@@ -48,7 +48,8 @@ ai-study-app/
     │   └── index.ts            # Application entry point and server startup
     ├── .env                    # Environment configuration (ignored by Git)
     └── package.json
-    
+```
+
 ---
 
 ## REST API Reference
