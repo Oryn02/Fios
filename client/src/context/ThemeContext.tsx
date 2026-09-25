@@ -16,6 +16,7 @@ function applyAccent(accent: AccentKey) {
   const def = ACCENTS.find((a) => a.key === accent) || ACCENTS[0];
   const root = document.documentElement;
   root.style.setProperty('--fios-accent-from', def.from);
+  root.style.setProperty('--fios-accent-via', def.via);
   root.style.setProperty('--fios-accent-to', def.to);
   root.style.setProperty('--fios-accent-solid', def.solid);
 }

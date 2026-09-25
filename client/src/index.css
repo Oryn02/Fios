@@ -2,12 +2,14 @@
 
 /* ==========================================================================
    Fios theme tokens
-   Accent variables recolor the brandmark, rings and primary chrome.
+   Accent variables (3-stop gradient) power the universal gradient engine:
+   buttons, gradient text, glowing borders, and active rings.
    Surface variables drive the dashboard dark/light themes.
    ========================================================================== */
 :root {
   --fios-accent-from: #34d399;
-  --fios-accent-to: #22d3ee;
+  --fios-accent-via: #2dd4bf;
+  --fios-accent-to: #3b82f6;
   --fios-accent-solid: #34d399;
 
   /* Dark theme (default) */
@@ -20,10 +22,10 @@
 }
 
 [data-theme="light"] {
-  --fios-bg: #f6f7fb;
+  --fios-bg: #f8fafc;
   --fios-surface: #ffffff;
-  --fios-surface-2: #eef1f6;
-  --fios-border: rgba(15, 23, 42, 0.10);
+  --fios-surface-2: #eef2f7;
+  --fios-border: rgba(15, 23, 42, 0.12);
   --fios-text: #0f172a;
   --fios-text-muted: #475569;
 }
@@ -36,45 +38,67 @@
 .fios-text { color: var(--fios-text); }
 .fios-text-muted { color: var(--fios-text-muted); }
 
+/* Universal gradient engine (3-stop, accent-driven) */
 .accent-text {
-  background-image: linear-gradient(90deg, var(--fios-accent-from), var(--fios-accent-to));
+  background-image: linear-gradient(90deg, var(--fios-accent-from), var(--fios-accent-via), var(--fios-accent-to));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-.accent-bg { background-image: linear-gradient(120deg, var(--fios-accent-from), var(--fios-accent-to)); }
+.accent-bg { background-image: linear-gradient(120deg, var(--fios-accent-from), var(--fios-accent-via), var(--fios-accent-to)); }
+.accent-bg:hover { opacity: 0.92; }
 .accent-ring { box-shadow: 0 0 0 1px color-mix(in srgb, var(--fios-accent-solid) 55%, transparent); }
 .accent-glow { box-shadow: 0 10px 40px -12px color-mix(in srgb, var(--fios-accent-solid) 45%, transparent); }
 .accent-solid-text { color: var(--fios-accent-solid); }
 .accent-border { border-color: color-mix(in srgb, var(--fios-accent-solid) 45%, transparent); }
 
 /* ==========================================================================
+   Comprehensive Light Mode remap.
+   Legacy views use hard-coded dark tokens; when the dashboard root is in
+   light mode we remap those tokens to the light palette so every card,
+   sidebar, modal and drawer flips to a clean white/soft-grey surface with
+   dark, readable text. The fixed-emerald landing page is wrapped in its own
+   data-theme="dark" and is therefore never affected.
+   ========================================================================== */
+[data-theme="light"] [class*="#0e131f"] { background-color: var(--fios-surface) !important; }
+[data-theme="light"] [class*="#07090e"] { background-color: var(--fios-surface-2) !important; }
+[data-theme="light"] [class*="bg-slate-800"],
+[data-theme="light"] [class*="bg-slate-900"],
+[data-theme="light"] [class*="bg-slate-700"] { background-color: var(--fios-surface-2) !important; }
+
+[data-theme="light"] [class*="border-slate-800"],
+[data-theme="light"] [class*="border-slate-700"] { border-color: var(--fios-border) !important; }
+
+[data-theme="light"] [class*="text-white"],
+[data-theme="light"] [class*="text-slate-100"],
+[data-theme="light"] [class*="text-slate-200"],
+[data-theme="light"] [class*="text-slate-300"] { color: var(--fios-text) !important; }
+[data-theme="light"] [class*="text-slate-400"],
+[data-theme="light"] [class*="text-slate-500"],
+[data-theme="light"] [class*="text-slate-600"] { color: var(--fios-text-muted) !important; }
+
+/* Keep dark text legible on accent-filled buttons in both themes. */
+[data-theme="light"] [class*="text-slate-950"] { color: #0f172a !important; }
+/* Soft shadows for cards in light mode */
+[data-theme="light"] [class*="shadow-xl"],
+[data-theme="light"] [class*="shadow-2xl"] { box-shadow: 0 8px 24px -12px rgba(15, 23, 42, 0.18) !important; }
+
+/* ==========================================================================
    Mobile / cross-browser optimizations
    ========================================================================== */
-
-/* Prevent iOS Safari from zooming when focusing inputs (needs >= 16px). */
-input,
-select,
-textarea {
-  font-size: 16px;
-}
+input, select, textarea { font-size: 16px; }
 @media (min-width: 768px) {
-  input,
-  select,
-  textarea {
-    font-size: inherit;
-  }
+  input, select, textarea { font-size: inherit; }
 }
 
-/* Respect iPhone home-indicator / notch safe areas. */
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 .safe-top { padding-top: env(safe-area-inset-top, 0px); }
-
-/* Dynamic viewport height helper (falls back to vh on old browsers). */
 .min-h-dvh { min-height: 100vh; min-height: 100dvh; }
+.h-dvh { height: 100vh; height: 100dvh; }
 
 html, body, #root { min-height: 100vh; min-height: 100dvh; }
 body { background-color: #000; overscroll-behavior-y: none; }
-
-/* Smooth momentum scrolling on iOS for scroll containers. */
 .scroll-touch { -webkit-overflow-scrolling: touch; }
+
+/* Mermaid diagrams render on a neutral surface in both themes */
+.fios-mermaid svg { max-width: 100%; height: auto; }
