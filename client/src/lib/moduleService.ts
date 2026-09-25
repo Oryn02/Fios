@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { IS_DEMO, demoModules } from './demo';
 
 export interface DBModule {
   id: string;
@@ -8,6 +9,8 @@ export interface DBModule {
   color: string;
   created_at: string;
 }
+
+let demoModuleState: DBModule[] = [...demoModules];
 
 export const COLOR_OPTIONS: Record<string, { label: string; badge: string; border: string }> = {
   emerald: { label: 'Emerald', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', border: 'border-emerald-400' },
@@ -19,6 +22,8 @@ export const COLOR_OPTIONS: Record<string, { label: string; badge: string; borde
 };
 
 export async function getUserModules(): Promise<DBModule[]> {
+  if (IS_DEMO) return [...demoModuleState];
+
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
@@ -36,6 +41,19 @@ export async function getUserModules(): Promise<DBModule[]> {
 }
 
 export async function createModule(code: string, name: string, color: string): Promise<DBModule | null> {
+  if (IS_DEMO) {
+    const mod: DBModule = {
+      id: `demo-${Date.now()}`,
+      user_id: 'demo',
+      code: code.trim().toUpperCase(),
+      name: name.trim(),
+      color,
+      created_at: new Date().toISOString(),
+    };
+    demoModuleState = [...demoModuleState, mod];
+    return mod;
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Authentication required.');
 
@@ -55,6 +73,11 @@ export async function createModule(code: string, name: string, color: string): P
 }
 
 export async function deleteModule(moduleId: string): Promise<void> {
+  if (IS_DEMO) {
+    demoModuleState = demoModuleState.filter((m) => m.id !== moduleId);
+    return;
+  }
+
   const { error } = await supabase
     .from('modules')
     .delete()
