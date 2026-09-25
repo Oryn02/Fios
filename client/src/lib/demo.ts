@@ -64,10 +64,14 @@ export const demoProfile: UserProfile = {
   pomodoro_long_break: 15,
 };
 
+function daysFromNow(d: number): string {
+  return new Date(Date.now() + d * 86400_000).toISOString().slice(0, 10);
+}
+
 export const demoModules: DBModule[] = [
-  { id: 'm1', user_id: DEMO_USER.id, code: 'SOFT06001', name: 'Software Engineering', color: 'emerald', created_at: new Date().toISOString() },
-  { id: 'm2', user_id: DEMO_USER.id, code: 'COMP07020', name: 'Data Structures & Algorithms', color: 'cyan', created_at: new Date().toISOString() },
-  { id: 'm3', user_id: DEMO_USER.id, code: 'DBMS06110', name: 'Database Systems', color: 'indigo', created_at: new Date().toISOString() },
+  { id: 'm1', user_id: DEMO_USER.id, code: 'SOFT06001', name: 'Software Engineering', color: 'emerald', exam_date: daysFromNow(6), created_at: new Date().toISOString() },
+  { id: 'm2', user_id: DEMO_USER.id, code: 'COMP07020', name: 'Data Structures & Algorithms', color: 'cyan', exam_date: daysFromNow(14), created_at: new Date().toISOString() },
+  { id: 'm3', user_id: DEMO_USER.id, code: 'DBMS06110', name: 'Database Systems', color: 'indigo', exam_date: null, created_at: new Date().toISOString() },
 ];
 
 export const demoDecks: Deck[] = [

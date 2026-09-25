@@ -30,18 +30,37 @@ export interface AccentDef {
   key: AccentKey;
   label: string;
   from: string; // hex
+  via: string;  // hex (mid stop)
   to: string;   // hex
   solid: string;
 }
 
-// Secondary gradient accents selectable in Settings.
+// Secondary gradient accents selectable in Settings. Each is a 3-stop gradient
+// driving the universal gradient engine (buttons, gradient text, glows, rings).
 export const ACCENTS: AccentDef[] = [
-  { key: 'emerald', label: 'Emerald Glow', from: '#34d399', to: '#22d3ee', solid: '#34d399' },
-  { key: 'violet', label: 'Cyber Violet', from: '#a78bfa', to: '#8b5cf6', solid: '#a78bfa' },
-  { key: 'sunset', label: 'Sunset Fire', from: '#fb923c', to: '#f43f5e', solid: '#fb923c' },
-  { key: 'ocean', label: 'Electric Ocean', from: '#38bdf8', to: '#6366f1', solid: '#38bdf8' },
-  { key: 'lime', label: 'Neon Lime', from: '#a3e635', to: '#22c55e', solid: '#a3e635' },
+  { key: 'emerald', label: 'Emerald Blue', from: '#34d399', via: '#2dd4bf', to: '#3b82f6', solid: '#34d399' },
+  { key: 'violet', label: 'Cyber Violet', from: '#c084fc', via: '#a78bfa', to: '#6366f1', solid: '#a78bfa' },
+  { key: 'sunset', label: 'Sunset Fire', from: '#fbbf24', via: '#fb923c', to: '#f43f5e', solid: '#fb923c' },
+  { key: 'ocean', label: 'Electric Ocean', from: '#22d3ee', via: '#38bdf8', to: '#6366f1', solid: '#38bdf8' },
+  { key: 'lime', label: 'Neon Lime', from: '#bef264', via: '#a3e635', to: '#22c55e', solid: '#84cc16' },
 ];
+
+export interface RecallConcept {
+  concept: string;
+  status: 'covered' | 'partial' | 'missed';
+  note?: string;
+}
+
+export interface ActiveRecallLog {
+  id: string;
+  user_id: string;
+  module_code?: string | null;
+  topic: string;
+  accuracy: number;
+  content?: string | null;
+  report: RecallConcept[];
+  created_at: string;
+}
 
 export interface FiosDocument {
   id: string;
@@ -79,6 +98,7 @@ export interface DBModule {
   code: string;
   name: string;
   color: string;
+  exam_date?: string | null;
   created_at: string;
 }
 

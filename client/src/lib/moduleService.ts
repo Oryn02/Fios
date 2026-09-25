@@ -7,6 +7,7 @@ export interface DBModule {
   code: string;
   name: string;
   color: string;
+  exam_date?: string | null;
   created_at: string;
 }
 
@@ -70,6 +71,15 @@ export async function createModule(code: string, name: string, color: string): P
 
   if (error) throw error;
   return data;
+}
+
+export async function setModuleExamDate(moduleId: string, examDate: string | null): Promise<void> {
+  if (IS_DEMO) {
+    demoModuleState = demoModuleState.map((m) => (m.id === moduleId ? { ...m, exam_date: examDate } : m));
+    return;
+  }
+  const { error } = await supabase.from('modules').update({ exam_date: examDate }).eq('id', moduleId);
+  if (error) throw error;
 }
 
 export async function deleteModule(moduleId: string): Promise<void> {

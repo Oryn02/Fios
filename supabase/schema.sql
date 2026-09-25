@@ -45,9 +45,11 @@ create table if not exists public.modules (
   code text not null,
   name text not null,
   color text not null default 'emerald',
+  exam_date date,
   created_at timestamptz not null default now()
 );
 create index if not exists modules_user_idx on public.modules (user_id);
+alter table public.modules add column if not exists exam_date date;
 
 -- ----------------------------------------------------------------------------
 -- decks + cards (cards carry SM-2 spaced-repetition scheduling fields)
@@ -163,6 +165,21 @@ create table if not exists public.focus_sessions (
 );
 create index if not exists focus_sessions_user_idx on public.focus_sessions (user_id, created_at);
 
+-- ----------------------------------------------------------------------------
+-- active_recall_logs: AI "blurting" evaluations of free-recall attempts
+-- ----------------------------------------------------------------------------
+create table if not exists public.active_recall_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  module_code text,
+  topic text not null default '',
+  accuracy integer not null default 0,   -- 0-100 recall accuracy
+  content text,                          -- what the user wrote
+  report jsonb not null default '[]'::jsonb, -- color-coded concept report
+  created_at timestamptz not null default now()
+);
+create index if not exists active_recall_logs_user_idx on public.active_recall_logs (user_id, created_at);
+
 -- ============================================================================
 -- Row Level Security
 -- ============================================================================
@@ -176,6 +193,7 @@ alter table public.tasks         enable row level security;
 alter table public.documents     enable row level security;
 alter table public.grades        enable row level security;
 alter table public.focus_sessions enable row level security;
+alter table public.active_recall_logs enable row level security;
 
 -- Helper: (re)create a policy without erroring if it already exists.
 do $$
@@ -224,6 +242,11 @@ begin
 
   if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'focus_sessions' and policyname = 'focus_sessions_owner') then
     create policy focus_sessions_owner on public.focus_sessions
+      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  end if;
+
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'active_recall_logs' and policyname = 'active_recall_logs_owner') then
+    create policy active_recall_logs_owner on public.active_recall_logs
       for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
   end if;
 
