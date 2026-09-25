@@ -12,10 +12,10 @@ interface FiosLogoProps {
 
 const ICON_PX: Record<LogoSize, number> = { sm: 24, md: 32, lg: 44, xl: 64 };
 const TEXT_CLASS: Record<LogoSize, string> = {
-  sm: 'text-base',
-  md: 'text-lg',
-  lg: 'text-2xl',
-  xl: 'text-4xl',
+  sm: 'text-lg',
+  md: 'text-2xl',
+  lg: 'text-3xl',
+  xl: 'text-5xl',
 };
 
 /**

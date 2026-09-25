@@ -22,7 +22,10 @@ function applyAccent(accent: AccentKey) {
 }
 
 function applyTheme(theme: ThemeMode) {
-  document.documentElement.setAttribute('data-theme', theme);
+  const root = document.documentElement;
+  root.setAttribute('data-theme', theme);
+  root.classList.remove('light', 'dark');
+  root.classList.add(theme);
 }
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

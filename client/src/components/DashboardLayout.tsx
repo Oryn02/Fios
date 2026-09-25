@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   LayoutDashboard, Layers, Calendar, Settings, BookOpen,
   LogOut, Menu, X, Timer, HelpCircle, Code2, FileText, Target,
-  Sun, Moon, GraduationCap,
+  Sun, Moon, GraduationCap, Sparkles,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, disableDemo } from '../lib/demo';
@@ -31,6 +31,7 @@ const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'updates', label: 'Updates v2.1', icon: Sparkles },
 ];
 
 // Subset shown in the mobile bottom navigation bar.
@@ -63,7 +64,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <FiosLogo size="md" />
-          <span className="hidden sm:inline text-[10px] font-semibold not-italic accent-solid-text bg-[var(--fios-surface-2)] px-2 py-0.5 rounded border accent-border">v2.0</span>
+          <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.1</span>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">

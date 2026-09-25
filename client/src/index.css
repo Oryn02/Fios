@@ -22,12 +22,12 @@
 }
 
 [data-theme="light"] {
-  --fios-bg: #f8fafc;
-  --fios-surface: #ffffff;
-  --fios-surface-2: #eef2f7;
-  --fios-border: rgba(15, 23, 42, 0.12);
-  --fios-text: #0f172a;
-  --fios-text-muted: #475569;
+  --fios-bg: #e2e8f0;          /* Deeper slate-200 background so white cards pop */
+  --fios-surface: #ffffff;     /* Crisp white cards */
+  --fios-surface-2: #f1f5f9;   /* Slate-100 for nested containers/inputs */
+  --fios-border: #cbd5e1;      /* Clear slate-300 card borders */
+  --fios-text: #020617;        /* Pitch-dark slate-950 for maximum legibility */
+  --fios-text-muted: #334155;  /* Darker slate-700 so secondary text isn't washed out */
 }
 
 /* Semantic helpers used by theme-aware surfaces */
@@ -101,7 +101,7 @@
 [data-theme="light"] [class*="text-slate-600"] { color: var(--fios-text-muted) !important; }
 
 /* Keep dark text legible on accent-filled buttons in both themes. */
-[data-theme="light"] [class*="text-slate-950"] { color: #0f172a !important; }
+[data-theme="light"] [class*="text-slate-950"] { color: #020617 !important; }
 
 /* Soft shadows for cards in light mode */
 [data-theme="light"] [class*="shadow-xl"],

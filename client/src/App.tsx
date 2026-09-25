@@ -13,6 +13,7 @@ import { ModulesView } from './components/ModulesView';
 import { FileUpload } from './components/FileUpload';
 import { ScheduleTab } from './components/ScheduleTab';
 import { SettingsTab } from './components/SettingsTab';
+import { UpdatesTab } from './components/UpdatesTab';
 import { FocusTimer } from './components/FocusTimer';
 import { QuizExamView } from './components/QuizExamView';
 import { CodeExamView } from './components/CodeExamView';
@@ -195,6 +196,7 @@ const Dashboard: React.FC = () => {
           )}
           {activeTab === 'schedule' && <ScheduleTab />}
           {activeTab === 'settings' && <SettingsTab />}
+          {activeTab === 'updates' && <UpdatesTab />}
         </motion.div>
       </AnimatePresence>
 
