@@ -1,6 +1,9 @@
 import { FlashcardResponse } from '../types/api';
+import { getGeminiKey } from '../lib/geminiKey';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+// Use a relative path so requests flow through the Vite dev proxy (and any
+// production reverse-proxy) to the Express API rather than a hard-coded host.
+const API_BASE_URL = '/api';
 
 export async function generateFlashcards(studyNotes: string): Promise<FlashcardResponse> {
   const response = await fetch(`${API_BASE_URL}/generate/flashcards`, {
@@ -8,8 +11,7 @@ export async function generateFlashcards(studyNotes: string): Promise<FlashcardR
     headers: {
       'Content-Type': 'application/json',
     },
-    // CHANGE THIS LINE: Send 'text' so it matches `const { text } = req.body`
-    body: JSON.stringify({ text: studyNotes }),
+    body: JSON.stringify({ text: studyNotes, apiKey: getGeminiKey() }),
   });
 
   if (!response.ok) {

@@ -14,7 +14,7 @@ interface FlashcardDeckProps {
   moduleCode?: string;
 }
 
-export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({ 
+const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({ 
   cards, 
   isSaved = false, 
   deckTitle: initialTitle = 'Generated Flashcard Deck',
@@ -191,7 +191,7 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
             <button
               onClick={handleSaveDeck}
               disabled={saving}
-              className="w-full sm:w-auto px-5 py-2 bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-black italic uppercase tracking-wider text-xs rounded-lg transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 shrink-0"
+              className="w-full sm:w-auto px-5 py-2 bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)] hover:opacity-90 text-slate-950 font-black italic uppercase tracking-wider text-xs rounded-lg transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 shrink-0"
             >
               {saving ? (
                 <>
@@ -276,7 +276,7 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
             </span>
             <div className="w-36 h-2 bg-slate-800 rounded-full overflow-hidden p-0.5">
               <div 
-                className="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full transition-all duration-300" 
+                className="h-full bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)] rounded-full transition-all duration-300" 
                 style={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
               />
             </div>
@@ -372,4 +372,5 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
   );
 };
 
+export const FlashcardDeck = React.memo(FlashcardDeckInner);
 export default FlashcardDeck;

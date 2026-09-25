@@ -1,3 +1,5 @@
+import { getGeminiKey } from '../lib/geminiKey';
+
 export interface QuizQuestion {
   id: string;
   question: string;
@@ -10,7 +12,7 @@ export async function generateQuizFromNotes(notes: string): Promise<QuizQuestion
   const response = await fetch('/api/generate/quiz', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: notes }),
+    body: JSON.stringify({ text: notes, apiKey: getGeminiKey() }),
   });
 
   const responseText = await response.text();

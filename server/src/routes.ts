@@ -1,7 +1,22 @@
 import { Router, Request, Response } from 'express';
-import { generateFlashcardsFromText, generateQuizFromText } from './geminiService.js';
+import { GoogleGenAI } from '@google/genai';
+import {
+  generateFlashcardsFromText,
+  generateQuizFromText,
+  generateCodeExam,
+  gradeCodeSubmission,
+  summarizeDocument,
+  tutorAnswer,
+  evaluateRecall,
+} from './geminiService.js';
 
 const router = Router();
+
+// Per-request BYO Gemini key, sent by the client from the user's profile.
+function apiKeyOf(req: Request): string | undefined {
+  const headerKey = req.header('x-gemini-key');
+  return (req.body && req.body.apiKey) || headerKey || undefined;
+}
 
 /* ==========================================================================
    1. FLASHCARDS GENERATION
@@ -13,7 +28,7 @@ const handleFlashcards = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Text content is required' });
     }
 
-    const result = await generateFlashcardsFromText(text);
+    const result = await generateFlashcardsFromText(text, apiKeyOf(req));
     const cards = result?.cards || (Array.isArray(result) ? result : []);
     return res.status(200).json(cards);
   } catch (error: any) {
@@ -35,7 +50,7 @@ const handleQuiz = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Text content is required' });
     }
 
-    const result = await generateQuizFromText(text);
+    const result = await generateQuizFromText(text, apiKeyOf(req));
     const questions = result?.questions || (Array.isArray(result) ? result : []);
     return res.status(200).json(questions);
   } catch (error: any) {
@@ -48,7 +63,126 @@ router.post('/generate/quiz', handleQuiz);
 router.post('/generate-quiz', handleQuiz);
 
 /* ==========================================================================
-   3. ICAL / WEBCAL CORS PROXY ENDPOINT
+   3. CODE EXAM GENERATION
+   ========================================================================== */
+const handleGenerateCodeExam = async (req: Request, res: Response) => {
+  try {
+    const { language, examType, topic, difficulty } = req.body || {};
+    if (!language || !examType) {
+      return res.status(400).json({ error: 'language and examType are required' });
+    }
+
+    const result = await generateCodeExam(language, examType, topic || '', difficulty || 'intermediate', apiKeyOf(req));
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error('Code Exam Generation Error:', error);
+    return res.status(500).json({ error: error?.message || 'Failed to generate code exam' });
+  }
+};
+
+router.post('/generate/code-exam', handleGenerateCodeExam);
+router.post('/generate-code-exam', handleGenerateCodeExam);
+
+/* ==========================================================================
+   4. CODE EXAM GRADING
+   ========================================================================== */
+const handleGradeCodeExam = async (req: Request, res: Response) => {
+  try {
+    const { language, prompt, solutionCode, userCode } = req.body || {};
+    if (!userCode || !userCode.trim()) {
+      return res.status(400).json({ error: 'userCode is required' });
+    }
+
+    const result = await gradeCodeSubmission(language || 'javascript', prompt || '', solutionCode || '', userCode, apiKeyOf(req));
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error('Code Exam Grading Error:', error);
+    return res.status(500).json({ error: error?.message || 'Failed to grade submission' });
+  }
+};
+
+router.post('/grade/code-exam', handleGradeCodeExam);
+router.post('/grade-code-exam', handleGradeCodeExam);
+
+/* ==========================================================================
+   5. DOCUMENT SUMMARIZATION (PDF / NOTE PARSER)
+   ========================================================================== */
+const handleSummarize = async (req: Request, res: Response) => {
+  try {
+    const text = req.body.text || req.body.content;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Text content is required' });
+    }
+    const result = await summarizeDocument(text, apiKeyOf(req));
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error('Summarize Error:', error);
+    return res.status(500).json({ error: error?.message || 'Failed to summarize document' });
+  }
+};
+
+router.post('/summarize', handleSummarize);
+router.post('/generate/summary', handleSummarize);
+
+/* ==========================================================================
+   6. AI TUTOR (grounded chat)
+   ========================================================================== */
+const handleTutor = async (req: Request, res: Response) => {
+  try {
+    const { question, context } = req.body || {};
+    if (!question || !question.trim()) {
+      return res.status(400).json({ error: 'question is required' });
+    }
+    const result = await tutorAnswer(question, context || '', apiKeyOf(req));
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error('Tutor Error:', error);
+    return res.status(500).json({ error: error?.message || 'Failed to get tutor response' });
+  }
+};
+
+router.post('/tutor', handleTutor);
+
+/* ==========================================================================
+   6b. ACTIVE RECALL EVALUATOR ("blurting")
+   ========================================================================== */
+router.post('/active-recall', async (req: Request, res: Response) => {
+  try {
+    const { topic, userText, context } = req.body || {};
+    if (!userText || !userText.trim()) {
+      return res.status(400).json({ error: 'userText is required' });
+    }
+    const result = await evaluateRecall(topic || '', userText, context || '', apiKeyOf(req));
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error('Active Recall Error:', error);
+    return res.status(500).json({ error: error?.message || 'Failed to evaluate recall' });
+  }
+});
+
+/* ==========================================================================
+   7. VALIDATE GEMINI API KEY (BYO Key)
+   ========================================================================== */
+router.post('/validate-key', async (req: Request, res: Response) => {
+  try {
+    const key = (req.body && req.body.apiKey) || req.header('x-gemini-key');
+    if (!key || !String(key).trim()) {
+      return res.status(400).json({ valid: false, error: 'apiKey is required' });
+    }
+    const ai = new GoogleGenAI({ apiKey: String(key).trim() });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: 'Reply with the single word: OK',
+    });
+    const ok = !!response.text;
+    return res.status(200).json({ valid: ok });
+  } catch (error: any) {
+    return res.status(200).json({ valid: false, error: error?.message || 'Invalid API key' });
+  }
+});
+
+/* ==========================================================================
+   8. ICAL / WEBCAL CORS PROXY ENDPOINT
    ========================================================================== */
 const handleICalProxy = async (req: Request, res: Response) => {
   try {
@@ -70,8 +204,8 @@ const handleICalProxy = async (req: Request, res: Response) => {
     });
 
     if (!response.ok) {
-      return res.status(response.status).json({ 
-        error: `ATU server responded with status code ${response.status}` 
+      return res.status(response.status).json({
+        error: `ATU server responded with status code ${response.status}`,
       });
     }
 

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { Flashcard } from '../types/api';
+import { IS_DEMO, demoDecks } from './demo';
 
 export interface SavedDeck {
   id: string;
@@ -50,6 +51,8 @@ export async function saveDeckWithCards(
 }
 
 export async function getUserDecksWithCards() {
+  if (IS_DEMO) return demoDecks;
+
   const { data, error } = await supabase
     .from('decks')
     .select('*, cards(*)')
