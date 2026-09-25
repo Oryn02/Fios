@@ -10,9 +10,6 @@ export interface CalendarEvent {
   endDate: Date;
 }
 
-/* ==========================================================================
-   1. SAVE ICAL SUBSCRIPTION URL TO SUPABASE USER PROFILE
-   ========================================================================== */
 export async function saveCalendarUrl(url: string): Promise<void> {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) throw new Error('Authentication required.');
@@ -24,17 +21,11 @@ export async function saveCalendarUrl(url: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-/* ==========================================================================
-   2. RETRIEVE SAVED ICAL URL
-   ========================================================================== */
 export async function getSavedCalendarUrl(): Promise<string | null> {
   const { data: { user } } = await supabase.auth.getUser();
   return user?.user_metadata?.ical_url || null;
 }
 
-/* ==========================================================================
-   3. PARSE RAW ICS TEXT
-   ========================================================================== */
 export function parseIcsText(icsData: string): CalendarEvent[] {
   const parsedData = ICAL.parse(icsData);
   const comp = new ICAL.Component(parsedData);
@@ -55,12 +46,8 @@ export function parseIcsText(icsData: string): CalendarEvent[] {
   return events.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 }
 
-/* ==========================================================================
-   4. FETCH & PARSE ICAL FEED VIA EXPRESS SERVER PROXY
-   ========================================================================== */
 export async function fetchAndParseCalendar(icalUrl: string): Promise<CalendarEvent[]> {
-  // Call local Express server proxy endpoint
-  const backendProxyUrl = `http://localhost:5000/api/ical-proxy?url=${encodeURIComponent(icalUrl)}`;
+  const backendProxyUrl = `http://localhost:5000/ical-proxy?url=${encodeURIComponent(icalUrl)}`;
 
   const response = await fetch(backendProxyUrl);
   if (!response.ok) {

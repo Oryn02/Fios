@@ -211,7 +211,8 @@ const handleICalProxy = async (req: Request, res: Response) => {
 
     const icsData = await response.text();
 
-    res.setHeader('Content-Type', 'text/calendar');
+    // Set as text/plain so the frontend fetch() reads it as a string instead of triggering browser download
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     return res.status(200).send(icsData);
   } catch (error: any) {
     console.error('iCal Proxy Error:', error);

@@ -29,7 +29,6 @@ const ScheduleTabInner: React.FC = () => {
   const [icalUrl, setIcalUrl] = useState('');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
-  const [savingUrl, setSavingUrl] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // View Controls
@@ -88,16 +87,21 @@ const ScheduleTabInner: React.FC = () => {
     e.preventDefault();
     if (!icalUrl.trim()) return;
 
-    setSavingUrl(true);
+    setLoading(true);
     setStatusMessage(null);
 
     try {
-      await saveCalendarUrl(icalUrl);
-      await loadEvents(icalUrl);
+      // Immediately load and parse the calendar feed
+      await loadEvents(icalUrl.trim());
+      
+      // Save the URL to Supabase in the background without blocking the UI
+      saveCalendarUrl(icalUrl.trim()).catch((err) => {
+        console.error('Background save failed:', err);
+      });
     } catch (err: any) {
-      setStatusMessage({ type: 'error', text: err.message || 'Failed to save calendar URL.' });
+      setStatusMessage({ type: 'error', text: err.message || 'Failed to fetch calendar feed.' });
     } finally {
-      setSavingUrl(false);
+      setLoading(false);
     }
   };
 
@@ -254,10 +258,10 @@ const ScheduleTabInner: React.FC = () => {
           </div>
           <button
             type="submit"
-            disabled={savingUrl || loading || !icalUrl.trim()}
+            disabled={loading || !icalUrl.trim()}
             className="w-full sm:w-auto px-5 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 shrink-0"
           >
-            {savingUrl || loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : 'Sync'}
+            {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : 'Sync'}
           </button>
           
           <label className="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 shrink-0">
@@ -493,11 +497,75 @@ const ScheduleTabInner: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="bg-[#0e131f] border border-slate-800 rounded-xl p-8 text-center space-y-2">
-          <p className="text-xs font-black italic uppercase text-slate-400">Month Overview</p>
-          <p className="text-xs font-mono text-slate-500">
-            Total {events.filter(e => e.startDate.getMonth() === selectedDate.getMonth()).length} entries scheduled for {selectedDate.toLocaleDateString('en-GB', { month: 'long' })}.
-          </p>
+        <div className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 space-y-4">
+          <div className="grid grid-cols-7 gap-2 text-center font-mono text-[11px] font-black uppercase text-slate-500 pb-2 border-b border-slate-800">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+          </div>
+
+          <div className="grid grid-cols-7 gap-2">
+            {(() => {
+              const year = selectedDate.getFullYear();
+              const month = selectedDate.getMonth();
+              const firstDayOfMonth = new Date(year, month, 1);
+              const lastDayOfMonth = new Date(year, month + 1, 0);
+              
+              let startDayIndex = firstDayOfMonth.getDay() - 1;
+              if (startDayIndex === -1) startDayIndex = 6;
+
+              const daysInMonth = lastDayOfMonth.getDate();
+              const calendarCells = [];
+
+              for (let i = 0; i < startDayIndex; i++) {
+                calendarCells.push(<div key={`pad-${i}`} className="h-24 bg-[#07090e]/30 border border-slate-900 rounded-lg opacity-20" />);
+              }
+
+              for (let day = 1; day <= daysInMonth; day++) {
+                const currentDate = new Date(year, month, day);
+                const dayEvents = events.filter(e => isSameDay(e.startDate, currentDate));
+                const isTodayCell = isSameDay(currentDate, now);
+                const isSelectedCell = isSameDay(currentDate, selectedDate);
+
+                calendarCells.push(
+                  <div
+                    key={`day-${day}`}
+                    onClick={() => {
+                      setSelectedDate(currentDate);
+                      setViewMode('day');
+                    }}
+                    className={`h-24 bg-[#07090e] border rounded-lg p-2 flex flex-col justify-between cursor-pointer transition-all hover:border-emerald-400/50 ${
+                      isSelectedCell ? 'border-emerald-400 ring-1 ring-emerald-400/50' : 'border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-mono font-bold ${isTodayCell ? 'bg-emerald-400 text-slate-950 px-1.5 py-0.5 rounded-full' : 'text-slate-300'}`}>
+                        {day}
+                      </span>
+                      {dayEvents.length > 0 && (
+                        <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.2 rounded border border-cyan-500/20">
+                          {dayEvents.length}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="space-y-1 overflow-hidden">
+                      {dayEvents.slice(0, 2).map((ev, idx) => (
+                        <div key={idx} className="text-[9px] font-mono text-slate-400 truncate bg-slate-900/80 px-1 py-0.5 rounded">
+                          {ev.title}
+                        </div>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <div className="text-[9px] font-mono text-slate-500 italic">
+                          +{dayEvents.length - 2} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+
+              return calendarCells;
+            })()}
+          </div>
         </div>
       )}
 
