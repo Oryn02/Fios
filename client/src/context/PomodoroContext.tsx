@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import { useProfile } from './ProfileContext';
 import { DEFAULT_POMODORO } from '../types/db';
+import { logFocusSession } from '../lib/focusService';
 
 export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
 
@@ -122,11 +123,8 @@ export const PomodoroProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsActive(false);
       if (modeRef.current === 'work') {
         setCompletedSessions((c) => c + 1);
-        const existing = Number(localStorage.getItem('fios_logged_focus_mins')) || 0;
-        localStorage.setItem(
-          'fios_logged_focus_mins',
-          (existing + durationsRef.current.work).toString()
-        );
+        // Persist to focus_sessions so the Weekly Study Goal reflects real work.
+        logFocusSession(durationsRef.current.work, 'work').catch(() => {});
       }
       playChime();
     }

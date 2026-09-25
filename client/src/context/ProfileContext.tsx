@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import type { UserProfile } from '../types/db';
 import { getMyProfile, updateMyProfile } from '../lib/profileService';
+import { setGeminiKey } from '../lib/geminiKey';
 
 interface ProfileContextValue {
   profile: UserProfile | null;
@@ -27,6 +28,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const p = await getMyProfile();
       setProfile(p);
+      setGeminiKey(p?.gemini_api_key ?? null);
     } catch (err) {
       console.error('Failed to load profile:', err);
     } finally {
@@ -37,6 +39,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateProfile = useCallback(async (patch: Partial<UserProfile>) => {
     const updated = await updateMyProfile(patch);
     setProfile(updated);
+    if ('gemini_api_key' in patch) setGeminiKey(updated.gemini_api_key ?? null);
   }, []);
 
   useEffect(() => {

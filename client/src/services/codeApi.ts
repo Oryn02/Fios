@@ -1,4 +1,5 @@
 import type { CodeExamType, CodeLanguage } from '../types/db';
+import { getGeminiKey } from '../lib/geminiKey';
 
 export interface GeneratedCodeExam {
   title: string;
@@ -17,11 +18,11 @@ export interface CodeGradeResult {
   feedback: string;
 }
 
-async function postJson<T>(url: string, body: unknown): Promise<T> {
+async function postJson<T>(url: string, body: Record<string, unknown>): Promise<T> {
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ ...body, apiKey: getGeminiKey() }),
   });
 
   const text = await response.text();
