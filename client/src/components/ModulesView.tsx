@@ -2,29 +2,35 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Folder, Layers, Sparkles, ArrowRight, Trash2, Tag, Plus, Palette, X,
-  HelpCircle, Code2, CheckSquare, Square, Bug, Terminal, PencilRuler, Brain,
+  HelpCircle, Code2, CheckSquare, Square, Bug, Terminal, PencilRuler, Brain, FileText,
 } from 'lucide-react';
 import { getUserDecksWithCards } from '../lib/deckService';
 import { getUserModules, createModule, deleteModule, DBModule, COLOR_OPTIONS } from '../lib/moduleService';
 import { getQuizzes } from '../lib/mcqService';
 import { getCodeExams } from '../lib/codeExamService';
 import { getTasks, toggleTask } from '../lib/taskService';
+import { getDocuments, deleteDocument } from '../lib/documentService';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO } from '../lib/demo';
-import type { MCQQuiz, CodeExam, Task, CodeExamType } from '../types/db';
+import type { MCQQuiz, CodeExam, Task, CodeExamType, FiosDocument } from '../types/db';
 import { ActiveRecall } from './ActiveRecall';
 
 interface ModulesViewProps {
   onOpenFlashcards: (deckCards?: any[], title?: string, moduleCode?: string, isSaved?: boolean) => void;
+  onOpenQuiz?: (quizId: string) => void;
+  onOpenCodeExam?: (examId: string) => void;
+  onOpenDocument?: (docId: string) => void;
+  setActiveTab?: (tab: string) => void;
 }
 
-type EntityTab = 'decks' | 'quizzes' | 'code' | 'tasks';
+type EntityTab = 'decks' | 'quizzes' | 'code' | 'tasks' | 'documents';
 
 const ENTITY_TABS: { id: EntityTab; label: string; icon: React.ElementType }[] = [
   { id: 'decks', label: 'Decks', icon: Layers },
   { id: 'quizzes', label: 'MCQ Quizzes', icon: HelpCircle },
   { id: 'code', label: 'Code Exams', icon: Code2 },
   { id: 'tasks', label: 'Tasks', icon: CheckSquare },
+  { id: 'documents', label: 'Documents', icon: FileText },
 ];
 
 const EXAM_ICON: Record<CodeExamType, React.ReactNode> = {
@@ -33,12 +39,19 @@ const EXAM_ICON: Record<CodeExamType, React.ReactNode> = {
   logic_completion: <PencilRuler className="w-3.5 h-3.5" />,
 };
 
-const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
+const ModulesViewInner: React.FC<ModulesViewProps> = ({
+  onOpenFlashcards,
+  onOpenQuiz,
+  onOpenCodeExam,
+  onOpenDocument,
+  setActiveTab,
+}) => {
   const [modules, setModules] = useState<DBModule[]>([]);
   const [decks, setDecks] = useState<any[]>([]);
   const [quizzes, setQuizzes] = useState<MCQQuiz[]>([]);
   const [codeExams, setCodeExams] = useState<CodeExam[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [documents, setDocuments] = useState<FiosDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [entityTab, setEntityTab] = useState<EntityTab>('decks');
@@ -53,18 +66,20 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [m, d, q, c, t] = await Promise.all([
+      const [m, d, q, c, t, docList] = await Promise.all([
         getUserModules(),
         getUserDecksWithCards(),
         getQuizzes(),
         getCodeExams(),
         getTasks(),
+        getDocuments(),
       ]);
       setModules(m);
       setDecks(d || []);
       setQuizzes(q);
       setCodeExams(c);
       setTasks(t);
+      setDocuments(docList || []);
     } catch (err) {
       console.error('Error loading module data:', err);
     } finally {
@@ -84,14 +99,16 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
     quizzes: quizzes.filter((q) => matchesModule(q.module_code)),
     code: codeExams.filter((c) => matchesModule(c.module_code)),
     tasks: tasks.filter((t) => matchesModule(t.module_code)),
-  }), [decks, quizzes, codeExams, tasks, matchesModule]);
+    documents: documents.filter((doc) => matchesModule(doc.module_code)),
+  }), [decks, quizzes, codeExams, tasks, documents, matchesModule]);
 
   const countsFor = useCallback((code: string) => ({
     decks: decks.filter((d) => d.module_code === code).length,
     quizzes: quizzes.filter((q) => q.module_code === code).length,
     code: codeExams.filter((c) => c.module_code === code).length,
     tasks: tasks.filter((t) => t.module_code === code).length,
-  }), [decks, quizzes, codeExams, tasks]);
+    documents: documents.filter((doc) => doc.module_code === code).length,
+  }), [decks, quizzes, codeExams, tasks, documents]);
 
   const handleCreateModule = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,6 +153,17 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
     }
   };
 
+  const handleDeleteDocument = async (e: React.MouseEvent, docId: string) => {
+    e.stopPropagation();
+    if (!confirm('Delete this document?')) return;
+    try {
+      await deleteDocument(docId);
+      setDocuments((prev) => prev.filter((doc) => doc.id !== docId));
+    } catch (err: any) {
+      alert(`Failed to delete document: ${err.message}`);
+    }
+  };
+
   const handleUpdateDeckModule = async (e: React.ChangeEvent<HTMLSelectElement>, deckId: string) => {
     e.stopPropagation();
     const newModuleCode = e.target.value;
@@ -164,7 +192,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
           <h2 className="text-2xl font-black italic text-white uppercase tracking-tight flex items-center gap-2">
             <BookOpen className="w-6 h-6 text-emerald-400" /> Academic Modules
           </h2>
-          <p className="text-xs font-mono text-slate-400 mt-1">Organize decks, quizzes, code exams, and tasks into subject folders.</p>
+          <p className="text-xs font-mono text-slate-400 mt-1">Organize decks, quizzes, code exams, tasks, and documents into subject folders.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => setRecallOpen(true)} className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
@@ -225,7 +253,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
             <span>All Modules</span><Layers className="w-4 h-4 text-emerald-400" />
           </div>
           <p className="text-2xl font-black text-white mt-2">{modules.length}</p>
-          <p className="text-[10px] font-mono text-slate-500 mt-1">{decks.length} decks · {quizzes.length} quizzes · {codeExams.length} exams</p>
+          <p className="text-[10px] font-mono text-slate-500 mt-1">{decks.length} decks · {quizzes.length} quizzes · {codeExams.length} exams · {documents.length} docs</p>
         </button>
 
         {modules.map((mod) => {
@@ -249,6 +277,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
                 <span className="flex items-center gap-1"><HelpCircle className="w-3 h-3 text-emerald-400" />{counts.quizzes}</span>
                 <span className="flex items-center gap-1"><Code2 className="w-3 h-3 text-indigo-400" />{counts.code}</span>
                 <span className="flex items-center gap-1"><CheckSquare className="w-3 h-3 text-amber-400" />{counts.tasks}</span>
+                <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-rose-400" />{counts.documents}</span>
               </div>
             </motion.div>
           );
@@ -258,12 +287,12 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
       {/* Entity type tabs */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-          <div className="flex items-center gap-1 bg-[#07090e] border border-slate-800 rounded-xl p-1 w-fit">
+          <div className="flex items-center gap-1 bg-[#07090e] border border-slate-800 rounded-xl p-1 w-fit overflow-x-auto">
             {ENTITY_TABS.map((t) => {
               const Icon = t.icon;
               return (
                 <button key={t.id} onClick={() => setEntityTab(t.id)}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase transition-colors flex items-center gap-1.5 cursor-pointer ${entityTab === t.id ? 'bg-emerald-400 text-slate-950' : 'text-slate-400 hover:text-slate-200'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 ${entityTab === t.id ? 'bg-emerald-400 text-slate-950' : 'text-slate-400 hover:text-slate-200'}`}>
                   <Icon className="w-3.5 h-3.5" /> {t.label}
                 </button>
               );
@@ -318,13 +347,27 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
                 filtered.quizzes.length === 0 ? <EmptyState label="No MCQ quizzes in this module" /> : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filtered.quizzes.map((quiz) => (
-                      <div key={quiz.id} className="p-5 bg-[#0e131f]/90 border border-slate-800 rounded-xl space-y-3">
+                      <motion.div
+                        key={quiz.id}
+                        whileHover={{ y: -2 }}
+                        onClick={() => {
+                          if (onOpenQuiz) onOpenQuiz(quiz.id);
+                          if (setActiveTab) setActiveTab('quiz');
+                        }}
+                        className="p-5 bg-[#0e131f]/90 border border-slate-800 rounded-xl space-y-3 hover:border-emerald-500/50 transition-colors group cursor-pointer shadow-lg"
+                      >
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{quiz.questions.length} Q</span>
                           {quiz.module_code && <span className="text-[10px] font-mono text-cyan-400">{quiz.module_code}</span>}
                         </div>
-                        <h4 className="text-sm font-bold text-slate-100 line-clamp-2 flex items-center gap-2"><HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />{quiz.title}</h4>
-                      </div>
+                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors line-clamp-2 flex items-center gap-2">
+                          <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                          {quiz.title}
+                        </h4>
+                        <div className="flex items-center justify-end pt-2 border-t border-slate-800/60 text-xs font-mono text-slate-400">
+                          <span className="text-emerald-400 group-hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Take Exam <ArrowRight className="w-3 h-3" /></span>
+                        </div>
+                      </motion.div>
                     ))}
                   </div>
                 )
@@ -335,16 +378,30 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
                 filtered.code.length === 0 ? <EmptyState label="No code exams in this module" /> : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filtered.code.map((exam) => (
-                      <div key={exam.id} className="p-5 bg-[#0e131f]/90 border border-slate-800 rounded-xl space-y-3">
+                      <motion.div
+                        key={exam.id}
+                        whileHover={{ y: -2 }}
+                        onClick={() => {
+                          if (onOpenCodeExam) onOpenCodeExam(exam.id);
+                          if (setActiveTab) setActiveTab('code');
+                        }}
+                        className="p-5 bg-[#0e131f]/90 border border-slate-800 rounded-xl space-y-3 hover:border-indigo-500/50 transition-colors group cursor-pointer shadow-lg"
+                      >
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">{exam.language}</span>
                           {exam.module_code && <span className="text-[10px] font-mono text-indigo-400">{exam.module_code}</span>}
                         </div>
-                        <h4 className="text-sm font-bold text-slate-100 line-clamp-2 flex items-center gap-2"><Code2 className="w-4 h-4 text-indigo-400 shrink-0" />{exam.title}</h4>
-                        <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 pt-2 border-t border-slate-800/60">
-                          {EXAM_ICON[exam.exam_type]} {exam.exam_type.replace('_', ' ')}
+                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-indigo-300 transition-colors line-clamp-2 flex items-center gap-2">
+                          <Code2 className="w-4 h-4 text-indigo-400 shrink-0" />
+                          {exam.title}
+                        </h4>
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[10px] font-mono text-slate-500">
+                          <span className="flex items-center gap-1.5 capitalize">
+                            {EXAM_ICON[exam.exam_type]} {exam.exam_type.replace('_', ' ')}
+                          </span>
+                          <span className="text-indigo-400 group-hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Open Lab <ArrowRight className="w-3 h-3" /></span>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 )
@@ -365,6 +422,57 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
                           {task.due_date && <span className="text-[10px] font-mono text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">{task.due_date}</span>}
                         </div>
                       </div>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {/* DOCUMENTS */}
+              {entityTab === 'documents' && (
+                filtered.documents.length === 0 ? (
+                  <EmptyState
+                    label="No documents in this module"
+                    onAction={() => setActiveTab && setActiveTab('documents')}
+                    actionLabel="Upload & Summarize Document"
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filtered.documents.map((doc) => (
+                      <motion.div
+                        key={doc.id}
+                        whileHover={{ y: -2 }}
+                        onClick={() => {
+                          if (onOpenDocument) onOpenDocument(doc.id);
+                          if (setActiveTab) setActiveTab('documents');
+                        }}
+                        className="p-5 bg-[#0e131f]/90 border border-slate-800 rounded-xl space-y-3 hover:border-rose-500/50 transition-colors group cursor-pointer shadow-lg"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                            {doc.glossary?.length || 0} terms
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {doc.module_code && <span className="text-[10px] font-mono text-cyan-400">{doc.module_code}</span>}
+                            <button
+                              onClick={(e) => handleDeleteDocument(e, doc.id)}
+                              className="text-slate-600 hover:text-rose-400 p-1 transition-colors cursor-pointer"
+                              title="Delete document"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-rose-300 transition-colors line-clamp-2 flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-rose-400 shrink-0" />
+                          {doc.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 font-mono line-clamp-2">{doc.summary}</p>
+                        <div className="flex items-center justify-end pt-2 border-t border-slate-800/60 text-xs font-mono text-slate-400">
+                          <span className="text-rose-400 group-hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            Open Notes <ArrowRight className="w-3 h-3" />
+                          </span>
+                        </div>
+                      </motion.div>
                     ))}
                   </div>
                 )

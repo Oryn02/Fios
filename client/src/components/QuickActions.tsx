@@ -7,7 +7,8 @@ import { IS_DEMO } from '../lib/demo';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 
 interface QuickActionsProps {
-  onNavigate: (tab: string) => void;
+  onNavigate: (tab: string, options?: { openTutor?: boolean }) => void;
+  onOpenTutor?: () => void;
 }
 
 const QuickAddFlashcardModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -48,10 +49,10 @@ const QuickAddFlashcardModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
   };
 
   return (
-    <div className="fixed inset-0 z-[85] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[85] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="absolute inset-0" onClick={onClose} />
       <motion.div initial={{ opacity: 0, scale: 0.95, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }}
-        className="relative z-10 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 space-y-4">
+        className="relative z-10 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 space-y-4 shadow-2xl">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-black text-[var(--fios-text)] flex items-center gap-2"><Layers className="w-4 h-4 accent-solid-text" /> Quick Add Flashcard</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer"><X className="w-5 h-5" /></button>
@@ -87,36 +88,58 @@ const QuickAddFlashcardModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
   );
 };
 
-export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate }) => {
+export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTutor }) => {
   const { start } = usePomodoroControls();
   const [open, setOpen] = useState(false);
   const [showFlashcard, setShowFlashcard] = useState(false);
+
+  const handleAskAI = () => {
+    setOpen(false);
+    if (onOpenTutor) {
+      onOpenTutor();
+    } else {
+      onNavigate('documents', { openTutor: true });
+    }
+  };
 
   const actions = [
     { icon: Zap, label: 'Quick Add Flashcard', onClick: () => { setShowFlashcard(true); setOpen(false); } },
     { icon: FileText, label: 'New Note', onClick: () => { onNavigate('documents'); setOpen(false); } },
     { icon: Timer, label: 'Start Pomodoro', onClick: () => { start(); onNavigate('timer'); setOpen(false); } },
-    { icon: Bot, label: 'Ask AI', onClick: () => { onNavigate('documents'); setOpen(false); } },
+    { icon: Bot, label: 'Ask AI', onClick: handleAskAI },
   ];
 
   return (
     <>
-      <div className="fixed bottom-4 left-4 z-[60] flex flex-col items-start gap-2 safe-bottom">
+      {/* Click-outside backdrop when floating menu is open */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-xs"
+          />
+        )}
+      </AnimatePresence>
+
+      <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end gap-2.5 safe-bottom font-sans">
         <AnimatePresence>
           {open && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="flex flex-col gap-2">
+            <motion.div initial={{ opacity: 0, y: 8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.95 }} className="flex flex-col gap-2 items-end">
               {actions.map((a) => {
                 const Icon = a.icon;
                 return (
                   <motion.button
                     key={a.label}
-                    whileHover={{ x: 3 }}
+                    whileHover={{ x: -3 }}
                     whileTap={{ scale: 0.96 }}
                     onClick={a.onClick}
-                    className="flex items-center gap-2.5 pl-3 pr-4 py-2.5 rounded-xl border fios-border bg-[var(--fios-surface)] shadow-xl text-[var(--fios-text)] text-xs font-bold cursor-pointer"
+                    className="flex items-center gap-2.5 pl-4 pr-3.5 py-2.5 rounded-xl border fios-border bg-[var(--fios-surface)] shadow-2xl text-[var(--fios-text)] text-xs font-bold cursor-pointer hover:bg-[var(--fios-surface-2)] transition-colors"
                   >
-                    <span className="w-6 h-6 rounded-lg accent-bg flex items-center justify-center text-slate-950"><Icon className="w-3.5 h-3.5" /></span>
                     {a.label}
+                    <span className="w-6 h-6 rounded-lg accent-bg flex items-center justify-center text-slate-950"><Icon className="w-3.5 h-3.5" /></span>
                   </motion.button>
                 );
               })}
@@ -127,7 +150,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate }) => {
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={() => setOpen((v) => !v)}
-          className="w-13 h-13 p-3.5 rounded-2xl accent-bg text-slate-950 shadow-2xl accent-glow cursor-pointer"
+          className="w-12 h-12 rounded-2xl accent-bg text-slate-950 shadow-2xl accent-glow cursor-pointer flex items-center justify-center"
           aria-label="Quick actions"
         >
           <motion.span animate={{ rotate: open ? 45 : 0 }} className="block"><Plus className="w-6 h-6" /></motion.span>

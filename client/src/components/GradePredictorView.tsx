@@ -143,11 +143,15 @@ export const GradePredictorView: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Assessment name" required
               className="lg:col-span-2 bg-[var(--fios-surface-2)] border fios-border rounded-lg px-3 py-2 text-sm text-[var(--fios-text)] focus:outline-none focus:accent-border" />
-            <div className="flex items-center gap-1.5 bg-[var(--fios-surface-2)] border fios-border rounded-lg px-2.5 py-2">
+            <div className="flex items-center gap-1.5 bg-[#07090e] border fios-border rounded-lg px-2.5 py-2">
               <Folder className="w-3.5 h-3.5 accent-solid-text shrink-0" />
-              <select value={moduleCode} onChange={(e) => setModuleCode(e.target.value)} className="bg-transparent text-sm text-[var(--fios-text)] focus:outline-none cursor-pointer w-full">
-                <option value="">General</option>
-                {modules.map((m) => <option key={m.id} value={m.code}>{m.code}</option>)}
+              <select value={moduleCode} onChange={(e) => setModuleCode(e.target.value)} className="bg-[#07090e] text-sm text-slate-100 focus:outline-none cursor-pointer w-full">
+                <option value="" className="bg-[#07090e] text-slate-100">General</option>
+                {modules.map((m) => (
+                  <option key={m.id} value={m.code} className="bg-[#07090e] text-slate-100">
+                    {m.code}
+                  </option>
+                ))}
               </select>
             </div>
             <label className="flex items-center gap-2 bg-[var(--fios-surface-2)] border fios-border rounded-lg px-2.5 py-2 text-xs text-[var(--fios-text-muted)]">

@@ -40,26 +40,49 @@
 
 /* Universal gradient engine (3-stop, accent-driven) */
 .accent-text {
-  background-image: linear-gradient(90deg, var(--fios-accent-from), var(--fios-accent-via), var(--fios-accent-to));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  background-image: linear-gradient(90deg, var(--fios-accent-from), var(--fios-accent-via), var(--fios-accent-to)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
 }
-.accent-bg { background-image: linear-gradient(120deg, var(--fios-accent-from), var(--fios-accent-via), var(--fios-accent-to)); }
+.accent-bg {
+  background-image: linear-gradient(120deg, var(--fios-accent-from), var(--fios-accent-via), var(--fios-accent-to)) !important;
+}
 .accent-bg:hover { opacity: 0.92; }
-.accent-ring { box-shadow: 0 0 0 1px color-mix(in srgb, var(--fios-accent-solid) 55%, transparent); }
-.accent-glow { box-shadow: 0 10px 40px -12px color-mix(in srgb, var(--fios-accent-solid) 45%, transparent); }
-.accent-solid-text { color: var(--fios-accent-solid); }
-.accent-border { border-color: color-mix(in srgb, var(--fios-accent-solid) 45%, transparent); }
+.accent-ring { box-shadow: 0 0 0 1px color-mix(in srgb, var(--fios-accent-solid) 55%, transparent) !important; }
+.accent-glow { box-shadow: 0 10px 40px -12px color-mix(in srgb, var(--fios-accent-solid) 45%, transparent) !important; }
+.accent-solid-text { color: var(--fios-accent-solid) !important; }
+.accent-border { border-color: color-mix(in srgb, var(--fios-accent-solid) 45%, transparent) !important; }
+
+/* ==========================================================================
+   Global Accent Override: Forces hardcoded emerald/cyan legacy classes
+   to follow the selected accent theme across sub-headers and borders
+   ========================================================================== */
+.text-emerald-400,
+.text-teal-400,
+.text-cyan-400 {
+  color: var(--fios-accent-solid) !important;
+}
+
+.border-emerald-500,
+.border-teal-500,
+.border-cyan-500 {
+  border-color: color-mix(in srgb, var(--fios-accent-solid) 45%, transparent) !important;
+}
+
+.bg-emerald-400,
+.bg-teal-400,
+.bg-cyan-400 {
+  background-color: var(--fios-accent-solid) !important;
+}
 
 /* ==========================================================================
    Comprehensive Light Mode remap.
    Legacy views use hard-coded dark tokens; when the dashboard root is in
    light mode we remap those tokens to the light palette so every card,
-   sidebar, modal and drawer flips to a clean white/soft-grey surface with
-   dark, readable text. The fixed-emerald landing page is wrapped in its own
-   data-theme="dark" and is therefore never affected.
+   sidebar, modal and drawer flips to a clean white/soft-grey surface.
    ========================================================================== */
+[data-theme="light"] body { background-color: var(--fios-bg) !important; }
 [data-theme="light"] [class*="#0e131f"] { background-color: var(--fios-surface) !important; }
 [data-theme="light"] [class*="#07090e"] { background-color: var(--fios-surface-2) !important; }
 [data-theme="light"] [class*="bg-slate-800"],
@@ -79,6 +102,7 @@
 
 /* Keep dark text legible on accent-filled buttons in both themes. */
 [data-theme="light"] [class*="text-slate-950"] { color: #0f172a !important; }
+
 /* Soft shadows for cards in light mode */
 [data-theme="light"] [class*="shadow-xl"],
 [data-theme="light"] [class*="shadow-2xl"] { box-shadow: 0 8px 24px -12px rgba(15, 23, 42, 0.18) !important; }
@@ -91,8 +115,8 @@ input, select, textarea { font-size: 16px; }
   input, select, textarea { font-size: inherit; }
 }
 
-.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
-.safe-top { padding-top: env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)); }
+.safe-top { padding-top: max(1rem, env(safe-area-inset-top, 0px)); }
 .min-h-dvh { min-height: 100vh; min-height: 100dvh; }
 .h-dvh { height: 100vh; height: 100dvh; }
 

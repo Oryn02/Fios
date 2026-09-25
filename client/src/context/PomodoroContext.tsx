@@ -101,14 +101,14 @@ export const PomodoroProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return mins * 60;
   }, []);
 
-  // Keep an idle timer in sync when the user changes their duration preferences.
+  // Keep an idle timer in sync when user updates preferences.
   useEffect(() => {
     if (!isActiveRef.current) {
       setTimeLeft(secondsForMode(modeRef.current));
     }
   }, [durations, secondsForMode]);
 
-  // Single global 1s tick; only components reading state re-render.
+  // Single global 1s tick.
   useEffect(() => {
     if (!isActive) return;
     const id = setInterval(() => {
@@ -117,18 +117,28 @@ export const PomodoroProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return () => clearInterval(id);
   }, [isActive]);
 
-  // Session completion.
+  // Handle session completion & automatic reset / mode transition.
   useEffect(() => {
     if (isActive && timeLeft === 0) {
       setIsActive(false);
-      if (modeRef.current === 'work') {
-        setCompletedSessions((c) => c + 1);
-        // Persist to focus_sessions so the Weekly Study Goal reflects real work.
-        logFocusSession(durationsRef.current.work, 'work').catch(() => {});
-      }
       playChime();
+
+      if (modeRef.current === 'work') {
+        const nextCompleted = completedSessions + 1;
+        setCompletedSessions(nextCompleted);
+        logFocusSession(durationsRef.current.work, 'work').catch(() => {});
+
+        // Transition to long break every 4 completed sessions, otherwise short break
+        const nextMode: PomodoroMode = nextCompleted % 4 === 0 ? 'longBreak' : 'shortBreak';
+        setMode(nextMode);
+        setTimeLeft(secondsForMode(nextMode));
+      } else {
+        // Transition back to work mode after a break
+        setMode('work');
+        setTimeLeft(secondsForMode('work'));
+      }
     }
-  }, [isActive, timeLeft]);
+  }, [isActive, timeLeft, completedSessions, secondsForMode]);
 
   const switchMode = useCallback(
     (m: PomodoroMode) => {
@@ -141,8 +151,18 @@ export const PomodoroProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const controls = useMemo<PomodoroControls>(
     () => ({
-      toggle: () => setIsActive((a) => !a),
-      start: () => setIsActive(true),
+      toggle: () => {
+        if (timeLeft === 0) {
+          setTimeLeft(secondsForMode(modeRef.current));
+        }
+        setIsActive((a) => !a);
+      },
+      start: () => {
+        if (timeLeft === 0) {
+          setTimeLeft(secondsForMode(modeRef.current));
+        }
+        setIsActive(true);
+      },
       pause: () => setIsActive(false),
       reset: () => {
         setIsActive(false);
@@ -151,10 +171,14 @@ export const PomodoroProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       switchMode,
       skip: () => {
         setIsActive(false);
-        setTimeLeft(0);
+        if (modeRef.current === 'work') {
+          switchMode('shortBreak');
+        } else {
+          switchMode('work');
+        }
       },
     }),
-    [secondsForMode, switchMode]
+    [secondsForMode, switchMode, timeLeft]
   );
 
   const stateValue = useMemo<PomodoroState>(

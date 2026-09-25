@@ -51,9 +51,9 @@ export const DEMO_SESSION = {
 
 export const demoProfile: UserProfile = {
   id: DEMO_USER.id,
-  full_name: 'Oryn Delacroix',
-  preferred_name: 'Oryn',
-  address: 'Galway, Ireland',
+  full_name: 'Demo Student',
+  preferred_name: 'Student',
+  address: 'University Campus, Ireland',
   avatar_url: null,
   accent_color: 'emerald',
   theme: 'dark',
@@ -116,7 +116,7 @@ export const demoCodeExams: CodeExam[] = [
 ];
 
 export const demoTasks: Task[] = [
-  { id: 't1', title: 'Submit Software Quality & Testing repeat documentation', due_date: 'Tomorrow', completed: false, module_code: 'SOFT06001' },
+  { id: 't1', title: 'Submit Software Quality & Testing documentation', due_date: 'Tomorrow', completed: false, module_code: 'SOFT06001' },
   { id: 't2', title: 'Review Systems Analysis lecture slides', due_date: 'In 3 days', completed: false, module_code: 'SOFT06001' },
   { id: 't3', title: 'Implement AVL tree rotations', due_date: 'Friday', completed: true, module_code: 'COMP07020' },
 ];
@@ -136,7 +136,7 @@ export const demoDocuments: FiosDocument[] = [
 
 export const demoGrades: Grade[] = [
   { id: 'g1', user_id: DEMO_USER.id, module_code: 'SOFT06001', title: 'CA 1 — Requirements Doc', weight: 20, score: 72, target_grade: 60, created_at: new Date().toISOString() },
-  { id: 'g2', user_id: DEMO_USER.id, module_code: 'SOFT06001', title: 'CA 2 — Sprint Demo', weight: 30, score: null, target_grade: 60, created_at: new Date().toISOString() },
+  { id: 'g2', user_id: DEMO_USER.id, module_code: 'SOFT06001', title: 'CA 3 — Sprint Demo', weight: 30, score: null, target_grade: 60, created_at: new Date().toISOString() },
   { id: 'g3', user_id: DEMO_USER.id, module_code: 'SOFT06001', title: 'Final Exam', weight: 50, score: null, target_grade: 60, created_at: new Date().toISOString() },
 ];
 

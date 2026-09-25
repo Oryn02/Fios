@@ -17,7 +17,6 @@ export const WeeklyGoalWidget: React.FC<{ compact?: boolean }> = ({ compact = fa
 
   const refresh = () => { getWeeklyFocusMinutes().then(setMinutes).catch(() => setMinutes(0)); };
 
-  // Reload when a focus session completes (completedSessions increments).
   useEffect(() => { refresh(); }, [completedSessions]);
 
   const doneHours = Math.round((minutes / 60) * 10) / 10;
@@ -35,9 +34,9 @@ export const WeeklyGoalWidget: React.FC<{ compact?: boolean }> = ({ compact = fa
   };
 
   return (
-    <div className={`rounded-xl border fios-border bg-[var(--fios-surface)] p-4 space-y-2 ${compact ? '' : 'shadow-xl'}`}>
+    <div className={`rounded-xl border fios-border bg-[var(--fios-surface)] p-3.5 space-y-2 min-h-[100px] h-auto flex flex-col justify-between shrink-0 ${compact ? '' : 'shadow-xl'}`}>
       <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[var(--fios-text-muted)]">
-        <span className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5 accent-solid-text" /> Weekly Study Goal</span>
+        <span className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5 accent-solid-text shrink-0" /> Weekly Study Goal</span>
         <button onClick={openEdit} className="accent-solid-text hover:opacity-80 flex items-center gap-1 cursor-pointer">
           <Pencil className="w-3 h-3" /> {goalHours}h
         </button>
@@ -49,11 +48,11 @@ export const WeeklyGoalWidget: React.FC<{ compact?: boolean }> = ({ compact = fa
       </div>
 
       <div className="w-full h-1.5 bg-[var(--fios-surface-2)] rounded-full overflow-hidden">
-        <motion.div className="h-full accent-bg" initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.5 }} style={{ willChange: 'width' }} />
+        <motion.div className="h-full accent-bg" initial={false} animate={{ width: `${pct}%` }} transition={{ duration: 0.3 }} style={{ willChange: 'width' }} />
       </div>
 
       <p className="text-[11px] font-medium text-[var(--fios-text-muted)] pt-0.5 flex items-center gap-1">
-        <Flame className="w-3 h-3 accent-solid-text" /> {pct >= 100 ? 'Goal smashed this week!' : `${Math.max(0, Math.round((goalHours - doneHours) * 10) / 10)}h to go this week.`}
+        <Flame className="w-3 h-3 accent-solid-text shrink-0" /> {pct >= 100 ? 'Goal smashed this week!' : `${Math.max(0, Math.round((goalHours - doneHours) * 10) / 10)}h to go this week.`}
       </p>
 
       <AnimatePresence>

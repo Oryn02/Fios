@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   LayoutDashboard, Layers, Calendar, Settings, BookOpen,
   LogOut, Menu, X, Timer, HelpCircle, Code2, FileText, Target,
-  Sun, Moon,
+  Sun, Moon, GraduationCap,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, disableDemo } from '../lib/demo';
@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { id: 'quiz', label: 'Exam Mode', icon: HelpCircle },
   { id: 'code', label: 'Code Lab', icon: Code2 },
   { id: 'documents', label: 'AI Tutor', icon: FileText },
+  { id: 'atu-calendar', label: 'ATU Calendar', icon: GraduationCap },
   { id: 'grades', label: 'Grades', icon: Target },
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
@@ -33,7 +34,7 @@ const NAV_ITEMS = [
 ];
 
 // Subset shown in the mobile bottom navigation bar.
-const MOBILE_NAV = ['overview', 'modules', 'code', 'documents', 'settings'];
+const MOBILE_NAV = ['overview', 'modules', 'code', 'documents', 'atu-calendar'];
 
 const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, activeTab, setActiveTab }) => {
   const { profile } = useProfile();

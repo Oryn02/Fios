@@ -1,12 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { HelpCircle, CheckCircle2, XCircle, RotateCcw, ArrowRight, Sparkles, Save, Folder, Trash2, Loader2 } from 'lucide-react';
+import { HelpCircle, CheckCircle2, XCircle, RotateCcw, ArrowRight, Sparkles, Save, Folder, Trash2, Loader2, FileText } from 'lucide-react';
 import { generateQuiz } from '../services/quizApi';
 import { getQuizzes, saveQuiz, deleteQuiz } from '../lib/mcqService';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { MCQQuestion, MCQQuiz } from '../types/db';
+import { FileUpload } from './FileUpload';
 
-export const QuizExamView: React.FC = () => {
+interface QuizExamViewProps {
+  initialQuizId?: string | null;
+}
+
+export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => {
   const [studyNotes, setStudyNotes] = useState('');
   const [title, setTitle] = useState('');
   const [moduleCode, setModuleCode] = useState('');
@@ -27,12 +32,20 @@ export const QuizExamView: React.FC = () => {
   const loadSaved = useCallback(async () => {
     const q = await getQuizzes();
     setSavedQuizzes(q);
+    return q;
   }, []);
 
   useEffect(() => {
     getUserModules().then(setModules).catch(() => setModules([]));
-    loadSaved();
-  }, [loadSaved]);
+    loadSaved().then((quizzesList) => {
+      if (initialQuizId && quizzesList && quizzesList.length > 0) {
+        const target = quizzesList.find((q) => q.id === initialQuizId);
+        if (target) {
+          openSavedQuiz(target);
+        }
+      }
+    });
+  }, [loadSaved, initialQuizId]);
 
   const resetTaking = () => {
     setCurrentIndex(0);
@@ -40,6 +53,10 @@ export const QuizExamView: React.FC = () => {
     setScore(0);
     setIsSubmitted(false);
     setQuizFinished(false);
+  };
+
+  const handleTextExtracted = (extractedText: string) => {
+    setStudyNotes((prev) => (prev.trim() ? `${prev}\n\n${extractedText}` : extractedText));
   };
 
   const handleGenerateQuiz = async (e: React.FormEvent) => {
@@ -108,27 +125,39 @@ export const QuizExamView: React.FC = () => {
     <div className="space-y-8 max-w-4xl mx-auto font-sans text-slate-100 my-6">
       <div>
         <h2 className="text-2xl font-black italic text-white uppercase tracking-tight flex items-center gap-2">
-          <HelpCircle className="w-6 h-6 text-emerald-400" /> Exam & Quiz Simulator
+          <HelpCircle className="w-6 h-6 accent-solid-text" /> Exam & Quiz Simulator
         </h2>
         <p className="text-xs font-mono text-slate-400 mt-1">Generate multiple-choice practice exams from your notes and save them per module.</p>
       </div>
 
       {questions.length === 0 ? (
-        <form onSubmit={handleGenerateQuiz} className="bg-[#0e131f]/90 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
-          <label className="text-xs font-mono font-black uppercase text-slate-300 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" /> Paste Source Material
-          </label>
-          <textarea
-            value={studyNotes}
-            onChange={(e) => setStudyNotes(e.target.value)}
-            placeholder="Paste your course notes or lecture content here…"
-            className="w-full h-44 p-4 bg-[#07090e] border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-400 font-mono text-xs sm:text-sm"
-          />
+        <form onSubmit={handleGenerateQuiz} className="bg-[#0e131f]/90 border border-slate-800 rounded-2xl p-6 space-y-5 shadow-xl">
+          {/* File Upload Zone */}
+          <div className="space-y-2">
+            <label className="text-xs font-mono font-black uppercase text-slate-300 flex items-center gap-2">
+              <FileText className="w-4 h-4 accent-solid-text" /> Upload Lecture Slides or PDF
+            </label>
+            <FileUpload onTextExtracted={handleTextExtracted} />
+          </div>
+
+          {/* Text Area Input */}
+          <div className="space-y-2">
+            <label className="text-xs font-mono font-black uppercase text-slate-300 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 accent-bg rounded-full" /> Source Material Content
+            </label>
+            <textarea
+              value={studyNotes}
+              onChange={(e) => setStudyNotes(e.target.value)}
+              placeholder="Parsed PDF content or pasted course notes will appear here…"
+              className="w-full h-44 p-4 bg-[#07090e] border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:accent-border font-mono text-xs sm:text-sm"
+            />
+          </div>
+
           <motion.button
             whileTap={{ scale: 0.99 }}
             type="submit"
             disabled={loading || !studyNotes.trim()}
-            className="w-full py-3.5 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
+            className="w-full py-3.5 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
           >
             {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating practice exam…</> : <><Sparkles className="w-4 h-4" /> Generate Practice Quiz ↵</>}
           </motion.button>
@@ -142,10 +171,10 @@ export const QuizExamView: React.FC = () => {
                   <div
                     key={quiz.id}
                     onClick={() => openSavedQuiz(quiz)}
-                    className="p-3 bg-[#07090e] border border-slate-800 rounded-lg hover:border-emerald-500/40 cursor-pointer flex items-center justify-between group"
+                    className="p-3 bg-[#07090e] border border-slate-800 rounded-lg hover:accent-border cursor-pointer flex items-center justify-between group"
                   >
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-100 truncate group-hover:text-emerald-300">{quiz.title}</p>
+                      <p className="text-xs font-bold text-slate-100 truncate group-hover:accent-solid-text">{quiz.title}</p>
                       <p className="text-[10px] font-mono text-slate-500">{quiz.questions.length} questions{quiz.module_code ? ` · ${quiz.module_code}` : ''}</p>
                     </div>
                     <button onClick={(e) => handleDeleteSaved(e, quiz.id)} className="text-slate-600 hover:text-rose-400 p-1 cursor-pointer shrink-0">
@@ -159,14 +188,14 @@ export const QuizExamView: React.FC = () => {
         </form>
       ) : quizFinished ? (
         <div className="bg-[#0e131f] border border-slate-800 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
-          <span className="text-xs font-mono font-black uppercase text-emerald-400 tracking-widest">Exam Completed</span>
+          <span className="text-xs font-mono font-black uppercase accent-solid-text tracking-widest">Exam Completed</span>
           <h3 className="text-4xl font-black italic uppercase text-white">Your score: {score} / {questions.length}</h3>
           <p className="text-slate-400 text-xs font-mono">({Math.round((score / questions.length) * 100)}% accuracy)</p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button onClick={resetTaking} className="px-6 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl inline-flex items-center gap-2 cursor-pointer transition-colors">
               <RotateCcw className="w-4 h-4" /> Retake
             </button>
-            <button onClick={() => setQuestions([])} className="px-6 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl inline-flex items-center gap-2 cursor-pointer transition-colors">
+            <button onClick={() => setQuestions([])} className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-black italic uppercase text-xs rounded-xl inline-flex items-center gap-2 cursor-pointer transition-colors border border-slate-700">
               New Exam
             </button>
           </div>
@@ -179,10 +208,10 @@ export const QuizExamView: React.FC = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Quiz title…"
-              className="flex-1 w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-400"
+              className="flex-1 w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border"
             />
             <div className="flex items-center gap-1.5 bg-[#07090e] border border-slate-800 rounded-lg px-2.5 py-2 w-full sm:w-auto">
-              <Folder className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <Folder className="w-3.5 h-3.5 accent-solid-text shrink-0" />
               <select value={moduleCode} onChange={(e) => setModuleCode(e.target.value)} className="bg-transparent text-xs font-mono font-bold text-slate-200 focus:outline-none cursor-pointer w-full">
                 <option value="" className="bg-[#07090e]">General</option>
                 {modules.map((m) => <option key={m.id} value={m.code} className="bg-[#07090e]">{m.code}</option>)}
@@ -192,11 +221,11 @@ export const QuizExamView: React.FC = () => {
               <Save className="w-3.5 h-3.5" /> Save
             </button>
           </div>
-          {saveMsg && <p className="text-[11px] font-mono text-emerald-400 font-bold">{saveMsg}</p>}
+          {saveMsg && <p className="text-[11px] font-mono accent-solid-text font-bold">{saveMsg}</p>}
 
           <div className="bg-[#0e131f] border border-slate-800 rounded-2xl p-6 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between font-mono text-xs border-b border-slate-800 pb-3">
-              <span className="text-emerald-400 font-bold">Question {currentIndex + 1} of {questions.length}</span>
+              <span className="accent-solid-text font-bold">Question {currentIndex + 1} of {questions.length}</span>
               <span className="text-slate-500">Score: {score}</span>
             </div>
 
@@ -209,7 +238,7 @@ export const QuizExamView: React.FC = () => {
                   if (idx === currentQ.correctIndex) btnStyle = 'border-emerald-500/80 bg-emerald-500/10 text-emerald-300 font-bold';
                   else if (idx === selectedOption) btnStyle = 'border-rose-500/80 bg-rose-500/10 text-rose-300';
                 } else if (selectedOption === idx) {
-                  btnStyle = 'border-cyan-400 bg-cyan-950/40 text-cyan-200 font-bold';
+                  btnStyle = 'accent-border bg-slate-900 accent-solid-text font-bold';
                 }
                 return (
                   <button key={idx} onClick={() => handleSelectOption(idx)} className={`w-full p-4 rounded-xl border text-left text-xs font-mono transition-colors flex items-center justify-between cursor-pointer ${btnStyle}`}>
@@ -223,7 +252,7 @@ export const QuizExamView: React.FC = () => {
 
             {isSubmitted && (
               <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-xl space-y-1 font-mono text-xs">
-                <span className="font-bold text-cyan-400 uppercase">Explanation:</span>
+                <span className="font-bold accent-solid-text uppercase">Explanation:</span>
                 <p className="text-slate-300">{currentQ.explanation}</p>
               </div>
             )}

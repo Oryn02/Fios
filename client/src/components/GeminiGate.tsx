@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { KeyRound, Lock, ExternalLink, Check, Loader2, X } from 'lucide-react';
+import { KeyRound, Lock, ExternalLink, Check, Loader2, X, HelpCircle } from 'lucide-react';
 import { useProfile } from '../context/ProfileContext';
 import { validateGeminiKey } from '../services/aiApi';
 
@@ -17,6 +17,7 @@ export const GeminiKeyModal: React.FC<{ onClose: () => void; onSaved?: () => voi
   const [key, setKey] = useState('');
   const [status, setStatus] = useState<'idle' | 'testing' | 'valid' | 'invalid'>('idle');
   const [saving, setSaving] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   const test = async () => {
     if (!key.trim()) return;
@@ -61,6 +62,43 @@ export const GeminiKeyModal: React.FC<{ onClose: () => void; onSaved?: () => voi
             <p className="text-xs text-[var(--fios-text-muted)]">Bring your own key — it stays private to your account.</p>
           </div>
         </div>
+
+        {/* Walkthrough Toggle */}
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowGuide(!showGuide)}
+            className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <HelpCircle className="w-3.5 h-3.5" /> {showGuide ? 'Hide Guide' : 'How to get a key'}
+          </button>
+        </div>
+
+        {/* Step-by-Step Guide Box */}
+        {showGuide && (
+          <div className="p-3.5 rounded-xl bg-[var(--fios-surface-2)] border fios-border space-y-2.5 text-xs">
+            <p className="font-bold text-[var(--fios-text)]">Quick Setup Guide:</p>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2 text-[var(--fios-text-muted)]">
+                <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
+                <div>
+                  <p>Open Google AI Studio:</p>
+                  <a href={AI_STUDIO_URL} target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline inline-flex items-center gap-1 font-mono mt-0.5">
+                    Open AI Studio <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 text-[var(--fios-text-muted)]">
+                <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
+                <p>Sign in and click <strong className="text-[var(--fios-text)]">"Create API Key"</strong>.</p>
+              </div>
+              <div className="flex items-start gap-2 text-[var(--fios-text-muted)]">
+                <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
+                <p>Copy string starting with <code className="text-cyan-400 font-mono">AIzaSy...</code> and paste below.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <input

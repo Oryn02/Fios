@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Editor from '@monaco-editor/react';
 import {
@@ -32,7 +32,11 @@ interface ActiveChallenge {
   explanation?: string;
 }
 
-export const CodeExamView: React.FC = () => {
+interface CodeExamViewProps {
+  initialExamId?: string | null;
+}
+
+export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => {
   const { theme } = useTheme();
   const monacoTheme = theme === 'light' ? 'vs' : 'vs-dark';
   const [language, setLanguage] = useState<CodeLanguage>('javascript');
@@ -61,12 +65,37 @@ export const CodeExamView: React.FC = () => {
   const loadSaved = useCallback(async () => {
     const exams = await getCodeExams();
     setSavedExams(exams);
+    return exams;
+  }, []);
+
+  const openSaved = useCallback((exam: CodeExam) => {
+    setChallenge({
+      title: exam.title,
+      language: exam.language,
+      examType: exam.exam_type,
+      prompt: exam.prompt,
+      starterCode: exam.starter_code || '',
+      solutionCode: exam.solution_code || '',
+    });
+    setUserCode(exam.user_code || exam.starter_code || '');
+    setLanguage(exam.language);
+    setExamType(exam.exam_type);
+    setModuleCode(exam.module_code || '');
+    setGrade(null);
+    setShowSolution(false);
   }, []);
 
   useEffect(() => {
     getUserModules().then(setModules).catch(() => setModules([]));
-    loadSaved();
-  }, [loadSaved]);
+    loadSaved().then((examsList) => {
+      if (initialExamId && examsList && examsList.length > 0) {
+        const target = examsList.find((e) => e.id === initialExamId);
+        if (target) {
+          openSaved(target);
+        }
+      }
+    });
+  }, [loadSaved, initialExamId, openSaved]);
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true);
@@ -134,23 +163,6 @@ export const CodeExamView: React.FC = () => {
       setError(err.message || 'Failed to save exam.');
     }
   }, [challenge, userCode, moduleCode, grade, loadSaved]);
-
-  const openSaved = useCallback((exam: CodeExam) => {
-    setChallenge({
-      title: exam.title,
-      language: exam.language,
-      examType: exam.exam_type,
-      prompt: exam.prompt,
-      starterCode: exam.starter_code || '',
-      solutionCode: exam.solution_code || '',
-    });
-    setUserCode(exam.user_code || exam.starter_code || '');
-    setLanguage(exam.language);
-    setExamType(exam.exam_type);
-    setModuleCode(exam.module_code || '');
-    setGrade(null);
-    setShowSolution(false);
-  }, []);
 
   const handleDeleteSaved = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();

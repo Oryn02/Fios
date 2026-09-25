@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Pause, RotateCcw, SkipForward, Settings2, Timer, ChevronDown,
-  Check, X, Music, Volume2,
+  Check, X, Music, Volume2, Minimize2
 } from 'lucide-react';
 import {
   usePomodoroState, usePomodoroControls, formatClock, modeLabel, type PomodoroMode,
@@ -12,7 +12,7 @@ import { soundscapeEngine, SOUNDSCAPES, type Soundscape } from '../lib/soundscap
 
 const MODES: PomodoroMode[] = ['work', 'shortBreak', 'longBreak'];
 
-// Glowing ring + clock — the only node that re-renders every tick.
+// Glowing ring + clock — re-renders on timer ticks.
 const RingTimer: React.FC<{ size: number; stroke: number }> = ({ size, stroke }) => {
   const { timeLeft, mode, durations } = usePomodoroState();
   const total = (mode === 'work' ? durations.work : mode === 'shortBreak' ? durations.shortBreak : durations.longBreak) * 60;
@@ -22,7 +22,7 @@ const RingTimer: React.FC<{ size: number; stroke: number }> = ({ size, stroke })
   const offset = c * (1 - progress);
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+    <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
         <defs>
           <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
@@ -120,79 +120,118 @@ const SoundscapePanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 export const PomodoroWidget: React.FC = () => {
   const { mode, isActive } = usePomodoroState();
   const { toggle, reset, skip, switchMode } = usePomodoroControls();
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [panel, setPanel] = useState<'none' | 'settings' | 'sound'>('none');
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-      className="fixed bottom-4 right-4 z-[60] w-[256px] select-none"
-      style={{ willChange: 'transform, opacity' }}
-    >
-      {/* Glassmorphism pill/card */}
-      <div className="rounded-3xl border fios-border bg-[var(--fios-surface)]/70 backdrop-blur-2xl shadow-2xl accent-glow overflow-hidden">
-        <button onClick={() => setExpanded((e) => !e)} className="w-full flex items-center gap-3 px-3 py-2.5 cursor-pointer">
-          {!expanded && <RingTimer size={34} stroke={4} />}
-          <span className="flex-1 flex items-center gap-2 text-[10px] font-mono font-black uppercase tracking-widest text-[var(--fios-text)]">
-            <Timer className={`w-3.5 h-3.5 ${isActive ? 'accent-solid-text' : 'text-[var(--fios-text-muted)]'}`} />
-            {modeLabel(mode)}
-            {isActive && <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />}
-          </span>
-          <motion.span animate={{ rotate: expanded ? 0 : -90 }} className="text-[var(--fios-text-muted)]"><ChevronDown className="w-4 h-4" /></motion.span>
-        </button>
+    <>
+      {/* Click-outside backdrop when open */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setExpanded(false)}
+            className="fixed inset-0 z-[65] bg-black/60 backdrop-blur-xs"
+          />
+        )}
+      </AnimatePresence>
 
-        <AnimatePresence initial={false}>
-          {expanded && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
-              <div className="px-3.5 pb-3.5 space-y-3">
-                {/* Mode switcher */}
-                <div className="flex items-center gap-1 bg-[var(--fios-surface-2)] p-1 rounded-lg border fios-border">
-                  {MODES.map((m) => (
-                    <button key={m} onClick={() => switchMode(m)}
-                      className={`flex-1 py-1 rounded-md text-[9px] font-mono font-bold uppercase transition-colors cursor-pointer ${
-                        mode === m ? 'accent-bg text-slate-950' : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)]'
-                      }`}>
-                      {m === 'work' ? 'Focus' : m === 'shortBreak' ? 'Short' : 'Long'}
-                    </button>
-                  ))}
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+        className="fixed bottom-6 right-20 z-[70] select-none font-sans"
+        style={{ willChange: 'transform, opacity' }}
+      >
+        <div className={`rounded-3xl border fios-border bg-[var(--fios-surface)]/90 backdrop-blur-2xl shadow-2xl accent-glow overflow-hidden transition-all ${expanded ? 'w-[280px]' : 'w-auto'}`}>
+          <button
+            onClick={() => setExpanded((e) => !e)}
+            className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer text-left"
+          >
+            <div className="flex items-center gap-2.5">
+              <Timer className={`w-4 h-4 ${isActive ? 'accent-solid-text' : 'text-[var(--fios-text-muted)]'}`} />
+              <span className="text-xs font-mono font-black uppercase tracking-widest text-[var(--fios-text)]">
+                {modeLabel(mode)}
+              </span>
+              {isActive && <span className="w-2 h-2 rounded-full accent-bg animate-pulse" />}
+            </div>
+
+            {!expanded ? (
+              <RingTimer size={30} stroke={3.5} />
+            ) : (
+              <span className="text-[var(--fios-text-muted)] p-1 hover:text-[var(--fios-text)]">
+                <Minimize2 className="w-3.5 h-3.5" />
+              </span>
+            )}
+          </button>
+
+          <AnimatePresence initial={false}>
+            {expanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="overflow-hidden"
+              >
+                <div className="px-3.5 pb-3.5 space-y-3 pt-1 border-t fios-border">
+                  {/* Mode switcher */}
+                  <div className="flex items-center gap-1 bg-[var(--fios-surface-2)] p-1 rounded-lg border fios-border">
+                    {MODES.map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => switchMode(m)}
+                        className={`flex-1 py-1 rounded-md text-[9px] font-mono font-bold uppercase transition-colors cursor-pointer ${
+                          mode === m ? 'accent-bg text-slate-950' : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)]'
+                        }`}
+                      >
+                        {m === 'work' ? 'Focus' : m === 'shortBreak' ? 'Short' : 'Long'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Ring timer */}
+                  <div className="flex justify-center py-2">
+                    <RingTimer size={124} stroke={9} />
+                  </div>
+
+                  {/* Control Bar */}
+                  <div className="flex items-center justify-center gap-2">
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
+                      onClick={toggle}
+                      className="flex-1 py-2 accent-bg text-slate-950 font-black uppercase text-[11px] rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                    >
+                      {isActive ? <Pause className="w-3.5 h-3.5 fill-slate-950" /> : <Play className="w-3.5 h-3.5 fill-slate-950" />}
+                      {isActive ? 'Pause' : 'Start'}
+                    </motion.button>
+                    <IconBtn onClick={reset} title="Reset"><RotateCcw className="w-3.5 h-3.5" /></IconBtn>
+                    <IconBtn onClick={skip} title="Skip"><SkipForward className="w-3.5 h-3.5" /></IconBtn>
+                    <IconBtn onClick={() => setPanel(panel === 'sound' ? 'none' : 'sound')} active={panel === 'sound'} title="Soundscapes"><Music className="w-3.5 h-3.5" /></IconBtn>
+                    <IconBtn onClick={() => setPanel(panel === 'settings' ? 'none' : 'settings')} active={panel === 'settings'} title="Timer settings"><Settings2 className="w-3.5 h-3.5" /></IconBtn>
+                  </div>
+
+                  <AnimatePresence>
+                    {panel === 'settings' && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
+                        <DurationSettings onClose={() => setPanel('none')} />
+                      </motion.div>
+                    )}
+                    {panel === 'sound' && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
+                        <SoundscapePanel onClose={() => setPanel('none')} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-
-                {/* Big ring */}
-                <div className="flex justify-center py-1"><RingTimer size={120} stroke={9} /></div>
-
-                {/* Controls */}
-                <div className="flex items-center justify-center gap-2">
-                  <motion.button whileTap={{ scale: 0.92 }} onClick={toggle}
-                    className="flex-1 py-2 accent-bg text-slate-950 font-black uppercase text-[11px] rounded-lg flex items-center justify-center gap-1.5 cursor-pointer">
-                    {isActive ? <Pause className="w-3.5 h-3.5 fill-slate-950" /> : <Play className="w-3.5 h-3.5 fill-slate-950" />}
-                    {isActive ? 'Pause' : 'Start'}
-                  </motion.button>
-                  <IconBtn onClick={reset} title="Reset"><RotateCcw className="w-3.5 h-3.5" /></IconBtn>
-                  <IconBtn onClick={skip} title="Skip"><SkipForward className="w-3.5 h-3.5" /></IconBtn>
-                  <IconBtn onClick={() => setPanel(panel === 'sound' ? 'none' : 'sound')} active={panel === 'sound'} title="Soundscapes"><Music className="w-3.5 h-3.5" /></IconBtn>
-                  <IconBtn onClick={() => setPanel(panel === 'settings' ? 'none' : 'settings')} active={panel === 'settings'} title="Timer settings"><Settings2 className="w-3.5 h-3.5" /></IconBtn>
-                </div>
-
-                <AnimatePresence>
-                  {panel === 'settings' && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
-                      <DurationSettings onClose={() => setPanel('none')} />
-                    </motion.div>
-                  )}
-                  {panel === 'sound' && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
-                      <SoundscapePanel onClose={() => setPanel('none')} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </>
   );
 };
 

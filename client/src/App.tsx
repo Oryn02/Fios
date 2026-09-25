@@ -18,6 +18,7 @@ import { QuizExamView } from './components/QuizExamView';
 import { CodeExamView } from './components/CodeExamView';
 import { DocumentsView } from './components/DocumentsView';
 import { GradePredictorView } from './components/GradePredictorView';
+import { ATUCalendarView } from './components/ATUCalendarView';
 import { PomodoroWidget } from './components/PomodoroWidget';
 import { QuickActions } from './components/QuickActions';
 import { GeminiGate } from './components/GeminiGate';
@@ -32,8 +33,6 @@ interface SelectedDeck {
   isSaved?: boolean;
 }
 
-// Authenticated dashboard shell. Providers live here so the profile + global
-// Pomodoro timer are available to every tab and the persistent widget.
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [studyNotes, setStudyNotes] = useState('');
@@ -42,11 +41,18 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleTabChange = useCallback((tab: string) => {
+  // States to track specific Quiz, Code Exam, Document IDs, and AI Tutor open flag
+  const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
+  const [activeCodeExamId, setActiveCodeExamId] = useState<string | null>(null);
+  const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const [openTutorOnLoad, setOpenTutorOnLoad] = useState(false);
+
+  const handleTabChange = useCallback((tab: string, options?: { openTutor?: boolean }) => {
     if (tab === 'flashcards') {
       setCards([]);
       setSelectedDeck(null);
     }
+    setOpenTutorOnLoad(!!options?.openTutor);
     setActiveTab(tab);
   }, []);
 
@@ -100,7 +106,9 @@ const Dashboard: React.FC = () => {
           transition={{ duration: 0.18, ease: 'easeOut' }}
           style={{ willChange: 'transform, opacity' }}
         >
-          {activeTab === 'overview' && <OverviewTab onOpenFlashcards={handleOpenFlashcards} onNavigate={handleTabChange} />}
+          {activeTab === 'overview' && (
+            <OverviewTab onOpenFlashcards={handleOpenFlashcards} onNavigate={handleTabChange} />
+          )}
 
           {activeTab === 'flashcards' && (
             <div className="space-y-8 max-w-4xl mx-auto">
@@ -115,10 +123,15 @@ const Dashboard: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center bg-[#0e131f] border border-slate-800 p-3 rounded-xl">
-                    <span className="text-xs font-mono font-bold text-slate-400 uppercase">Active deck studying</span>
+                    <span className="text-xs font-mono font-bold text-slate-400 uppercase">
+                      Active deck studying
+                    </span>
                     <button
-                      onClick={() => { setCards([]); setSelectedDeck(null); }}
-                      className="text-xs font-mono text-cyan-400 hover:underline font-bold uppercase cursor-pointer"
+                      onClick={() => {
+                        setCards([]);
+                        setSelectedDeck(null);
+                      }}
+                      className="text-xs font-mono accent-solid-text hover:underline font-bold uppercase cursor-pointer"
                     >
                       + Generate New Deck
                     </button>
@@ -134,24 +147,66 @@ const Dashboard: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'modules' && <ModulesView onOpenFlashcards={handleOpenFlashcards} />}
-          {activeTab === 'quiz' && <GeminiGate feature="Quiz Generator"><QuizExamView /></GeminiGate>}
-          {activeTab === 'code' && <GeminiGate feature="Code Exams"><CodeExamView /></GeminiGate>}
-          {activeTab === 'documents' && <DocumentsView />}
+          {activeTab === 'modules' && (
+            <ModulesView
+              onOpenFlashcards={handleOpenFlashcards}
+              onOpenQuiz={(quizId) => {
+                setActiveQuizId(quizId);
+                setActiveTab('quiz');
+              }}
+              onOpenCodeExam={(examId) => {
+                setActiveCodeExamId(examId);
+                setActiveTab('code');
+              }}
+              onOpenDocument={(docId) => {
+                setActiveDocId(docId);
+                setActiveTab('documents');
+              }}
+              setActiveTab={handleTabChange}
+            />
+          )}
+
+          {activeTab === 'quiz' && (
+            <GeminiGate feature="Quiz Generator">
+              <QuizExamView initialQuizId={activeQuizId} />
+            </GeminiGate>
+          )}
+
+          {activeTab === 'code' && (
+            <GeminiGate feature="Code Exams">
+              <CodeExamView initialExamId={activeCodeExamId} />
+            </GeminiGate>
+          )}
+
+          {activeTab === 'documents' && (
+            <DocumentsView 
+              initialDocId={activeDocId} 
+              autoOpenTutor={openTutorOnLoad} 
+            />
+          )}
+
+          {activeTab === 'atu-calendar' && <ATUCalendarView />}
+
           {activeTab === 'grades' && <GradePredictorView />}
-          {activeTab === 'timer' && <div className="py-8"><FocusTimer /></div>}
+          {activeTab === 'timer' && (
+            <div className="py-8">
+              <FocusTimer />
+            </div>
+          )}
           {activeTab === 'schedule' && <ScheduleTab />}
           {activeTab === 'settings' && <SettingsTab />}
         </motion.div>
       </AnimatePresence>
 
       <PomodoroWidget />
-      <QuickActions onNavigate={handleTabChange} />
+      <QuickActions 
+        onNavigate={handleTabChange} 
+        onOpenTutor={() => handleTabChange('documents', { openTutor: true })} 
+      />
     </DashboardLayout>
   );
 };
 
-// Extracted so its local textarea state changes don't re-render sibling tabs.
 const FlashcardGenerator: React.FC<{
   studyNotes: string;
   setStudyNotes: (v: string) => void;
@@ -161,8 +216,8 @@ const FlashcardGenerator: React.FC<{
 }> = ({ studyNotes, setStudyNotes, onGenerate, loading, error }) => (
   <>
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
-      <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-emerald-500/10 border-l-2 border-emerald-400 text-emerald-400 text-[11px] font-black uppercase tracking-widest">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+      <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
+        <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
         Academic Suite · Study Lab
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
@@ -175,12 +230,12 @@ const FlashcardGenerator: React.FC<{
 
     <form
       onSubmit={onGenerate}
-      className="bg-[#0e131f]/90 backdrop-blur-xl border border-slate-800/80 rounded-xl p-6 shadow-2xl space-y-4 relative overflow-hidden font-sans"
+      className="bg-[#0e131f]/95 backdrop-blur-xl border border-slate-800/80 rounded-xl p-6 shadow-2xl space-y-4 relative overflow-hidden font-sans"
     >
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--fios-accent-solid)] to-transparent" />
       <div className="flex items-center justify-between">
         <label className="text-xs font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
-          <span className="w-1 h-3 bg-emerald-400 rounded-xs" />
+          <span className="w-1 h-3 accent-bg rounded-xs" />
           Source Material
         </label>
         <span className="text-[11px] font-mono text-slate-500">{studyNotes.length} CHARS</span>
@@ -192,14 +247,14 @@ const FlashcardGenerator: React.FC<{
         value={studyNotes}
         onChange={(e) => setStudyNotes(e.target.value)}
         placeholder="Paste your course notes or lecture slides here…"
-        className="w-full h-44 p-4 bg-[#07090e]/90 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 resize-none font-mono text-xs sm:text-sm transition-all"
+        className="w-full h-44 p-4 bg-[#07090e]/90 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none focus:accent-border focus:ring-1 focus:ring-[var(--fios-accent-solid)] resize-none font-mono text-xs sm:text-sm transition-all"
       />
 
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={loading || !studyNotes.trim()}
-          className="flex-1 py-3.5 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase tracking-wider text-sm rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+          className="flex-1 py-3.5 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase tracking-wider text-sm rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
         >
           {loading ? (
             <>
@@ -265,9 +320,9 @@ export function App() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-[#07090e] flex items-center justify-center text-emerald-400 font-mono text-xs">
+      <div className="min-h-screen bg-[#07090e] flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
           Initializing Fios…
         </div>
       </div>
