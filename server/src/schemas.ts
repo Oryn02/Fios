@@ -128,3 +128,26 @@ export const codeGradeSchema = {
   },
   required: ['correct', 'score', 'feedback'],
 };
+
+export const summarySchema = {
+  type: Type.OBJECT,
+  properties: {
+    summary: {
+      type: Type.STRING,
+      description: 'A concise, well-structured summary of the material',
+    },
+    glossary: {
+      type: Type.ARRAY,
+      description: 'Key terms and their definitions',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          term: { type: Type.STRING, description: 'The key term' },
+          definition: { type: Type.STRING, description: 'A clear, concise definition' },
+        },
+        required: ['term', 'definition'],
+      },
+    },
+  },
+  required: ['summary', 'glossary'],
+};
