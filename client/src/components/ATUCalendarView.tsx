@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar as CalendarIcon, ExternalLink, GraduationCap, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, ExternalLink, GraduationCap, Clock, BookOpen } from 'lucide-react';
 
 interface AcademicEvent {
   date: string;
@@ -110,20 +110,30 @@ export const ATUCalendarView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
           <h2 className="text-2xl font-black italic uppercase tracking-tight flex items-center gap-2 text-white">
-            <GraduationCap className="w-6 h-6 text-cyan-400" /> ATU Academic Calendar
+            <GraduationCap className="w-6 h-6 accent-solid-text" /> ATU Academic Calendar
           </h2>
           <p className="text-xs font-mono text-slate-400 mt-1">
             Atlantic Technological University · Official key dates & exam schedules (2026–27)[cite: 6].
           </p>
         </div>
-        <a
-          href="https://atlantictu.sharepoint.com/sites/StudentHUB"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-3.5 py-2 bg-[#0e131f] border border-slate-800 text-xs font-mono font-bold text-cyan-400 rounded-xl hover:border-cyan-500/50 transition-colors inline-flex items-center gap-1.5 w-fit"
-        >
-          ATU Student Hub <ExternalLink className="w-3.5 h-3.5" />
-        </a>
+        <div className="flex items-center gap-2 flex-wrap">
+          <a
+            href="https://studenthub.atu.ie/GalwayMayo/getgoing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-2 bg-[#0e131f] border border-slate-800 text-xs font-mono font-bold text-slate-300 rounded-xl hover:border-slate-700 transition-colors inline-flex items-center gap-1.5"
+          >
+            ATU Student Hub <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+          </a>
+          <a
+            href="https://studenthub.atu.ie/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-2 bg-[#0e131f] border border-slate-800 text-xs font-mono font-bold accent-solid-text rounded-xl hover:border-emerald-500/50 transition-colors inline-flex items-center gap-1.5"
+          >
+            <BookOpen className="w-3.5 h-3.5" /> ATU Galway-Mayo VLE <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
       </div>
 
       {/* Filter Tabs */}
@@ -134,7 +144,7 @@ export const ATUCalendarView: React.FC = () => {
             onClick={() => setFilter(cat)}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-colors cursor-pointer shrink-0 ${
               filter === cat
-                ? 'bg-cyan-400 text-slate-950'
+                ? 'accent-bg text-slate-950'
                 : 'bg-[#0e131f] border border-slate-800 text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -154,7 +164,7 @@ export const ATUCalendarView: React.FC = () => {
             className="p-4 rounded-xl bg-[#0e131f]/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-700 transition-colors"
           >
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-lg bg-[#07090e] border border-slate-800 text-cyan-400 shrink-0">
+              <div className="p-2.5 rounded-lg bg-[#07090e] border border-slate-800 accent-solid-text shrink-0">
                 <CalendarIcon className="w-5 h-5" />
               </div>
               <div className="space-y-1">
@@ -168,7 +178,7 @@ export const ATUCalendarView: React.FC = () => {
               </div>
             </div>
             <div className="text-xs font-mono font-bold text-slate-300 shrink-0 bg-[#07090e] border border-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-1.5 w-fit">
-              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+              <Clock className="w-3.5 h-3.5 accent-solid-text" />
               {item.date}
             </div>
           </motion.div>

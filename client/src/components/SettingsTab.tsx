@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Shield, Calendar, LogOut, Save, Trash2,
   Sliders, Timer, Check, MapPin, IdCard, Palette, Sun, Moon,
-  KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target
+  KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Copy, CheckCircle2, X
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, DEMO_USER, disableDemo, demoFocusSessions } from '../lib/demo';
@@ -16,6 +16,123 @@ import { validateGeminiKey } from '../services/aiApi';
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
 
+const SupportModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText('oryn02@gmail.com');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans text-slate-100">
+      <div className="absolute inset-0" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        className="relative z-10 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 space-y-5 shadow-2xl"
+      >
+        <div className="flex items-center justify-between border-b fios-border pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border accent-solid-text">
+              <Mail className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-black uppercase text-[var(--fios-text)]">Contact Support</h3>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <p className="text-xs text-[var(--fios-text-muted)] leading-relaxed">
+          Need help, found a bug, or have questions about Fios? Reach out directly via email:
+        </p>
+
+        <div className="flex items-center justify-between bg-[var(--fios-surface-2)] border fios-border px-3 py-2.5 rounded-xl font-mono text-xs accent-solid-text">
+          <span>oryn02@gmail.com</span>
+          <button
+            onClick={handleCopy}
+            className="px-3 py-1.5 bg-[var(--fios-surface)] border fios-border text-[var(--fios-text)] rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer text-[11px]"
+          >
+            {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+
+        <div className="pt-2 flex justify-end gap-2">
+          <a
+            href="mailto:oryn02@gmail.com"
+            className="px-4 py-2 accent-bg text-slate-950 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90 transition-opacity inline-flex items-center gap-1.5"
+          >
+            Open Mail App
+          </a>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl cursor-pointer hover:opacity-80 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+const PrivacyModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
+  <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans text-slate-100">
+    <div className="absolute inset-0" onClick={onClose} />
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95, y: 12 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="relative z-10 w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 sm:p-8 space-y-6 shadow-2xl"
+    >
+      <div className="flex items-center justify-between border-b fios-border pb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border accent-solid-text">
+            <Shield className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-black uppercase text-[var(--fios-text)]">Privacy Policy & GDPR Statement</h3>
+            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center</p>
+          </div>
+        </div>
+        <button onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer p-1">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="space-y-4 text-xs sm:text-sm text-[var(--fios-text-muted)] leading-relaxed font-sans">
+        <section className="space-y-1.5">
+          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">1. Data Controller & Overview</h4>
+          <p>
+            Fios respects your privacy and is committed to protecting your personal data in accordance with the General Data Protection Regulation (GDPR) and Irish data protection legislation.
+          </p>
+        </section>
+        <section className="space-y-1.5">
+          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">2. Information We Collect</h4>
+          <p>We process limited personal data necessary for authentication and core functionality via Supabase, alongside your encrypted API keys and private study notes.</p>
+        </section>
+        <section className="space-y-1.5">
+          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">3. Your Rights</h4>
+          <p>You retain the right to access, correct, or request complete erasure of your personal data and account records at any time.</p>
+        </section>
+      </div>
+
+      <div className="border-t fios-border pt-4 flex justify-end">
+        <button
+          onClick={onClose}
+          className="px-5 py-2.5 accent-bg text-slate-950 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+        >
+          Close Policy
+        </button>
+      </div>
+    </motion.div>
+  </div>
+);
+
 const SettingsTabInner: React.FC = () => {
   const { profile, updateProfile } = useProfile();
   const { theme, setTheme, accent, setAccent } = useTheme();
@@ -25,6 +142,10 @@ const SettingsTabInner: React.FC = () => {
   const [userId, setUserId] = useState('Loading…');
   const [icalUrl, setIcalUrl] = useState('');
   const [feedStatus, setFeedStatus] = useState<string | null>(null);
+
+  // Modals state
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
 
   // Weekly Study Goal State
   const [goalHours, setGoalHours] = useState(profile?.weekly_study_goal_hours ?? 10);
@@ -577,6 +698,30 @@ const SettingsTabInner: React.FC = () => {
         </div>
       </section>
 
+      {/* ABOUT, LEGAL & SUPPORT */}
+      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+          <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
+        </h2>
+        <p className="text-xs text-slate-400">
+          Review our data processing practices under GDPR or reach out directly for assistance.
+        </p>
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <button
+            onClick={() => setShowPrivacy(true)}
+            className="px-4 py-2 rounded-lg bg-[#07090e] border border-slate-800 text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <Shield className="w-3.5 h-3.5" /> Privacy Policy & GDPR
+          </button>
+          <button
+            onClick={() => setShowSupport(true)}
+            className="px-4 py-2 rounded-lg bg-[#07090e] border border-slate-800 text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <Mail className="w-3.5 h-3.5" /> Contact Support (oryn02@gmail.com)
+          </button>
+        </div>
+      </section>
+
       {/* PRIVACY & DATA RIGHTS */}
       <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
@@ -640,6 +785,9 @@ const SettingsTabInner: React.FC = () => {
           <LogOut className="w-4 h-4" /> Log Out of Fios
         </motion.button>
       </section>
+
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
     </div>
   );
 };

@@ -5,22 +5,26 @@ import { getUserModules, DBModule } from '../lib/moduleService';
 import { ActiveRecallQuiz } from './ActiveRecallQuiz';
 import { FormattedContent } from './FormattedContent';
 import { calculateSM2 } from '../lib/spacedRepetition';
-import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder } from 'lucide-react';
+import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers } from 'lucide-react';
 
 interface FlashcardDeckProps {
   cards: Flashcard[];
   isSaved?: boolean;
   deckTitle?: string;
   moduleCode?: string;
+  deckId?: string;
 }
 
 const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({ 
-  cards, 
+  cards: initialCards, 
   isSaved = false, 
   deckTitle: initialTitle = 'Generated Flashcard Deck',
-  moduleCode: initialModule = ''
+  moduleCode: initialModule = '',
+  deckId
 }) => {
+  const [cards, setCards] = useState<Flashcard[]>(initialCards);
   const [mode, setMode] = useState<'browse' | 'test'>('browse');
+  const [studyFilter, setStudyFilter] = useState<'due' | 'all'>('due');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [deckTitle, setDeckTitle] = useState(initialTitle);
@@ -30,6 +34,39 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
   const [hasSaved, setHasSaved] = useState(isSaved);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // If it's a saved deck, fetch live cards from Supabase on mount to ensure fresh SM-2 dates
+  useEffect(() => {
+    async function fetchLiveCards() {
+      const firstCardId = (initialCards[0] as any)?.id;
+      if (isSaved && firstCardId) {
+        // Find parent deck ID or fetch cards for this deck
+        const { data: cardData, error } = await supabase
+          .from('cards')
+          .select('*')
+          .eq('deck_id', (initialCards[0] as any).deck_id || firstCardId); // fallback or direct match
+
+        if (!error && cardData && cardData.length > 0) {
+          const mapped = cardData.map((c: any) => ({
+            id: c.id,
+            front: c.question,
+            back: c.answer,
+            ease_factor: c.ease_factor ?? 2.5,
+            interval: c.interval ?? 0,
+            repetitions: c.repetitions ?? 0,
+            next_review: c.next_review || new Date().toISOString(),
+          }));
+          setCards(mapped);
+        }
+      } else {
+        setCards(initialCards);
+      }
+    }
+
+    fetchLiveCards();
+    setCurrentIndex(0);
+    setIsFlipped(false);
+  }, [initialCards, isSaved]);
+
   useEffect(() => {
     async function fetchModules() {
       const userMods = await getUserModules();
@@ -38,19 +75,24 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     if (!isSaved) fetchModules();
   }, [isSaved]);
 
+  // SM-2 Due Filter calculation
+  const nowIso = new Date().toISOString();
+  const dueCards = cards.filter((c: any) => !c.next_review || c.next_review <= nowIso);
+  const activeCards = studyFilter === 'due' ? dueCards : cards;
+
   const handleNext = useCallback(() => {
     setIsFlipped(false);
-    if (cards.length > 0) {
-      setCurrentIndex((prev) => (prev + 1) % cards.length);
+    if (activeCards.length > 0) {
+      setCurrentIndex((prev) => (prev + 1) % activeCards.length);
     }
-  }, [cards.length]);
+  }, [activeCards.length]);
 
   const handlePrev = useCallback(() => {
     setIsFlipped(false);
-    if (cards.length > 0) {
-      setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
+    if (activeCards.length > 0) {
+      setCurrentIndex((prev) => (prev - 1 + activeCards.length) % activeCards.length);
     }
-  }, [cards.length]);
+  }, [activeCards.length]);
 
   const handleToggleFlip = useCallback(() => {
     setIsFlipped((prev) => !prev);
@@ -79,7 +121,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
 
   if (!cards || cards.length === 0) return null;
 
-  const currentCard = cards[currentIndex];
+  const currentCard = activeCards[currentIndex] || activeCards[0];
   const questionText = currentCard?.front || (currentCard as any)?.question || '';
   const answerText = currentCard?.back || (currentCard as any)?.answer || '';
 
@@ -111,15 +153,32 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
       const cardRows = cards.map((card) => ({
         deck_id: deck.id,
         question: card.front || (card as any).question,
-        answer: card.back || (card as any).answer
+        answer: card.back || (card as any).answer,
+        ease_factor: (card as any).ease_factor || 2.5,
+        interval: (card as any).interval || 0,
+        repetitions: (card as any).repetitions || 0,
+        next_review: (card as any).next_review || new Date().toISOString(),
       }));
 
-      const { error: cardsError } = await supabase
+      const { data: insertedCards, error: cardsError } = await supabase
         .from('cards')
-        .insert(cardRows);
+        .insert(cardRows)
+        .select();
 
       if (cardsError) {
         throw new Error(cardsError.message);
+      }
+
+      if (insertedCards) {
+        setCards(insertedCards.map((c: any) => ({
+          id: c.id,
+          front: c.question,
+          back: c.answer,
+          ease_factor: c.ease_factor,
+          interval: c.interval,
+          repetitions: c.repetitions,
+          next_review: c.next_review,
+        })));
       }
 
       setHasSaved(true);
@@ -132,18 +191,33 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
   };
 
   const handleRating = async (rating: number) => {
-    if ((currentCard as any)?.id) {
-      const updatedStats = calculateSM2(
-        {
-          easeFactor: (currentCard as any).ease_factor || 2.5,
-          interval: (currentCard as any).interval || 0,
-          repetitions: (currentCard as any).repetitions || 0,
-          nextReview: (currentCard as any).next_review || new Date().toISOString(),
-        },
-        rating
-      );
+    const updatedStats = calculateSM2(
+      {
+        easeFactor: (currentCard as any).ease_factor || 2.5,
+        interval: (currentCard as any).interval || 0,
+        repetitions: (currentCard as any).repetitions || 0,
+        nextReview: (currentCard as any).next_review || new Date().toISOString(),
+      },
+      rating
+    );
 
-      await supabase
+    // Update local card state immediately
+    const cardIndexInAll = cards.findIndex(c => (c as any).id ? (c as any).id === (currentCard as any).id : c === currentCard);
+    if (cardIndexInAll !== -1) {
+      const updatedCards = [...cards];
+      updatedCards[cardIndexInAll] = {
+        ...currentCard,
+        ease_factor: updatedStats.easeFactor,
+        interval: updatedStats.interval,
+        repetitions: updatedStats.repetitions,
+        next_review: updatedStats.nextReview,
+      } as any;
+      setCards(updatedCards);
+    }
+
+    // Persist the new SM-2 schedule to Supabase with verification
+    if ((currentCard as any)?.id) {
+      const { error } = await supabase
         .from('cards')
         .update({
           ease_factor: updatedStats.easeFactor,
@@ -152,6 +226,10 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
           next_review: updatedStats.nextReview,
         })
         .eq('id', (currentCard as any).id);
+
+      if (error) {
+        console.error("Failed to update card in Supabase:", error.message);
+      }
     }
 
     handleNext();
@@ -222,18 +300,32 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
           </div>
         )}
 
-        {/* Mode Toggle Switch */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
-            Study Mode
-          </span>
-          <div className="flex items-center gap-1 bg-[#07090e] p-1 rounded-xl border border-slate-800">
+        {/* Study Filter & Mode Controls */}
+        <div className="flex flex-col sm:flex-row items-center justify-between pt-2 border-t border-slate-800/60 gap-3">
+          <div className="flex items-center gap-1 bg-[#07090e] p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
+            <button
+              onClick={() => { setStudyFilter('due'); setCurrentIndex(0); }}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                studyFilter === 'due' ? 'bg-cyan-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" /> Due Today ({dueCards.length})
+            </button>
+            <button
+              onClick={() => { setStudyFilter('all'); setCurrentIndex(0); }}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                studyFilter === 'all' ? 'bg-cyan-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" /> All ({cards.length})
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1 bg-[#07090e] p-1 rounded-xl border border-slate-800 w-full sm:w-auto justify-end">
             <button
               onClick={() => setMode('browse')}
               className={`px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                mode === 'browse'
-                  ? 'bg-emerald-400 text-slate-950 shadow font-black'
-                  : 'text-slate-400 hover:text-slate-200'
+                mode === 'browse' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Eye className="w-3.5 h-3.5" /> Browse
@@ -241,12 +333,10 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             <button
               onClick={() => setMode('test')}
               className={`px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                mode === 'test'
-                  ? 'bg-emerald-400 text-slate-950 shadow font-black'
-                  : 'text-slate-400 hover:text-slate-200'
+                mode === 'test' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Target className="w-3.5 h-3.5" /> Active Recall
+              <Target className="w-3.5 h-3.5" /> Recall
             </button>
           </div>
         </div>
@@ -255,29 +345,38 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
       {/* Save Status Banner */}
       {saveStatus && (
         <div className={`p-3 rounded-lg text-xs font-bold tracking-wide uppercase border-l-4 flex items-center gap-2 ${
-          saveStatus.type === 'success' 
-            ? 'bg-emerald-500/10 border-emerald-400 text-emerald-300' 
-            : 'bg-rose-500/10 border-rose-500 text-rose-300'
+          saveStatus.type === 'success' ? 'bg-emerald-500/10 border-emerald-400 text-emerald-300' : 'bg-rose-500/10 border-rose-500 text-rose-300'
         }`}>
           {saveStatus.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
           {saveStatus.message}
         </div>
       )}
 
-      {/* 2. Main View Switcher */}
+      {/* Main View Switcher */}
       {mode === 'test' ? (
-        <ActiveRecallQuiz cards={cards} onFinish={() => setMode('browse')} />
+        <ActiveRecallQuiz cards={activeCards} onFinish={() => setMode('browse')} />
+      ) : activeCards.length === 0 ? (
+        <div className="text-center py-12 space-y-3 bg-[#0e131f] border border-slate-800 rounded-xl p-6">
+          <h3 className="text-base font-bold text-white uppercase">All caught up! 🎉</h3>
+          <p className="text-xs text-slate-400">No flashcards are due for review today according to your SM-2 schedule.</p>
+          <button 
+            onClick={() => setStudyFilter('all')}
+            className="px-4 py-2 bg-emerald-400 text-slate-950 font-bold text-xs rounded-lg cursor-pointer"
+          >
+            Study All Cards Anyway
+          </button>
+        </div>
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest text-slate-400 bg-[#0e131f]/60 px-4 py-2.5 rounded-lg border border-slate-800/80 font-mono">
             <span className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
-              CARD <span className="text-white">{currentIndex + 1}</span> / {cards.length}
+              CARD <span className="text-white">{currentIndex + 1}</span> / {activeCards.length}
             </span>
             <div className="w-36 h-2 bg-slate-800 rounded-full overflow-hidden p-0.5">
               <div 
                 className="h-full bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)] rounded-full transition-all duration-300" 
-                style={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
+                style={{ width: `${((currentIndex + 1) / activeCards.length) * 100}%` }}
               />
             </div>
           </div>
@@ -291,9 +390,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
 
             <div className="w-full flex justify-between items-center z-10 font-mono">
               <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded border ${
-                isFlipped 
-                  ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30' 
-                  : 'bg-cyan-400/10 text-cyan-400 border-cyan-400/30'
+                isFlipped ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30' : 'bg-cyan-400/10 text-cyan-400 border-cyan-400/30'
               }`}>
                 {isFlipped ? 'ANSWER' : 'QUESTION'}
               </span>
@@ -303,9 +400,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             </div>
 
             <div className="my-auto px-2 z-10 text-left sm:text-center">
-              <FormattedContent
-                text={isFlipped ? answerText : questionText}
-              />
+              <FormattedContent text={isFlipped ? answerText : questionText} />
             </div>
 
             <div className="w-full flex justify-center z-10 font-mono pt-2">
@@ -315,7 +410,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             </div>
           </div>
 
-          {/* 3. SM-2 Spaced Repetition Rating Buttons or Previous/Next Navigation */}
+          {/* SM-2 Spaced Repetition Rating Buttons */}
           {isFlipped ? (
             <div className="space-y-2">
               <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500 text-center">
