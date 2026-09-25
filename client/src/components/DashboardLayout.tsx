@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Layers, Calendar, Settings, BookOpen, LogOut, Menu, X } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Layers, 
+  Calendar, 
+  Settings, 
+  BookOpen, 
+  LogOut, 
+  Menu, 
+  X, 
+  Timer, 
+  HelpCircle 
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface DashboardLayoutProps {
@@ -33,8 +44,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const navItems = [
     { id: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
     { id: 'flashcards', label: 'FLASHCARDS', icon: Layers },
-    { id: 'schedule', label: 'SCHEDULE', icon: Calendar },
     { id: 'modules', label: 'MODULES', icon: BookOpen },
+    { id: 'quiz', label: 'EXAM MODE', icon: HelpCircle },
+    { id: 'timer', label: 'FOCUS TIMER', icon: Timer },
+    { id: 'schedule', label: 'SCHEDULE', icon: Calendar },
     { id: 'settings', label: 'SETTINGS', icon: Settings },
   ];
 
@@ -42,10 +55,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col font-sans select-none overflow-x-hidden">
-      {/* Top EA FC-Style HUD Bar */}
+      {/* Top HUD Bar */}
       <header className="h-16 border-b border-slate-800/80 bg-[#0e131f]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          {/* Mobile Menu Toggle */}
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800/50 cursor-pointer"
@@ -53,7 +65,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          {/* Logo Badge */}
           <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-emerald-400 to-cyan-400 p-[1.5px] shadow-lg shadow-emerald-500/20">
             <div className="w-full h-full bg-[#07090e] rounded-[7px] flex items-center justify-center">
               <span className="font-black italic text-transparent bg-clip-text bg-gradient-to-tr from-emerald-400 to-cyan-400 text-lg tracking-tighter">
@@ -68,7 +79,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
         </div>
 
-        {/* User / Status HUD Indicators */}
         <div className="flex items-center gap-3 sm:gap-4 text-xs font-black uppercase tracking-wider">
           <div className="hidden sm:flex items-center gap-2 bg-[#07090e] px-2.5 py-1 rounded-md border border-slate-800 text-slate-300">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -84,7 +94,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </span>
           </div>
 
-          {/* Logout Button */}
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
@@ -125,7 +134,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
         )}
 
-        {/* Left Sidebar Navigation */}
+        {/* Sidebar Navigation */}
         <aside className="w-60 border-r border-slate-800/80 bg-[#0e131f]/40 p-4 hidden md:flex flex-col justify-between">
           <div className="space-y-6">
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-3">
@@ -154,7 +163,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </nav>
           </div>
 
-          {/* Quick Stats Widget in Sidebar */}
           <div className="bg-[#0e131f] border border-slate-800 rounded-xl p-4 space-y-2">
             <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-300">
               <span>WEEKLY STUDY GOAL</span>
@@ -171,7 +179,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
         {/* Main Content Viewport */}
         <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full relative">
-          {/* Ambient Flares */}
           <div className="absolute top-10 left-10 w-96 h-96 bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none" />
           
@@ -183,3 +190,5 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     </div>
   );
 };
+
+export default DashboardLayout;
