@@ -12,10 +12,14 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **MCQ Quiz Generator** — practice exams with explanations, saved per module.
 - **Monaco Code Exams** — bug-fix, output-prediction, and logic-completion challenges (JS/TS/Python/C) graded by AI.
 - **Smart Notes & AI Tutor** — upload PDFs/notes for summaries, glossaries, and a grounded chat drawer.
+- **AI Active Recall ("Blurting")** — write everything you remember on a blank canvas; Gemini returns a color-coded report (covered / vague / missed) and a Recall Accuracy %.
+- **Revision Flight Plan** — a dashboard "To study today" queue prioritized by exam proximity, overdue SM-2 cards, and low module readiness.
 - **Grade Predictor** — computes the scores you need across assessments to hit a target grade.
 - **Module Readiness Heatmap** — a 0–100% readiness score per module from your decks, quizzes, and code exams.
-- **Global Pomodoro Timer** — a persistent floating widget that follows you across the app and feeds your Weekly Study Goal.
-- **Custom branding** — a bespoke vector `<FiosLogo />` brandmark, dark/light themes, and five gradient accents.
+- **Global Pomodoro Timer** — a glassmorphism floating widget with a glowing progress ring, Web Audio **soundscapes** (brown/white noise, rain, ocean, lofi, binaural alpha), and a Weekly Study Goal tracker.
+- **Mermaid diagrams** — ```mermaid blocks in AI summaries, tutor answers, and code-exam explanations render as interactive flowcharts.
+- **Universal gradient engine** — one accent (3-stop gradient) drives every button, gradient heading, glow, and ring; switch it live in Settings.
+- **Custom branding** — a bespoke vector `<FiosLogo />` brandmark, full dark/light themes, and five gradient accents (Emerald Blue, Cyber Violet, Sunset Fire, Electric Ocean, Neon Lime).
 
 ---
 
@@ -33,10 +37,17 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | React 19, Vite 8, TypeScript, Tailwind CSS 4, Framer Motion, `@monaco-editor/react`, lucide-react |
+| Frontend | React 19, Vite 8, TypeScript, Tailwind CSS 4, Framer Motion, `@monaco-editor/react`, Mermaid.js, Web Audio API, lucide-react |
 | Backend | Node.js, Express 5, TypeScript (`tsx`), `@google/genai` (Gemini) |
 | Data & Auth | Supabase (Postgres + Auth + Row Level Security) |
 | AI | Google Gemini API (BYO key) |
+
+### Signature features in depth
+- **Revision Flight Plan** (`client/src/lib/flightPlan.ts`) scores each module on exam proximity (`modules.exam_date`), due SM-2 cards (`cards.next_review`), and readiness, then surfaces the top 3 actions on the dashboard.
+- **Active Recall Evaluator** posts your free-recall text + related `documents` to `POST /api/active-recall`; Gemini returns per-concept statuses and an accuracy score saved to `active_recall_logs`.
+- **Pomodoro Soundscapes** (`client/src/lib/soundscapes.ts`) synthesize ambient audio live with the Web Audio API — no audio files shipped.
+- **Universal gradient engine** — `user_profiles.accent_color` maps to CSS variables (`--fios-accent-from/via/to/solid`) consumed by `.accent-bg`, `.accent-text`, `.accent-ring`, and the `<FiosLogo />`, so every accented element recolors instantly.
+- **Light mode** remaps legacy dark tokens to a light palette via `[data-theme="light"]` overrides, and toggles Monaco between `vs-dark` and `vs`.
 
 ### Brand & design
 - Custom vector **`<FiosLogo />`** component (sizes `sm`–`xl`, icon-only or icon + wordmark) used in the navbar, mobile header, landing hero, auth screens, and favicon.
@@ -76,7 +87,7 @@ ai-study-app/
 - A Google Gemini API key ([AI Studio](https://aistudio.google.com/app/apikey)) — per-user (BYO) and/or a server fallback
 
 ### 1. Database
-In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It is idempotent and creates all tables (`user_profiles`, `modules`, `decks`, `cards`, `mcq_quizzes`, `code_exams`, `tasks`, `documents`, `grades`, `focus_sessions`), Row Level Security policies, and a trigger that auto-provisions a **clean, empty profile** for every new signup (no sample data).
+In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It is idempotent and creates all tables (`user_profiles`, `modules` (with `exam_date`), `decks`, `cards`, `mcq_quizzes`, `code_exams`, `tasks`, `documents`, `grades`, `focus_sessions`, `active_recall_logs`), Row Level Security policies, and a trigger that auto-provisions a **clean, empty profile** for every new signup (no sample data).
 
 > In your Supabase Auth settings, disable "Confirm email" for the fastest local sign-in, or confirm the address you register with.
 
@@ -126,7 +137,8 @@ Click **"Explore Live Demo"** on the landing page, or build/run the client with 
 | `POST /api/generate/code-exam` | Generate a coding challenge |
 | `POST /api/grade/code-exam` | Grade a code submission |
 | `POST /api/summarize` | Summarize a document + glossary |
-| `POST /api/tutor` | Grounded AI tutor answer |
+| `POST /api/tutor` | Grounded AI tutor answer (may include Mermaid) |
+| `POST /api/active-recall` | Evaluate a free-recall "blurting" attempt |
 | `POST /api/validate-key` | Validate a Gemini API key |
 | `GET  /api/ical-proxy` | CORS proxy for iCal/WebCAL timetables |
 
