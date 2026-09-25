@@ -17,12 +17,24 @@ create table if not exists public.user_profiles (
   full_name text,
   preferred_name text,
   address text,
+  avatar_url text,
+  accent_color text not null default 'emerald',
+  theme text not null default 'dark',
+  gemini_api_key text,
+  weekly_study_goal_hours integer not null default 10,
   pomodoro_work_duration integer not null default 25,
   pomodoro_short_break integer not null default 5,
   pomodoro_long_break integer not null default 15,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Additive migration for existing projects (safe to re-run).
+alter table public.user_profiles add column if not exists avatar_url text;
+alter table public.user_profiles add column if not exists accent_color text not null default 'emerald';
+alter table public.user_profiles add column if not exists theme text not null default 'dark';
+alter table public.user_profiles add column if not exists gemini_api_key text;
+alter table public.user_profiles add column if not exists weekly_study_goal_hours integer not null default 10;
 
 -- ----------------------------------------------------------------------------
 -- modules: subject folders (e.g. SOFT06001 — Software Engineering)
@@ -109,6 +121,48 @@ create table if not exists public.tasks (
 );
 create index if not exists tasks_user_idx on public.tasks (user_id);
 
+-- ----------------------------------------------------------------------------
+-- documents: uploaded notes/PDFs with AI summary + glossary for the AI Tutor
+-- ----------------------------------------------------------------------------
+create table if not exists public.documents (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  module_code text,
+  title text not null default 'Untitled Document',
+  content text not null default '',
+  summary text,
+  glossary jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists documents_user_idx on public.documents (user_id);
+
+-- ----------------------------------------------------------------------------
+-- grades: assessment components used by the Grade Predictor
+-- ----------------------------------------------------------------------------
+create table if not exists public.grades (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  module_code text,
+  title text not null default 'Assessment',
+  weight numeric not null default 0,      -- percentage weight of final grade
+  score numeric,                          -- achieved score (null = not graded yet)
+  target_grade numeric not null default 40, -- desired final grade %
+  created_at timestamptz not null default now()
+);
+create index if not exists grades_user_idx on public.grades (user_id);
+
+-- ----------------------------------------------------------------------------
+-- focus_sessions: completed Pomodoro focus logs for the Weekly Study Goal
+-- ----------------------------------------------------------------------------
+create table if not exists public.focus_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  minutes integer not null default 0,
+  mode text not null default 'work',
+  created_at timestamptz not null default now()
+);
+create index if not exists focus_sessions_user_idx on public.focus_sessions (user_id, created_at);
+
 -- ============================================================================
 -- Row Level Security
 -- ============================================================================
@@ -119,6 +173,9 @@ alter table public.cards         enable row level security;
 alter table public.mcq_quizzes   enable row level security;
 alter table public.code_exams    enable row level security;
 alter table public.tasks         enable row level security;
+alter table public.documents     enable row level security;
+alter table public.grades        enable row level security;
+alter table public.focus_sessions enable row level security;
 
 -- Helper: (re)create a policy without erroring if it already exists.
 do $$
@@ -152,6 +209,21 @@ begin
 
   if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'tasks' and policyname = 'tasks_owner') then
     create policy tasks_owner on public.tasks
+      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  end if;
+
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'documents' and policyname = 'documents_owner') then
+    create policy documents_owner on public.documents
+      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  end if;
+
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'grades' and policyname = 'grades_owner') then
+    create policy grades_owner on public.grades
+      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  end if;
+
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'focus_sessions' and policyname = 'focus_sessions_owner') then
+    create policy focus_sessions_owner on public.focus_sessions
       for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
   end if;
 

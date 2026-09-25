@@ -1,10 +1,18 @@
 // Shared database entity types matching the Supabase schema in supabase/schema.sql
 
+export type AccentKey = 'emerald' | 'violet' | 'sunset' | 'ocean' | 'lime';
+export type ThemeMode = 'dark' | 'light';
+
 export interface UserProfile {
   id: string;
   full_name: string | null;
   preferred_name: string | null;
   address: string | null;
+  avatar_url: string | null;
+  accent_color: AccentKey;
+  theme: ThemeMode;
+  gemini_api_key: string | null;
+  weekly_study_goal_hours: number;
   pomodoro_work_duration: number;
   pomodoro_short_break: number;
   pomodoro_long_break: number;
@@ -17,6 +25,53 @@ export const DEFAULT_POMODORO = {
   shortBreak: 5,
   longBreak: 15,
 } as const;
+
+export interface AccentDef {
+  key: AccentKey;
+  label: string;
+  from: string; // hex
+  to: string;   // hex
+  solid: string;
+}
+
+// Secondary gradient accents selectable in Settings.
+export const ACCENTS: AccentDef[] = [
+  { key: 'emerald', label: 'Emerald Glow', from: '#34d399', to: '#22d3ee', solid: '#34d399' },
+  { key: 'violet', label: 'Cyber Violet', from: '#a78bfa', to: '#8b5cf6', solid: '#a78bfa' },
+  { key: 'sunset', label: 'Sunset Fire', from: '#fb923c', to: '#f43f5e', solid: '#fb923c' },
+  { key: 'ocean', label: 'Electric Ocean', from: '#38bdf8', to: '#6366f1', solid: '#38bdf8' },
+  { key: 'lime', label: 'Neon Lime', from: '#a3e635', to: '#22c55e', solid: '#a3e635' },
+];
+
+export interface FiosDocument {
+  id: string;
+  user_id: string;
+  module_code?: string | null;
+  title: string;
+  content: string;
+  summary?: string | null;
+  glossary: { term: string; definition: string }[];
+  created_at: string;
+}
+
+export interface Grade {
+  id: string;
+  user_id: string;
+  module_code?: string | null;
+  title: string;
+  weight: number;
+  score: number | null;
+  target_grade: number;
+  created_at: string;
+}
+
+export interface FocusSession {
+  id: string;
+  user_id: string;
+  minutes: number;
+  mode: string;
+  created_at: string;
+}
 
 export interface DBModule {
   id: string;
