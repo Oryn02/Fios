@@ -6,6 +6,7 @@ import {
   codeExamSchema,
   codeGradeSchema,
   summarySchema,
+  recallSchema,
 } from './schemas.js';
 
 dotenv.config();
@@ -148,6 +149,23 @@ export async function summarizeDocument(text: string, apiKey?: string) {
   return JSON.parse(cleanJsonResponse(response.text));
 }
 
+export async function evaluateRecall(topic: string, userText: string, context: string, apiKey?: string) {
+  const ai = getClient(apiKey);
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: `A student is practicing active recall ("blurting") on the topic "${topic}". Evaluate what they wrote against the reference material. Identify concepts they covered well, concepts that are vague/incomplete, and crucial points they omitted or got wrong. Give an overall accuracy 0-100.\n\n=== REFERENCE MATERIAL ===\n${context || '(no reference material provided — evaluate on general correctness for the topic)'}\n\n=== STUDENT RECALL ===\n${userText}`,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: recallSchema,
+      systemInstruction:
+        'You are a supportive exam coach. Grade free-recall attempts fairly. Mark each concept status as exactly "covered", "partial", or "missed".',
+    },
+  });
+
+  if (!response.text) throw new Error('No text returned from Gemini model.');
+  return JSON.parse(cleanJsonResponse(response.text));
+}
+
 export async function tutorAnswer(question: string, context: string, apiKey?: string) {
   const ai = getClient(apiKey);
   const response = await ai.models.generateContent({
@@ -155,7 +173,7 @@ export async function tutorAnswer(question: string, context: string, apiKey?: st
     contents: `You are helping a student understand their uploaded notes. Ground your answer in the provided material and say if something is not covered.\n\n=== NOTES ===\n${context}\n\n=== QUESTION ===\n${question}`,
     config: {
       systemInstruction:
-        'You are Fios AI Tutor, a friendly, precise study tutor. Answer clearly and concisely based primarily on the provided notes.',
+        'You are Fios AI Tutor, a friendly, precise study tutor. Answer clearly and concisely based primarily on the provided notes. When explaining a process, flow, hierarchy, or architecture, include a Mermaid diagram inside a ```mermaid code block to visualize it.',
     },
   });
 

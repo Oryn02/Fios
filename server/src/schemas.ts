@@ -129,6 +129,30 @@ export const codeGradeSchema = {
   required: ['correct', 'score', 'feedback'],
 };
 
+export const recallSchema = {
+  type: Type.OBJECT,
+  properties: {
+    accuracy: {
+      type: Type.INTEGER,
+      description: 'Overall recall accuracy from 0 to 100',
+    },
+    concepts: {
+      type: Type.ARRAY,
+      description: 'Per-concept evaluation of the student\'s free recall',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          concept: { type: Type.STRING, description: 'The concept being evaluated' },
+          status: { type: Type.STRING, description: 'One of: covered, partial, missed' },
+          note: { type: Type.STRING, description: 'Brief note on how it was handled or what was missed' },
+        },
+        required: ['concept', 'status'],
+      },
+    },
+  },
+  required: ['accuracy', 'concepts'],
+};
+
 export const summarySchema = {
   type: Type.OBJECT,
   properties: {
