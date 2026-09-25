@@ -30,6 +30,15 @@ export function askTutor(question: string, context: string): Promise<{ answer: s
   return postJson<{ answer: string }>('/api/tutor', { question, context });
 }
 
+export interface RecallResult {
+  accuracy: number;
+  concepts: { concept: string; status: 'covered' | 'partial' | 'missed'; note?: string }[];
+}
+
+export function evaluateRecall(topic: string, userText: string, context: string): Promise<RecallResult> {
+  return postJson<RecallResult>('/api/active-recall', { topic, userText, context });
+}
+
 // Validate a candidate key directly (used by the Settings "Test key" button).
 export async function validateGeminiKey(apiKey: string): Promise<boolean> {
   const response = await fetch('/api/validate-key', {
