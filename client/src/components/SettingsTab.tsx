@@ -227,7 +227,7 @@ const SettingsTabInner: React.FC = () => {
 
         <div className="flex justify-end">
           <motion.button whileTap={{ scale: 0.97 }} type="submit" disabled={savingProfile}
-            className="px-5 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50">
+            className="px-5 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50">
             <Save className="w-3.5 h-3.5" /> {savingProfile ? 'Saving…' : 'Save Profile'}
           </motion.button>
         </div>
@@ -251,7 +251,7 @@ const SettingsTabInner: React.FC = () => {
         <p className="text-[10px] text-slate-500 leading-tight">These durations drive both the Focus Timer tab and the floating timer widget across the app.</p>
         <div className="flex justify-end">
           <motion.button whileTap={{ scale: 0.97 }} type="submit" disabled={savingPomodoro}
-            className="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50">
+            className="px-5 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50">
             <Save className="w-3.5 h-3.5" /> {savingPomodoro ? 'Saving…' : 'Save Timer Defaults'}
           </motion.button>
         </div>
@@ -339,7 +339,7 @@ const SettingsTabInner: React.FC = () => {
           <input type="url" value={icalUrl} onChange={(e) => setIcalUrl(e.target.value)}
             placeholder="https://timetables.atu.ie/Ical/StudentSet?studentSetID=…"
             className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-400" />
-          <button type="submit" className="w-full sm:w-auto px-5 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors shrink-0 cursor-pointer">Update Feed</button>
+          <button type="submit" className="w-full sm:w-auto px-5 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors shrink-0 cursor-pointer">Update Feed</button>
         </form>
         <div className="flex items-center justify-between pt-1">
           <p className="text-xs text-slate-400 font-mono">Need to unlink or reset your timetable sync?</p>

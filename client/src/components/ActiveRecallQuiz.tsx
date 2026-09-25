@@ -87,7 +87,7 @@ export const ActiveRecallQuiz: React.FC<ActiveRecallQuizProps> = ({ cards, onFin
           {onFinish && (
             <button
               onClick={onFinish}
-              className="px-5 py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black uppercase rounded-xl transition-colors cursor-pointer"
+              className="px-5 py-3 accent-bg hover:opacity-90 text-slate-950 text-xs font-black uppercase rounded-xl transition-colors cursor-pointer"
             >
               Back to Deck ↵
             </button>
@@ -111,7 +111,7 @@ export const ActiveRecallQuiz: React.FC<ActiveRecallQuizProps> = ({ cards, onFin
 
       <div className="w-full bg-slate-800/60 h-1.5 rounded-full overflow-hidden">
         <div
-          className="bg-gradient-to-r from-emerald-400 to-cyan-400 h-full transition-all duration-300"
+          className="bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)] h-full transition-all duration-300"
           style={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
         />
       </div>

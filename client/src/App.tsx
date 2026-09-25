@@ -100,7 +100,7 @@ const Dashboard: React.FC = () => {
           transition={{ duration: 0.18, ease: 'easeOut' }}
           style={{ willChange: 'transform, opacity' }}
         >
-          {activeTab === 'overview' && <OverviewTab onOpenFlashcards={handleOpenFlashcards} />}
+          {activeTab === 'overview' && <OverviewTab onOpenFlashcards={handleOpenFlashcards} onNavigate={handleTabChange} />}
 
           {activeTab === 'flashcards' && (
             <div className="space-y-8 max-w-4xl mx-auto">
@@ -166,7 +166,7 @@ const FlashcardGenerator: React.FC<{
         Academic Suite · Study Lab
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
-        Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Studio</span>
+        Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
       </h1>
       <p className="text-slate-400 text-xs sm:text-sm font-medium max-w-md">
         Convert lecture slides and study notes into high-contrast flashcards instantly.
@@ -199,7 +199,7 @@ const FlashcardGenerator: React.FC<{
         <button
           type="submit"
           disabled={loading || !studyNotes.trim()}
-          className="flex-1 py-3.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase tracking-wider text-sm rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+          className="flex-1 py-3.5 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase tracking-wider text-sm rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
         >
           {loading ? (
             <>

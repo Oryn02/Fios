@@ -12,9 +12,11 @@ import type { Task } from '../types/db';
 import { usePreferredName, useProfile } from '../context/ProfileContext';
 import { Avatar } from './Avatar';
 import { ModuleHeatmap } from './ModuleHeatmap';
+import { RevisionFlightPlan } from './RevisionFlightPlan';
 
 interface OverviewTabProps {
   onOpenFlashcards: (deckCards?: any[], title?: string, moduleCode?: string, isSaved?: boolean) => void;
+  onNavigate?: (tab: string) => void;
 }
 
 interface SavedDeck {
@@ -32,7 +34,7 @@ function greetingFor(date: Date): string {
   return 'Good evening';
 }
 
-const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards }) => {
+const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavigate }) => {
   const preferredName = usePreferredName();
   const { profile } = useProfile();
   const [savedDecks, setSavedDecks] = useState<SavedDeck[]>([]);
@@ -188,7 +190,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards }) => {
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={() => onOpenFlashcards()}
-            className="px-5 py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase tracking-wider text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-colors flex items-center gap-2 cursor-pointer"
+            className="px-5 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase tracking-wider text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-colors flex items-center gap-2 cursor-pointer"
           >
             <Zap className="w-4 h-4 fill-slate-950" /> Generate Flashcards ↵
           </motion.button>
@@ -229,12 +231,15 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards }) => {
             />
           </div>
           <div className="flex justify-end">
-            <button type="submit" className="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors cursor-pointer">
+            <button type="submit" className="px-5 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors cursor-pointer">
               Save Task
             </button>
           </div>
         </form>
       )}
+
+      {/* Revision Flight Plan */}
+      <RevisionFlightPlan onNavigate={(tab) => onNavigate?.(tab)} />
 
       {/* Module Readiness Heatmap */}
       <ModuleHeatmap />

@@ -128,7 +128,7 @@ export const QuizExamView: React.FC = () => {
             whileTap={{ scale: 0.99 }}
             type="submit"
             disabled={loading || !studyNotes.trim()}
-            className="w-full py-3.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
+            className="w-full py-3.5 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
           >
             {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating practice exam…</> : <><Sparkles className="w-4 h-4" /> Generate Practice Quiz ↵</>}
           </motion.button>
@@ -163,10 +163,10 @@ export const QuizExamView: React.FC = () => {
           <h3 className="text-4xl font-black italic uppercase text-white">Your score: {score} / {questions.length}</h3>
           <p className="text-slate-400 text-xs font-mono">({Math.round((score / questions.length) * 100)}% accuracy)</p>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <button onClick={resetTaking} className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black italic uppercase text-xs rounded-xl inline-flex items-center gap-2 cursor-pointer transition-colors">
+            <button onClick={resetTaking} className="px-6 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl inline-flex items-center gap-2 cursor-pointer transition-colors">
               <RotateCcw className="w-4 h-4" /> Retake
             </button>
-            <button onClick={() => setQuestions([])} className="px-6 py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase text-xs rounded-xl inline-flex items-center gap-2 cursor-pointer transition-colors">
+            <button onClick={() => setQuestions([])} className="px-6 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl inline-flex items-center gap-2 cursor-pointer transition-colors">
               New Exam
             </button>
           </div>
@@ -188,7 +188,7 @@ export const QuizExamView: React.FC = () => {
                 {modules.map((m) => <option key={m.id} value={m.code} className="bg-[#07090e]">{m.code}</option>)}
               </select>
             </div>
-            <button onClick={handleSaveQuiz} className="w-full sm:w-auto px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
+            <button onClick={handleSaveQuiz} className="w-full sm:w-auto px-4 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
               <Save className="w-3.5 h-3.5" /> Save
             </button>
           </div>
@@ -230,11 +230,11 @@ export const QuizExamView: React.FC = () => {
 
             <div className="flex justify-end pt-2 border-t border-slate-800">
               {!isSubmitted ? (
-                <button onClick={handleSubmitAnswer} disabled={selectedOption === null} className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black italic uppercase text-xs rounded-xl disabled:opacity-30 cursor-pointer transition-colors">
+                <button onClick={handleSubmitAnswer} disabled={selectedOption === null} className="px-6 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl disabled:opacity-30 cursor-pointer transition-colors">
                   Submit Answer
                 </button>
               ) : (
-                <button onClick={handleNextQuestion} className="px-6 py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase text-xs rounded-xl flex items-center gap-2 cursor-pointer transition-colors">
+                <button onClick={handleNextQuestion} className="px-6 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl flex items-center gap-2 cursor-pointer transition-colors">
                   Next Question <ArrowRight className="w-4 h-4" />
                 </button>
               )}

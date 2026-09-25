@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Folder, Layers, Sparkles, ArrowRight, Trash2, Tag, Plus, Palette, X,
-  HelpCircle, Code2, CheckSquare, Square, Bug, Terminal, PencilRuler,
+  HelpCircle, Code2, CheckSquare, Square, Bug, Terminal, PencilRuler, Brain,
 } from 'lucide-react';
 import { getUserDecksWithCards } from '../lib/deckService';
 import { getUserModules, createModule, deleteModule, DBModule, COLOR_OPTIONS } from '../lib/moduleService';
@@ -12,6 +12,7 @@ import { getTasks, toggleTask } from '../lib/taskService';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO } from '../lib/demo';
 import type { MCQQuiz, CodeExam, Task, CodeExamType } from '../types/db';
+import { ActiveRecall } from './ActiveRecall';
 
 interface ModulesViewProps {
   onOpenFlashcards: (deckCards?: any[], title?: string, moduleCode?: string, isSaved?: boolean) => void;
@@ -47,6 +48,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('emerald');
   const [creating, setCreating] = useState(false);
+  const [recallOpen, setRecallOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -164,11 +166,14 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
           </h2>
           <p className="text-xs font-mono text-slate-400 mt-1">Organize decks, quizzes, code exams, and tasks into subject folders.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setIsCreatingModule(true)} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-700">
-            <Plus className="w-3.5 h-3.5 text-cyan-400" /> New Module
+        <div className="flex items-center gap-2 flex-wrap">
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setRecallOpen(true)} className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
+            <Brain className="w-3.5 h-3.5 accent-solid-text" /> Active Recall
           </motion.button>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => onOpenFlashcards()} className="px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/10">
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setIsCreatingModule(true)} className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
+            <Plus className="w-3.5 h-3.5 accent-solid-text" /> New Module
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => onOpenFlashcards()} className="px-4 py-2 accent-bg text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
             <Sparkles className="w-3.5 h-3.5" /> Generate Deck
           </motion.button>
         </div>
@@ -204,7 +209,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
               </div>
             </div>
             <div className="flex justify-end pt-2">
-              <button type="submit" disabled={creating} className="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors cursor-pointer shadow-lg disabled:opacity-40">
+              <button type="submit" disabled={creating} className="px-5 py-2.5 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors cursor-pointer shadow-lg disabled:opacity-40">
                 {creating ? 'Creating…' : 'Save Module Folder'}
               </button>
             </div>
@@ -368,6 +373,10 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({ onOpenFlashcards }) => {
           </AnimatePresence>
         )}
       </div>
+
+      <AnimatePresence>
+        {recallOpen && <ActiveRecall modules={modules} initialModule={selectedModule || ''} onClose={() => setRecallOpen(false)} />}
+      </AnimatePresence>
     </div>
   );
 };
@@ -377,7 +386,7 @@ const EmptyState: React.FC<{ label: string; onAction?: () => void; actionLabel?:
     <Sparkles className="w-8 h-8 text-slate-600 mx-auto" />
     <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">{label}</p>
     {onAction && actionLabel && (
-      <button onClick={onAction} className="px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+      <button onClick={onAction} className="px-4 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer">
         <Sparkles className="w-3.5 h-3.5" /> {actionLabel}
       </button>
     )}

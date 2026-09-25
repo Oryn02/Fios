@@ -255,7 +255,7 @@ const ScheduleTabInner: React.FC = () => {
           <button
             type="submit"
             disabled={savingUrl || loading || !icalUrl.trim()}
-            className="w-full sm:w-auto px-5 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 shrink-0"
+            className="w-full sm:w-auto px-5 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 shrink-0"
           >
             {savingUrl || loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : 'Sync'}
           </button>

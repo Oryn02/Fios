@@ -1,6 +1,7 @@
 import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { MermaidDiagram } from './MermaidDiagram';
 
 interface FormattedContentProps {
   text?: string;
@@ -34,7 +35,9 @@ export const FormattedContent: React.FC<FormattedContentProps> = ({ text = '' })
   return (
     <div className="space-y-2">
       {parts.map((part, i) =>
-        part.type === 'code' ? (
+        part.type === 'code' && part.language === 'mermaid' ? (
+          <MermaidDiagram key={i} chart={part.content} />
+        ) : part.type === 'code' ? (
           <div key={i} className="rounded-lg overflow-hidden border border-slate-800 text-xs font-mono text-left">
             <SyntaxHighlighter 
               language={part.language} 

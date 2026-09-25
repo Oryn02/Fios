@@ -27,7 +27,7 @@ const BigReadout: React.FC = () => {
       </div>
       <div className="w-full bg-slate-800/80 h-1.5 rounded-full mt-6 overflow-hidden">
         <div
-          className="bg-gradient-to-r from-emerald-400 to-cyan-400 h-full transition-[width] duration-1000 ease-linear"
+          className="bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)] h-full transition-[width] duration-1000 ease-linear"
           style={{ width: `${progress}%`, willChange: 'width' }}
         />
       </div>
@@ -63,7 +63,7 @@ export const FocusTimer: React.FC = () => {
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={toggle}
-          className="px-8 py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg shadow-emerald-500/10 flex items-center gap-2 cursor-pointer"
+          className="px-8 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg shadow-emerald-500/10 flex items-center gap-2 cursor-pointer"
         >
           <PlayPause />
         </motion.button>

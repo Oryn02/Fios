@@ -9,6 +9,7 @@ import { getDocuments, saveDocument, deleteDocument } from '../lib/documentServi
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { FiosDocument } from '../types/db';
 import { GeminiGate } from './GeminiGate';
+import { FormattedContent } from './FormattedContent';
 
 interface ChatMessage { role: 'user' | 'assistant'; text: string; }
 
@@ -221,8 +222,8 @@ const DocumentsInner: React.FC = () => {
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${m.role === 'user' ? 'bg-[var(--fios-surface-2)] text-[var(--fios-text)]' : 'accent-bg text-slate-950'}`}>
                       {m.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
                     </div>
-                    <div className={`rounded-xl px-3 py-2 text-xs leading-relaxed max-w-[80%] ${m.role === 'user' ? 'bg-[var(--fios-surface-2)]' : 'bg-[var(--fios-surface-2)] border fios-border'}`}>
-                      {m.text}
+                    <div className={`rounded-xl px-3 py-2 text-xs leading-relaxed max-w-[85%] ${m.role === 'user' ? 'bg-[var(--fios-surface-2)]' : 'bg-[var(--fios-surface-2)] border fios-border'}`}>
+                      {m.role === 'assistant' ? <FormattedContent text={m.text} /> : m.text}
                     </div>
                   </div>
                 ))}

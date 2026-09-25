@@ -12,6 +12,8 @@ import {
   CODE_LANGUAGES, CODE_EXAM_TYPES,
   type CodeLanguage, type CodeExamType, type CodeExam,
 } from '../types/db';
+import { useTheme } from '../context/ThemeContext';
+import { FormattedContent } from './FormattedContent';
 
 const EXAM_ICON: Record<CodeExamType, React.ReactNode> = {
   bug_fix: <Bug className="w-3.5 h-3.5" />,
@@ -31,6 +33,8 @@ interface ActiveChallenge {
 }
 
 export const CodeExamView: React.FC = () => {
+  const { theme } = useTheme();
+  const monacoTheme = theme === 'light' ? 'vs' : 'vs-dark';
   const [language, setLanguage] = useState<CodeLanguage>('javascript');
   const [examType, setExamType] = useState<CodeExamType>('bug_fix');
   const [topic, setTopic] = useState('');
@@ -235,7 +239,7 @@ export const CodeExamView: React.FC = () => {
           whileTap={{ scale: 0.99 }}
           onClick={handleGenerate}
           disabled={generating}
-          className="w-full py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
+          className="w-full py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
         >
           {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           {generating ? 'Generating challenge…' : 'Generate Code Challenge'}
@@ -286,7 +290,7 @@ export const CodeExamView: React.FC = () => {
                 </div>
                 <Editor
                   height="320px"
-                  theme="vs-dark"
+                  theme={monacoTheme}
                   language={monacoLanguage}
                   value={userCode}
                   onChange={(v) => setUserCode(v ?? '')}
@@ -308,7 +312,7 @@ export const CodeExamView: React.FC = () => {
                   whileTap={{ scale: 0.97 }}
                   onClick={handleGrade}
                   disabled={grading}
-                  className="flex-1 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
+                  className="flex-1 py-2.5 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
                 >
                   {grading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-slate-950" />}
                   {grading ? 'Grading…' : 'Submit & Grade'}
@@ -367,14 +371,15 @@ export const CodeExamView: React.FC = () => {
                   </div>
                   <Editor
                     height="240px"
-                    theme="vs-dark"
+                    theme={monacoTheme}
                     language={monacoLanguage}
                     value={challenge.solutionCode}
                     options={{ readOnly: true, fontSize: 13, minimap: { enabled: false }, scrollBeyondLastLine: false, padding: { top: 12 }, automaticLayout: true }}
                   />
                   {challenge.explanation && (
-                    <div className="p-3 bg-[#0e131f] text-xs font-mono text-slate-300 leading-relaxed border-t border-slate-800">
-                      <span className="text-amber-400 font-bold uppercase">Why: </span>{challenge.explanation}
+                    <div className="p-3 bg-[#0e131f] text-xs text-slate-300 leading-relaxed border-t border-slate-800">
+                      <span className="text-amber-400 font-bold uppercase">Why: </span>
+                      <FormattedContent text={challenge.explanation} />
                     </div>
                   )}
                 </div>
