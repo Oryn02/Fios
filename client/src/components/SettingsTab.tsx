@@ -2,20 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   User, Shield, Calendar, LogOut, Save, Trash2,
-  Sliders, Timer, Check, MapPin, IdCard,
+  Sliders, Timer, Check, MapPin, IdCard, Palette, Sun, Moon,
+  KeyRound, ExternalLink, Loader2,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { IS_DEMO, DEMO_USER } from '../lib/demo';
+import { IS_DEMO, DEMO_USER, disableDemo } from '../lib/demo';
 import { getSavedCalendarUrl, saveCalendarUrl } from '../lib/calendarService';
 import { useProfile } from '../context/ProfileContext';
+import { useTheme } from '../context/ThemeContext';
+import { AvatarPicker } from './Avatar';
+import { ACCENTS } from '../types/db';
+import { validateGeminiKey } from '../services/aiApi';
+
+const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
 
 const SettingsTabInner: React.FC = () => {
   const { profile, updateProfile } = useProfile();
+  const { theme, setTheme, accent, setAccent } = useTheme();
 
   const [email, setEmail] = useState('Loading…');
   const [userId, setUserId] = useState('Loading…');
   const [icalUrl, setIcalUrl] = useState('');
   const [feedStatus, setFeedStatus] = useState<string | null>(null);
+
+  // Gemini key management
+  const [keyInput, setKeyInput] = useState('');
+  const [keyStatus, setKeyStatus] = useState<'idle' | 'testing' | 'valid' | 'invalid' | 'saved'>('idle');
 
   // Profile form
   const [fullName, setFullName] = useState('');
@@ -92,6 +104,34 @@ const SettingsTabInner: React.FC = () => {
     }
   };
 
+  const handleAvatarChange = async (dataUrl: string | null) => {
+    try {
+      await updateProfile({ avatar_url: dataUrl });
+    } catch (err) {
+      console.error('Failed to update avatar:', err);
+    }
+  };
+
+  const handleTestKey = async () => {
+    if (!keyInput.trim()) return;
+    setKeyStatus('testing');
+    const ok = await validateGeminiKey(keyInput.trim());
+    setKeyStatus(ok ? 'valid' : 'invalid');
+  };
+
+  const handleSaveKey = async () => {
+    if (!keyInput.trim()) return;
+    await updateProfile({ gemini_api_key: keyInput.trim() });
+    setKeyStatus('saved');
+    setKeyInput('');
+    setTimeout(() => setKeyStatus('idle'), 2500);
+  };
+
+  const handleRemoveKey = async () => {
+    await updateProfile({ gemini_api_key: null });
+    setKeyStatus('idle');
+  };
+
   const handleSaveFeed = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -115,7 +155,7 @@ const SettingsTabInner: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    if (IS_DEMO) { window.location.reload(); return; }
+    if (IS_DEMO) { disableDemo(); window.location.reload(); return; }
     await supabase.auth.signOut();
   };
 
@@ -153,6 +193,8 @@ const SettingsTabInner: React.FC = () => {
             <span className="text-xs font-mono text-emerald-400 flex items-center gap-1 font-bold"><Check className="w-3.5 h-3.5" /> Saved</span>
           )}
         </div>
+
+        <AvatarPicker url={profile?.avatar_url} name={profile?.preferred_name || profile?.full_name} onChange={handleAvatarChange} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-2">
@@ -214,6 +256,79 @@ const SettingsTabInner: React.FC = () => {
           </motion.button>
         </div>
       </form>
+
+      {/* APPEARANCE */}
+      <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-xl space-y-5">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-[var(--fios-text-muted)] flex items-center gap-2">
+          <Palette className="w-4 h-4 accent-solid-text" /> Appearance
+        </h2>
+
+        <div className="space-y-2">
+          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Theme</span>
+          <div className="flex items-center gap-2">
+            {(['dark', 'light'] as const).map((t) => (
+              <button key={t} onClick={() => setTheme(t)}
+                className={`px-4 py-2 rounded-lg text-xs font-black uppercase flex items-center gap-1.5 border transition-colors cursor-pointer ${
+                  theme === t ? 'accent-bg text-slate-950 border-transparent' : 'bg-[var(--fios-surface-2)] fios-border text-[var(--fios-text-muted)]'
+                }`}>
+                {t === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />} {t}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Accent Gradient</span>
+          <div className="flex flex-wrap gap-2">
+            {ACCENTS.map((a) => (
+              <button key={a.key} onClick={() => setAccent(a.key)}
+                className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition-transform cursor-pointer ${
+                  accent === a.key ? 'ring-2 ring-white/60 scale-[1.03]' : 'opacity-80 hover:opacity-100'
+                } bg-[var(--fios-surface-2)] fios-border text-[var(--fios-text)]`}>
+                <span className="w-4 h-4 rounded-full" style={{ backgroundImage: `linear-gradient(120deg, ${a.from}, ${a.to})` }} />
+                {a.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-[var(--fios-text-muted)]">The public landing page keeps Fios's signature emerald identity regardless of this choice.</p>
+        </div>
+      </section>
+
+      {/* GEMINI API KEY (BYO KEY) */}
+      <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-xl space-y-4">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-[var(--fios-text-muted)] flex items-center gap-2">
+          <KeyRound className="w-4 h-4 accent-solid-text" /> Gemini API Key (Bring Your Own Key)
+        </h2>
+        <p className="text-xs text-[var(--fios-text-muted)]">
+          {profile?.gemini_api_key
+            ? 'A key is configured. AI features are unlocked. You can replace or remove it below.'
+            : 'Add your free Gemini API key to unlock AI features. It is stored on your profile and used only for your requests.'}
+        </p>
+        <div className="flex flex-col sm:flex-row items-stretch gap-2">
+          <input type="password" value={keyInput} onChange={(e) => { setKeyInput(e.target.value); setKeyStatus('idle'); }}
+            placeholder={profile?.gemini_api_key ? '•••••••••• (configured)' : 'AIza…'}
+            className="flex-1 bg-[var(--fios-surface-2)] border fios-border rounded-lg px-3 py-2 text-sm font-mono text-[var(--fios-text)] focus:outline-none focus:accent-border" />
+          <button onClick={handleTestKey} disabled={!keyInput.trim() || keyStatus === 'testing'}
+            className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-lg cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1.5">
+            {keyStatus === 'testing' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Test
+          </button>
+          <button onClick={handleSaveKey} disabled={!keyInput.trim()}
+            className="px-5 py-2 accent-bg text-slate-950 font-black uppercase text-xs rounded-lg cursor-pointer disabled:opacity-40">Save Key</button>
+          {profile?.gemini_api_key && (
+            <button onClick={handleRemoveKey} className="px-4 py-2 bg-rose-500/10 border border-rose-500/30 text-rose-300 font-bold uppercase text-xs rounded-lg cursor-pointer flex items-center gap-1.5">
+              <Trash2 className="w-3.5 h-3.5" /> Remove
+            </button>
+          )}
+        </div>
+        <div className="flex items-center justify-between">
+          {keyStatus === 'valid' && <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Key is valid</span>}
+          {keyStatus === 'invalid' && <span className="text-[11px] font-bold text-rose-400">Key could not be validated.</span>}
+          {keyStatus === 'saved' && <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Saved</span>}
+          <a href={AI_STUDIO_URL} target="_blank" rel="noreferrer" className="ml-auto text-[11px] font-mono text-[var(--fios-text-muted)] hover:accent-solid-text flex items-center gap-1">
+            Get a free key <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      </section>
 
       {/* 3. TIMETABLE FEED */}
       <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { LogIn, UserPlus, ShieldAlert, X } from 'lucide-react';
+import { FiosLogo } from './FiosLogo';
 
 interface AuthModalProps {
   mode?: 'signin' | 'signup';
@@ -81,13 +82,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ mode = 'signin', onClose, 
           </button>
         )}
 
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-emerald-500/10 border-l-2 border-emerald-400 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
-            Academic Command Center
+        <div className="text-center space-y-3">
+          <div className="flex justify-center">
+            <FiosLogo size="lg" withWordmark fixedEmerald />
           </div>
-          <h1 className="text-3xl font-black italic tracking-tight text-white">
-            Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Studio</span>
-          </h1>
           <p className="text-slate-400 text-xs font-medium">
             {isSignUp ? 'Create your student account to sync your work' : 'Sign in to access your modules & study tools'}
           </p>

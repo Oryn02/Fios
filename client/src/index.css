@@ -1,1 +1,80 @@
 @import "tailwindcss";
+
+/* ==========================================================================
+   Fios theme tokens
+   Accent variables recolor the brandmark, rings and primary chrome.
+   Surface variables drive the dashboard dark/light themes.
+   ========================================================================== */
+:root {
+  --fios-accent-from: #34d399;
+  --fios-accent-to: #22d3ee;
+  --fios-accent-solid: #34d399;
+
+  /* Dark theme (default) */
+  --fios-bg: #000000;
+  --fios-surface: #0e131f;
+  --fios-surface-2: #07090e;
+  --fios-border: rgba(255, 255, 255, 0.08);
+  --fios-text: #f1f5f9;
+  --fios-text-muted: #94a3b8;
+}
+
+[data-theme="light"] {
+  --fios-bg: #f6f7fb;
+  --fios-surface: #ffffff;
+  --fios-surface-2: #eef1f6;
+  --fios-border: rgba(15, 23, 42, 0.10);
+  --fios-text: #0f172a;
+  --fios-text-muted: #475569;
+}
+
+/* Semantic helpers used by theme-aware surfaces */
+.fios-app-bg { background-color: var(--fios-bg); color: var(--fios-text); }
+.fios-surface { background-color: var(--fios-surface); }
+.fios-surface-2 { background-color: var(--fios-surface-2); }
+.fios-border { border-color: var(--fios-border); }
+.fios-text { color: var(--fios-text); }
+.fios-text-muted { color: var(--fios-text-muted); }
+
+.accent-text {
+  background-image: linear-gradient(90deg, var(--fios-accent-from), var(--fios-accent-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.accent-bg { background-image: linear-gradient(120deg, var(--fios-accent-from), var(--fios-accent-to)); }
+.accent-ring { box-shadow: 0 0 0 1px color-mix(in srgb, var(--fios-accent-solid) 55%, transparent); }
+.accent-glow { box-shadow: 0 10px 40px -12px color-mix(in srgb, var(--fios-accent-solid) 45%, transparent); }
+.accent-solid-text { color: var(--fios-accent-solid); }
+.accent-border { border-color: color-mix(in srgb, var(--fios-accent-solid) 45%, transparent); }
+
+/* ==========================================================================
+   Mobile / cross-browser optimizations
+   ========================================================================== */
+
+/* Prevent iOS Safari from zooming when focusing inputs (needs >= 16px). */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+@media (min-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: inherit;
+  }
+}
+
+/* Respect iPhone home-indicator / notch safe areas. */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-top { padding-top: env(safe-area-inset-top, 0px); }
+
+/* Dynamic viewport height helper (falls back to vh on old browsers). */
+.min-h-dvh { min-height: 100vh; min-height: 100dvh; }
+
+html, body, #root { min-height: 100vh; min-height: 100dvh; }
+body { background-color: #000; overscroll-behavior-y: none; }
+
+/* Smooth momentum scrolling on iOS for scroll containers. */
+.scroll-touch { -webkit-overflow-scrolling: touch; }

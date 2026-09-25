@@ -16,9 +16,14 @@ import { SettingsTab } from './components/SettingsTab';
 import { FocusTimer } from './components/FocusTimer';
 import { QuizExamView } from './components/QuizExamView';
 import { CodeExamView } from './components/CodeExamView';
+import { DocumentsView } from './components/DocumentsView';
+import { GradePredictorView } from './components/GradePredictorView';
 import { PomodoroWidget } from './components/PomodoroWidget';
+import { QuickActions } from './components/QuickActions';
+import { GeminiGate } from './components/GeminiGate';
 import { ProfileProvider } from './context/ProfileContext';
 import { PomodoroProvider } from './context/PomodoroContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 interface SelectedDeck {
   cards: Flashcard[];
@@ -130,8 +135,10 @@ const Dashboard: React.FC = () => {
           )}
 
           {activeTab === 'modules' && <ModulesView onOpenFlashcards={handleOpenFlashcards} />}
-          {activeTab === 'quiz' && <QuizExamView />}
-          {activeTab === 'code' && <CodeExamView />}
+          {activeTab === 'quiz' && <GeminiGate feature="Quiz Generator"><QuizExamView /></GeminiGate>}
+          {activeTab === 'code' && <GeminiGate feature="Code Exams"><CodeExamView /></GeminiGate>}
+          {activeTab === 'documents' && <DocumentsView />}
+          {activeTab === 'grades' && <GradePredictorView />}
           {activeTab === 'timer' && <div className="py-8"><FocusTimer /></div>}
           {activeTab === 'schedule' && <ScheduleTab />}
           {activeTab === 'settings' && <SettingsTab />}
@@ -139,6 +146,7 @@ const Dashboard: React.FC = () => {
       </AnimatePresence>
 
       <PomodoroWidget />
+      <QuickActions onNavigate={handleTabChange} />
     </DashboardLayout>
   );
 };
@@ -284,9 +292,11 @@ export function App() {
 
   return (
     <ProfileProvider>
-      <PomodoroProvider>
-        <Dashboard />
-      </PomodoroProvider>
+      <ThemeProvider>
+        <PomodoroProvider>
+          <Dashboard />
+        </PomodoroProvider>
+      </ThemeProvider>
     </ProfileProvider>
   );
 }

@@ -297,6 +297,7 @@ export const CodeExamView: React.FC = () => {
                     padding: { top: 12, bottom: 12 },
                     fontFamily: 'JetBrains Mono, monospace',
                     smoothScrolling: true,
+                    automaticLayout: true,
                   }}
                   loading={<div className="p-6 text-xs font-mono text-slate-500">Loading editor…</div>}
                 />
@@ -369,7 +370,7 @@ export const CodeExamView: React.FC = () => {
                     theme="vs-dark"
                     language={monacoLanguage}
                     value={challenge.solutionCode}
-                    options={{ readOnly: true, fontSize: 13, minimap: { enabled: false }, scrollBeyondLastLine: false, padding: { top: 12 } }}
+                    options={{ readOnly: true, fontSize: 13, minimap: { enabled: false }, scrollBeyondLastLine: false, padding: { top: 12 }, automaticLayout: true }}
                   />
                   {challenge.explanation && (
                     <div className="p-3 bg-[#0e131f] text-xs font-mono text-slate-300 leading-relaxed border-t border-slate-800">

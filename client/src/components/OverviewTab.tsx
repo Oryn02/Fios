@@ -9,7 +9,9 @@ import { getSavedCalendarUrl, fetchAndParseCalendar, CalendarEvent } from '../li
 import { getTasks, createTask, toggleTask, deleteTask } from '../lib/taskService';
 import { getUserDecksWithCards } from '../lib/deckService';
 import type { Task } from '../types/db';
-import { usePreferredName } from '../context/ProfileContext';
+import { usePreferredName, useProfile } from '../context/ProfileContext';
+import { Avatar } from './Avatar';
+import { ModuleHeatmap } from './ModuleHeatmap';
 
 interface OverviewTabProps {
   onOpenFlashcards: (deckCards?: any[], title?: string, moduleCode?: string, isSaved?: boolean) => void;
@@ -32,6 +34,7 @@ function greetingFor(date: Date): string {
 
 const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards }) => {
   const preferredName = usePreferredName();
+  const { profile } = useProfile();
   const [savedDecks, setSavedDecks] = useState<SavedDeck[]>([]);
   const [loadingDecks, setLoadingDecks] = useState(true);
 
@@ -133,17 +136,20 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards }) => {
         transition={{ duration: 0.25 }}
         className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800/80 pb-6"
       >
-        <div>
-          <div className="text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-1 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Today · {todayLabel}
+        <div className="flex items-center gap-4">
+          <Avatar url={profile?.avatar_url} name={preferredName} size={56} className="shrink-0 accent-ring" />
+          <div>
+            <div className="text-[11px] font-black uppercase tracking-widest accent-solid-text mb-1 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
+              Today · {todayLabel}
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black italic tracking-tight text-[var(--fios-text)]">
+              {greeting}, <span className="accent-text">{preferredName}</span>.
+            </h1>
+            <p className="text-[var(--fios-text-muted)] text-xs sm:text-sm font-medium mt-1">
+              Welcome back to <span className="text-[var(--fios-text)] font-bold">Fios</span> · Semester 1 · 2026/27
+            </p>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black italic tracking-tight text-white">
-            {greeting}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">{preferredName}</span>.
-          </h1>
-          <p className="text-slate-400 text-xs sm:text-sm font-medium mt-1">
-            Welcome back to <span className="text-slate-200 font-bold">Fios</span> · Semester 1 · 2026/27
-          </p>
         </div>
 
         <div className="bg-[#0e131f] border border-slate-800 rounded-xl px-4 py-2.5 flex items-center gap-4 self-start md:self-auto font-mono">
@@ -229,6 +235,9 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards }) => {
           </div>
         </form>
       )}
+
+      {/* Module Readiness Heatmap */}
+      <ModuleHeatmap />
 
       {/* 3. Saved Study Decks */}
       <div className="bg-[#0e131f]/60 border border-slate-800/80 rounded-2xl p-6 space-y-4 shadow-xl">
