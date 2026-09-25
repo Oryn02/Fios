@@ -1,5 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { generateFlashcardsFromText, generateQuizFromText } from './geminiService.js';
+import {
+  generateFlashcardsFromText,
+  generateQuizFromText,
+  generateCodeExam,
+  gradeCodeSubmission,
+} from './geminiService.js';
 
 const router = Router();
 
@@ -48,7 +53,54 @@ router.post('/generate/quiz', handleQuiz);
 router.post('/generate-quiz', handleQuiz);
 
 /* ==========================================================================
-   3. ICAL / WEBCAL CORS PROXY ENDPOINT
+   3. CODE EXAM GENERATION
+   ========================================================================== */
+const handleGenerateCodeExam = async (req: Request, res: Response) => {
+  try {
+    const { language, examType, topic, difficulty } = req.body || {};
+    if (!language || !examType) {
+      return res.status(400).json({ error: 'language and examType are required' });
+    }
+
+    const result = await generateCodeExam(language, examType, topic || '', difficulty || 'intermediate');
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error('Code Exam Generation Error:', error);
+    return res.status(500).json({ error: error?.message || 'Failed to generate code exam' });
+  }
+};
+
+router.post('/generate/code-exam', handleGenerateCodeExam);
+router.post('/generate-code-exam', handleGenerateCodeExam);
+
+/* ==========================================================================
+   4. CODE EXAM GRADING
+   ========================================================================== */
+const handleGradeCodeExam = async (req: Request, res: Response) => {
+  try {
+    const { language, prompt, solutionCode, userCode } = req.body || {};
+    if (!userCode || !userCode.trim()) {
+      return res.status(400).json({ error: 'userCode is required' });
+    }
+
+    const result = await gradeCodeSubmission(
+      language || 'javascript',
+      prompt || '',
+      solutionCode || '',
+      userCode
+    );
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error('Code Exam Grading Error:', error);
+    return res.status(500).json({ error: error?.message || 'Failed to grade submission' });
+  }
+};
+
+router.post('/grade/code-exam', handleGradeCodeExam);
+router.post('/grade-code-exam', handleGradeCodeExam);
+
+/* ==========================================================================
+   5. ICAL / WEBCAL CORS PROXY ENDPOINT
    ========================================================================== */
 const handleICalProxy = async (req: Request, res: Response) => {
   try {

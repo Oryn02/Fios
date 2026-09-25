@@ -70,3 +70,61 @@ export const quizSchema = {
   },
   required: ['quizTitle', 'questions'],
 };
+
+export const codeExamSchema = {
+  type: Type.OBJECT,
+  properties: {
+    title: {
+      type: Type.STRING,
+      description: 'A short, descriptive title for the coding challenge',
+    },
+    language: {
+      type: Type.STRING,
+      description: 'The programming language, one of: javascript, typescript, python, c',
+    },
+    examType: {
+      type: Type.STRING,
+      description: 'The challenge type: bug_fix, output_prediction, or logic_completion',
+    },
+    prompt: {
+      type: Type.STRING,
+      description: 'Clear instructions describing the task the student must complete',
+    },
+    starterCode: {
+      type: Type.STRING,
+      description: 'The code the student starts from (buggy code, snippet to trace, or incomplete function)',
+    },
+    solutionCode: {
+      type: Type.STRING,
+      description: 'The full correct solution code',
+    },
+    expectedOutput: {
+      type: Type.STRING,
+      description: 'For output_prediction challenges, the exact expected program output; otherwise an empty string',
+    },
+    explanation: {
+      type: Type.STRING,
+      description: 'A concise explanation of the correct solution and the key concept being tested',
+    },
+  },
+  required: ['title', 'language', 'examType', 'prompt', 'starterCode', 'solutionCode', 'explanation'],
+};
+
+export const codeGradeSchema = {
+  type: Type.OBJECT,
+  properties: {
+    correct: {
+      type: Type.BOOLEAN,
+      description: 'Whether the submitted solution correctly satisfies the challenge',
+    },
+    score: {
+      type: Type.INTEGER,
+      description: 'A score from 0 to 100 reflecting correctness and quality',
+    },
+    feedback: {
+      type: Type.STRING,
+      description: 'Constructive feedback explaining what is right or wrong and how to improve',
+    },
+  },
+  required: ['correct', 'score', 'feedback'],
+};
