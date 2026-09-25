@@ -14,7 +14,7 @@ interface FlashcardDeckProps {
   moduleCode?: string;
 }
 
-export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({ 
+const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({ 
   cards, 
   isSaved = false, 
   deckTitle: initialTitle = 'Generated Flashcard Deck',
@@ -372,4 +372,5 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
   );
 };
 
+export const FlashcardDeck = React.memo(FlashcardDeckInner);
 export default FlashcardDeck;

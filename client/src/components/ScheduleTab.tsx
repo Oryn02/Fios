@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Calendar as CalendarIcon, Clock, MapPin, Link2, RefreshCw, 
-  Upload, ChevronLeft, ChevronRight, Check, Play, Coffee 
+import {
+  Calendar as CalendarIcon, MapPin, Link2, RefreshCw,
+  Upload, ChevronLeft, ChevronRight, Check, Play, Coffee,
 } from 'lucide-react';
 import { 
   saveCalendarUrl, getSavedCalendarUrl, fetchAndParseCalendar, 
@@ -22,7 +22,7 @@ interface TimetableItem {
   data: CalendarEvent | BreakData;
 }
 
-export const ScheduleTab: React.FC = () => {
+const ScheduleTabInner: React.FC = () => {
   /* ==========================================================================
      1. STATE MANAGEMENT
      ========================================================================== */
@@ -230,7 +230,7 @@ export const ScheduleTab: React.FC = () => {
   return (
     <div className="space-y-6 max-w-5xl mx-auto font-sans text-slate-100">
       
-      {/* Header Banner - Matches FIOS Style */}
+      {/* Header Banner */}
       <header className="space-y-1">
         <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-black uppercase tracking-widest">
           <CalendarIcon className="w-3.5 h-3.5" />
@@ -504,3 +504,6 @@ export const ScheduleTab: React.FC = () => {
     </div>
   );
 };
+
+export const ScheduleTab = React.memo(ScheduleTabInner);
+export default ScheduleTab;
