@@ -1,18 +1,50 @@
-# Fios — Render Blueprint (monorepo)
-# Dashboard Root Directory must be `server` or `client` (where package.json lives),
-# NEVER `src` / `server/src` / `client/src` — that causes:
-#   ENOENT: … open '/opt/render/project/src/package.json'
+# Fios — Render Blueprint
 #
-# After first deploy, set secrets in the Render dashboard (see README).
+# Confirmed production API: https://fios-akjy.onrender.com (service Fios / srv-das193rbc2fs738u2rug)
+#
+# NEVER set Root Directory to `src` / `server/src` / `client/src`
+# (ENOENT …/src/package.json).
+#
+# Prefer Option A (single Web Service) when you only have one Render service.
 
 services:
-  # Express API (Web Service)
+  # --- Option A: one Web Service serves API + Vite SPA ---
+  # Dashboard: clear Root Directory (repo root), then:
+  #   Build:  npm run build
+  #   Start:  npm start
+  # Leave VITE_API_URL empty (same-origin /api).
+  - type: web
+    name: Fios
+    runtime: node
+    plan: free
+    # rootDir omitted = repository root (required so client/ is in the build)
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      # Bake same-origin client (empty VITE_API_URL). Set Supabase keys in dashboard.
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_DEMO_MODE
+        value: "false"
+
+  # --- Option B: keep API-only at server/ + optional Static Site ---
+  # Use if Root Directory must stay `server/`.
+  # Then create a Static Site (rootDir client) with:
+  #   VITE_API_URL=https://fios-akjy.onrender.com
   - type: web
     name: fios-api
     runtime: node
     plan: free
     rootDir: server
-    buildCommand: npm install && npm run build
+    # --include=dev so `tsc` is available even when NODE_ENV=production
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /health
     envVars:
@@ -23,12 +55,11 @@ services:
       - key: CLIENT_ORIGIN
         sync: false
 
-  # Vite/React static frontend
   - type: web
     name: fios-web
     runtime: static
     rootDir: client
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     staticPublishPath: dist
     routes:
       - type: rewrite
@@ -40,7 +71,7 @@ services:
       - key: VITE_SUPABASE_ANON_KEY
         sync: false
       - key: VITE_API_URL
-        sync: false
+        value: https://fios-akjy.onrender.com
       - key: VITE_ADMIN_UID
         sync: false
       - key: VITE_DEMO_MODE

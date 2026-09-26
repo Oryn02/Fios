@@ -95,58 +95,68 @@ Fios/
 
 ## Deploy on Render
 
-Blueprint: commit [`render.yaml`](render.yaml) and **New → Blueprint** from the repo, or create two services manually:
+**Live API service:** [Fios](https://fios-akjy.onrender.com) (`srv-das193rbc2fs738u2rug`) · branch `main` · auto-deploy.
 
-### 1) API — Web Service
+Blueprint: [`render.yaml`](render.yaml).
+
+### Urgent: `Missing script: "build"`
+
+`main` historically only had `start` / `dev` in `server/package.json`. v2.2.2 adds:
+
+```json
+"build": "tsc"
+```
+
+Until this PR is merged, either merge [#3](https://github.com/Oryn02/Fios/pull/3) or temporarily set Build Command to:
+
+`npm install --include=dev && npx tsc`
+
+(`--include=dev` matters when `NODE_ENV=production` would otherwise skip `typescript`.)
+
+### Option A — single Web Service (recommended for your workspace)
+
+You currently have **one** service. Point it at the **repo root** so Express can serve the Vite SPA + `/api`:
 
 | Setting | Value |
 | --- | --- |
-| Root Directory | **`server`** (not `src`, not `server/src`) |
-| Runtime | Node |
-| Build Command | `npm install && npm run build` |
+| Root Directory | **empty / `.`** (repo root — not `server/`, not `src`) |
+| Build Command | `npm run build` |
 | Start Command | `npm start` |
-| Health Check Path | `/health` |
+| Health Check | `/health` |
 
-**Env vars (API):**
+Root `package.json` builds `server` then `client`. Express serves `client/dist` when present. **Leave `VITE_API_URL` unset** (same-origin `/api`).
 
-| Key | Notes |
-| --- | --- |
-| `GEMINI_API_KEY` | Optional server fallback key |
-| `CLIENT_ORIGIN` | Your Static Site origin, e.g. `https://fios-web.onrender.com` (comma-separated if multiple) |
-| `PORT` | Set automatically by Render — do not hardcode |
+Also set on the service (build-time for Vite): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, optional `GEMINI_API_KEY`.
 
-After deploy, copy the service URL (e.g. `https://fios-api.onrender.com`).
-
-### 2) Frontend — Static Site
+### Option B — keep Root Directory = `server/` (API-only)
 
 | Setting | Value |
 | --- | --- |
-| Root Directory | **`client`** (not `src`, not `client/src`) |
-| Build Command | `npm install && npm run build` |
-| Publish Directory | `dist` |
+| Root Directory | **`server`** |
+| Build Command | `npm install --include=dev && npm run build` |
+| Start Command | `npm start` |
 
-**Env vars (Static Site — baked in at build time):**
+Then add a **Static Site** for the UI:
 
-| Key | Notes |
+| Setting | Value |
 | --- | --- |
-| `VITE_SUPABASE_URL` | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anon key |
-| `VITE_API_URL` | **API origin only** — e.g. `https://fios-api.onrender.com` (no `/api` suffix, no trailing slash) |
-| `VITE_ADMIN_UID` | Optional admin UUID |
-| `VITE_DEMO_MODE` | `false` for production |
+| Root Directory | **`client`** |
+| Build Command | `npm install --include=dev && npm run build` |
+| Publish Directory | `dist` |
+| `VITE_API_URL` | **`https://fios-akjy.onrender.com`** (no `/api`, no trailing slash) |
+| `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | Your Supabase project |
+| `CLIENT_ORIGIN` (on API) | Your Static Site URL |
 
-`VITE_API_URL` is required when the static site and API are separate hosts. Leaving it empty makes the browser call relative `/api/…` (works locally via Vite proxy; fails on a Static Site alone → 405/HTML).
-
-Redeploy the Static Site after changing any `VITE_*` variable.
+Redeploy the Static Site after any `VITE_*` change.
 
 ### Assumed vs you must set
 
-| Item | Assumed in repo | You must set |
+| Item | Assumed | You set |
 | --- | --- | --- |
-| Split services (API + Static) | Yes (`render.yaml`) | Confirm service names/URLs |
-| `VITE_API_URL` | Placeholder in examples | Real `https://<api-service>.onrender.com` |
-| `CLIENT_ORIGIN` | Placeholder | Real Static Site URL |
-| Supabase keys | Examples only | Your project credentials |
+| API URL | `https://fios-akjy.onrender.com` | Confirm in dashboard |
+| Single vs split | Prefer Option A if only one service | Clear Root Dir → `.` for Option A |
+| `VITE_API_URL` | Empty for Option A | Option B: `https://fios-akjy.onrender.com` |
+| Supabase `VITE_*` | Examples only | Real credentials |
 
 ---
 
