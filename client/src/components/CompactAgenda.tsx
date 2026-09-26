@@ -2,7 +2,12 @@ import React, { memo, useMemo } from 'react';
 import { CheckSquare, MapPin, Play, Check } from 'lucide-react';
 import type { CalendarEvent } from '../lib/calendarService';
 import type { Task } from '../types/db';
-import { buildUnifiedAgenda, formatAgendaWhen, type AgendaItem } from '../lib/agendaService';
+import {
+  buildUnifiedAgenda,
+  formatAgendaWhen,
+  groupAgendaByDay,
+  type AgendaItem,
+} from '../lib/agendaService';
 import { classStateCardClass } from '../lib/scheduleTime';
 import { MOD_BADGE_CLASS, MOD_PILL_CLASS } from '../lib/moduleColors';
 
@@ -33,13 +38,13 @@ const AgendaRow = memo(function AgendaRow({
   return (
     <div
       data-mod-color={item.colorKey}
-      className={`p-3 rounded-xl bg-[#07090e]/80 border border-slate-800/80 flex items-center justify-between gap-3 transition-colors ${classStateCardClass(item.state)} ${
+      className={`rounded-xl bg-[#07090e]/80 border border-slate-800/80 flex items-center justify-between gap-3 transition-colors ${classStateCardClass(item.state)} ${
         item.state === 'next' ? 'ring-1 ring-[color-mix(in_srgb,var(--mod-solid)_40%,transparent)]' : ''
       } ${compact ? 'p-2.5' : 'p-3.5'}`}
     >
       <div className="min-w-0 flex-1 space-y-0.5">
         <div className={`text-[10px] font-mono font-bold ${muted ? 'text-slate-600' : 'text-slate-400'}`}>
-          {formatAgendaWhen(item.start, item.end)}
+          {formatAgendaWhen(item)}
         </div>
         <div className="flex items-center gap-2 min-w-0 flex-wrap">
           <div className={`text-xs font-black truncate ${muted ? 'text-slate-500 line-through' : 'text-white'}`}>
@@ -87,6 +92,7 @@ const AgendaRow = memo(function AgendaRow({
 
 /**
  * Memoized compact agenda — cheap re-renders; list capped; build work memoized.
+ * Items group under calendar date headers; tasks sort by due date.
  */
 export const CompactAgenda = memo(function CompactAgenda({
   classes,
@@ -102,8 +108,8 @@ export const CompactAgenda = memo(function CompactAgenda({
   // Stabilize module list reference for memo deps when parent passes inline arrays
   const moduleKey = modules?.map((m) => `${m.code}:${m.color}`).join('|') ?? '';
 
-  const items = useMemo(() => {
-    return buildUnifiedAgenda({
+  const groups = useMemo(() => {
+    const items = buildUnifiedAgenda({
       classes,
       tasks,
       modules,
@@ -112,6 +118,7 @@ export const CompactAgenda = memo(function CompactAgenda({
       hideCompletedTasks: false,
       now: new Date(),
     });
+    return groupAgendaByDay(items, new Date());
     // eslint-disable-next-line react-hooks/exhaustive-deps -- moduleKey proxies modules
   }, [classes, tasks, moduleKey, limit, day?.getTime()]);
 
@@ -119,14 +126,26 @@ export const CompactAgenda = memo(function CompactAgenda({
     return <div className="py-6 text-center text-xs font-mono text-slate-500 animate-pulse">Loading agenda…</div>;
   }
 
-  if (items.length === 0) {
+  if (groups.length === 0) {
     return <p className="text-xs text-slate-400 py-4">{emptyMessage}</p>;
   }
 
   return (
-    <div className="fios-agenda-scroll space-y-2 max-h-80 overflow-y-auto pr-0.5 contain-content">
-      {items.map((item) => (
-        <AgendaRow key={item.id} item={item} onToggleTask={onToggleTask} compact={compact} />
+    <div className="fios-agenda-scroll space-y-4 max-h-80 overflow-y-auto pr-0.5 contain-content">
+      {groups.map((group) => (
+        <section key={group.key} className="space-y-2" aria-labelledby={`agenda-day-${group.key}`}>
+          <h4
+            id={`agenda-day-${group.key}`}
+            className="sticky top-0 z-[1] text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text bg-[var(--fios-surface)]/95 backdrop-blur-sm py-1.5 border-b border-slate-800/60"
+          >
+            {group.label}
+          </h4>
+          <div className="space-y-2">
+            {group.items.map((item) => (
+              <AgendaRow key={item.id} item={item} onToggleTask={onToggleTask} compact={compact} />
+            ))}
+          </div>
+        </section>
       ))}
     </div>
   );

@@ -4,6 +4,18 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v2.2.5',
+      date: 'September 2026',
+      title: 'Nav chrome polish & agenda by due date',
+      highlights: [
+        'Header hamburger / X restyled to match the top bar — same size, radius, and accent border as neighbouring chrome controls, vertically aligned with the Fios logo; toggle behaviour unchanged.',
+        'Compact agenda / unified timeline: timed tasks sort and appear by due date (not start), so deadlines land on the correct calendar day alongside classes.',
+        'Agenda date headers: Today / Tomorrow / weekday groups so classes and tasks sit under clear calendar days instead of a flat undated list.',
+        'Overview Focus card: no more “You’re all caught up” flash while tasks are still loading — shows a loading state until the real pending count arrives.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.5.',
+      ],
+    },
+    {
       version: 'v2.2.4',
       date: 'September 2026',
       title: 'Nav toggle, task dates, support send & landing refresh',
@@ -104,7 +116,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v2.2.4</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v2.2.5</p>
       </header>
 
       <div className="space-y-4">
