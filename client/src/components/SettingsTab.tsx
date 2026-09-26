@@ -1042,8 +1042,28 @@ const SettingsTabInner: React.FC = () => {
         <p className="text-xs text-[var(--fios-text-muted)]">
           {profile?.gemini_api_key
             ? 'A key is configured. AI features are unlocked. You can replace or remove it below.'
-            : 'Add your free Gemini API key to unlock AI features. It is stored on your profile and used only for your requests.'}
+            : 'Add your Gemini API key to unlock AI features. It is stored on your profile and used only for your requests.'}
         </p>
+
+        <div className="rounded-xl border fios-border bg-[var(--fios-surface-2)]/80 px-3.5 py-3 space-y-1.5">
+          <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--fios-text-muted)]">
+            Tip · Free tier capacity
+          </p>
+          <p className="text-xs text-[var(--fios-text-muted)] leading-relaxed">
+            When Google&apos;s free Gemini tier is busy (high demand / many active users), flashcards, quizzes, and the tutor
+            can feel slow or fail intermittently. If that happens often, consider upgrading to a{' '}
+            <strong className="text-[var(--fios-text)]">paid Gemini plan in Google AI Studio</strong> for more reliable
+            throughput — optional, and only if you need steadier AI responses.
+          </p>
+          <a
+            href="https://aistudio.google.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] font-mono font-bold accent-solid-text hover:underline cursor-pointer"
+          >
+            Open Google AI Studio <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
 
         <div className="flex flex-col sm:flex-row items-stretch gap-2">
           <input type="password" value={keyInput} onChange={(e) => { setKeyInput(e.target.value); setKeyStatus('idle'); }}
@@ -1062,12 +1082,12 @@ const SettingsTabInner: React.FC = () => {
           )}
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           {keyStatus === 'valid' && <span className="text-[11px] font-bold accent-solid-text flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Key is valid</span>}
           {keyStatus === 'invalid' && <span className="text-[11px] font-bold text-rose-400">Key could not be validated.</span>}
           {keyStatus === 'saved' && <span className="text-[11px] font-bold accent-solid-text flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Saved</span>}
           <a href={AI_STUDIO_URL} target="_blank" rel="noreferrer" className="ml-auto text-[11px] font-mono text-[var(--fios-text-muted)] hover:accent-solid-text flex items-center gap-1">
-            Get a free key <ExternalLink className="w-3.5 h-3.5" />
+            Get an API key <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       </section>

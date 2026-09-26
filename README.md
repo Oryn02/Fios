@@ -40,6 +40,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Expanded module accent palette; CompactAgenda performance; timed tasks on the unified timeline.
 - In-app feedback & ratings; Privacy Policy / Terms / consent / export refresh for GDPR-style transparency.
 - Mobile touch targets and gesture hardening (nav, Zen exit, FAB, flashcard swipe, agenda scroll).
+- Settings tip: optional paid Gemini (Google AI Studio) when free-tier capacity is overloaded.
 - See the in-app **Updates** tab for the full changelog.
 
 ---

@@ -26,6 +26,7 @@ const UpdatesTabInner: React.FC = () => {
         'In-app Feedback & Ratings: star rating, category tags, optional anonymous message — stored securely with your profile or without a user id.',
         'Privacy & GDPR: expanded Privacy Policy and Terms (landing footer + Settings); clearer cookie/local-storage consent; Export My Data (JSON) and erasure guidance aligned with processors (Supabase, Gemini, GitHub, hosting).',
         'Mobile touch: ~44px targets on bottom nav, Zen Exit, drawer, FAB/Pomodoro; flashcard swipe ignores vertical scroll; agenda scroll uses touch-action pan-y; active: states so critical actions are not hover-only.',
+        'Settings: helpful tip that a paid Gemini plan via Google AI Studio can avoid slowdowns when the free tier is overloaded (optional; link to AI Studio).',
         'Version alignment: packages, HTML title, Updates tab, and README all report v2.2.3. Builds on v2.2.2 Render/Zen/widget work without regressing Bugbot fixes.',
       ],
     },
