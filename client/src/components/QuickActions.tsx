@@ -151,7 +151,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
   };
 
   const actions = useMemo(() => {
-    const ids = (smartWidgetActions?.length ? smartWidgetActions : DEFAULT_SMART_ACTIONS) as SmartActionId[];
+    const ids = (Array.isArray(smartWidgetActions) ? smartWidgetActions : DEFAULT_SMART_ACTIONS) as SmartActionId[];
     return ids
       .filter((id) => ACTION_META[id])
       .map((id) => ({ id, ...ACTION_META[id], onClick: actionHandlers[id] }));

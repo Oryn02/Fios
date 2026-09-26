@@ -160,17 +160,36 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [updateProfile]);
 
   const patch = useCallback((partial: Partial<PreferencesState>) => {
-    persist({ ...prefs, ...partial });
-  }, [prefs, persist]);
+    setPrefs((prev) => {
+      const next = { ...prev, ...partial };
+      localStorage.setItem(LS_KEY, JSON.stringify(next));
+      updateProfile({ prefs: next } as any).catch(() => {
+        /* prefs column may not exist yet */
+      });
+      return next;
+    });
+  }, [updateProfile]);
 
   const setLowPower = useCallback((v: boolean) => patch({ lowPower: v }), [patch]);
   const setZenMode = useCallback((v: boolean) => patch({ zenMode: v }), [patch]);
   const setOpenDyslexic = useCallback((v: boolean) => patch({ openDyslexic: v }), [patch]);
   const setWidgetOrder = useCallback((order: WidgetId[]) => patch({ widgetOrder: order }), [patch]);
   const setWidgetVisible = useCallback((id: WidgetId, visible: boolean) => {
-    patch({ widgetVisibility: { ...prefs.widgetVisibility, [id]: visible } });
-  }, [patch, prefs.widgetVisibility]);
-  const setMobileNavSlots = useCallback((slots: string[]) => patch({ mobileNavSlots: slots.slice(0, 5) }), [patch]);
+    setPrefs((prev) => {
+      const next = {
+        ...prev,
+        widgetVisibility: { ...prev.widgetVisibility, [id]: visible },
+      };
+      localStorage.setItem(LS_KEY, JSON.stringify(next));
+      updateProfile({ prefs: next } as any).catch(() => {});
+      return next;
+    });
+  }, [updateProfile]);
+  const setMobileNavSlots = useCallback((slots: string[]) => {
+    const trimmed = slots.filter(Boolean).slice(0, 5);
+    // Never persist an empty list — fall back to defaults so hide/reorder stay consistent.
+    patch({ mobileNavSlots: trimmed.length ? trimmed : [...DEFAULT_MOBILE_NAV] });
+  }, [patch]);
   const setNavOrder = useCallback((order: string[]) => patch({ navOrder: order }), [patch]);
   const setShowPomodoroWidget = useCallback((v: boolean) => patch({ showPomodoroWidget: v }), [patch]);
   const setShowSmartWidget = useCallback((v: boolean) => patch({ showSmartWidget: v }), [patch]);
