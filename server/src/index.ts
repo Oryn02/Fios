@@ -8,7 +8,9 @@ dotenv.config();
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+// 15mb limit supports base64-encoded images/audio in JSON bodies
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // Dual mounting guarantees Vite proxy hits the route handler
 app.use('/api', routes);
