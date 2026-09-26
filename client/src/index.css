@@ -22,12 +22,22 @@
 }
 
 [data-theme="light"] {
-  --fios-bg: #f7f4ef;          /* Warm off-white canvas */
-  --fios-surface: #f5f2eb;     /* Soft stone card surface */
-  --fios-surface-2: #efeae1;   /* Nested inputs / chips */
-  --fios-border: #d6d0c4;      /* Warm stone border */
-  --fios-text: #1c1917;        /* Stone-900 primary text */
-  --fios-text-muted: #57534e;  /* Stone-600 secondary */
+  /* High-contrast cool slate light palette (v2.2.0) */
+  --fios-bg: #f8fafc;          /* Page canvas — slate-50 */
+  --fios-surface: #ffffff;     /* Primary cards / panels */
+  --fios-surface-2: #f1f5f9;   /* Elevated / nested surfaces */
+  --fios-border: #cbd5e1;      /* Slate-300 borders */
+  --fios-text: #0f172a;        /* Slate-900 primary */
+  --fios-text-muted: #334155;  /* Slate-700 secondary */
+  --fios-shadow-sm:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 1px 3px rgba(15, 23, 42, 0.06);
+  --fios-shadow-md:
+    0 4px 6px -1px rgba(15, 23, 42, 0.06),
+    0 10px 20px -8px rgba(15, 23, 42, 0.10);
+  --fios-shadow-lg:
+    0 10px 15px -3px rgba(15, 23, 42, 0.07),
+    0 20px 40px -16px rgba(51, 65, 85, 0.14);
 }
 
 /* Semantic helpers used by theme-aware surfaces */
@@ -103,9 +113,25 @@
 /* Keep dark text legible on accent-filled buttons in both themes. */
 [data-theme="light"] [class*="text-slate-950"] { color: #020617 !important; }
 
-/* Soft shadows for cards in light mode */
+/* Soft multi-layer tinted shadows (slate-tinted, not harsh black) */
+[data-theme="light"] [class*="shadow-sm"],
+[data-theme="light"] [class*="shadow "] {
+  box-shadow: var(--fios-shadow-sm) !important;
+}
+[data-theme="light"] [class*="shadow-md"],
+[data-theme="light"] [class*="shadow-lg"] {
+  box-shadow: var(--fios-shadow-md) !important;
+}
 [data-theme="light"] [class*="shadow-xl"],
-[data-theme="light"] [class*="shadow-2xl"] { box-shadow: 0 8px 24px -12px rgba(15, 23, 42, 0.18) !important; }
+[data-theme="light"] [class*="shadow-2xl"] {
+  box-shadow: var(--fios-shadow-lg) !important;
+}
+
+/* Slightly stronger card presence on white surfaces */
+[data-theme="light"] .fios-surface,
+[data-theme="light"] [class*="bg-[var(--fios-surface)]"] {
+  box-shadow: var(--fios-shadow-sm);
+}
 
 /* ==========================================================================
    Mobile / cross-browser optimizations

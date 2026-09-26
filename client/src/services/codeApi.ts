@@ -1,5 +1,5 @@
 import type { CodeExamType, CodeLanguage } from '../types/db';
-import { getGeminiKey } from '../lib/geminiKey';
+import { postApiJson } from '../lib/apiClient';
 
 export interface GeneratedCodeExam {
   title: string;
@@ -18,27 +18,6 @@ export interface CodeGradeResult {
   feedback: string;
 }
 
-async function postJson<T>(url: string, body: Record<string, unknown>): Promise<T> {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...body, apiKey: getGeminiKey() }),
-  });
-
-  const text = await response.text();
-  let data: any = {};
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    throw new Error(`Server returned non-JSON output (Status ${response.status}).`);
-  }
-
-  if (!response.ok) {
-    throw new Error(data?.error || `Server error: ${response.status}`);
-  }
-  return data as T;
-}
-
 export function generateCodeExam(params: {
   language: CodeLanguage;
   examType: CodeExamType;
@@ -46,7 +25,7 @@ export function generateCodeExam(params: {
   customPrompt?: string;
   difficulty?: string;
 }): Promise<GeneratedCodeExam> {
-  return postJson<GeneratedCodeExam>('/api/generate/code-exam', params);
+  return postApiJson<GeneratedCodeExam>('/api/generate/code-exam', params as unknown as Record<string, unknown>);
 }
 
 export function gradeCodeExam(params: {
@@ -55,5 +34,5 @@ export function gradeCodeExam(params: {
   solutionCode: string;
   userCode: string;
 }): Promise<CodeGradeResult> {
-  return postJson<CodeGradeResult>('/api/grade/code-exam', params);
+  return postApiJson<CodeGradeResult>('/api/grade/code-exam', params as unknown as Record<string, unknown>);
 }

@@ -155,7 +155,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
   const handleSave = useCallback(async () => {
     if (!challenge) return;
     try {
-      await saveCodeExam({
+      const saved = await saveCodeExam({
         title: challenge.title,
         language: challenge.language,
         exam_type: challenge.examType,
@@ -166,13 +166,15 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
         module_code: moduleCode || null,
         completed: grade?.correct ?? false,
       });
-      setSaveMsg('Saved to your Code Exams!');
+      setSaveMsg(`Saved · id ${saved.id.slice(0, 8)}…`);
       setTimeout(() => setSaveMsg(null), 2500);
-      loadSaved();
+      const list = await loadSaved();
+      const fresh = (list || []).find((e) => e.id === saved.id);
+      if (fresh) openSaved(fresh);
     } catch (err: any) {
       setError(err.message || 'Failed to save exam.');
     }
-  }, [challenge, userCode, moduleCode, grade, loadSaved]);
+  }, [challenge, userCode, moduleCode, grade, loadSaved, openSaved]);
 
   const handleDeleteSaved = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();

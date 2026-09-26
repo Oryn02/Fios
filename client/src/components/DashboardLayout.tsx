@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutDashboard, Layers, Calendar, Settings, BookOpen,
   LogOut, Menu, X, Timer, HelpCircle, Code2, FileText, Target,
-  Sun, Moon, GraduationCap, Sparkles, Bot, Monitor, Command,
+  Sun, Moon, GraduationCap, Sparkles, Bot, Monitor, Command, Focus,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, disableDemo } from '../lib/demo';
@@ -14,6 +14,7 @@ import { FiosLogo } from './FiosLogo';
 import { Avatar } from './Avatar';
 import { WeeklyGoalWidget } from './WeeklyGoalWidget';
 import { CommandPalette, type CommandItem } from './CommandPalette';
+import { toast } from '../lib/toast';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -37,14 +38,33 @@ export const NAV_ITEMS = [
   { id: 'updates', label: 'Updates v2.2', icon: Sparkles },
 ];
 
+/** Tabs where Zen/Deep Focus may hide chrome. Global frames (Settings, Overview, …) keep nav. */
+const ZEN_STUDY_TABS = new Set([
+  'flashcards',
+  'quiz',
+  'code',
+  'documents',
+  'tutor',
+  'timer',
+]);
+
 const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, activeTab, setActiveTab }) => {
   const { profile } = useProfile();
   const preferredName = usePreferredName();
   const { theme, resolvedTheme, toggleTheme } = useTheme();
-  const { zenMode, mobileNavSlots } = usePreferences();
+  const { zenMode, setZenMode, mobileNavSlots } = usePreferences();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // Only hide chrome on distraction-free study surfaces — never trap Settings/etc.
+  const chromeHidden = zenMode && ZEN_STUDY_TABS.has(activeTab);
+
+  const exitZen = useCallback(() => {
+    if (!zenMode) return;
+    setZenMode(false);
+    toast('Zen mode off — navigation restored', 'info');
+  }, [zenMode, setZenMode]);
 
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
@@ -62,11 +82,17 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setPaletteOpen((v) => !v);
+        return;
+      }
+      // Escape exits Zen from any view (including Settings if somehow chrome-hidden)
+      if (e.key === 'Escape' && zenMode) {
+        e.preventDefault();
+        exitZen();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [zenMode, exitZen]);
 
   const commandItems: CommandItem[] = useMemo(() => [
     ...NAV_ITEMS.map((item) => ({
@@ -76,6 +102,19 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       keywords: [item.id],
       action: () => navigate(item.id),
     })),
+    {
+      id: 'action-exit-zen',
+      label: zenMode ? 'Exit Zen / Deep Focus' : 'Enter Zen / Deep Focus',
+      hint: 'Focus',
+      keywords: ['zen', 'focus', 'escape'],
+      action: () => {
+        if (zenMode) exitZen();
+        else {
+          setZenMode(true);
+          toast('Zen on — chrome hides on study views. Press Esc to exit.', 'info');
+        }
+      },
+    },
     {
       id: 'action-theme',
       label: 'Toggle theme',
@@ -90,7 +129,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       keywords: ['logout'],
       action: () => { void handleLogout(); },
     },
-  ], [navigate, toggleTheme, handleLogout]);
+  ], [navigate, toggleTheme, handleLogout, zenMode, exitZen, setZenMode]);
 
   const displayName = profile?.full_name?.trim() || preferredName;
   const ThemeIcon = theme === 'system' ? Monitor : (resolvedTheme === 'dark' ? Sun : Moon);
@@ -104,8 +143,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
   return (
     <div className="min-h-dvh fios-app-bg flex flex-col font-sans overflow-x-hidden">
-      {/* Top HUD Bar */}
-      {!zenMode && (
+      {/* Top HUD Bar — always visible outside study Zen surfaces */}
+      {!chromeHidden && (
         <header className="h-16 border-b fios-border bg-[var(--fios-surface)]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-50 safe-top">
           <div className="flex items-center gap-3">
             <button
@@ -119,6 +158,11 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             </button>
             <FiosLogo size="md" />
             <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.0</span>
+            {zenMode && (
+              <span className="hidden sm:inline text-[10px] font-mono font-bold uppercase tracking-wider accent-solid-text bg-[var(--fios-surface-2)] px-2 py-1 rounded-md border accent-border">
+                Zen armed
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -132,6 +176,18 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               <Command className="w-3.5 h-3.5" />
               <span>K</span>
             </button>
+
+            {zenMode && (
+              <button
+                type="button"
+                onClick={exitZen}
+                title="Exit Zen mode (Esc)"
+                aria-label="Exit Zen mode"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border accent-border accent-solid-text bg-[var(--fios-surface-2)] text-[10px] font-black uppercase cursor-pointer"
+              >
+                <Focus className="w-3.5 h-3.5" /> Exit Zen
+              </button>
+            )}
 
             <button
               type="button"
@@ -172,7 +228,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       <div className="flex flex-1 relative">
         {/* Mobile slide-out drawer */}
         <AnimatePresence>
-          {drawerOpen && !zenMode && (
+          {drawerOpen && !chromeHidden && (
             <>
               <motion.div
                 initial={{ opacity: 0 }}
@@ -222,7 +278,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         </AnimatePresence>
 
         {/* Desktop Sidebar */}
-        {!zenMode && (
+        {!chromeHidden && (
           <aside className="w-60 border-r fios-border bg-[var(--fios-surface)]/40 p-4 hidden md:flex flex-col justify-between" aria-label="Sidebar">
             <div className="space-y-6">
               <div className="text-[10px] font-black uppercase tracking-widest text-[var(--fios-text-muted)] px-3">Navigation</div>
@@ -257,8 +313,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         )}
 
         {/* Main Content Viewport */}
-        <main className={`flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full relative ${zenMode ? 'pb-8' : 'pb-24 md:pb-8'}`} id="main-content">
-          {!zenMode && (
+        <main className={`flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full relative ${chromeHidden ? 'pb-8' : 'pb-24 md:pb-8'}`} id="main-content">
+          {!chromeHidden && (
             <div className="absolute top-10 left-10 w-96 h-96 rounded-full blur-[100px] pointer-events-none opacity-40" style={{ backgroundColor: 'color-mix(in srgb, var(--fios-accent-solid) 8%, transparent)' }} />
           )}
           <div className="relative z-10">{children}</div>
@@ -266,7 +322,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       </div>
 
       {/* Hot-swappable mobile bottom nav */}
-      {!zenMode && (
+      {!chromeHidden && (
         <nav
           className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-2 pt-1.5 pb-1 safe-bottom"
           aria-label="Mobile shortcuts"
@@ -290,6 +346,37 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           })}
         </nav>
       )}
+
+      {/* Persistent escape hatch while study Zen chrome is hidden */}
+      <AnimatePresence>
+        {chromeHidden && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className="fixed bottom-4 right-4 z-[60] flex flex-col items-end gap-2 safe-bottom"
+          >
+            <button
+              type="button"
+              onClick={exitZen}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl accent-bg text-slate-950 text-xs font-black uppercase tracking-wider shadow-xl cursor-pointer"
+              aria-label="Exit Zen mode"
+              title="Exit Zen mode (Esc)"
+            >
+              <Focus className="w-4 h-4" /> Exit Zen
+              <span className="hidden sm:inline font-mono text-[10px] opacity-70 normal-case">Esc</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaletteOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border fios-border bg-[var(--fios-surface)] text-[var(--fios-text-muted)] text-[10px] font-mono cursor-pointer"
+              aria-label="Open command palette"
+            >
+              <Command className="w-3 h-3" /> Navigate
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} items={commandItems} />
     </div>

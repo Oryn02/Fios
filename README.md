@@ -20,9 +20,10 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Module Readiness Heatmap** — 0–100% readiness per module; modules support tag/folder groups.
 - **Global Pomodoro Timer** — floating widget with Web Audio soundscapes and Weekly Study Goal tracker.
 - **PWA** — installable standalone app via VitePWA + Workbox; offline mutation queue (IndexedDB).
-- **Themes** — Dark / Light / System, Low-Power mode, Zen focus, OpenDyslexic, warm light palette.
+- **Themes** — Dark / Light / System, Low-Power mode, Zen (study views only + Esc exit), OpenDyslexic, high-contrast light palette (`#f8fafc` / white / `#f1f5f9`).
 - **Mermaid + Markdown + LaTeX** — diagrams, GFM markdown, and KaTeX math in AI content.
-- **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service.
+- **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Privacy / Terms / Cookie Policy.
+- **Live-demo AI auth guard** — guests can browse; cloud AI / uploads require sign-in (GitHub or email).
 
 ---
 
@@ -50,8 +51,9 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 - **Active Recall Evaluator** posts your free-recall text + related `documents` to `POST /api/active-recall`; Gemini returns per-concept statuses and an accuracy score saved to `active_recall_logs`.
 - **Pomodoro Soundscapes** (`client/src/lib/soundscapes.ts`) synthesize ambient audio live with the Web Audio API — no audio files shipped.
 - **Universal gradient engine** — `user_profiles.accent_color` maps to CSS variables (`--fios-accent-from/via/to/solid`) consumed by `.accent-bg`, `.accent-text`, `.accent-ring`, and the `<FiosLogo />`.
-- **Light mode** remaps legacy dark tokens to a warm off-white / stone palette via `[data-theme="light"]`; System mode follows `prefers-color-scheme`.
+- **Light mode** remaps legacy dark tokens to a high-contrast slate palette via `[data-theme="light"]` (soft multi-layer shadows); System mode follows `prefers-color-scheme`.
 - **RAG study engine** — `POST /api/rag/query` + `POST /api/upload/pdf`; client helpers in `lib/ragClient.ts`.
+- **Vercel API bridge** — `api/index.ts` + root `vercel.json` rewrite `/api/*` to the Express app so tutor/generate never hit the SPA HTML 404.
 
 ### Brand & design
 - Custom vector **`<FiosLogo />`** (geometric `</>` + glowing core nodes; sizes `sm`–`xl`) used in the navbar, mobile header, landing hero, auth screens, and favicon.

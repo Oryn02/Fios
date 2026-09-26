@@ -22,6 +22,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [activeQuizId, setActiveQuizId] = useState<string | null>(initialQuizId ?? null);
 
   const [savedQuizzes, setSavedQuizzes] = useState<MCQQuiz[]>([]);
 
@@ -30,6 +31,22 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
   const [score, setScore] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [quizFinished, setQuizFinished] = useState(false);
+
+  const resetTaking = useCallback(() => {
+    setCurrentIndex(0);
+    setSelectedOption(null);
+    setScore(0);
+    setIsSubmitted(false);
+    setQuizFinished(false);
+  }, []);
+
+  const openSavedQuiz = useCallback((quiz: MCQQuiz) => {
+    setActiveQuizId(quiz.id);
+    setQuestions(quiz.questions);
+    setTitle(quiz.title);
+    setModuleCode(quiz.module_code || '');
+    resetTaking();
+  }, [resetTaking]);
 
   const loadSaved = useCallback(async () => {
     const q = await getQuizzes();
@@ -42,20 +59,10 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
     loadSaved().then((quizzesList) => {
       if (initialQuizId && quizzesList && quizzesList.length > 0) {
         const target = quizzesList.find((q) => q.id === initialQuizId);
-        if (target) {
-          openSavedQuiz(target);
-        }
+        if (target) openSavedQuiz(target);
       }
-    });
-  }, [loadSaved, initialQuizId]);
-
-  const resetTaking = () => {
-    setCurrentIndex(0);
-    setSelectedOption(null);
-    setScore(0);
-    setIsSubmitted(false);
-    setQuizFinished(false);
-  };
+    }).catch((err: any) => setError(err?.message || 'Failed to load quizzes'));
+  }, [loadSaved, initialQuizId, openSavedQuiz]);
 
   const handleTextExtracted = (extractedText: string) => {
     setStudyNotes((prev) => (prev.trim() ? `${prev}\n\n${extractedText}` : extractedText));
@@ -82,20 +89,15 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
 
   const handleSaveQuiz = async () => {
     try {
-      await saveQuiz(title || 'Untitled Quiz', questions, moduleCode || null);
-      setSaveMsg('Quiz saved!');
+      const saved = await saveQuiz(title || 'Untitled Quiz', questions, moduleCode || null);
+      setActiveQuizId(saved.id);
+      setSaveMsg(`Quiz saved · id ${saved.id.slice(0, 8)}…`);
       setTimeout(() => setSaveMsg(null), 2500);
-      loadSaved();
+      await loadSaved();
+      openSavedQuiz(saved);
     } catch (err: any) {
       setError(err.message || 'Failed to save quiz.');
     }
-  };
-
-  const openSavedQuiz = (quiz: MCQQuiz) => {
-    setQuestions(quiz.questions);
-    setTitle(quiz.title);
-    setModuleCode(quiz.module_code || '');
-    resetTaking();
   };
 
   const handleDeleteSaved = async (e: React.MouseEvent, id: string) => {

@@ -17,9 +17,22 @@ export async function getCodeExams(): Promise<CodeExam[]> {
 
   if (error) {
     console.error('Error loading code exams:', error);
-    return [];
+    throw new Error(error.message || 'Failed to load code exams');
   }
   return (data as CodeExam[]) || [];
+}
+
+export async function getCodeExamById(id: string): Promise<CodeExam> {
+  if (!id?.trim()) throw new Error('Code exam id is required');
+  if (IS_DEMO) {
+    const found = demoExamState.find((e) => e.id === id);
+    if (!found) throw new Error('Code exam not found');
+    return found;
+  }
+  const { data, error } = await supabase.from('code_exams').select('*').eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message || 'Failed to load code exam');
+  if (!data) throw new Error('Code exam not found');
+  return data as CodeExam;
 }
 
 export async function saveCodeExam(exam: Partial<CodeExam>): Promise<CodeExam> {

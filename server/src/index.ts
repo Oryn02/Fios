@@ -18,9 +18,15 @@ app.use(cors());
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
-// Dual mounting guarantees Vite proxy hits the route handler
+// Dual mounting: Vite proxy uses /api; Vercel serverless also mounts at /api
+// via rewrites. Bare `/` mount keeps local `curl localhost:5000/tutor` working.
 app.use('/api', routes);
 app.use('/', routes);
+
+/** JSON 404 for unmatched API paths — never return an HTML shell to fetch(). */
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: 'API route not found', path: _req.originalUrl || _req.url });
+});
 
 // Only listen locally. Vercel imports this app directly as a serverless handler.
 if (process.env.NODE_ENV !== 'production') {

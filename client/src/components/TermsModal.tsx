@@ -62,10 +62,24 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose }) => (
           </p>
         </section>
         <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">5. Limitation of liability</h4>
+          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">5. Privacy &amp; cookies</h4>
+          <p>
+            Processing of personal data is described in the Privacy Policy &amp; GDPR statement. Browser storage practices
+            are described in the Cookie Policy. Live-demo guests may browse the UI; cloud AI generation requires a signed-in account.
+          </p>
+        </section>
+        <section className="space-y-1.5">
+          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">6. Limitation of liability</h4>
           <p>
             To the fullest extent permitted by law, the authors are not liable for grades, exam outcomes, data loss,
             or third-party API outages. Always verify AI-generated study material independently.
+          </p>
+        </section>
+        <section className="space-y-1.5">
+          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">7. Changes</h4>
+          <p>
+            These terms may be updated with the product (see the in-app Updates changelog for Fios v2.2.0 and later).
+            Continued use after changes constitutes acceptance of the revised terms.
           </p>
         </section>
       </div>

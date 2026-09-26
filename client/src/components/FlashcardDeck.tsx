@@ -33,22 +33,27 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
   const [modules, setModules] = useState<DBModule[]>([]);
   const [saving, setSaving] = useState(false);
   const [hasSaved, setHasSaved] = useState(isSaved);
+  const [savedDeckId, setSavedDeckId] = useState<string | undefined>(deckId);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // If it's a saved deck, fetch live cards from Supabase on mount to ensure fresh SM-2 dates
   useEffect(() => {
     async function fetchLiveCards() {
-      const firstCardId = (initialCards[0] as any)?.id;
-      if (isSaved && firstCardId) {
-        // Find parent deck ID or fetch cards for this deck
+      const resolvedDeckId =
+        deckId ||
+        savedDeckId ||
+        (initialCards[0] as any)?.deck_id;
+
+      if (isSaved && resolvedDeckId) {
         const { data: cardData, error } = await supabase
           .from('cards')
           .select('*')
-          .eq('deck_id', (initialCards[0] as any).deck_id || firstCardId); // fallback or direct match
+          .eq('deck_id', resolvedDeckId);
 
         if (!error && cardData && cardData.length > 0) {
           const mapped = cardData.map((c: any) => ({
             id: c.id,
+            deck_id: c.deck_id,
             front: c.question,
             back: c.answer,
             ease_factor: c.ease_factor ?? 2.5,
@@ -57,16 +62,19 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             next_review: c.next_review || new Date().toISOString(),
           }));
           setCards(mapped);
+          setSavedDeckId(resolvedDeckId);
+          return;
         }
-      } else {
-        setCards(initialCards);
       }
+      setCards(initialCards);
     }
 
-    fetchLiveCards();
+    void fetchLiveCards();
     setCurrentIndex(0);
     setIsFlipped(false);
-  }, [initialCards, isSaved]);
+    // Intentionally omit savedDeckId to avoid re-fetch loops after save
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deckId / isSaved / initialCards drive reloads
+  }, [initialCards, isSaved, deckId]);
 
   useEffect(() => {
     async function fetchModules() {
@@ -232,6 +240,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
       if (insertedCards) {
         setCards(insertedCards.map((c: any) => ({
           id: c.id,
+          deck_id: c.deck_id || deck.id,
           front: c.question,
           back: c.answer,
           ease_factor: c.ease_factor,
@@ -241,10 +250,14 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
         })));
       }
 
+      // Keep the real Supabase deck id for subsequent SM-2 fetches / module open
+      setSavedDeckId(deck.id);
       setHasSaved(true);
-      setSaveStatus({ type: 'success', message: 'Deck saved to your module successfully!' });
+      setSaveStatus({ type: 'success', message: `Deck saved (${deck.id.slice(0, 8)}…)` });
+      toast('Deck saved', 'success');
     } catch (err: any) {
       setSaveStatus({ type: 'error', message: err.message || 'Error saving deck to database.' });
+      toast(err.message || 'Failed to save deck', 'error');
     } finally {
       setSaving(false);
     }

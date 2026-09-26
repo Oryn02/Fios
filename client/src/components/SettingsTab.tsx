@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Shield, Calendar, LogOut, Save, Trash2,
   Sliders, Timer, Check, MapPin, IdCard, Palette, Sun, Moon,
-  KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Copy, CheckCircle2, X, Smartphone,
+  KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, X, Smartphone,
   Monitor, BatteryLow, Type, Focus, GitBranch, Cookie, FileText, ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -16,6 +16,8 @@ import { AvatarPicker } from './Avatar';
 import { ACCENTS, type ThemeMode } from '../types/db';
 import { validateGeminiKey } from '../services/aiApi';
 import { TermsModal } from './TermsModal';
+import { CookiePolicyModal } from './CookiePolicyModal';
+import { SupportModal } from './SupportModal';
 import { AdminPanel, useIsAdmin } from './AdminPanel';
 import { resetCookieConsent } from './CookieConsent';
 import { toast } from '../lib/toast';
@@ -24,69 +26,6 @@ import { DEFAULT_MOBILE_NAV } from '../context/PreferencesContext';
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
 
-const SupportModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText('oryn02@gmail.com');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans text-slate-100">
-      <div className="absolute inset-0" onClick={onClose} />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0 }}
-        className="relative z-10 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 space-y-5 shadow-2xl"
-      >
-        <div className="flex items-center justify-between border-b fios-border pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border accent-solid-text">
-              <Mail className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-black uppercase text-[var(--fios-text)]">Contact Support</h3>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer p-1">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <p className="text-xs text-[var(--fios-text-muted)] leading-relaxed">
-          Need help, found a bug, or have questions about Fios? Reach out directly via email:
-        </p>
-
-        <div className="flex items-center justify-between bg-[var(--fios-surface-2)] border fios-border px-3 py-2.5 rounded-xl font-mono text-xs accent-solid-text">
-          <span>oryn02@gmail.com</span>
-          <button
-            onClick={handleCopy}
-            className="px-3 py-1.5 bg-[var(--fios-surface)] border fios-border text-[var(--fios-text)] rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer text-[11px]"
-          >
-            {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
-        </div>
-
-        <div className="pt-2 flex justify-end gap-2">
-          <a
-            href="mailto:oryn02@gmail.com"
-            className="px-4 py-2 accent-bg text-slate-950 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90 transition-opacity inline-flex items-center gap-1.5"
-          >
-            Open Mail App
-          </a>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl cursor-pointer hover:opacity-80 transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
 
 const PrivacyModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
   <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans text-slate-100">
@@ -159,6 +98,7 @@ const SettingsTabInner: React.FC = () => {
   // Modals state
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showCookies, setShowCookies] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [gistStatus, setGistStatus] = useState<string | null>(null);
@@ -784,6 +724,11 @@ const SettingsTabInner: React.FC = () => {
             <Focus className="w-3.5 h-3.5" /> Zen mode {zenMode ? 'On' : 'Off'}
           </button>
         </div>
+        <p className="text-[11px] text-[var(--fios-text-muted)] leading-relaxed">
+          Zen hides chrome only on study views (Tutor, Code Lab, Flashcards, Notes, Quiz, Timer).
+          Settings and Overview keep navigation. Exit anytime with <kbd className="font-mono accent-solid-text">Esc</kbd>,
+          the floating <strong className="text-[var(--fios-text)]">Exit Zen</strong> button, or this toggle.
+        </p>
 
         <div className="space-y-2">
           <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Mobile bottom nav slots (max 5)</span>
@@ -921,6 +866,12 @@ const SettingsTabInner: React.FC = () => {
             <FileText className="w-3.5 h-3.5" /> Terms of Service
           </button>
           <button
+            onClick={() => setShowCookies(true)}
+            className="px-4 py-2 rounded-lg bg-[#07090e] border border-slate-800 text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <Cookie className="w-3.5 h-3.5" /> Cookie Policy
+          </button>
+          <button
             onClick={() => { resetCookieConsent(); toast('Cookie consent reset — banner will reappear', 'info'); }}
             className="px-4 py-2 rounded-lg bg-[#07090e] border border-slate-800 text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
           >
@@ -1035,6 +986,7 @@ const SettingsTabInner: React.FC = () => {
 
       {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
       {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
+      {showCookies && <CookiePolicyModal onClose={() => setShowCookies(false)} />}
       {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
     </div>
   );

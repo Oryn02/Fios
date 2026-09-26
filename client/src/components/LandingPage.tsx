@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, Layers, HelpCircle, Code2, FileText, Target, Timer,
-  ShieldCheck, KeyRound, Play, Check, Shield, X, ChevronDown, Mail, Copy, CheckCircle2,
+  ShieldCheck, KeyRound, Play, Check, Shield, X, ChevronDown, Mail,
 } from 'lucide-react';
 import { FiosLogo } from './FiosLogo';
 import { enableDemoAndReload } from '../lib/demo';
+import { TermsModal } from './TermsModal';
+import { CookiePolicyModal } from './CookiePolicyModal';
+import { GdprModal } from './GdprModal';
+import { SupportModal } from './SupportModal';
 
 interface LandingPageProps {
   onOpenAuth: (mode: 'signin' | 'signup') => void;
@@ -37,20 +41,39 @@ const walkthrough = [
 
 const faqs = [
   {
-    q: 'Is Fios completely free to use?',
-    a: 'Yes! Fios is open for personal academic use. You can sign up, manage modules, run focus sessions, and use flashcards for free.',
+    category: 'Product',
+    q: 'What is Fios useful for as a student?',
+    a: 'Fios is your academic command center: turn lecture PDFs into SM-2 flashcards, MCQ quizzes, and Monaco code challenges; chat with a grounded AI Tutor; track focus with Pomodoro + soundscapes; plan revision with the Flight Plan; and forecast grades per module — all in one dashboard.',
   },
   {
-    q: 'How does the Bring Your Own Key (BYO-Key) system work?',
-    a: 'To unlock AI-powered features like note summarization, quiz generation, and code grading, you simply enter your own free Google Gemini API key in settings. It is stored securely on your account profile and used exclusively for your requests.',
+    category: 'Product',
+    q: 'Is Fios free to use?',
+    a: 'Yes for personal academic use. Sign up, manage modules, run focus sessions, and organize decks for free. AI generation uses your own Gemini key (BYO-Key) so you control quota and cost — Fios does not resell AI access.',
   },
   {
-    q: 'Are my uploaded lecture slides and notes secure?',
-    a: 'Absolutely. Your notes and documents are stored securely in your private database schema via Supabase. We adhere strictly to GDPR guidelines and never share or use your study data for public model training.',
+    category: 'Study features',
+    q: 'Which study tools are included in v2.2.0?',
+    a: 'SM-2 flashcards (with swipe Easy/Hard), MCQ Exam Mode, Code Lab with custom prompts, Smart Notes + full-screen AI Tutor (RAG over your notes), Active Recall “blurting”, Revision Flight Plan, grade predictor, ATU/iCal timetable overlay, PWA offline queue, and modular dashboard widgets.',
   },
   {
-    q: 'Can I access Fios across multiple devices?',
-    a: 'Yes. Because your account and study progress are synchronized via cloud infrastructure, your modules, flashcards, and study timers stay updated whether you are on your laptop or mobile device.',
+    category: 'Privacy',
+    q: 'How does Fios protect my lecture notes and data?',
+    a: 'Notes and decks live in your private Supabase rows under Row Level Security. We follow GDPR-aligned practices, do not sell data, and do not use your uploads for public model training. Essential browser storage keeps you signed in; see our Cookie Policy for essential vs analytics details.',
+  },
+  {
+    category: 'Privacy',
+    q: 'How does Bring Your Own Key (BYO-Key) work?',
+    a: 'Add a free Google Gemini API key in Settings. It is stored on your profile and sent only with your AI requests. Cloud AI is locked for live-demo guests — sign in (email or GitHub) to unlock generation.',
+  },
+  {
+    category: 'Account',
+    q: 'How do I set up an account?',
+    a: 'Click Sign up, register with email/password or Continue with GitHub, then open Settings to add your Gemini key. Optionally import an iCal/WebCal timetable and create modules for each subject. Prefer a tour first? Use Explore Live Demo — AI cloud features stay locked until you sign in.',
+  },
+  {
+    category: 'Account',
+    q: 'Can I use Fios on multiple devices?',
+    a: 'Yes. Authenticated progress syncs via Supabase (modules, decks, quizzes, notes, focus logs). Install the PWA for a standalone app shell; offline actions queue in IndexedDB and sync when you reconnect.',
   },
 ];
 
@@ -126,73 +149,13 @@ const PrivacyModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
   </div>
 );
 
-const SupportModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText('oryn02@gmail.com');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans text-slate-100">
-      <div className="absolute inset-0" onClick={onClose} />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0 }}
-        className="relative z-10 w-full max-w-md rounded-2xl border border-slate-800 bg-[#0e131f] p-6 space-y-5 shadow-2xl"
-      >
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-[#07090e] border border-slate-800 text-emerald-400">
-              <Mail className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-black uppercase text-white">Contact Support</h3>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer p-1">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <p className="text-xs text-slate-300 leading-relaxed">
-          Need help, found a bug, or have questions about Fios? Reach out directly via email:
-        </p>
-
-        <div className="flex items-center justify-between bg-[#07090e] border border-slate-800 px-3 py-2.5 rounded-xl font-mono text-xs text-emerald-400">
-          <span>oryn02@gmail.com</span>
-          <button
-            onClick={handleCopy}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer text-[11px]"
-          >
-            {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
-        </div>
-
-        <div className="pt-2 flex justify-end gap-2">
-          <a
-            href="mailto:oryn02@gmail.com"
-            className="px-4 py-2 bg-emerald-400 text-slate-950 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90 transition-opacity inline-flex items-center gap-1.5"
-          >
-            Open Mail App
-          </a>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-slate-800 text-slate-300 font-bold uppercase text-xs rounded-xl cursor-pointer hover:bg-slate-700 transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
   const [tab, setTab] = useState('flashcards');
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showCookies, setShowCookies] = useState(false);
+  const [showGdpr, setShowGdpr] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const activeWalk = walkthrough.find((w) => w.id === tab) || walkthrough[0];
@@ -202,10 +165,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       <div className="fixed top-[-15%] left-[5%] w-[40rem] h-[40rem] bg-emerald-500/15 rounded-full blur-[160px] pointer-events-none" />
       <div className="fixed bottom-[-15%] right-[0%] w-[34rem] h-[34rem] bg-teal-500/10 rounded-full blur-[160px] pointer-events-none" />
 
-      {/* Nav */}
+      {/* Nav — public; legal links require no auth */}
       <header className="w-full border-b border-white/10 bg-black/60 backdrop-blur-md sticky top-0 z-50">
-        <div className="px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">
+        <div className="px-6 py-4 flex items-center justify-between max-w-7xl mx-auto gap-4">
           <FiosLogo size="md" fixedEmerald />
+          <nav className="hidden lg:flex items-center gap-4 text-xs font-medium text-slate-400" aria-label="Legal">
+            <button type="button" onClick={() => setShowTerms(true)} className="hover:text-emerald-400 cursor-pointer">Terms</button>
+            <button type="button" onClick={() => setShowPrivacy(true)} className="hover:text-emerald-400 cursor-pointer">Privacy</button>
+            <button type="button" onClick={() => setShowGdpr(true)} className="hover:text-emerald-400 cursor-pointer">GDPR</button>
+            <button type="button" onClick={() => setShowCookies(true)} className="hover:text-emerald-400 cursor-pointer">Cookies</button>
+          </nav>
           <div className="flex items-center gap-3">
             <button onClick={() => onOpenAuth('signin')} className="text-sm font-medium text-slate-300 hover:text-white transition-colors px-3 py-2 cursor-pointer">Sign in</button>
             <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={() => onOpenAuth('signup')}
@@ -352,28 +321,51 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-14 max-w-3xl mx-auto space-y-6">
+        <section className="py-14 max-w-3xl mx-auto space-y-6" id="faq">
           <div className="text-center space-y-2">
             <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Questions & Answers</span>
             <h2 className="text-3xl font-bold text-white">Frequently Asked Questions</h2>
+            <p className="text-sm text-slate-400 max-w-lg mx-auto">
+              Product utility, privacy, study tools, and account setup — expand any card for a clear answer.
+            </p>
           </div>
           <div className="space-y-3">
             {faqs.map((faq, idx) => {
               const isOpen = openFaq === idx;
               return (
-                <div key={idx} className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                <div
+                  key={idx}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden transition-shadow hover:shadow-[0_0_0_1px_rgba(52,211,153,0.25)]"
+                >
                   <button
+                    type="button"
                     onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full p-4 text-left flex items-center justify-between gap-4 font-bold text-sm text-white hover:text-emerald-400 transition-colors cursor-pointer"
+                    aria-expanded={isOpen}
+                    className="w-full p-4 text-left flex items-start justify-between gap-4 font-bold text-sm text-white hover:text-emerald-400 transition-colors cursor-pointer"
                   >
-                    <span>{faq.q}</span>
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-emerald-400' : ''}`} />
+                    <span className="space-y-1.5 min-w-0">
+                      <span className="block text-[10px] font-mono font-black uppercase tracking-widest text-emerald-400/90">
+                        {faq.category}
+                      </span>
+                      <span className="block leading-snug">{faq.q}</span>
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 mt-1 transition-transform ${isOpen ? 'rotate-180 text-emerald-400' : ''}`} />
                   </button>
-                  {isOpen && (
-                    <div className="px-4 pb-4 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-white/5 pt-3">
-                      {faq.a}
-                    </div>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-4 pb-4 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-white/5 pt-3">
+                          {faq.a}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })}
@@ -391,19 +383,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
         </section>
       </main>
 
-      {/* Footer */}
+      {/* Footer — legal links are public (no auth) */}
       <footer className="w-full border-t border-white/10 py-8 relative z-10">
-        <div className="max-w-6xl mx-auto px-6 space-y-5">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <FiosLogo size="sm" fixedEmerald />
-            <div className="flex items-center gap-5 text-xs text-slate-400 flex-wrap justify-center">
-              <button onClick={() => onOpenAuth('signin')} className="hover:text-white cursor-pointer">Sign in</button>
-              <button onClick={() => onOpenAuth('signup')} className="hover:text-white cursor-pointer">Sign up</button>
-              <button onClick={enableDemoAndReload} className="hover:text-white cursor-pointer">Live demo</button>
-              <button onClick={() => setShowPrivacy(true)} className="hover:text-emerald-400 cursor-pointer underline">Privacy Policy</button>
-              <button onClick={() => setShowSupport(true)} className="hover:text-emerald-400 transition-colors inline-flex items-center gap-1 cursor-pointer">
-                <Mail className="w-3.5 h-3.5" /> Support
-              </button>
+        <div className="max-w-6xl mx-auto px-6 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
+            <div className="space-y-3">
+              <FiosLogo size="sm" fixedEmerald />
+              <p className="text-[11px] text-slate-500 max-w-xs leading-relaxed">
+                Academic command center · v2.2.0. Legal documents below open without signing in.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 text-xs">
+              <div className="space-y-2">
+                <p className="text-[10px] font-mono font-black uppercase tracking-widest text-emerald-400">Account</p>
+                <button type="button" onClick={() => onOpenAuth('signin')} className="block text-slate-400 hover:text-white cursor-pointer text-left">Sign in</button>
+                <button type="button" onClick={() => onOpenAuth('signup')} className="block text-slate-400 hover:text-white cursor-pointer text-left">Sign up</button>
+                <button type="button" onClick={enableDemoAndReload} className="block text-slate-400 hover:text-white cursor-pointer text-left">Live demo</button>
+                <a href="#faq" className="block text-slate-400 hover:text-emerald-400">FAQ</a>
+              </div>
+              <div className="space-y-2" aria-label="Legal documents">
+                <p className="text-[10px] font-mono font-black uppercase tracking-widest text-emerald-400">Legal</p>
+                <button type="button" onClick={() => setShowTerms(true)} className="block text-slate-400 hover:text-emerald-400 cursor-pointer underline text-left">Terms of Service</button>
+                <button type="button" onClick={() => setShowPrivacy(true)} className="block text-slate-400 hover:text-emerald-400 cursor-pointer underline text-left">Privacy Policy</button>
+                <button type="button" onClick={() => setShowGdpr(true)} className="block text-slate-400 hover:text-emerald-400 cursor-pointer underline text-left">GDPR Compliance</button>
+                <button type="button" onClick={() => setShowCookies(true)} className="block text-slate-400 hover:text-emerald-400 cursor-pointer underline text-left">Cookie Policy</button>
+              </div>
+              <div className="space-y-2">
+                <p className="text-[10px] font-mono font-black uppercase tracking-widest text-emerald-400">Help</p>
+                <button type="button" onClick={() => setShowSupport(true)} className="text-slate-400 hover:text-emerald-400 transition-colors inline-flex items-center gap-1 cursor-pointer">
+                  <Mail className="w-3.5 h-3.5" /> Support
+                </button>
+              </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -416,6 +426,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       </footer>
 
       {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
+      {showCookies && <CookiePolicyModal onClose={() => setShowCookies(false)} />}
+      {showGdpr && <GdprModal onClose={() => setShowGdpr(false)} />}
       {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
     </div>
   );

@@ -6,7 +6,7 @@ import {
 import { FileUpload } from './FileUpload';
 import { summarizeText, askTutor } from '../services/aiApi';
 import { indexDocumentChunks } from '../lib/ragClient';
-import { getDocuments, saveDocument, deleteDocument } from '../lib/documentService';
+import { getDocuments, getDocumentById, saveDocument, deleteDocument } from '../lib/documentService';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { FiosDocument } from '../types/db';
 import { GeminiGate } from './GeminiGate';
@@ -65,11 +65,18 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
 
   useEffect(() => {
     getUserModules().then(setModules).catch(() => setModules([]));
-    load().then((docsList) => {
+    load().then(async (docsList) => {
       let targetDoc: FiosDocument | null = null;
 
-      if (initialDocId && docsList && docsList.length > 0) {
-        targetDoc = docsList.find((doc) => doc.id === initialDocId) || null;
+      if (initialDocId) {
+        targetDoc = (docsList || []).find((doc) => doc.id === initialDocId) || null;
+        if (!targetDoc) {
+          try {
+            targetDoc = await getDocumentById(initialDocId);
+          } catch {
+            setError('Document not found — it may have been deleted.');
+          }
+        }
       } else if (autoOpenTutor && docsList && docsList.length > 0) {
         targetDoc = docsList[0];
       }
@@ -90,7 +97,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         setActive(fallbackDoc);
         openTutor(fallbackDoc);
       }
-    });
+    }).catch((err: any) => setError(err?.message || 'Failed to load documents'));
   }, [load, initialDocId, autoOpenTutor, openTutor]);
 
   useEffect(() => {

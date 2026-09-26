@@ -17,9 +17,23 @@ export async function getDocuments(): Promise<FiosDocument[]> {
 
   if (error) {
     console.error('Error loading documents:', error);
-    return [];
+    throw new Error(error.message || 'Failed to load documents');
   }
   return (data as FiosDocument[]) || [];
+}
+
+/** Fetch one document by id — throws a clear error when missing (not a silent empty). */
+export async function getDocumentById(id: string): Promise<FiosDocument> {
+  if (!id?.trim()) throw new Error('Document id is required');
+  if (IS_DEMO) {
+    const found = demoDocState.find((d) => d.id === id);
+    if (!found) throw new Error('Document not found');
+    return found;
+  }
+  const { data, error } = await supabase.from('documents').select('*').eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message || 'Failed to load document');
+  if (!data) throw new Error('Document not found');
+  return data as FiosDocument;
 }
 
 export async function saveDocument(doc: Partial<FiosDocument>): Promise<FiosDocument> {

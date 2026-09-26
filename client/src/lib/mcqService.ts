@@ -17,9 +17,22 @@ export async function getQuizzes(): Promise<MCQQuiz[]> {
 
   if (error) {
     console.error('Error loading quizzes:', error);
-    return [];
+    throw new Error(error.message || 'Failed to load quizzes');
   }
   return (data as MCQQuiz[]) || [];
+}
+
+export async function getQuizById(id: string): Promise<MCQQuiz> {
+  if (!id?.trim()) throw new Error('Quiz id is required');
+  if (IS_DEMO) {
+    const found = demoQuizState.find((q) => q.id === id);
+    if (!found) throw new Error('Quiz not found');
+    return found;
+  }
+  const { data, error } = await supabase.from('mcq_quizzes').select('*').eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message || 'Failed to load quiz');
+  if (!data) throw new Error('Quiz not found');
+  return data as MCQQuiz;
 }
 
 export async function saveQuiz(

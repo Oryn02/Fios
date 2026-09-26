@@ -526,4 +526,51 @@ const handleRagQuery = async (req: Request, res: Response) => {
 
 router.post('/rag/query', handleRagQuery);
 
+/* ==========================================================================
+   12. SUPPORT MESSAGE → email provider (Resend / SendGrid)
+   ========================================================================== */
+
+/**
+ * POST /support
+ * Body: `{ message, name?, replyTo? }`
+ * Delivers to SUPPORT_EMAIL when RESEND_API_KEY or SENDGRID_API_KEY is set.
+ */
+router.post('/support', async (req: Request, res: Response) => {
+  try {
+    const { message, name, replyTo } = req.body || {};
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ error: 'message is required' });
+    }
+    if (message.trim().length < 10) {
+      return res.status(400).json({ error: 'message is too short' });
+    }
+    if (message.length > 4000) {
+      return res.status(400).json({ error: 'message is too long (max 4000 characters)' });
+    }
+    if (replyTo && typeof replyTo === 'string' && replyTo.trim()) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyTo.trim())) {
+        return res.status(400).json({ error: 'replyTo email is invalid' });
+      }
+    }
+
+    const { sendSupportEmail } = await import('./supportEmail.js');
+    const result = await sendSupportEmail({
+      message: String(message),
+      name: typeof name === 'string' ? name : undefined,
+      replyTo: typeof replyTo === 'string' ? replyTo : undefined,
+    });
+
+    if (result.unconfigured) {
+      return res.status(503).json({ error: result.error, unconfigured: true });
+    }
+    if (!result.ok) {
+      return res.status(502).json({ error: result.error || 'Failed to deliver support message' });
+    }
+    return res.status(200).json({ ok: true, provider: result.provider, id: result.id });
+  } catch (error: any) {
+    console.error('Support message error:', error);
+    return res.status(500).json({ error: error?.message || 'Failed to send support message' });
+  }
+});
+
 export default router;
