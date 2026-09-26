@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { FileUpload } from './FileUpload';
 import { summarizeText, askTutor } from '../services/aiApi';
+import { indexDocumentChunks } from '../lib/ragClient';
 import { getDocuments, saveDocument, deleteDocument } from '../lib/documentService';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { FiosDocument } from '../types/db';
@@ -146,6 +147,10 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         summary: result.summary,
         glossary: result.glossary || [],
         module_code: moduleCode || null,
+      });
+      // Index ~500-word passages into Supabase note_chunks for AI Tutor RAG
+      void indexDocumentChunks(saved.id, text).then((r) => {
+        if (r.indexed > 0) toast(`Indexed ${r.indexed} note chunk(s) for RAG`, 'info');
       });
       setDocs((prev) => [saved, ...prev]);
       setActive(saved);

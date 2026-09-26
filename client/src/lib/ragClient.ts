@@ -1,4 +1,7 @@
 import { getGeminiKey } from './geminiKey';
+import { chunkText } from './chunkText';
+import { supabase } from './supabase';
+import { IS_DEMO } from './demo';
 
 export interface RagQueryResult {
   passages: string[];
@@ -7,28 +10,97 @@ export interface RagQueryResult {
 }
 
 /**
+ * Index a document's content into Supabase `note_chunks` (~500-word passages).
+ * Replaces prior chunks for the same document_id. Soft-fails if table/RLS missing.
+ */
+export async function indexDocumentChunks(
+  documentId: string,
+  content: string
+): Promise<{ indexed: number }> {
+  if (IS_DEMO || !content?.trim()) return { indexed: 0 };
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { indexed: 0 };
+
+  const pieces = chunkText(content, 500, 50);
+  if (pieces.length === 0) return { indexed: 0 };
+
+  // Clear previous index for this document, then insert fresh rows
+  await supabase.from('note_chunks').delete().eq('document_id', documentId).eq('user_id', user.id);
+
+  const rows = pieces.map((contentText, chunk_index) => ({
+    user_id: user.id,
+    document_id: documentId,
+    chunk_index,
+    content: contentText,
+  }));
+
+  const { error } = await supabase.from('note_chunks').insert(rows);
+  if (error) {
+    console.warn('[rag] note_chunks index failed:', error.message);
+    return { indexed: 0 };
+  }
+  return { indexed: rows.length };
+}
+
+/**
+ * Load the signed-in user's indexed note passages from Supabase.
+ */
+export async function loadUserNoteChunks(limit = 200): Promise<string[]> {
+  if (IS_DEMO) return [];
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('note_chunks')
+    .select('content')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.warn('[rag] note_chunks load failed:', error.message);
+    return [];
+  }
+  return (data || []).map((r: { content?: string }) => r.content || '').filter(Boolean);
+}
+
+/**
  * Call the study-engine RAG endpoint.
- * Soft-fails are the caller's responsibility — this throws on hard HTTP errors.
+ * When `chunks` / `text` are omitted, loads passages from Supabase `note_chunks`.
  */
 export async function queryRag(params: {
   query: string;
   chunks?: string[];
+  text?: string;
   k?: number;
 }): Promise<RagQueryResult> {
+  let chunks = params.chunks;
+  let text = params.text;
+
+  if ((!chunks || chunks.length === 0) && !text?.trim()) {
+    chunks = await loadUserNoteChunks();
+  }
+
+  if ((!chunks || chunks.length === 0) && !text?.trim()) {
+    return { passages: [] };
+  }
+
   const response = await fetch('/api/rag/query', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       query: params.query,
-      chunks: params.chunks,
-      k: params.k ?? 5,
+      chunks: chunks && chunks.length ? chunks : undefined,
+      text: text?.trim() || undefined,
+      topK: params.k ?? 5,
       apiKey: getGeminiKey(),
     }),
   });
-  const text = await response.text();
+  const bodyText = await response.text();
   let data: any = {};
   try {
-    data = text ? JSON.parse(text) : {};
+    data = bodyText ? JSON.parse(bodyText) : {};
   } catch {
     throw new Error(`RAG returned non-JSON (Status ${response.status}).`);
   }

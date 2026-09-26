@@ -425,14 +425,21 @@ const SettingsTabInner: React.FC = () => {
     }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
-      options: { redirectTo: window.location.origin },
+      options: {
+        redirectTo: window.location.origin,
+        scopes: 'gist',
+      },
     });
     if (error) toast(error.message, 'error');
   };
 
   const handleGistExport = async () => {
     const sample = `// Fios Code Lab export — ${new Date().toISOString()}\n// Paste your solution below.\n`;
-    const token = localStorage.getItem('fios_github_token') || (import.meta.env.VITE_GITHUB_TOKEN as string | undefined);
+    const token = (
+      localStorage.getItem('fios_github_token') ||
+      (import.meta.env.VITE_GITHUB_TOKEN as string | undefined) ||
+      ''
+    ).trim();
     if (!token) {
       await navigator.clipboard.writeText(sample);
       setGistStatus('No GitHub token. Sample copied — create a gist at https://gist.github.com and paste.');

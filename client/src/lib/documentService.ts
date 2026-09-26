@@ -63,6 +63,8 @@ export async function deleteDocument(id: string): Promise<void> {
     demoDocState = demoDocState.filter((d) => d.id !== id);
     return;
   }
+  // note_chunks cascade on document_id when FK is present; also clear explicitly
+  await supabase.from('note_chunks').delete().eq('document_id', id);
   const { error } = await supabase.from('documents').delete().eq('id', id);
   if (error) throw error;
 }
