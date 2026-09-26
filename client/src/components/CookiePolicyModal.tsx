@@ -7,7 +7,7 @@ interface CookiePolicyModalProps {
 }
 
 /**
- * Cookie Policy — essential vs analytics transparency for Fios v2.2.0.
+ * Cookie Policy — essential vs analytics transparency for Fios v2.2.1.
  */
 export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({ onClose }) => (
   <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
@@ -29,7 +29,7 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({ onClose })
             <h3 id="cookie-policy-title" className="text-base font-black uppercase text-[var(--fios-text)]">
               Cookie Policy
             </h3>
-            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center · v2.2.0</p>
+            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center · v2.2.1</p>
           </div>
         </div>
         <button type="button" onClick={onClose} className="text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer p-1" aria-label="Close">
@@ -62,7 +62,7 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({ onClose })
         <section className="space-y-1.5">
           <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">3. Analytics cookies</h4>
           <p>
-            Fios v2.2.0 does <strong className="text-[var(--fios-text)]">not</strong> set third-party analytics or advertising cookies
+            Fios v2.2.1 does <strong className="text-[var(--fios-text)]">not</strong> set third-party analytics or advertising cookies
             by default. If product analytics are added later, they will be optional, disclosed here, and controllable from Settings.
           </p>
         </section>

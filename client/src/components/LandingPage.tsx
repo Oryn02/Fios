@@ -52,7 +52,7 @@ const faqs = [
   },
   {
     category: 'Study features',
-    q: 'Which study tools are included in v2.2.0?',
+    q: 'Which study tools are included in v2.2.1?',
     a: 'SM-2 flashcards (with swipe Easy/Hard), MCQ Exam Mode, Code Lab with custom prompts, Smart Notes + full-screen AI Tutor (RAG over your notes), Active Recall “blurting”, Revision Flight Plan, grade predictor, ATU/iCal timetable overlay, PWA offline queue, and modular dashboard widgets.',
   },
   {
@@ -390,7 +390,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
             <div className="space-y-3">
               <FiosLogo size="sm" fixedEmerald />
               <p className="text-[11px] text-slate-500 max-w-xs leading-relaxed">
-                Academic command center · v2.2.0. Legal documents below open without signing in.
+                Academic command center · v2.2.1. Legal documents below open without signing in.
               </p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 text-xs">
@@ -421,7 +421,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <span key={b} className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono text-slate-400">{b}</span>
             ))}
           </div>
-          <p className="text-[11px] text-slate-600">Fios v2.2.0 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
+          <p className="text-[11px] text-slate-600">Fios v2.2.1 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
         </div>
       </footer>
 

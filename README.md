@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v2.2.0**
+**Current version: v2.2.1**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -70,7 +70,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 
 ```
 ai-study-app/
-├── client/                 # React + Vite frontend (v2.2.0)
+├── client/                 # React + Vite frontend (v2.2.1)
 │   ├── src/
 │   │   ├── components/      # UI (dashboard, landing, code lab, AI tutor, …)
 │   │   ├── context/         # Profile, Theme, Preferences, Pomodoro
@@ -80,7 +80,7 @@ ai-study-app/
 │   └── public/favicon.svg
 ├── server/                 # Express + Gemini study engine
 │   └── src/                # routes.ts, geminiService.ts, schemas.ts
-├── supabase/schema.sql     # Idempotent schema + RLS + v2.2.0 tables
+├── supabase/schema.sql     # Idempotent schema + RLS + v2.2.1 tables
 └── CONTRIBUTING.md         # Dev setup & migration notes
 ```
 

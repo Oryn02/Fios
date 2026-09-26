@@ -22,7 +22,7 @@
 }
 
 [data-theme="light"] {
-  /* High-contrast cool slate light palette (v2.2.0) */
+  /* High-contrast cool slate light palette (v2.2.1) */
   --fios-bg: #f8fafc;          /* Page canvas — slate-50 */
   --fios-surface: #ffffff;     /* Primary cards / panels */
   --fios-surface-2: #f1f5f9;   /* Elevated / nested surfaces */
@@ -41,6 +41,18 @@
 }
 
 /* Semantic helpers used by theme-aware surfaces */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 .fios-app-bg { background-color: var(--fios-bg); color: var(--fios-text); }
 .fios-surface { background-color: var(--fios-surface); }
 .fios-surface-2 { background-color: var(--fios-surface-2); }

@@ -24,7 +24,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose }) => (
           </div>
           <div>
             <h3 id="tos-title" className="text-base font-black uppercase text-[var(--fios-text)]">Terms of Service</h3>
-            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center · v2.2.0</p>
+            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center · v2.2.1</p>
           </div>
         </div>
         <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer p-1" aria-label="Close">
@@ -78,7 +78,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose }) => (
         <section className="space-y-1.5">
           <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">7. Changes</h4>
           <p>
-            These terms may be updated with the product (see the in-app Updates changelog for Fios v2.2.0 and later).
+            These terms may be updated with the product (see the in-app Updates changelog for Fios v2.2.1 and later).
             Continued use after changes constitutes acceptance of the revised terms.
           </p>
         </section>

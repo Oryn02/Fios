@@ -276,47 +276,71 @@ router.post('/validate-key', async (req: Request, res: Response) => {
    ========================================================================== */
 
 /**
- * GET /ical-proxy?url=...
- * Proxies an iCal/WebCAL feed with browser-spoof headers for ATU timetables.
+ * GET|POST /ical-proxy
+ * Proxies iCal/WebCal feeds (ATU StudentSet etc.) server-side to avoid browser CORS.
+ * Query `?url=` or JSON/body `{ url }`.
  */
 const handleICalProxy = async (req: Request, res: Response) => {
   try {
-    const { url } = req.query;
+    const { validateIcalUrl } = await import('./icalProxy.js');
+    const rawUrl =
+      (typeof req.query.url === 'string' && req.query.url) ||
+      (typeof req.body?.url === 'string' && req.body.url) ||
+      '';
 
-    if (!url || typeof url !== 'string') {
-      return res.status(400).json({ error: 'Missing or invalid "url" query parameter.' });
+    const checked = validateIcalUrl(rawUrl);
+    if (!checked.ok || !checked.url) {
+      return res.status(400).json({ error: checked.error || 'Invalid timetable URL.' });
     }
 
-    // Convert webcal protocol to standard https
-    const targetUrl = url.replace(/^webcal:\/\//i, 'https://');
-
-    // Add browser spoof headers so ATU timetable server accepts request
-    const response = await fetch(targetUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/calendar, text/plain, */*',
-      },
-    });
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: `ATU server responded with status code ${response.status}`,
+    const targetUrl = checked.url;
+    let upstream: globalThis.Response;
+    try {
+      upstream = await globalThis.fetch(targetUrl, {
+        redirect: 'follow',
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'text/calendar, text/plain, application/ics, */*',
+          'Accept-Language': 'en-IE,en;q=0.9',
+        },
+      });
+    } catch (netErr: any) {
+      console.error('iCal upstream network error:', netErr?.message || netErr);
+      return res.status(502).json({
+        error: `Could not reach timetable host (${new URL(targetUrl).hostname}). Check the URL or try again later.`,
       });
     }
 
-    const icsData = await response.text();
+    if (!upstream.ok) {
+      return res.status(upstream.status === 404 ? 404 : 502).json({
+        error:
+          upstream.status === 404
+            ? 'Timetable feed not found (404). Confirm your studentSetID is still valid on timetables.atu.ie.'
+            : `Timetable host responded with HTTP ${upstream.status}.`,
+      });
+    }
 
-    // Set as text/plain so the frontend fetch() reads it as a string instead of triggering browser download
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    const icsData = await upstream.text();
+    if (!icsData || !/BEGIN:VCALENDAR/i.test(icsData)) {
+      return res.status(502).json({
+        error: 'Upstream response was not a valid iCalendar (missing BEGIN:VCALENDAR).',
+      });
+    }
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Cache-Control', 'private, max-age=120');
     return res.status(200).send(icsData);
   } catch (error: any) {
     console.error('iCal Proxy Error:', error);
-    return res.status(500).json({ error: 'Internal server error while proxying iCal feed.' });
+    return res.status(500).json({
+      error: error?.message || 'Internal server error while proxying iCal feed.',
+    });
   }
 };
 
 router.get('/ical-proxy', handleICalProxy);
-router.get('/api/ical-proxy', handleICalProxy);
+router.post('/ical-proxy', handleICalProxy);
 
 /* ==========================================================================
    9. PDF UPLOAD (multipart) — fixes prior 405 on POST /upload/pdf

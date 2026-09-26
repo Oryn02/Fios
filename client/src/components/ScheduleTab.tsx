@@ -6,7 +6,7 @@ import {
 import {
   saveCalendarUrl, getSavedCalendarUrl, fetchAndParseCalendar,
   parseIcsText, CalendarEvent, eventsOnLocalDay, findNextClass,
-  isClassFinished, isClassOngoing,
+  isClassFinished, isClassOngoing, validateClientIcalUrl,
 } from '../lib/calendarService';
 import {
   ATU_ACADEMIC_EVENTS, ATU_CATEGORY_STYLES, atuEventsOnDay, localDateKey,

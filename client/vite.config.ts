@@ -34,11 +34,12 @@ export default defineConfig({
         navigateFallback: '/index.html',
         runtimeCaching: [
           {
+            // Never cache API — NetworkFirst previously stored HTML 404s for /api/*
+            // and broke iCal sync / summarize with stale non-JSON responses.
             urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-            handler: 'NetworkFirst',
+            handler: 'NetworkOnly',
             options: {
               cacheName: 'fios-api',
-              networkTimeoutSeconds: 8,
             },
           },
           {

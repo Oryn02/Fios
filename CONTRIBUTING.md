@@ -1,6 +1,6 @@
 # Contributing to Fios
 
-Thanks for helping improve Fios. This guide covers local setup, schema migrations, and architecture notes for v2.2.0+.
+Thanks for helping improve Fios. This guide covers local setup, schema migrations, and architecture notes for v2.2.1+.
 
 ## Prerequisites
 
@@ -36,7 +36,7 @@ The Vite dev server proxies `/api` → `http://localhost:5000`.
 
 1. Open the Supabase SQL editor.
 2. Run [`supabase/schema.sql`](supabase/schema.sql) in full — it is **idempotent**.
-3. v2.2.0 additions (also in that file):
+3. v2.2.1 additions (also in that file):
    - `user_profiles.prefs` (jsonb)
    - `modules.parent_code`, `modules.tags`
    - `document_revisions`, `tutor_messages`, `note_chunks` (+ RLS)
@@ -78,7 +78,7 @@ server/src/
 supabase/schema.sql   Idempotent Postgres + RLS
 ```
 
-### Key v2.2.0 client patterns
+### Key v2.2.1 client patterns
 
 - **PreferencesContext** — lowPower, zenMode, openDyslexic, widget order, mobile nav slots (localStorage + optional `prefs` jsonb).
 - **ThemeContext** — `dark | light | system` with `resolvedTheme` via `prefers-color-scheme`.

@@ -50,7 +50,7 @@ export const CookieConsent: React.FC = () => {
                 <p className="text-[11px] text-[var(--fios-text-muted)] leading-relaxed">
                   Fios uses <strong className="text-[var(--fios-text)]">essential</strong> browser storage for sign-in,
                   preferences, and offline sync. We do <strong className="text-[var(--fios-text)]">not</strong> run
-                  third-party analytics or ad cookies in v2.2.0.
+                  third-party analytics or ad cookies in v2.2.1.
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <button

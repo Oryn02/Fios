@@ -35,7 +35,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v2.2', icon: Sparkles },
+  { id: 'updates', label: 'Updates v2.2.1', icon: Sparkles },
 ];
 
 /** Tabs where Zen/Deep Focus may hide chrome. Global frames (Settings, Overview, …) keep nav. */
@@ -202,7 +202,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               {drawerOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             <FiosLogo size="md" />
-            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.0</span>
+            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.1</span>
             {zenMode && (
               <span className="hidden sm:inline text-[10px] font-mono font-bold uppercase tracking-wider accent-solid-text bg-[var(--fios-surface-2)] px-2 py-1 rounded-md border accent-border">
                 Zen armed

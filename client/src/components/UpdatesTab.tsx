@@ -4,20 +4,37 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v2.2.1',
+      date: 'September 2026',
+      title: 'Legal UX, Resilience, Schedule & Nav Polish',
+      highlights: [
+        'Light mode contrast revamp: slate canvas (#f8fafc), white surfaces, elevated #f1f5f9, #0f172a / #334155 text, #cbd5e1 borders, soft multi-layer shadows.',
+        'Legal & compliance: dedicated Terms of Service, Cookie Policy + consent banner, GDPR Compliance modal, and public landing header/footer links (Terms / Privacy / GDPR / Cookies) with no auth required.',
+        'Landing FAQ upgrade: categorized expandable FAQ (Product, Study features, Privacy, Account) with jump links from the footer.',
+        'Guest AI auth guard: cloud AI surfaces (Tutor, Code Lab, PDF/multimodal, quizzes) blocked for live-demo guests with a themed GitHub sign-in modal; admin UID bypass.',
+        'PWA / Vercel build: vendor chunk split (Mermaid lazy), Workbox size limit + diagrams precache ignore — unblocks production deploy.',
+        'Cards / exams / docs + AI Tutor 404s: restored Vercel Express bridge (api/index.ts + rewrites), postApiJson client, and real resource IDs after create.',
+        'Zen Mode escape hatch: chrome hides only on study tabs; Esc, floating Exit Zen, and header control so Settings is never a trap.',
+        'Support messaging: in-app form posts to /api/support (Resend/SendGrid); inbox from VITE_SUPPORT_EMAIL / SUPPORT_EMAIL; graceful 503 if unconfigured.',
+        'Code Lab readability: higher-contrast field labels, balanced editor/reference columns, clearer Submit / Save / Solution actions, multi-line seeded code formatting.',
+        'Schedule & ATU: prominent Next Class card, Completed styling for finished/past sessions, monthly grid with expanded iCal RRULEs + ATU academic key dates overlay.',
+        'iCal sync fix: browser never fetches timetables.atu.ie directly (CORS). Sync goes through Express POST/GET /api/ical-proxy with ATU StudentSet validation and clearer proxy/network errors.',
+        'Desktop navbar drag-reorder: grip handle DnD + Alt+↑/↓, order persisted in prefs/localStorage; mobile drawer follows order without breaking bottom nav.',
+        'Smart Notes / study API hardening: postApiJson + Vercel Express bridge; Workbox uses NetworkOnly for /api so HTML 404s are never cached.',
+      ],
+    },
+    {
       version: 'v2.2.0',
       date: 'September 2026',
       title: 'Study Engine, PWA, Auth Guard & Polish',
       highlights: [
-        'Audit & cleanup: removed Vercel/bridge orphans and unused modals; Error Boundaries around widgets, Flashcards, Code Lab.',
-        'PDF upload fixed via POST /api/upload/pdf + Vite /api → localhost:5000 proxy; restored Vercel api bridge for production tutor/generate routes.',
-        'Branding: geometric </> logo, v2.2.0 badges, high-contrast light palette (#f8fafc / #fff / #f1f5f9) with soft slate-tinted shadows.',
-        'Smart Notes & Code Lab: full-screen AI Tutor + chat history, custom Code Lab prompts, notes revision undo, Markdown + LaTeX + Mermaid.',
-        'Nav & a11y: slide-out drawer, hot-swappable bottom nav, Ctrl/Cmd+K palette, Zen on study views only (Esc / Exit Zen escape), OpenDyslexic, ARIA landmarks.',
-        'Themes & perf: Dark / Light / System, Low-Power mode, modular Overview widgets, module tag folders.',
+        'Audit & cleanup: removed unused orphans; Error Boundaries around widgets, Flashcards, Code Lab.',
+        'PDF upload via POST /api/upload/pdf + Vite /api proxy; study engine (vision/audio, chunking, RAG).',
+        'Branding: geometric </> logo, v2.2 badges; Smart Notes full-screen Tutor, custom Code Lab prompts, Markdown + LaTeX + Mermaid.',
+        'Nav & a11y: drawer, hot-swappable bottom nav, Ctrl/Cmd+K palette, OpenDyslexic, ARIA landmarks.',
+        'Themes & perf: Dark / Light / System, Low-Power mode, modular Overview widgets.',
         'PWA & offline: VitePWA + Workbox, IndexedDB mutation queue, iCal agenda overlay.',
-        'Study engine: Gemini vision/audio → notes, ~500-word PDF chunking, RAG against note_chunks.',
-        'Security & legal: AI auth guard for live demo, GitHub OAuth + gist helpers, admin UID gate, Privacy / Terms / Cookie Policy + consent banner.',
-        'Improved light-mode contrast and expanded landing FAQ (product, privacy, study tools, account setup).',
+        'Security base: GitHub OAuth + gist helpers, admin UID gate, Privacy foundations.',
       ],
     },
     {
@@ -43,33 +60,35 @@ const UpdatesTabInner: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto font-sans text-slate-100">
+    <div className="space-y-6 max-w-4xl mx-auto font-sans text-[var(--fios-text)]">
       <header className="space-y-1">
-        <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-black uppercase tracking-widest">
+        <div className="flex items-center gap-2 accent-solid-text text-xs font-mono font-black uppercase tracking-widest">
           <Sparkles className="w-3.5 h-3.5" />
-          SYSTEM CHANGELOG
+          System changelog
         </div>
-        <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v2.2.0</p>
+        <h1 className="text-3xl font-black italic uppercase tracking-tight text-[var(--fios-text)]">Fios Updates</h1>
+        <p className="text-xs font-mono text-[var(--fios-text-muted)]">Current release · v2.2.1</p>
       </header>
 
       <div className="space-y-4">
         {releases.map((rel, idx) => (
-          <div key={idx} className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 space-y-4 shadow-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800/80">
+          <div key={rel.version} className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 space-y-4 shadow-[var(--fios-shadow-md)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b fios-border">
               <div className="flex items-center gap-3">
-                <span className="bg-emerald-400 text-slate-950 font-mono font-black text-xs px-2.5 py-1 rounded-md uppercase">
+                <span className={`font-mono font-black text-xs px-2.5 py-1 rounded-md uppercase ${
+                  idx === 0 ? 'accent-bg text-slate-950' : 'bg-[var(--fios-surface-2)] text-[var(--fios-text)] border fios-border'
+                }`}>
                   {rel.version}
                 </span>
-                <h3 className="text-base font-black text-white italic tracking-wide">{rel.title}</h3>
+                <h3 className="text-base font-black text-[var(--fios-text)] italic tracking-wide">{rel.title}</h3>
               </div>
-              <span className="text-xs font-mono text-slate-500 font-bold">{rel.date}</span>
+              <span className="text-xs font-mono text-[var(--fios-text-muted)] font-bold">{rel.date}</span>
             </div>
 
             <ul className="space-y-2.5">
               {rel.highlights.map((point, pIdx) => (
-                <li key={pIdx} className="flex items-start gap-2.5 text-xs font-mono text-slate-300 leading-relaxed">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <li key={pIdx} className="flex items-start gap-2.5 text-xs font-mono text-[var(--fios-text-muted)] leading-relaxed">
+                  <CheckCircle2 className="w-4 h-4 accent-solid-text shrink-0 mt-0.5" />
                   <span>{point}</span>
                 </li>
               ))}

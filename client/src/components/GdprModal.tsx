@@ -29,7 +29,7 @@ export const GdprModal: React.FC<GdprModalProps> = ({ onClose }) => (
             <h3 id="gdpr-title" className="text-base font-black uppercase text-[var(--fios-text)]">
               GDPR Compliance
             </h3>
-            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center · v2.2.0</p>
+            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center · v2.2.1</p>
           </div>
         </div>
         <button type="button" onClick={onClose} className="text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer p-1" aria-label="Close">
@@ -42,7 +42,7 @@ export const GdprModal: React.FC<GdprModalProps> = ({ onClose }) => (
           <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">1. Legal basis</h4>
           <p>
             Fios processes personal data under GDPR Art. 6(1)(b) (contract / service delivery for your study account)
-            and Art. 6(1)(f) (legitimate interests in securing the service). Optional analytics cookies are not used in v2.2.0.
+            and Art. 6(1)(f) (legitimate interests in securing the service). Optional analytics cookies are not used in v2.2.1.
           </p>
         </section>
         <section className="space-y-1.5">

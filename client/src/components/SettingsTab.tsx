@@ -341,7 +341,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '2.2.0',
+      version: '2.2.1',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -850,7 +850,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.0.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.1.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
