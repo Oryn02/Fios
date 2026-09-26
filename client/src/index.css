@@ -274,6 +274,84 @@ html.theme-ready .fios-card {
 }
 
 /* ==========================================================================
+   Landing marketing surface — locked default emerald (ignore saved accent /
+   light remaps). Scoped under [data-landing] + html[data-landing-active].
+   ========================================================================== */
+[data-landing],
+html[data-landing-active] {
+  --fios-accent-from: #34d399;
+  --fios-accent-via: #2dd4bf;
+  --fios-accent-to: #14b8a6;
+  --fios-accent-solid: #34d399;
+  --fios-bg: #05070b;
+  --fios-surface: #0e131f;
+  --fios-surface-2: #07090e;
+  --fios-border: rgba(148, 163, 184, 0.18);
+  --fios-border-strong: rgba(148, 163, 184, 0.32);
+  --fios-text: #f8fafc;
+  --fios-text-muted: #94a3b8;
+  color-scheme: dark;
+}
+
+/* Beat global accent remaps so emerald-* utilities stay true brand green */
+[data-landing] .text-emerald-400,
+[data-landing] .text-teal-400,
+[data-landing] .text-cyan-400,
+html[data-landing-active] .text-emerald-400,
+html[data-landing-active] .text-teal-400,
+html[data-landing-active] .text-cyan-400 {
+  color: #34d399 !important;
+}
+[data-landing] .text-emerald-300,
+html[data-landing-active] .text-emerald-300 {
+  color: #6ee7b7 !important;
+}
+[data-landing] .border-emerald-500,
+[data-landing] .border-teal-500,
+[data-landing] .border-cyan-500,
+html[data-landing-active] .border-emerald-500,
+html[data-landing-active] .border-teal-500,
+html[data-landing-active] .border-cyan-500 {
+  border-color: rgba(16, 185, 129, 0.45) !important;
+}
+[data-landing] .bg-emerald-400,
+[data-landing] .bg-teal-400,
+[data-landing] .bg-cyan-400,
+html[data-landing-active] .bg-emerald-400,
+html[data-landing-active] .bg-teal-400,
+html[data-landing-active] .bg-cyan-400 {
+  background-color: #34d399 !important;
+}
+
+/* Prevent light-theme legacy remaps from recoloring the marketing page */
+html[data-theme="light"] [data-landing],
+html[data-theme="light"] [data-landing] [class*="bg-black"],
+html[data-theme="light"] [data-landing] [class*="bg-slate-"],
+html[data-theme="light"] [data-landing] [class*="#07090e"],
+html[data-theme="light"] [data-landing] [class*="#0e131f"] {
+  background-color: #000 !important;
+  color: #f1f5f9 !important;
+}
+html[data-theme="light"] [data-landing] [class*="text-white"],
+html[data-theme="light"] [data-landing] [class*="text-slate-100"],
+html[data-theme="light"] [data-landing] [class*="text-slate-200"],
+html[data-theme="light"] [data-landing] [class*="text-slate-300"] {
+  color: #f1f5f9 !important;
+}
+html[data-theme="light"] [data-landing] [class*="text-slate-400"],
+html[data-theme="light"] [data-landing] [class*="text-slate-500"],
+html[data-theme="light"] [data-landing] [class*="text-slate-600"] {
+  color: #94a3b8 !important;
+}
+html[data-theme="light"] [data-landing] .text-emerald-400,
+html[data-theme="light"] [data-landing] .text-teal-400 {
+  color: #34d399 !important;
+}
+html[data-theme="light"] [data-landing] [class*="text-slate-950"] {
+  color: #020617 !important;
+}
+
+/* ==========================================================================
    Mobile / cross-browser optimizations + touch (v2.2.3)
    ========================================================================== */
 input, select, textarea { font-size: 16px; }

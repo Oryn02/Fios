@@ -23,7 +23,8 @@ export type SmartActionId =
   | 'grades'
   | 'flashcards'
   | 'timer'
-  | 'calendar';
+  | 'calendar'
+  | 'zen';
 
 export type SmartMetricId = 'dueCards' | 'tasks' | 'streak' | 'timer' | 'upcoming';
 
@@ -40,7 +41,7 @@ export const DEFAULT_SMART_ACTIONS: SmartActionId[] = ['flashcard', 'note', 'pom
 /** Full catalog users can enable / reorder in Settings. */
 export const ALL_SMART_ACTIONS: SmartActionId[] = [
   'flashcard', 'note', 'pomodoro', 'tutor',
-  'tasks', 'schedule', 'quiz', 'modules', 'grades', 'flashcards', 'timer', 'calendar',
+  'tasks', 'schedule', 'quiz', 'modules', 'grades', 'flashcards', 'timer', 'calendar', 'zen',
 ];
 
 export const DEFAULT_SMART_METRICS: SmartMetricId[] = ['dueCards', 'tasks'];
@@ -59,6 +60,7 @@ export const SMART_ACTION_LABELS: Record<SmartActionId, string> = {
   flashcards: 'Flashcard Decks',
   timer: 'Focus Timer',
   calendar: 'ATU Calendar',
+  zen: 'Zen / Deep Focus',
 };
 
 export const SMART_METRIC_LABELS: Record<SmartMetricId, string> = {
@@ -90,6 +92,22 @@ export interface PreferencesState {
   smartWidgetCompact: boolean;
   /** Show metrics chip(s) on the Smart Quick FAB. */
   smartWidgetShowMetrics: boolean;
+}
+
+/** Match DashboardLayout / Tailwind `md` — below this, floating widgets default off. */
+export const MOBILE_WIDGET_MQ = '(max-width: 767px)';
+
+export function isMobileViewport(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia(MOBILE_WIDGET_MQ).matches;
+}
+
+/**
+ * Desktop keeps floating Pomodoro + Smart Quick on by default.
+ * Mobile defaults both off until the user saves an explicit preference.
+ */
+export function defaultFloatingWidgetsOn(): boolean {
+  return !isMobileViewport();
 }
 
 const DEFAULTS: PreferencesState = {
@@ -128,6 +146,7 @@ function sanitizeMetrics(raw: unknown): SmartMetricId[] {
 }
 
 function cloneDefaults(): PreferencesState {
+  const floatingOn = defaultFloatingWidgetsOn();
   return {
     ...DEFAULTS,
     widgetVisibility: { ...DEFAULTS.widgetVisibility },
@@ -136,6 +155,8 @@ function cloneDefaults(): PreferencesState {
     navOrder: [...DEFAULTS.navOrder],
     smartWidgetActions: [...DEFAULTS.smartWidgetActions],
     smartWidgetMetrics: [...DEFAULTS.smartWidgetMetrics],
+    showPomodoroWidget: floatingOn,
+    showSmartWidget: floatingOn,
   };
 }
 
@@ -144,6 +165,7 @@ function loadLocal(): PreferencesState {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return cloneDefaults();
     const parsed = JSON.parse(raw);
+    const floatingFallback = defaultFloatingWidgetsOn();
     return {
       ...DEFAULTS,
       ...parsed,
@@ -153,8 +175,13 @@ function loadLocal(): PreferencesState {
       navOrder: Array.isArray(parsed.navOrder) ? parsed.navOrder : [...DEFAULTS.navOrder],
       smartWidgetActions: sanitizeActions(parsed.smartWidgetActions),
       smartWidgetMetrics: sanitizeMetrics(parsed.smartWidgetMetrics),
-      showPomodoroWidget: parsed.showPomodoroWidget !== false,
-      showSmartWidget: parsed.showSmartWidget !== false,
+      // Preserve explicit booleans; only viewport-default when the key was never saved
+      showPomodoroWidget: typeof parsed.showPomodoroWidget === 'boolean'
+        ? parsed.showPomodoroWidget
+        : floatingFallback,
+      showSmartWidget: typeof parsed.showSmartWidget === 'boolean'
+        ? parsed.showSmartWidget
+        : floatingFallback,
       smartWidgetCompact: !!parsed.smartWidgetCompact,
       smartWidgetShowMetrics: parsed.smartWidgetShowMetrics !== false,
     };

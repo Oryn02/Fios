@@ -34,6 +34,7 @@ import { PreferencesProvider } from './context/PreferencesContext';
 import { AiAuthProvider } from './context/AiAuthContext';
 import { startOfflineQueueListener } from './lib/offlineQueue';
 import { useAiAuth } from './context/AiAuthContext';
+import { lockLandingBrand } from './lib/landingBrand';
 
 interface SelectedDeck {
   cards: Flashcard[];
@@ -250,7 +251,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v2.2.6
+        Academic Suite · Study Lab · v2.2.7
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -327,10 +328,16 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v2.2.6 — Your Academic Command Center';
+    document.title = 'Fios v2.2.7 — Your Academic Command Center';
   }, []);
 
   useEffect(() => startOfflineQueueListener(), []);
+
+  // Logged-out marketing surface: force default emerald + dark (ignore Settings prefs)
+  useEffect(() => {
+    if (checkingAuth || session) return;
+    return lockLandingBrand();
+  }, [checkingAuth, session]);
 
   useEffect(() => {
     if (IS_DEMO) {
@@ -381,7 +388,7 @@ export function App() {
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v2.2.6…
+          Initializing Fios v2.2.7…
         </div>
       </div>
     );
@@ -390,16 +397,18 @@ export function App() {
   if (!session) {
     return (
       <ToastProvider>
-        <LandingPage onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })} />
-        <AnimatePresence>
-          {authModal.isOpen && (
-            <AuthModal
-              mode={authModal.mode}
-              onClose={() => setAuthModal({ isOpen: false, mode: 'signin' })}
-            />
-          )}
-        </AnimatePresence>
-        <CookieConsent />
+        <div data-landing data-theme="dark">
+          <LandingPage onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })} />
+          <AnimatePresence>
+            {authModal.isOpen && (
+              <AuthModal
+                mode={authModal.mode}
+                onClose={() => setAuthModal({ isOpen: false, mode: 'signin' })}
+              />
+            )}
+          </AnimatePresence>
+          <CookieConsent />
+        </div>
       </ToastProvider>
     );
   }

@@ -34,7 +34,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v2.2.6', icon: Sparkles },
+  { id: 'updates', label: 'Updates v2.2.7', icon: Sparkles },
 ];
 
 /** Tabs where Zen may hide chrome (study surfaces). Settings/Overview always keep nav. */
@@ -94,8 +94,15 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      // ⌘K / Ctrl+K — command palette (match header chip). Capture phase so
+      // browser search-bar bindings (e.g. Firefox Ctrl+K) and editors don't win.
+      const isPaletteChord =
+        (e.metaKey || e.ctrlKey) &&
+        !e.altKey &&
+        (e.code === 'KeyK' || e.key.toLowerCase() === 'k');
+      if (isPaletteChord) {
         e.preventDefault();
+        e.stopPropagation();
         setPaletteOpen((v) => !v);
         return;
       }
@@ -112,8 +119,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         exitZen();
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, [zenMode, exitZen, paletteOpen, drawerOpen]);
 
   const [draftNavOrder, setDraftNavOrder] = useState<string[] | null>(null);
@@ -242,7 +249,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             >
               <FiosLogo size="lg" className="leading-none min-w-0 pointer-events-none" />
             </button>
-            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.6</span>
+            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.7</span>
             {zenMode && (
               <button
                 type="button"
@@ -259,11 +266,12 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             <button
               type="button"
               onClick={() => setPaletteOpen(true)}
-              title="Command palette (Ctrl/Cmd+K)"
-              aria-label="Open command palette"
+              title="Command palette (⌘K / Ctrl+K)"
+              aria-label="Open command palette (Control or Command K)"
+              aria-keyshortcuts="Meta+K Control+K"
               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] text-[10px] font-mono cursor-pointer"
             >
-              <Command className="w-3.5 h-3.5" />
+              <Command className="w-3.5 h-3.5" aria-hidden />
               <span>K</span>
             </button>
 

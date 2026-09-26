@@ -4,6 +4,20 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v2.2.7',
+      date: 'September 2026',
+      title: 'Mobile widget defaults, SM-2 previews & brand polish',
+      highlights: [
+        'Mobile: Quick Widget FAB and Pomodoro floating widget default OFF for new users / unsaved prefs; explicit saved prefs are preserved. Desktop defaults unchanged.',
+        'SM-2 rating buttons: Again / Hard / Good / Easy previews differentiate meaningfully (e.g. new cards ~1m / ~10m / 1d / 4d) and match the schedule written on rate; Active Recall Reveal-before-grade unchanged.',
+        'Landing / logged-out marketing: locked to default emerald brand + dark chrome — ignores saved Settings accent and Light/System remaps (in-app theme/accent unchanged).',
+        'Logo mark: decorative orbit dots / frame removed — in-app `</>` only. PWA / Apple touch icons rebuilt as larger white `</>` on solid black (no border chrome); apple-touch 180×180 + 192/512/maskable refreshed.',
+        'Command palette: ⌘K / Ctrl+K reliably opens the same palette as the header ⌘ K chip (capture-phase handler so browser search bindings do not steal it).',
+        'Smart Quick Widget: Zen / Deep Focus available in the action catalog (toggle enter/exit); mobile Quick Widget still defaults off.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.7.',
+      ],
+    },
+    {
       version: 'v2.2.6',
       date: 'September 2026',
       title: 'Landing density, mobile uploads & PWA icons',
@@ -135,7 +149,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v2.2.6</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v2.2.7</p>
       </header>
 
       <div className="space-y-4">

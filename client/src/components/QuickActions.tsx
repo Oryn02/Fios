@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Zap, FileText, Timer, Bot, X, Layers, Check, Loader2, Folder,
-  CheckSquare, Calendar, HelpCircle, BookOpen, Target, GraduationCap, Flame,
+  CheckSquare, Calendar, HelpCircle, BookOpen, Target, GraduationCap, Flame, Focus,
 } from 'lucide-react';
 import { usePomodoroControls, usePomodoroState, formatClock } from '../context/PomodoroContext';
 import {
@@ -38,6 +38,7 @@ const ACTION_ICONS: Record<SmartActionId, typeof Zap> = {
   flashcards: Layers,
   timer: Timer,
   calendar: GraduationCap,
+  zen: Focus,
 };
 
 const QuickAddFlashcardModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -139,6 +140,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
     smartWidgetMetrics,
     smartWidgetCompact,
     smartWidgetShowMetrics,
+    zenMode,
+    setZenMode,
   } = usePreferences();
   const [open, setOpen] = useState(false);
   const [showFlashcard, setShowFlashcard] = useState(false);
@@ -217,6 +220,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
     flashcards: () => { onNavigate('flashcards'); setOpen(false); },
     timer: () => { onNavigate('timer'); setOpen(false); },
     calendar: () => { onNavigate('atu-calendar'); setOpen(false); },
+    zen: () => { setZenMode(!zenMode); setOpen(false); },
   };
 
   const actions = useMemo(() => {
@@ -225,12 +229,14 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
       .filter((id) => ACTION_ICONS[id])
       .map((id) => ({
         id,
-        label: SMART_ACTION_LABELS[id],
+        label: id === 'zen'
+          ? (zenMode ? 'Exit Zen / Deep Focus' : 'Enter Zen / Deep Focus')
+          : SMART_ACTION_LABELS[id],
         icon: ACTION_ICONS[id],
         onClick: actionHandlers[id],
       }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartWidgetActions, onNavigate, onOpenTutor]);
+  }, [smartWidgetActions, onNavigate, onOpenTutor, zenMode, setZenMode]);
 
   const metricChips = useMemo(() => {
     const order = (smartWidgetMetrics?.length ? smartWidgetMetrics : ['dueCards', 'tasks']) as SmartMetricId[];
