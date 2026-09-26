@@ -50,6 +50,33 @@ app.get('/api/health', (_req, res) => {
   res.status(200).json({ ok: true, service: 'fios-api', version: '2.2.2' });
 });
 
+/**
+ * Friendly root — browsers often open the API URL by mistake.
+ * Frontend is the Static Site (e.g. https://fios-web.onrender.com), not this service.
+ * When CLIENT_ORIGIN is set, redirect HTML navigations there; otherwise return JSON.
+ */
+const primaryAppOrigin =
+  clientOrigins.find((o) => o && o !== '*') ||
+  'https://fios-web.onrender.com';
+
+app.get('/', (req, res) => {
+  const accept = String(req.headers.accept || '');
+  const wantsHtml = accept.includes('text/html');
+  const forceRedirect = req.query.redirect === '1' || req.query.to === 'app';
+
+  if ((wantsHtml || forceRedirect) && clientOrigins.length > 0) {
+    return res.redirect(302, primaryAppOrigin);
+  }
+
+  return res.status(200).json({
+    service: 'fios-api',
+    version: '2.2.2',
+    health: '/health',
+    app: primaryAppOrigin,
+    hint: 'This host is the Express API only. Open the Fios Static Site (fios-web) for the app UI.',
+  });
+});
+
 // Dual mounting: Vite proxy + direct `/api/*` and bare paths both work
 app.use('/api', routes);
 app.use('/', routes);
