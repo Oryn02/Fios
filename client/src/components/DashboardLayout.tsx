@@ -34,7 +34,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v2.2.3', icon: Sparkles },
+  { id: 'updates', label: 'Updates v2.2.4', icon: Sparkles },
 ];
 
 /** Tabs where Zen may hide chrome (study surfaces). Settings/Overview always keep nav. */
@@ -49,10 +49,23 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
   const { zenMode, setZenMode, mobileNavSlots, navOrder, setNavOrder } = usePreferences();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  /** Desktop sidebar visibility (hamburger toggles this on md+). */
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true
+  );
 
   const hideChrome = zenMode && ZEN_STUDY_TABS.has(activeTab);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => setIsDesktop(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
@@ -66,6 +79,18 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
   }, [setActiveTab]);
 
   const exitZen = useCallback(() => setZenMode(false), [setZenMode]);
+
+  /** Header hamburger / X — mobile drawer or desktop sidebar. */
+  const toggleNavChrome = useCallback(() => {
+    if (isDesktop) {
+      setSidebarOpen((v) => !v);
+      setDrawerOpen(false);
+    } else {
+      setDrawerOpen((v) => !v);
+    }
+  }, [isDesktop]);
+
+  const navToggleOpen = isDesktop ? sidebarOpen : drawerOpen;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -192,19 +217,20 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
     <div className="min-h-dvh fios-app-bg flex flex-col font-sans overflow-x-hidden">
       {/* Top HUD Bar — always visible unless Zen is hiding study chrome */}
       {!hideChrome && (
-        <header className="h-16 border-b fios-border bg-[var(--fios-surface)]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-50 safe-top">
+        <header className="h-16 border-b fios-border bg-[var(--fios-surface)]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-[60] safe-top">
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setDrawerOpen((v) => !v)}
-              className="md:hidden touch-target p-2 rounded-lg text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] active:bg-[var(--fios-surface)] bg-[var(--fios-surface-2)] cursor-pointer"
-              aria-label={drawerOpen ? 'Close navigation menu' : 'Open navigation menu'}
-              aria-expanded={drawerOpen}
+              onClick={toggleNavChrome}
+              className="relative z-[70] touch-target p-2 rounded-lg text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] active:bg-[var(--fios-surface)] bg-[var(--fios-surface-2)] border fios-border cursor-pointer"
+              aria-label={navToggleOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={navToggleOpen}
+              aria-controls={isDesktop ? 'fios-desktop-sidebar' : 'fios-mobile-drawer'}
             >
-              {drawerOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {navToggleOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             <FiosLogo size="md" />
-            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.3</span>
+            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.4</span>
             {zenMode && (
               <button
                 type="button"
@@ -290,22 +316,23 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
       <div className="flex flex-1 relative">
         <AnimatePresence>
-          {drawerOpen && !hideChrome && (
+          {drawerOpen && !hideChrome && !isDesktop && (
             <>
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="md:hidden fixed inset-0 z-40 bg-black/50"
+                className="fixed inset-0 top-16 z-40 bg-black/50"
                 onClick={() => setDrawerOpen(false)}
                 aria-hidden
               />
               <motion.aside
+                id="fios-mobile-drawer"
                 initial={{ x: '-100%' }}
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
                 transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-                className="md:hidden fixed top-0 left-0 bottom-0 z-50 w-[80vw] max-w-xs bg-[var(--fios-surface)] border-r fios-border p-4 flex flex-col safe-top safe-bottom"
+                className="fixed top-16 left-0 bottom-0 z-50 w-[80vw] max-w-xs bg-[var(--fios-surface)] border-r fios-border p-4 flex flex-col safe-bottom"
                 aria-label="Mobile navigation"
               >
                 <div className="flex items-center justify-between mb-4">
@@ -339,8 +366,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           )}
         </AnimatePresence>
 
-        {!hideChrome && (
-          <aside className="w-60 border-r fios-border bg-[var(--fios-surface)]/40 p-4 hidden md:flex flex-col justify-between" aria-label="Sidebar">
+        {!hideChrome && sidebarOpen && (
+          <aside id="fios-desktop-sidebar" className="w-60 border-r fios-border bg-[var(--fios-surface)]/40 p-4 hidden md:flex flex-col justify-between" aria-label="Sidebar">
             <div className="space-y-6">
               <div className="text-[10px] font-black uppercase tracking-widest text-[var(--fios-text-muted)] px-3">
                 Navigation
@@ -463,22 +490,23 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
       {/* When Zen hides chrome on mobile, still allow drawer via Menu above */}
       <AnimatePresence>
-        {drawerOpen && hideChrome && (
+        {drawerOpen && hideChrome && !isDesktop && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="md:hidden fixed inset-0 z-40 bg-black/50"
+              className="fixed inset-0 z-40 bg-black/50"
               onClick={() => setDrawerOpen(false)}
               aria-hidden
             />
             <motion.aside
+              id="fios-mobile-drawer-zen"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="md:hidden fixed top-0 left-0 bottom-0 z-50 w-[80vw] max-w-xs bg-[var(--fios-surface)] border-r fios-border p-4 flex flex-col safe-top safe-bottom"
+              className="fixed top-0 left-0 bottom-0 z-50 w-[80vw] max-w-xs bg-[var(--fios-surface)] border-r fios-border p-4 flex flex-col safe-top safe-bottom"
               aria-label="Mobile navigation"
             >
               <div className="flex items-center justify-between mb-4">

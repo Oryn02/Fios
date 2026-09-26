@@ -20,6 +20,8 @@ import { Avatar } from './Avatar';
 import { ModuleHeatmap } from './ModuleHeatmap';
 import { RevisionFlightPlan } from './RevisionFlightPlan';
 import { CompactAgenda } from './CompactAgenda';
+import { DatetimeLocalInput } from './DatetimeLocalInput';
+import { toast } from '../lib/toast';
 
 interface OverviewTabProps {
   onOpenFlashcards: (deckCards?: any[], title?: string, moduleCode?: string, isSaved?: boolean) => void;
@@ -137,7 +139,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
     if (!newTaskTitle.trim()) return;
     const due = fromDatetimeLocalValue(newTaskDueAt);
     if (!due) {
-      console.error('Due date/time is required');
+      toast('Pick a due date and time', 'error');
       return;
     }
     const start = fromDatetimeLocalValue(newTaskStart) || new Date(due.getTime() - 30 * 60 * 1000);
@@ -152,8 +154,10 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
       setNewTaskStart('');
       setNewTaskDueAt('');
       setIsAddingTask(false);
+      toast('Task saved', 'success');
     } catch (err) {
       console.error('Failed to add task:', err);
+      toast('Failed to save task', 'error');
     }
   }, [newTaskTitle, newTaskStart, newTaskDueAt]);
 
@@ -367,23 +371,23 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
               className="sm:col-span-2 bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border"
               autoFocus
             />
-            <label className="space-y-1">
+            <label className="space-y-1 block" htmlFor="fios-task-start">
               <span className="text-[10px] font-mono font-bold uppercase text-slate-500">Start (optional)</span>
-              <input
-                type="datetime-local"
+              <DatetimeLocalInput
+                id="fios-task-start"
                 value={newTaskStart}
-                onChange={(e) => setNewTaskStart(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border"
+                onChange={setNewTaskStart}
+                aria-label="Task start date and time"
               />
             </label>
-            <label className="space-y-1">
+            <label className="space-y-1 block" htmlFor="fios-task-due">
               <span className="text-[10px] font-mono font-bold uppercase text-slate-500">Due date & time *</span>
-              <input
-                type="datetime-local"
-                required
+              <DatetimeLocalInput
+                id="fios-task-due"
                 value={newTaskDueAt}
-                onChange={(e) => setNewTaskDueAt(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border"
+                onChange={setNewTaskDueAt}
+                required
+                aria-label="Task due date and time"
               />
             </label>
           </div>

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   User, Shield, Calendar, LogOut, Save, Trash2,
   Sliders, Timer, Check, MapPin, IdCard, Palette, Sun, Moon,
-  KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Copy, CheckCircle2, X, Smartphone,
+  KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Smartphone,
   Monitor, BatteryLow, Type, Focus, GitBranch, Cookie, FileText, ShieldCheck,
   GripVertical, LayoutGrid, ChevronUp, ChevronDown, Zap
 } from 'lucide-react';
@@ -32,75 +32,12 @@ import { TermsModal } from './TermsModal';
 import { PrivacyModal } from './PrivacyModal';
 import { AdminPanel, useIsAdmin } from './AdminPanel';
 import { FeedbackForm } from './FeedbackForm';
+import { SupportModal } from './SupportModal';
 import { resetCookieConsent } from './CookieConsent';
 import { toast } from '../lib/toast';
 import { NAV_ITEMS } from './DashboardLayout';
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
-
-const SupportModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText('oryn02@gmail.com');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans text-slate-100">
-      <div className="absolute inset-0" onClick={onClose} />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0 }}
-        className="relative z-10 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 space-y-5 shadow-2xl"
-      >
-        <div className="flex items-center justify-between border-b fios-border pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border accent-solid-text">
-              <Mail className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-black uppercase text-[var(--fios-text)]">Contact Support</h3>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer p-1">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <p className="text-xs text-[var(--fios-text-muted)] leading-relaxed">
-          Need help, found a bug, or have questions about Fios? Reach out directly via email:
-        </p>
-
-        <div className="flex items-center justify-between bg-[var(--fios-surface-2)] border fios-border px-3 py-2.5 rounded-xl font-mono text-xs accent-solid-text">
-          <span>oryn02@gmail.com</span>
-          <button
-            onClick={handleCopy}
-            className="px-3 py-1.5 bg-[var(--fios-surface)] border fios-border text-[var(--fios-text)] rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer text-[11px]"
-          >
-            {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
-        </div>
-
-        <div className="pt-2 flex justify-end gap-2">
-          <a
-            href="mailto:oryn02@gmail.com"
-            className="px-4 py-2 accent-bg text-slate-950 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90 transition-opacity inline-flex items-center gap-1.5"
-          >
-            Open Mail App
-          </a>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl cursor-pointer hover:opacity-80 transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
 
 const SettingsTabInner: React.FC = () => {
   const { profile, updateProfile } = useProfile();
@@ -374,7 +311,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '2.2.3',
+      version: '2.2.4',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -1098,7 +1035,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.3.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.4.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
