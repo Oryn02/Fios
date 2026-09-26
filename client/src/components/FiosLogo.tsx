@@ -19,7 +19,8 @@ const TEXT_CLASS: Record<LogoSize, string> = {
 };
 
 /**
- * Fios brandmark — terminal brackets `</>` only (no decorative dots / frame).
+ * Fios brandmark — clean terminal brackets `</>` (no decorative dots / frame).
+ * Square optical balance with ~20% padding and even stroke gaps; matches PWA icons.
  * Recolours with the active accent via CSS variables unless `fixedEmerald` is set.
  */
 export const FiosLogo: React.FC<FiosLogoProps> = ({
@@ -37,7 +38,7 @@ export const FiosLogo: React.FC<FiosLogoProps> = ({
   const to = fixedEmerald ? '#14b8a6' : 'var(--fios-accent-to, #22d3ee)';
 
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
+    <span className={`inline-flex items-center gap-3 ${className}`}>
       <svg
         width={px}
         height={px}
@@ -48,32 +49,32 @@ export const FiosLogo: React.FC<FiosLogoProps> = ({
         aria-label="Fios logo"
       >
         <defs>
-          <linearGradient id={gradId} x1="4" y1="6" x2="44" y2="42" gradientUnits="userSpaceOnUse">
+          <linearGradient id={gradId} x1="8" y1="10" x2="40" y2="38" gradientUnits="userSpaceOnUse">
             <stop stopColor={from} />
             <stop offset="0.5" stopColor={via} />
             <stop offset="1" stopColor={to} />
           </linearGradient>
         </defs>
 
-        {/* Terminal brackets </> — scaled up, no dots / frame / glow */}
+        {/* Terminal brackets </> — ~20% inset, open tracking, square balance */}
         <path
-          d="M15 10L6 24L15 38"
+          d="M15.5 13L9.5 24L15.5 35"
           stroke={`url(#${gradId})`}
-          strokeWidth="4"
+          strokeWidth="3.4"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <path
-          d="M33 10L42 24L33 38"
+          d="M32.5 13L38.5 24L32.5 35"
           stroke={`url(#${gradId})`}
-          strokeWidth="4"
+          strokeWidth="3.4"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <path
-          d="M29 9L19 39"
+          d="M26.4 13L21.6 35"
           stroke={`url(#${gradId})`}
-          strokeWidth="4"
+          strokeWidth="3.4"
           strokeLinecap="round"
         />
       </svg>
