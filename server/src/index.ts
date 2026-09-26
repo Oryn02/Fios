@@ -6,7 +6,6 @@ import routes from './routes.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -15,6 +14,12 @@ app.use(express.json());
 app.use('/api', routes);
 app.use('/', routes);
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// Only listen locally. Vercel imports this app directly as a serverless handler.
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
