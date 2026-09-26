@@ -77,7 +77,10 @@ const Dashboard: React.FC = () => {
 
     try {
       const data = await generateFlashcards(studyNotes);
-      const cardsList = Array.isArray(data) ? data : data?.cards || [];
+      const cardsList = Array.isArray(data?.cards) ? data.cards : [];
+      if (!cardsList.length) {
+        throw new Error('No flashcards were returned. Try longer notes or regenerate.');
+      }
       setCards(cardsList);
       setSelectedDeck({
         cards: cardsList,
@@ -85,7 +88,9 @@ const Dashboard: React.FC = () => {
         isSaved: false,
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to connect to server.');
+      const msg = err?.message || String(err) || 'Failed to connect to server.';
+      // Guard against opaque runtime TypeErrors bubbling as "undefined is not a function"
+      setError(msg.includes('is not a function') ? 'Flashcard generation failed. Check your Gemini key in Settings and try again.' : msg);
     } finally {
       setLoading(false);
     }
@@ -245,7 +250,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v2.2.5
+        Academic Suite · Study Lab · v2.2.6
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -322,7 +327,7 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v2.2.5 — Your Academic Command Center';
+    document.title = 'Fios v2.2.6 — Your Academic Command Center';
   }, []);
 
   useEffect(() => startOfflineQueueListener(), []);
@@ -376,7 +381,7 @@ export function App() {
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v2.2.5…
+          Initializing Fios v2.2.6…
         </div>
       </div>
     );

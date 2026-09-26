@@ -58,8 +58,21 @@ export async function generateFlashcardsFromText(studyNotes: string, apiKey?: st
     },
   });
 
-  if (!response.text) throw new Error('No text returned from Gemini model.');
-  return JSON.parse(cleanJsonResponse(response.text));
+  const raw =
+    typeof response.text === 'string'
+      ? response.text
+      : Array.isArray((response as any)?.candidates)
+        ? (response as any).candidates
+            .flatMap((c: any) => c?.content?.parts || [])
+            .map((p: any) => p?.text || '')
+            .join('')
+        : '';
+  if (!raw.trim()) throw new Error('No text returned from Gemini model.');
+  const parsed = JSON.parse(cleanJsonResponse(raw));
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Gemini returned an invalid flashcard payload.');
+  }
+  return parsed;
 }
 
 /**

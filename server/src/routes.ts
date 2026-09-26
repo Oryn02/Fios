@@ -14,6 +14,7 @@ import {
   chunkText,
   ragRetrieve,
 } from './geminiService.js';
+import { extractPdfTextFromBuffer } from './pdfText.js';
 
 const router = Router();
 
@@ -69,11 +70,23 @@ const handleFlashcards = async (req: Request, res: Response) => {
     }
 
     const result = await generateFlashcardsFromText(text, apiKeyOf(req));
-    const cards = result?.cards || (Array.isArray(result) ? result : []);
-    return res.status(200).json(cards);
+    const cards = Array.isArray(result?.cards)
+      ? result.cards
+      : Array.isArray(result)
+        ? result
+        : [];
+    // Always return a stable object shape so clients never call .cards on an array by mistake
+    return res.status(200).json({
+      title: typeof result?.title === 'string' ? result.title : undefined,
+      cards,
+    });
   } catch (error: any) {
     console.error('Flashcard Generation Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to generate flashcards' });
+    const message =
+      error?.message && !String(error.message).includes('is not a function')
+        ? error.message
+        : 'Failed to generate flashcards. Check the Gemini model/key and try again.';
+    return res.status(500).json({ error: message });
   }
 };
 
@@ -353,16 +366,17 @@ router.post('/api/ical-proxy', handleICalProxy);
  *
  * Accepts multipart form-data with:
  * - `file` (optional): PDF or text buffer via multer memory storage
- * - `text` (optional): client-extracted plain text (preferred for binary PDFs)
+ * - `text` (optional): client-extracted plain text (preferred when available)
  * - `title` (optional): document title
  *
  * Resolution order:
  * 1. If `text` field is provided → use it (200)
  * 2. Else if uploaded buffer looks like UTF-8 text → decode and use it (200)
- * 3. Else return 400 asking the client to also send extracted text
- *    (still a valid POST — never 405)
+ * 3. Else if buffer is a binary PDF → extract text server-side with pdf.js (200)
+ * 4. Else return 400 (still a valid POST — never 405)
  *
  * Dual-mounted under `/api/upload/pdf` via `index.ts`.
+ * Enables iPhone / Android Files picker uploads without client-only PDF.js.
  */
 const handleUploadPdf = async (req: Request, res: Response) => {
   try {
@@ -396,12 +410,52 @@ const handleUploadPdf = async (req: Request, res: Response) => {
       }
     }
 
-    // Binary PDF without client-extracted text — valid POST, ask for extraction
+    if (req.file?.buffer?.length) {
+      const isPdfMagic =
+        req.file.buffer.length >= 5 &&
+        req.file.buffer.subarray(0, 5).toString('ascii') === '%PDF-';
+      const nameLooksPdf = /\.pdf$/i.test(req.file.originalname || '');
+      if (isPdfMagic || nameLooksPdf || req.file.mimetype === 'application/pdf') {
+        try {
+          const text = await extractPdfTextFromBuffer(req.file.buffer);
+          if (text.trim()) {
+            return res.status(200).json({
+              ok: true,
+              title,
+              text: text.trim(),
+              source: 'server-pdfjs',
+              bytes: req.file.size,
+              pagesHint: true,
+            });
+          }
+          return res.status(422).json({
+            ok: false,
+            error:
+              'PDF uploaded but no extractable text was found (it may be image-only / scanned). Try a text PDF, paste notes, or upload a photo of the page for Vision.',
+            title,
+            bytes: req.file.size,
+            receivedFile: true,
+          });
+        } catch (extractErr: any) {
+          console.error('Server PDF extract failed:', extractErr);
+          return res.status(422).json({
+            ok: false,
+            error:
+              extractErr?.message ||
+              'Could not parse this PDF on the server. Try another file, paste text, or upload an image for Vision.',
+            title,
+            bytes: req.file.size,
+            receivedFile: true,
+          });
+        }
+      }
+    }
+
     return res.status(400).json({
       ok: false,
       error:
-        'Binary PDF received without extracted text. Extract text client-side (e.g. pdf.js) and re-POST with multipart fields `file` + `text`, or send JSON `{ text, title }` to POST /upload/notes.',
-      hint: 'Include the optional `text` field with the extracted content.',
+        'No extractable content. Upload a PDF/TXT file, or send multipart fields `file` + `text`.',
+      hint: 'iOS/Android: use Files or Photos; PDFs are parsed on the server when needed.',
       title,
       bytes: req.file?.size ?? 0,
       receivedFile: !!req.file,

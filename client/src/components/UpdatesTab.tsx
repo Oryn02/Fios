@@ -4,6 +4,23 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v2.2.6',
+      date: 'September 2026',
+      title: 'Landing density, mobile uploads & PWA icons',
+      highlights: [
+        'Landing hero: tighter top spacing so brand, headline, and CTAs sit higher — no tall empty band under the nav.',
+        'Product window mockup scaled down and inset so it no longer dominates the hero / study-hubs boundary.',
+        'FAQ and study-hubs copy expanded (tutor grounding, unified agenda, multi-device) so the page feels fuller below the fold.',
+        'Dashboard header: smaller hamburger / X, centered in the header row (not resting on the bottom divider); Fios logo + wordmark enlarged.',
+        'Header Fios logo / wordmark is a button that navigates to Overview (keyboard + cursor pointer).',
+        'Mobile uploads: removed the iOS “PDF extraction unavailable” block; PDFs upload via Files and extract on the server when needed; Android never blocked.',
+        'Images from iPhone Photos / Android gallery accepted in study upload (Vision / multimodal → notes); SUPPORTS copy updated for PDF, TXT, and images.',
+        'Flashcards generate: hardened card payload parsing and safe rich-text rendering to stop the mobile “undefined is not a function” crash.',
+        'PWA / Add to Home Screen: regenerated apple-touch-icon 180×180 and 192/512 PNGs from the current Fios mark with safe padding; manifest + HTML link tags updated.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.6.',
+      ],
+    },
+    {
       version: 'v2.2.5',
       date: 'September 2026',
       title: 'Nav chrome polish & agenda by due date',
@@ -118,7 +135,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v2.2.5</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v2.2.6</p>
       </header>
 
       <div className="space-y-4">

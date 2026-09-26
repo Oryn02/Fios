@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
+/**
+ * Safe rich-text renderer for flashcards / notes.
+ * Avoids hard crashes if syntax-highlighter or KaTeX plugins misbehave on mobile.
+ */
+import React, { useMemo, Component, type ReactNode, type ErrorInfo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { MermaidDiagram } from './MermaidDiagram';
 import 'katex/dist/katex.min.css';
 
@@ -12,54 +14,73 @@ interface FormattedContentProps {
   text?: string;
 }
 
+class SoftBoundary extends Component<{ children: ReactNode; fallback: string }, { err: boolean }> {
+  state = { err: false };
+  static getDerivedStateFromError() {
+    return { err: true };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[FormattedContent]', error, info.componentStack);
+  }
+  render() {
+    if (this.state.err) {
+      return (
+        <pre className="whitespace-pre-wrap text-sm text-[var(--fios-text)] font-sans leading-relaxed">
+          {this.props.fallback}
+        </pre>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export const FormattedContent: React.FC<FormattedContentProps> = ({ text = '' }) => {
-  const content = useMemo(() => text || '', [text]);
+  const content = useMemo(() => (typeof text === 'string' ? text : String(text ?? '')), [text]);
   if (!content) return null;
 
   return (
-    <div className="fios-prose text-sm text-[var(--fios-text)]">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
-        components={{
-          code({ className, children, ...props }) {
-            const match = /language-(\w+)/.exec(className || '');
-            const lang = match?.[1];
-            const code = String(children).replace(/\n$/, '');
-            const isInline = !className && !String(children).includes('\n');
+    <SoftBoundary fallback={content}>
+      <div className="fios-prose text-sm text-[var(--fios-text)]">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+          components={{
+            code({ className, children, ...props }) {
+              const match = /language-(\w+)/.exec(className || '');
+              const lang = match?.[1];
+              const code = String(children ?? '').replace(/\n$/, '');
+              const isInline = !className && !String(children ?? '').includes('\n');
 
-            if (isInline) {
+              if (isInline) {
+                return (
+                  <code className={className} {...props}>
+                    {children}
+                  </code>
+                );
+              }
+
+              if (lang === 'mermaid') {
+                return <MermaidDiagram chart={code} />;
+              }
+
+              // Avoid react-syntax-highlighter on mobile flashcards — it has pulled
+              // "undefined is not a function" TypeErrors on some iOS Safari builds.
               return (
-                <code className={className} {...props}>
-                  {children}
-                </code>
+                <pre className="rounded-lg overflow-x-auto border border-slate-800 text-xs font-mono text-left my-2 p-3 bg-[#07090e] text-slate-200 whitespace-pre-wrap">
+                  {lang ? <span className="block text-[10px] uppercase tracking-wider text-slate-500 mb-1">{lang}</span> : null}
+                  <code>{code}</code>
+                </pre>
               );
-            }
-
-            if (lang === 'mermaid') {
-              return <MermaidDiagram chart={code} />;
-            }
-
-            return (
-              <div className="rounded-lg overflow-hidden border border-slate-800 text-xs font-mono text-left my-2">
-                <SyntaxHighlighter
-                  language={lang || 'javascript'}
-                  style={vscDarkPlus}
-                  customStyle={{ margin: 0, padding: '1rem', background: '#07090e' }}
-                >
-                  {code}
-                </SyntaxHighlighter>
-              </div>
-            );
-          },
-          pre({ children }) {
-            return <>{children}</>;
-          },
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
+            },
+            pre({ children }) {
+              return <>{children}</>;
+            },
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+    </SoftBoundary>
   );
 };
 

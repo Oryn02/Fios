@@ -13,6 +13,7 @@ interface MediaStudyInputProps {
 /**
  * Multimodal voice/vision entry for Smart Notes — image or audio file →
  * `POST /api/media/process`. Guarded by AiAuth before any upload runs.
+ * No `capture` attribute so iPhone Photos / Android gallery remain available.
  */
 export const MediaStudyInput: React.FC<MediaStudyInputProps> = ({ onNotes }) => {
   const { requireAiAuth } = useAiAuth();
@@ -68,8 +69,7 @@ export const MediaStudyInput: React.FC<MediaStudyInputProps> = ({ onNotes }) => 
       <input
         ref={imageRef}
         type="file"
-        accept="image/*"
-        capture="environment"
+        accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.heic,.heif"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -110,7 +110,7 @@ export const MediaStudyInput: React.FC<MediaStudyInputProps> = ({ onNotes }) => 
         {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mic className="w-3.5 h-3.5 accent-solid-text" />}
         Voice
       </button>
-      <span className="text-[10px] font-mono text-[var(--fios-text-muted)]">Gemini Vision / audio → notes</span>
+      <span className="text-[10px] font-mono text-[var(--fios-text-muted)]">Gemini Vision / audio → notes · Photos & Files OK</span>
     </div>
   );
 };
