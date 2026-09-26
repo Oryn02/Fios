@@ -23,9 +23,15 @@ import { ATUCalendarView } from './components/ATUCalendarView';
 import { PomodoroWidget } from './components/PomodoroWidget';
 import { QuickActions } from './components/QuickActions';
 import { GeminiGate } from './components/GeminiGate';
+import { AiTutorView } from './components/AiTutorView';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { ToastProvider } from './components/Toast';
+import { CookieConsent } from './components/CookieConsent';
 import { ProfileProvider } from './context/ProfileContext';
 import { PomodoroProvider } from './context/PomodoroContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { PreferencesProvider } from './context/PreferencesContext';
+import { startOfflineQueueListener } from './lib/offlineQueue';
 
 interface SelectedDeck {
   cards: Flashcard[];
@@ -33,6 +39,8 @@ interface SelectedDeck {
   moduleCode?: string;
   isSaved?: boolean;
 }
+
+const IDLE_MS = 24 * 60 * 60 * 1000;
 
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -42,7 +50,6 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // States to track specific Quiz, Code Exam, Document IDs, and AI Tutor open flag
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
   const [activeCodeExamId, setActiveCodeExamId] = useState<string | null>(null);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
@@ -108,7 +115,9 @@ const Dashboard: React.FC = () => {
           style={{ willChange: 'transform, opacity' }}
         >
           {activeTab === 'overview' && (
-            <OverviewTab onOpenFlashcards={handleOpenFlashcards} onNavigate={handleTabChange} />
+            <ErrorBoundary fallbackTitle="Overview widgets crashed">
+              <OverviewTab onOpenFlashcards={handleOpenFlashcards} onNavigate={handleTabChange} />
+            </ErrorBoundary>
           )}
 
           {activeTab === 'flashcards' && (
@@ -137,12 +146,14 @@ const Dashboard: React.FC = () => {
                       + Generate New Deck
                     </button>
                   </div>
-                  <FlashcardDeck
-                    cards={cards}
-                    isSaved={selectedDeck?.isSaved ?? false}
-                    deckTitle={selectedDeck?.title}
-                    moduleCode={selectedDeck?.moduleCode}
-                  />
+                  <ErrorBoundary fallbackTitle="Flashcard deck crashed">
+                    <FlashcardDeck
+                      cards={cards}
+                      isSaved={selectedDeck?.isSaved ?? false}
+                      deckTitle={selectedDeck?.title}
+                      moduleCode={selectedDeck?.moduleCode}
+                    />
+                  </ErrorBoundary>
                 </div>
               )}
             </div>
@@ -175,16 +186,20 @@ const Dashboard: React.FC = () => {
 
           {activeTab === 'code' && (
             <GeminiGate feature="Code Exams">
-              <CodeExamView initialExamId={activeCodeExamId} />
+              <ErrorBoundary fallbackTitle="Code Lab crashed">
+                <CodeExamView initialExamId={activeCodeExamId} />
+              </ErrorBoundary>
             </GeminiGate>
           )}
 
           {activeTab === 'documents' && (
-            <DocumentsView 
-              initialDocId={activeDocId} 
-              autoOpenTutor={openTutorOnLoad} 
+            <DocumentsView
+              initialDocId={activeDocId}
+              autoOpenTutor={openTutorOnLoad}
             />
           )}
+
+          {activeTab === 'tutor' && <AiTutorView />}
 
           {activeTab === 'atu-calendar' && <ATUCalendarView />}
 
@@ -201,9 +216,9 @@ const Dashboard: React.FC = () => {
       </AnimatePresence>
 
       <PomodoroWidget />
-      <QuickActions 
-        onNavigate={handleTabChange} 
-        onOpenTutor={() => handleTabChange('documents', { openTutor: true })} 
+      <QuickActions
+        onNavigate={handleTabChange}
+        onOpenTutor={() => handleTabChange('tutor')}
       />
     </DashboardLayout>
   );
@@ -220,7 +235,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab
+        Academic Suite · Study Lab · v2.2.0
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -297,8 +312,10 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios — Your Academic Command Center';
+    document.title = 'Fios v2.2.0 — Your Academic Command Center';
   }, []);
+
+  useEffect(() => startOfflineQueueListener(), []);
 
   useEffect(() => {
     if (IS_DEMO) {
@@ -307,17 +324,38 @@ export function App() {
       return;
     }
 
+    let lastActive = Date.now();
+    const bump = () => { lastActive = Date.now(); };
+    const events: (keyof WindowEventMap)[] = ['pointerdown', 'keydown', 'touchstart'];
+    events.forEach((e) => window.addEventListener(e, bump, { passive: true }));
+
+    const idleTimer = window.setInterval(() => {
+      if (Date.now() - lastActive > IDLE_MS) {
+        void supabase.auth.signOut();
+      }
+    }, 60_000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setCheckingAuth(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+      } else if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        setSession(session);
+      } else {
+        setSession(session);
+      }
       setCheckingAuth(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      window.clearInterval(idleTimer);
+      events.forEach((e) => window.removeEventListener(e, bump));
+    };
   }, []);
 
   if (checkingAuth) {
@@ -325,7 +363,7 @@ export function App() {
       <div className="min-h-screen bg-[#07090e] flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios…
+          Initializing Fios v2.2.0…
         </div>
       </div>
     );
@@ -333,7 +371,7 @@ export function App() {
 
   if (!session) {
     return (
-      <>
+      <ToastProvider>
         <LandingPage onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })} />
         <AnimatePresence>
           {authModal.isOpen && (
@@ -343,16 +381,22 @@ export function App() {
             />
           )}
         </AnimatePresence>
-      </>
+        <CookieConsent />
+      </ToastProvider>
     );
   }
 
   return (
     <ProfileProvider>
       <ThemeProvider>
-        <PomodoroProvider>
-          <Dashboard />
-        </PomodoroProvider>
+        <PreferencesProvider>
+          <PomodoroProvider>
+            <ToastProvider>
+              <Dashboard />
+              <CookieConsent />
+            </ToastProvider>
+          </PomodoroProvider>
+        </PreferencesProvider>
       </ThemeProvider>
     </ProfileProvider>
   );

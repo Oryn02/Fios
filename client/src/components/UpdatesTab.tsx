@@ -1,8 +1,25 @@
 import React from 'react';
-import { Sparkles, GitCommit, CheckCircle2, Terminal } from 'lucide-react';
+import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v2.2.0',
+      date: 'September 2026',
+      title: 'PWA, Themes, Tutor & Study Engine UI',
+      highlights: [
+        'Installable PWA with VitePWA + Workbox (standalone manifest, offline-friendly shell).',
+        'Theme modes: Dark / Light / System with warm off-white light tokens and Low-Power mode.',
+        'Accessibility: OpenDyslexic font toggle, Zen/Deep Focus chrome hide, ARIA nav landmarks.',
+        'Independent full-screen AI Tutor tab with persistent chat + optional RAG grounding.',
+        'Command palette (Ctrl/Cmd+K), global toasts, cookie consent, Terms of Service modal.',
+        'Markdown + LaTeX (KaTeX) in FormattedContent while keeping Mermaid fences.',
+        'Flashcard touch swipe (right=Easy, left=Hard), Code Lab custom challenge prompts.',
+        'Smart Notes summary revision history with undo, modular Overview widgets, module tag folders.',
+        'PDF upload POST to /api/upload/pdf, IndexedDB offline mutation queue, GitHub OAuth + gist export helpers.',
+        'Schema additions: document_revisions, tutor_messages, note_chunks, module tags/parent_code, prefs jsonb.',
+      ],
+    },
     {
       version: 'v2.1',
       date: 'September 2026',
@@ -10,8 +27,8 @@ const UpdatesTabInner: React.FC = () => {
       highlights: [
         'Implemented local Express server proxy (port 5000) to bypass ATU CORS restrictions and feed synchronization blocks.',
         'Added fully interactive Month, Week, and Day calendar views with seamless date navigation controls.',
-        'Upgraded SM-2 flashcard deck persistence layer with robust Supabase field mapping.'
-      ]
+        'Upgraded SM-2 flashcard deck persistence layer with robust Supabase field mapping.',
+      ],
     },
     {
       version: 'v2.0',
@@ -20,9 +37,9 @@ const UpdatesTabInner: React.FC = () => {
       highlights: [
         'Integrated Gemini AI API for automated flashcard, quiz, and code exam generation.',
         'Added Active Recall "blurting" evaluator and AI grounded tutor chat.',
-        'Configured dark-mode tactical UI styling optimized for late-night study sessions.'
-      ]
-    }
+        'Configured dark-mode tactical UI styling optimized for late-night study sessions.',
+      ],
+    },
   ];
 
   return (
@@ -33,6 +50,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
+        <p className="text-xs font-mono text-slate-400">Current release · v2.2.0</p>
       </header>
 
       <div className="space-y-4">

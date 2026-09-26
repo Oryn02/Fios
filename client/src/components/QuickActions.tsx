@@ -98,7 +98,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
     if (onOpenTutor) {
       onOpenTutor();
     } else {
-      onNavigate('documents', { openTutor: true });
+      onNavigate('tutor');
     }
   };
 

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FileText, Sparkles, Loader2, BookOpen, MessageSquare, Send, Trash2, X, Bot, User, Upload, Tag,
+  FileText, Sparkles, Loader2, BookOpen, MessageSquare, Send, Trash2, X, Bot, User, Upload, Tag, History, Undo2,
 } from 'lucide-react';
 import { FileUpload } from './FileUpload';
 import { summarizeText, askTutor } from '../services/aiApi';
@@ -10,12 +10,18 @@ import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { FiosDocument } from '../types/db';
 import { GeminiGate } from './GeminiGate';
 import { FormattedContent } from './FormattedContent';
+import { toast } from '../lib/toast';
 
 interface ChatMessage { role: 'user' | 'assistant'; text: string; }
 
 interface DocumentsInnerProps {
   initialDocId?: string | null;
   autoOpenTutor?: boolean;
+}
+
+interface SummaryRevision {
+  at: string;
+  summary: string;
 }
 
 const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenTutor }) => {
@@ -28,11 +34,15 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
   const [docs, setDocs] = useState<FiosDocument[]>([]);
   const [active, setActive] = useState<FiosDocument | null>(null);
 
-  // AI tutor drawer
   const [tutorOpen, setTutorOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [question, setQuestion] = useState('');
   const [thinking, setThinking] = useState(false);
+
+  const [revisions, setRevisions] = useState<SummaryRevision[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [editingSummary, setEditingSummary] = useState(false);
+  const [draftSummary, setDraftSummary] = useState('');
 
   const load = useCallback(async () => {
     const d = await getDocuments();
@@ -62,9 +72,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
 
       if (targetDoc) {
         setActive(targetDoc);
-        if (autoOpenTutor) {
-          openTutor(targetDoc);
-        }
+        if (autoOpenTutor) openTutor(targetDoc);
       } else if (autoOpenTutor) {
         const fallbackDoc: FiosDocument = {
           id: 'general-tutor',
@@ -80,6 +88,51 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
       }
     });
   }, [load, initialDocId, autoOpenTutor, openTutor]);
+
+  useEffect(() => {
+    if (!active?.id || active.id === 'general-tutor') {
+      setRevisions([]);
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(`fios_doc_revisions_${active.id}`);
+      setRevisions(raw ? JSON.parse(raw) : []);
+    } catch {
+      setRevisions([]);
+    }
+    setDraftSummary(active.summary || '');
+    setEditingSummary(false);
+  }, [active?.id, active?.summary]);
+
+  const pushRevision = (summary: string) => {
+    if (!active?.id || active.id === 'general-tutor') return;
+    const next = [{ at: new Date().toISOString(), summary }, ...revisions].slice(0, 20);
+    setRevisions(next);
+    localStorage.setItem(`fios_doc_revisions_${active.id}`, JSON.stringify(next));
+  };
+
+  const applyRevision = (rev: SummaryRevision) => {
+    if (!active) return;
+    if (active.summary) pushRevision(active.summary);
+    const updated = { ...active, summary: rev.summary };
+    setActive(updated);
+    setDocs((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+    setDraftSummary(rev.summary);
+    setHistoryOpen(false);
+    toast('Restored previous summary', 'success');
+  };
+
+  const saveEditedSummary = () => {
+    if (!active) return;
+    if (active.summary && active.summary !== draftSummary) {
+      pushRevision(active.summary);
+    }
+    const updated = { ...active, summary: draftSummary };
+    setActive(updated);
+    setDocs((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+    setEditingSummary(false);
+    toast('Summary updated', 'success');
+  };
 
   const handleSummarize = async () => {
     if (!text.trim()) return;
@@ -98,6 +151,12 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
       setActive(saved);
       setText('');
       setTitle('');
+      if (result.summary) {
+        localStorage.setItem(
+          `fios_doc_revisions_${saved.id}`,
+          JSON.stringify([{ at: new Date().toISOString(), summary: result.summary }])
+        );
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to summarize.');
     } finally {
@@ -110,6 +169,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
     await deleteDocument(id);
     setDocs((prev) => prev.filter((d) => d.id !== id));
     if (active?.id === id) setActive(null);
+    localStorage.removeItem(`fios_doc_revisions_${id}`);
   };
 
   const send = async () => {
@@ -133,14 +193,13 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
     <div className="space-y-6 max-w-6xl mx-auto font-sans text-[var(--fios-text)]">
       <div>
         <h2 className="text-2xl font-black italic uppercase tracking-tight flex items-center gap-2">
-          <FileText className="w-6 h-6 accent-solid-text" /> Smart Notes · AI Tutor
+          <FileText className="w-6 h-6 accent-solid-text" /> Smart Notes
         </h2>
         <p className="text-xs font-mono text-[var(--fios-text-muted)] mt-1">
-          Upload notes or PDFs to get an AI summary, a key-term glossary, and a grounded tutor chat.
+          Upload notes or PDFs for AI summaries, glossaries, and revision history. Use the AI Tutor tab for full-screen chat.
         </p>
       </div>
 
-      {/* Uploader */}
       <div className="rounded-2xl border fios-border bg-[var(--fios-surface)] p-5 shadow-xl space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <input
@@ -179,7 +238,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
           whileTap={{ scale: 0.99 }}
           onClick={handleSummarize}
           disabled={busy || !text.trim()}
-          className="w-full py-3 accent-bg text-slate-950 font-black italic uppercase text-xs rounded-xl transition-transform active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
+          className="w-full py-3 accent-bg text-slate-950 font-black italic uppercase text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           {busy ? 'Summarizing…' : 'Summarize & Save'}
@@ -187,10 +246,9 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         {error && <div className="p-3 bg-rose-500/10 border-l-4 border-rose-500 text-rose-300 text-xs font-mono rounded-r-lg">{error}</div>}
       </div>
 
-      {/* Active doc detail */}
       {active && active.id !== 'general-tutor' && (
         <div className="rounded-2xl border fios-border bg-[var(--fios-surface)] p-5 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-black uppercase flex items-center gap-2">
                 <BookOpen className="w-4 h-4 accent-solid-text" /> {active.title}
@@ -201,11 +259,60 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
                 </span>
               )}
             </div>
-            <button onClick={() => openTutor(active)} className="px-3 py-1.5 accent-bg text-slate-950 text-xs font-black uppercase rounded-lg flex items-center gap-1.5 cursor-pointer">
-              <MessageSquare className="w-3.5 h-3.5" /> Ask AI Tutor
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setHistoryOpen((v) => !v)}
+                  className="px-3 py-1.5 border fios-border bg-[var(--fios-surface-2)] text-[var(--fios-text-muted)] text-xs font-bold uppercase rounded-lg flex items-center gap-1.5 cursor-pointer"
+                >
+                  <History className="w-3.5 h-3.5" /> Undo ({revisions.length})
+                </button>
+                {historyOpen && revisions.length > 0 && (
+                  <div className="absolute right-0 mt-1 z-20 w-72 max-h-56 overflow-y-auto rounded-xl border fios-border bg-[var(--fios-surface)] shadow-xl p-2 space-y-1">
+                    {revisions.map((rev, i) => (
+                      <button
+                        key={`${rev.at}-${i}`}
+                        type="button"
+                        onClick={() => applyRevision(rev)}
+                        className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--fios-surface-2)] cursor-pointer"
+                      >
+                        <p className="text-[10px] font-mono text-[var(--fios-text-muted)] flex items-center gap-1">
+                          <Undo2 className="w-3 h-3" /> {new Date(rev.at).toLocaleString()}
+                        </p>
+                        <p className="text-[11px] text-[var(--fios-text)] line-clamp-2 mt-0.5">{rev.summary}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => { setEditingSummary((v) => !v); setDraftSummary(active.summary || ''); }}
+                className="px-3 py-1.5 border fios-border text-xs font-bold uppercase rounded-lg cursor-pointer text-[var(--fios-text-muted)]"
+              >
+                Edit
+              </button>
+              <button onClick={() => openTutor(active)} className="px-3 py-1.5 accent-bg text-slate-950 text-xs font-black uppercase rounded-lg flex items-center gap-1.5 cursor-pointer">
+                <MessageSquare className="w-3.5 h-3.5" /> Ask AI Tutor
+              </button>
+            </div>
           </div>
-          {active.summary && <p className="text-sm text-[var(--fios-text-muted)] leading-relaxed">{active.summary}</p>}
+          {editingSummary ? (
+            <div className="space-y-2">
+              <textarea
+                value={draftSummary}
+                onChange={(e) => setDraftSummary(e.target.value)}
+                className="w-full h-28 p-3 bg-[var(--fios-surface-2)] border fios-border rounded-xl text-sm text-[var(--fios-text)] focus:outline-none focus:accent-border"
+              />
+              <div className="flex gap-2 justify-end">
+                <button type="button" onClick={() => setEditingSummary(false)} className="px-3 py-1.5 text-xs font-bold uppercase cursor-pointer text-[var(--fios-text-muted)]">Cancel</button>
+                <button type="button" onClick={saveEditedSummary} className="px-3 py-1.5 accent-bg text-slate-950 text-xs font-black uppercase rounded-lg cursor-pointer">Save revision</button>
+              </div>
+            </div>
+          ) : (
+            active.summary && <p className="text-sm text-[var(--fios-text-muted)] leading-relaxed">{active.summary}</p>
+          )}
           {active.glossary?.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {active.glossary.map((g, i) => (
@@ -219,7 +326,6 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         </div>
       )}
 
-      {/* Saved docs */}
       <div className="space-y-3">
         <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 border-b fios-border pb-3">
           <FileText className="w-4 h-4 accent-solid-text" /> Documents <span className="text-xs font-mono text-[var(--fios-text-muted)] ml-auto">{docs.length}</span>
@@ -228,7 +334,6 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
           <div className="rounded-2xl border border-dashed fios-border p-10 text-center space-y-2">
             <Upload className="w-8 h-8 text-slate-500 mx-auto" />
             <p className="text-xs font-bold uppercase text-[var(--fios-text-muted)]">No documents yet</p>
-            <p className="text-[11px] font-mono text-slate-500">Upload a PDF or paste notes above to build your AI-summarized library.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -238,9 +343,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded accent-bg text-slate-950">{doc.glossary?.length || 0} terms</span>
                   <div className="flex items-center gap-2">
-                    {doc.module_code && (
-                      <span className="text-[10px] font-mono text-cyan-400 font-bold">{doc.module_code}</span>
-                    )}
+                    {doc.module_code && <span className="text-[10px] font-mono text-cyan-400 font-bold">{doc.module_code}</span>}
                     <button onClick={(e) => { e.stopPropagation(); openTutor(doc); }} className="text-slate-500 hover:accent-solid-text p-0.5 cursor-pointer" title="Ask AI Tutor"><MessageSquare className="w-3.5 h-3.5" /></button>
                     <button onClick={(e) => handleDelete(e, doc.id)} className="text-slate-500 hover:text-rose-400 p-0.5 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
@@ -253,7 +356,6 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         )}
       </div>
 
-      {/* AI Tutor drawer */}
       <AnimatePresence>
         {tutorOpen && (
           <>
@@ -274,21 +376,19 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
                 </div>
                 <button onClick={() => setTutorOpen(false)} className="text-slate-400 hover:text-slate-200 cursor-pointer"><X className="w-5 h-5" /></button>
               </div>
-
               <div className="flex-1 overflow-y-auto p-4 space-y-3 scroll-touch">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex gap-2 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${m.role === 'user' ? 'bg-[var(--fios-surface-2)] text-[var(--fios-text)]' : 'accent-bg text-slate-950'}`}>
                       {m.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
                     </div>
-                    <div className={`rounded-xl px-3 py-2 text-xs leading-relaxed max-w-[85%] ${m.role === 'user' ? 'bg-[var(--fios-surface-2)]' : 'bg-[var(--fios-surface-2)] border fios-border'}`}>
+                    <div className={`rounded-xl px-3 py-2 text-xs leading-relaxed max-w-[85%] bg-[var(--fios-surface-2)] border fios-border`}>
                       {m.role === 'assistant' ? <FormattedContent text={m.text} /> : m.text}
                     </div>
                   </div>
                 ))}
                 {thinking && <div className="flex items-center gap-2 text-xs text-[var(--fios-text-muted)]"><Loader2 className="w-4 h-4 animate-spin" /> Thinking…</div>}
               </div>
-
               <div className="p-3 border-t fios-border flex items-center gap-2">
                 <input
                   value={question}

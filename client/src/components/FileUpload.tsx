@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Upload, FileText, X, Loader2, AlertCircle } from 'lucide-react';
 import { extractTextFromPDF } from '../lib/pdfExtractor';
+import { uploadPdfToServer } from '../lib/ragClient';
 
 interface FileUploadProps {
   onTextExtracted: (text: string, filename: string) => void;
@@ -13,11 +14,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
   const [isIOS, setIsIOS] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Detect iOS on component mount
   useEffect(() => {
-    const checkIOS = 
-      /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-      (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+    const checkIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
     setIsIOS(checkIOS);
   }, []);
 
@@ -45,6 +45,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
       }
 
       onTextExtracted(extracted, file.name);
+
+      // Exercise server upload route (soft-fail)
+      if (isPDF) {
+        void uploadPdfToServer(file, extracted).then((res) => {
+          if (!res.ok) console.info('[FileUpload] server PDF upload soft-failed', res.data);
+        });
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to extract text from file.');
       setFileName(null);
@@ -56,12 +63,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
-    if (file) processFile(file);
+    if (file) void processFile(file);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) processFile(file);
+    if (file) void processFile(file);
   };
 
   const clearFile = () => {
@@ -120,7 +127,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
         </div>
       )}
 
-      {/* iOS-specific warning message */}
       {isIOS && !fileName && (
         <div className="flex items-center gap-1.5 mt-2 text-amber-500/80 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />

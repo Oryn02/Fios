@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Flashcard } from '../types/api';
 import { supabase } from '../lib/supabase';
 import { getUserModules, DBModule } from '../lib/moduleService';
@@ -6,6 +6,7 @@ import { ActiveRecallQuiz } from './ActiveRecallQuiz';
 import { FormattedContent } from './FormattedContent';
 import { calculateSM2 } from '../lib/spacedRepetition';
 import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers } from 'lucide-react';
+import { toast } from '../lib/toast';
 
 interface FlashcardDeckProps {
   cards: Flashcard[];
@@ -119,11 +120,70 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleToggleFlip, handleNext, handlePrev]);
 
-  if (!cards || cards.length === 0) return null;
-
-  const currentCard = activeCards[currentIndex] || activeCards[0];
+  const currentCard = activeCards[currentIndex] || activeCards[0] || cards[0];
   const questionText = currentCard?.front || (currentCard as any)?.question || '';
   const answerText = currentCard?.back || (currentCard as any)?.answer || '';
+
+  const handleRating = useCallback(async (rating: number) => {
+    if (!currentCard) return;
+    const labels: Record<number, string> = { 1: 'Again', 2: 'Hard', 3: 'Good', 4: 'Easy' };
+    const updatedStats = calculateSM2(
+      {
+        easeFactor: (currentCard as any).ease_factor || 2.5,
+        interval: (currentCard as any).interval || 0,
+        repetitions: (currentCard as any).repetitions || 0,
+        nextReview: (currentCard as any).next_review || new Date().toISOString(),
+      },
+      rating
+    );
+
+    const cardIndexInAll = cards.findIndex(c => (c as any).id ? (c as any).id === (currentCard as any).id : c === currentCard);
+    if (cardIndexInAll !== -1) {
+      const updatedCards = [...cards];
+      updatedCards[cardIndexInAll] = {
+        ...currentCard,
+        ease_factor: updatedStats.easeFactor,
+        interval: updatedStats.interval,
+        repetitions: updatedStats.repetitions,
+        next_review: updatedStats.nextReview,
+      } as any;
+      setCards(updatedCards);
+    }
+
+    if ((currentCard as any)?.id) {
+      const { error } = await supabase
+        .from('cards')
+        .update({
+          ease_factor: updatedStats.easeFactor,
+          interval: updatedStats.interval,
+          repetitions: updatedStats.repetitions,
+          next_review: updatedStats.nextReview,
+        })
+        .eq('id', (currentCard as any).id);
+
+      if (error) {
+        console.error("Failed to update card in Supabase:", error.message);
+      }
+    }
+
+    toast(`Rated ${labels[rating] || rating}`, rating >= 3 ? 'success' : 'info');
+    handleNext();
+  }, [cards, currentCard, handleNext]);
+
+  const touchStartX = useRef<number | null>(null);
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.changedTouches[0]?.clientX ?? null;
+  }, []);
+  const onTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current == null || !isFlipped) return;
+    const dx = (e.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 64) return;
+    if (dx > 0) void handleRating(4);
+    else void handleRating(2);
+  }, [isFlipped, handleRating]);
+
+  if (!cards || cards.length === 0) return null;
 
   const handleSaveDeck = async () => {
     setSaving(true);
@@ -188,51 +248,6 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleRating = async (rating: number) => {
-    const updatedStats = calculateSM2(
-      {
-        easeFactor: (currentCard as any).ease_factor || 2.5,
-        interval: (currentCard as any).interval || 0,
-        repetitions: (currentCard as any).repetitions || 0,
-        nextReview: (currentCard as any).next_review || new Date().toISOString(),
-      },
-      rating
-    );
-
-    // Update local card state immediately
-    const cardIndexInAll = cards.findIndex(c => (c as any).id ? (c as any).id === (currentCard as any).id : c === currentCard);
-    if (cardIndexInAll !== -1) {
-      const updatedCards = [...cards];
-      updatedCards[cardIndexInAll] = {
-        ...currentCard,
-        ease_factor: updatedStats.easeFactor,
-        interval: updatedStats.interval,
-        repetitions: updatedStats.repetitions,
-        next_review: updatedStats.nextReview,
-      } as any;
-      setCards(updatedCards);
-    }
-
-    // Persist the new SM-2 schedule to Supabase with verification
-    if ((currentCard as any)?.id) {
-      const { error } = await supabase
-        .from('cards')
-        .update({
-          ease_factor: updatedStats.easeFactor,
-          interval: updatedStats.interval,
-          repetitions: updatedStats.repetitions,
-          next_review: updatedStats.nextReview,
-        })
-        .eq('id', (currentCard as any).id);
-
-      if (error) {
-        console.error("Failed to update card in Supabase:", error.message);
-      }
-    }
-
-    handleNext();
   };
 
   return (
@@ -381,10 +396,12 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             </div>
           </div>
 
-          {/* Flashcard Tile */}
+          {/* Flashcard Tile — swipe right=Easy, left=Hard when flipped */}
           <div
             onClick={handleToggleFlip}
-            className="w-full min-h-[280px] bg-[#0e131f] rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-slate-800 hover:border-emerald-400/50 shadow-2xl transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99]"
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+            className="w-full min-h-[280px] bg-[#0e131f] rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-slate-800 hover:border-emerald-400/50 shadow-2xl transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99] touch-pan-y"
           >
             <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${isFlipped ? 'from-emerald-400/20' : 'from-cyan-400/20'} to-transparent rounded-tr-xl pointer-events-none`} />
 

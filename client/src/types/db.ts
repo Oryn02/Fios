@@ -1,7 +1,7 @@
 // Shared database entity types matching the Supabase schema in supabase/schema.sql
 
 export type AccentKey = 'emerald' | 'violet' | 'sunset' | 'ocean' | 'lime';
-export type ThemeMode = 'dark' | 'light';
+export type ThemeMode = 'dark' | 'light' | 'system';
 
 export interface UserProfile {
   id: string;
@@ -16,6 +16,8 @@ export interface UserProfile {
   pomodoro_work_duration: number;
   pomodoro_short_break: number;
   pomodoro_long_break: number;
+  /** Free-form client preferences (widgets, a11y, nav slots). */
+  prefs?: Record<string, unknown> | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -99,6 +101,8 @@ export interface DBModule {
   name: string;
   color: string;
   exam_date?: string | null;
+  parent_code?: string | null;
+  tags?: string[] | null;
   created_at: string;
 }
 

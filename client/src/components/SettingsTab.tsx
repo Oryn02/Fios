@@ -3,16 +3,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Shield, Calendar, LogOut, Save, Trash2,
   Sliders, Timer, Check, MapPin, IdCard, Palette, Sun, Moon,
-  KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Copy, CheckCircle2, X, Smartphone
+  KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Copy, CheckCircle2, X, Smartphone,
+  Monitor, BatteryLow, Type, Focus, GitBranch, Cookie, FileText, ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, DEMO_USER, disableDemo, demoFocusSessions } from '../lib/demo';
 import { getSavedCalendarUrl, saveCalendarUrl } from '../lib/calendarService';
 import { useProfile } from '../context/ProfileContext';
 import { useTheme } from '../context/ThemeContext';
+import { usePreferences } from '../context/PreferencesContext';
 import { AvatarPicker } from './Avatar';
-import { ACCENTS } from '../types/db';
+import { ACCENTS, type ThemeMode } from '../types/db';
 import { validateGeminiKey } from '../services/aiApi';
+import { TermsModal } from './TermsModal';
+import { AdminPanel, useIsAdmin } from './AdminPanel';
+import { resetCookieConsent } from './CookieConsent';
+import { toast } from '../lib/toast';
+import { NAV_ITEMS } from './DashboardLayout';
+import { DEFAULT_MOBILE_NAV } from '../context/PreferencesContext';
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
 
@@ -136,6 +144,11 @@ const PrivacyModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
 const SettingsTabInner: React.FC = () => {
   const { profile, updateProfile } = useProfile();
   const { theme, setTheme, accent, setAccent } = useTheme();
+  const {
+    lowPower, setLowPower, zenMode, setZenMode, openDyslexic, setOpenDyslexic,
+    mobileNavSlots, setMobileNavSlots,
+  } = usePreferences();
+  const isAdmin = useIsAdmin();
 
   // User & Feed State
   const [email, setEmail] = useState('Loading…');
@@ -145,7 +158,10 @@ const SettingsTabInner: React.FC = () => {
 
   // Modals state
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [gistStatus, setGistStatus] = useState<string | null>(null);
 
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -367,8 +383,31 @@ const SettingsTabInner: React.FC = () => {
     }
   };
 
-  const handleExportData = () => {
-    const backupData = { ...localStorage };
+  const handleExportData = async () => {
+    let decks: unknown[] = [];
+    let cards: unknown[] = [];
+    let focus: unknown[] = [];
+    try {
+      if (!IS_DEMO) {
+        const { data: d } = await supabase.from('decks').select('*');
+        const { data: c } = await supabase.from('cards').select('*');
+        const { data: f } = await supabase.from('focus_sessions').select('*');
+        decks = d || [];
+        cards = c || [];
+        focus = f || [];
+      }
+    } catch {
+      /* soft fail — still export local prefs */
+    }
+    const backupData = {
+      exportedAt: new Date().toISOString(),
+      version: '2.2.0',
+      profile,
+      preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
+      localStorage: { ...localStorage },
+      studyLogs: focus,
+      flashcards: { decks, cards },
+    };
     const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -376,6 +415,52 @@ const SettingsTabInner: React.FC = () => {
     link.download = `fios-study-data-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
+    toast('Export downloaded', 'success');
+  };
+
+  const handleGithubSignIn = async () => {
+    if (IS_DEMO) {
+      toast('GitHub OAuth unavailable in demo mode', 'info');
+      return;
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) toast(error.message, 'error');
+  };
+
+  const handleGistExport = async () => {
+    const sample = `// Fios Code Lab export — ${new Date().toISOString()}\n// Paste your solution below.\n`;
+    const token = localStorage.getItem('fios_github_token') || (import.meta.env.VITE_GITHUB_TOKEN as string | undefined);
+    if (!token) {
+      await navigator.clipboard.writeText(sample);
+      setGistStatus('No GitHub token. Sample copied — create a gist at https://gist.github.com and paste.');
+      toast('Copied gist instructions to clipboard', 'info');
+      return;
+    }
+    try {
+      const res = await fetch('https://api.github.com/gists', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          description: 'Fios Code Lab export',
+          public: false,
+          files: { 'fios-solution.js': { content: sample } },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || `GitHub ${res.status}`);
+      setGistStatus(`Gist created: ${data.html_url}`);
+      toast('Gist created', 'success');
+    } catch (err: any) {
+      setGistStatus(err.message || 'Gist export failed');
+      toast('Gist export failed', 'error');
+    }
   };
 
   const handleSaveFeed = async (e: React.FormEvent) => {
@@ -653,15 +738,68 @@ const SettingsTabInner: React.FC = () => {
 
         <div className="space-y-2">
           <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Theme</span>
-          <div className="flex items-center gap-2">
-            {(['dark', 'light'] as const).map((t) => (
-              <button key={t} onClick={() => setTheme(t)}
+          <div className="flex items-center gap-2 flex-wrap">
+            {([
+              { id: 'dark' as ThemeMode, label: 'Dark', Icon: Moon },
+              { id: 'light' as ThemeMode, label: 'Light', Icon: Sun },
+              { id: 'system' as ThemeMode, label: 'System', Icon: Monitor },
+            ]).map(({ id, label, Icon }) => (
+              <button key={id} type="button" onClick={() => setTheme(id)}
                 className={`px-4 py-2 rounded-lg text-xs font-black uppercase flex items-center gap-1.5 border transition-colors cursor-pointer ${
-                  theme === t ? 'accent-bg text-slate-950 border-transparent' : 'bg-[var(--fios-surface-2)] fios-border text-[var(--fios-text-muted)]'
+                  theme === id ? 'accent-bg text-slate-950 border-transparent' : 'bg-[var(--fios-surface-2)] fios-border text-[var(--fios-text-muted)]'
                 }`}>
-                {t === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />} {t}
+                <Icon className="w-3.5 h-3.5" /> {label}
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => setLowPower(!lowPower)}
+            className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${lowPower ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+          >
+            <BatteryLow className="w-3.5 h-3.5" /> Low-Power {lowPower ? 'On' : 'Off'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpenDyslexic(!openDyslexic)}
+            className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${openDyslexic ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+          >
+            <Type className="w-3.5 h-3.5" /> OpenDyslexic {openDyslexic ? 'On' : 'Off'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setZenMode(!zenMode)}
+            className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${zenMode ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+          >
+            <Focus className="w-3.5 h-3.5" /> Zen mode {zenMode ? 'On' : 'Off'}
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Mobile bottom nav slots (max 5)</span>
+          <div className="flex flex-wrap gap-1.5">
+            {NAV_ITEMS.slice(0, 10).map((item) => {
+              const on = mobileNavSlots.includes(item.id);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    if (on) setMobileNavSlots(mobileNavSlots.filter((s) => s !== item.id));
+                    else if (mobileNavSlots.length < 5) setMobileNavSlots([...mobileNavSlots, item.id]);
+                  }}
+                  className={`px-2 py-1 rounded text-[10px] font-mono font-bold uppercase border cursor-pointer ${on ? 'accent-bg text-slate-950 border-transparent' : 'fios-border text-[var(--fios-text-muted)]'}`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+            <button type="button" onClick={() => setMobileNavSlots([...DEFAULT_MOBILE_NAV])} className="px-2 py-1 text-[10px] font-mono accent-solid-text cursor-pointer">
+              Reset
+            </button>
           </div>
         </div>
 
@@ -760,7 +898,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.0.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
@@ -770,12 +908,58 @@ const SettingsTabInner: React.FC = () => {
             <Shield className="w-3.5 h-3.5" /> Privacy Policy & GDPR
           </button>
           <button
+            onClick={() => setShowTerms(true)}
+            className="px-4 py-2 rounded-lg bg-[#07090e] border border-slate-800 text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <FileText className="w-3.5 h-3.5" /> Terms of Service
+          </button>
+          <button
+            onClick={() => { resetCookieConsent(); toast('Cookie consent reset — banner will reappear', 'info'); }}
+            className="px-4 py-2 rounded-lg bg-[#07090e] border border-slate-800 text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <Cookie className="w-3.5 h-3.5" /> Reset cookie consent
+          </button>
+          <button
             onClick={() => setShowSupport(true)}
             className="px-4 py-2 rounded-lg bg-[#07090e] border border-slate-800 text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
           >
-            <Mail className="w-3.5 h-3.5" /> Contact Support (oryn02@gmail.com)
+            <Mail className="w-3.5 h-3.5" /> Contact Support
+          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setShowAdmin((v) => !v)}
+              className="px-4 py-2 rounded-lg bg-[#07090e] border accent-border text-xs font-mono accent-solid-text cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" /> Admin panel
+            </button>
+          )}
+        </div>
+        {showAdmin && isAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
+      </section>
+
+      {/* GitHub */}
+      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+          <GitBranch className="w-4 h-4 accent-solid-text" /> GitHub
+        </h2>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => void handleGithubSignIn()}
+            className="px-4 py-2 rounded-lg accent-bg text-slate-950 text-xs font-black uppercase cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <GitBranch className="w-3.5 h-3.5" /> Sign in with GitHub
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleGistExport()}
+            className="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
+          >
+            Export Code Lab as Gist
           </button>
         </div>
+        {gistStatus && <p className="text-[11px] font-mono text-slate-400">{gistStatus}</p>}
+        <p className="text-[10px] text-slate-500">Optional: set <code className="accent-solid-text">fios_github_token</code> in localStorage or <code className="accent-solid-text">VITE_GITHUB_TOKEN</code> for automatic gist creation.</p>
       </section>
 
       {/* PRIVACY & DATA RIGHTS */}
@@ -792,7 +976,7 @@ const SettingsTabInner: React.FC = () => {
 
         <div className="pt-1 flex flex-wrap gap-3">
           <button
-            onClick={handleExportData}
+            onClick={() => void handleExportData()}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 accent-solid-text" /> Export My Data (JSON)
@@ -843,6 +1027,7 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
       {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
     </div>
   );

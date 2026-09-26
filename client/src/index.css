@@ -22,12 +22,12 @@
 }
 
 [data-theme="light"] {
-  --fios-bg: #e2e8f0;          /* Deeper slate-200 background so white cards pop */
-  --fios-surface: #ffffff;     /* Crisp white cards */
-  --fios-surface-2: #f1f5f9;   /* Slate-100 for nested containers/inputs */
-  --fios-border: #cbd5e1;      /* Clear slate-300 card borders */
-  --fios-text: #020617;        /* Pitch-dark slate-950 for maximum legibility */
-  --fios-text-muted: #334155;  /* Darker slate-700 so secondary text isn't washed out */
+  --fios-bg: #f7f4ef;          /* Warm off-white canvas */
+  --fios-surface: #f5f2eb;     /* Soft stone card surface */
+  --fios-surface-2: #efeae1;   /* Nested inputs / chips */
+  --fios-border: #d6d0c4;      /* Warm stone border */
+  --fios-text: #1c1917;        /* Stone-900 primary text */
+  --fios-text-muted: #57534e;  /* Stone-600 secondary */
 }
 
 /* Semantic helpers used by theme-aware surfaces */
@@ -126,3 +126,56 @@ body { background-color: #000; overscroll-behavior-y: none; }
 
 /* Mermaid diagrams render on a neutral surface in both themes */
 .fios-mermaid svg { max-width: 100%; height: auto; }
+
+/* Low-power: disable heavy blur / perpetual animation */
+[data-low-power="true"] .backdrop-blur-md,
+[data-low-power="true"] .backdrop-blur-xl,
+[data-low-power="true"] .backdrop-blur-sm {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+[data-low-power="true"] .animate-pulse,
+[data-low-power="true"] .animate-ping,
+[data-low-power="true"] .animate-spin {
+  animation: none !important;
+}
+[data-low-power="true"] [class*="blur-["],
+[data-low-power="true"] .blur-\[100px\] {
+  filter: none !important;
+  opacity: 0 !important;
+}
+
+/* OpenDyslexic accessibility font */
+[data-opendyslexic="true"] body,
+[data-opendyslexic="true"] button,
+[data-opendyslexic="true"] input,
+[data-opendyslexic="true"] textarea,
+[data-opendyslexic="true"] select {
+  font-family: "OpenDyslexic", "Open Dyslexic", Comic Sans MS, Verdana, sans-serif !important;
+}
+
+/* Formatted markdown prose helpers */
+.fios-prose { line-height: 1.65; }
+.fios-prose h1, .fios-prose h2, .fios-prose h3 {
+  font-weight: 800;
+  margin: 0.75em 0 0.35em;
+  color: var(--fios-text);
+}
+.fios-prose p { margin: 0.4em 0; }
+.fios-prose ul, .fios-prose ol { margin: 0.4em 0 0.4em 1.25em; }
+.fios-prose code:not(pre code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  padding: 0.1em 0.35em;
+  border-radius: 0.3em;
+  background: var(--fios-surface-2);
+}
+.fios-prose a { color: var(--fios-accent-solid); text-decoration: underline; }
+.fios-prose table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin: 0.5em 0; }
+.fios-prose th, .fios-prose td { border: 1px solid var(--fios-border); padding: 0.35em 0.5em; }
+.fios-prose blockquote {
+  border-left: 3px solid var(--fios-accent-solid);
+  padding-left: 0.75em;
+  margin: 0.5em 0;
+  color: var(--fios-text-muted);
+}

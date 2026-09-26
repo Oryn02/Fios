@@ -19,9 +19,8 @@ const TEXT_CLASS: Record<LogoSize, string> = {
 };
 
 /**
- * Fios brandmark — an abstract open book (knowledge) with a rising spark
- * (insight), built from clean geometric lines. Recolours with the active
- * accent via CSS variables unless `fixedEmerald` is set.
+ * Fios brandmark — geometric terminal brackets `</>` with a glowing core node.
+ * Recolours with the active accent via CSS variables unless `fixedEmerald` is set.
  */
 export const FiosLogo: React.FC<FiosLogoProps> = ({
   size = 'md',
@@ -31,9 +30,11 @@ export const FiosLogo: React.FC<FiosLogoProps> = ({
 }) => {
   const id = useId().replace(/:/g, '');
   const gradId = `fios-grad-${id}`;
+  const glowId = `fios-glow-${id}`;
   const px = ICON_PX[size];
 
   const from = fixedEmerald ? '#34d399' : 'var(--fios-accent-from, #34d399)';
+  const via = fixedEmerald ? '#2dd4bf' : 'var(--fios-accent-via, #2dd4bf)';
   const to = fixedEmerald ? '#14b8a6' : 'var(--fios-accent-to, #22d3ee)';
 
   return (
@@ -48,38 +49,60 @@ export const FiosLogo: React.FC<FiosLogoProps> = ({
         aria-label="Fios logo"
       >
         <defs>
-          <linearGradient id={gradId} x1="6" y1="6" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+          <linearGradient id={gradId} x1="4" y1="6" x2="44" y2="42" gradientUnits="userSpaceOnUse">
             <stop stopColor={from} />
+            <stop offset="0.5" stopColor={via} />
             <stop offset="1" stopColor={to} />
           </linearGradient>
+          <radialGradient id={glowId} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={from} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={from} stopOpacity="0" />
+          </radialGradient>
         </defs>
 
-        {/* Rounded badge outline */}
-        <rect x="1.25" y="1.25" width="45.5" height="45.5" rx="11" stroke={`url(#${gradId})`} strokeWidth="2.5" opacity="0.55" />
+        {/* Soft glow core */}
+        <circle cx="24" cy="24" r="14" fill={`url(#${glowId})`} opacity="0.55" />
 
-        {/* Open book — two angled pages meeting at a spine */}
-        <path
-          d="M24 16.5C21 14.4 17.6 13.6 13.5 14.2C12.7 14.3 12 15 12 15.9V32.4C12 33.4 12.9 34.2 13.9 34C17.6 33.5 21 34.2 24 36"
+        {/* Outer geometric frame */}
+        <rect
+          x="2"
+          y="2"
+          width="44"
+          height="44"
+          rx="12"
           stroke={`url(#${gradId})`}
-          strokeWidth="2.6"
+          strokeWidth="2"
+          opacity="0.5"
+        />
+
+        {/* Terminal brackets </> */}
+        <path
+          d="M16 14L9 24L16 34"
+          stroke={`url(#${gradId})`}
+          strokeWidth="3.2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <path
-          d="M24 16.5C27 14.4 30.4 13.6 34.5 14.2C35.3 14.3 36 15 36 15.9V32.4C36 33.4 35.1 34.2 34.1 34C30.4 33.5 27 34.2 24 36"
+          d="M32 14L39 24L32 34"
           stroke={`url(#${gradId})`}
-          strokeWidth="2.6"
+          strokeWidth="3.2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {/* Spine */}
-        <path d="M24 16.5V36" stroke={`url(#${gradId})`} strokeWidth="2.2" strokeLinecap="round" opacity="0.7" />
-
-        {/* Knowledge spark rising from the book */}
         <path
-          d="M24 5.5L25.4 9L29 10.4L25.4 11.8L24 15.3L22.6 11.8L19 10.4L22.6 9L24 5.5Z"
-          fill={`url(#${gradId})`}
+          d="M27.5 13.5L20.5 34.5"
+          stroke={`url(#${gradId})`}
+          strokeWidth="3"
+          strokeLinecap="round"
         />
+
+        {/* Orbit nodes */}
+        <circle cx="24" cy="24" r="2.4" fill={`url(#${gradId})`} />
+        <circle cx="12" cy="12" r="1.6" fill={from} opacity="0.85" />
+        <circle cx="36" cy="12" r="1.6" fill={to} opacity="0.85" />
+        <circle cx="12" cy="36" r="1.6" fill={via} opacity="0.85" />
+        <circle cx="36" cy="36" r="1.6" fill={from} opacity="0.85" />
       </svg>
 
       {withWordmark && (

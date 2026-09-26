@@ -8,6 +8,8 @@ export interface DBModule {
   name: string;
   color: string;
   exam_date?: string | null;
+  parent_code?: string | null;
+  tags?: string[] | null;
   created_at: string;
 }
 
@@ -41,7 +43,12 @@ export async function getUserModules(): Promise<DBModule[]> {
   return data || [];
 }
 
-export async function createModule(code: string, name: string, color: string): Promise<DBModule | null> {
+export async function createModule(
+  code: string,
+  name: string,
+  color: string,
+  opts?: { tags?: string[]; parent_code?: string | null }
+): Promise<DBModule | null> {
   if (IS_DEMO) {
     const mod: DBModule = {
       id: `demo-${Date.now()}`,
@@ -49,6 +56,8 @@ export async function createModule(code: string, name: string, color: string): P
       code: code.trim().toUpperCase(),
       name: name.trim(),
       color,
+      tags: opts?.tags || [],
+      parent_code: opts?.parent_code || null,
       created_at: new Date().toISOString(),
     };
     demoModuleState = [...demoModuleState, mod];
@@ -65,12 +74,23 @@ export async function createModule(code: string, name: string, color: string): P
       code: code.trim().toUpperCase(),
       name: name.trim(),
       color,
+      tags: opts?.tags || [],
+      parent_code: opts?.parent_code || null,
     })
     .select()
     .single();
 
   if (error) throw error;
   return data;
+}
+
+export async function updateModuleTags(moduleId: string, tags: string[]): Promise<void> {
+  if (IS_DEMO) {
+    demoModuleState = demoModuleState.map((m) => (m.id === moduleId ? { ...m, tags } : m));
+    return;
+  }
+  const { error } = await supabase.from('modules').update({ tags }).eq('id', moduleId);
+  if (error) throw error;
 }
 
 export async function setModuleExamDate(moduleId: string, examDate: string | null): Promise<void> {
