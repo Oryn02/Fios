@@ -6,7 +6,10 @@ import {
   GripVertical, Eye, EyeOff,
 } from 'lucide-react';
 import { IS_DEMO } from '../lib/demo';
-import { getSavedCalendarUrl, fetchAndParseCalendar, CalendarEvent } from '../lib/calendarService';
+import {
+  getSavedCalendarUrl, fetchAndParseCalendar, CalendarEvent,
+  eventsOnLocalDay, findNextClass, isClassFinished, isClassOngoing,
+} from '../lib/calendarService';
 import { getTasks, createTask, toggleTask, deleteTask } from '../lib/taskService';
 import { getUserDecksWithCards } from '../lib/deckService';
 import type { Task } from '../types/db';
@@ -102,17 +105,13 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         if (savedUrl) {
           const events = await fetchAndParseCalendar(savedUrl);
           const now = new Date();
-          const todayEvents = events.filter((e) =>
-            e.startDate.getFullYear() === now.getFullYear() &&
-            e.startDate.getMonth() === now.getMonth() &&
-            e.startDate.getDate() === now.getDate()
-          ).sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-          setTodayClasses(todayEvents);
+          setTodayClasses(eventsOnLocalDay(events, now));
+          const next = findNextClass(events, now);
           const upcoming = events
-            .filter((e) => e.startDate.getTime() >= now.getTime())
+            .filter((e) => e.endDate.getTime() > now.getTime())
             .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
             .slice(0, 5);
-          setUpcomingClasses(upcoming);
+          setUpcomingClasses(next ? [next, ...upcoming.filter((e) => e.id !== next.id)].slice(0, 5) : upcoming);
         }
       } catch (err) {
         console.error('Failed to load today classes:', err);
@@ -374,20 +373,45 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
             </div>
           ) : (
             <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-              {todayClasses.map((item) => (
-                <div key={item.id} className="p-3.5 rounded-xl bg-[#07090e]/80 border border-slate-800/80 flex items-center justify-between gap-4">
-                  <div className="space-y-0.5 min-w-0">
-                    <div className="text-[10px] font-mono font-bold text-slate-400">{formatTime(item.startDate)} - {formatTime(item.endDate)}</div>
-                    <div className="text-xs font-black text-white truncate">{item.title}</div>
-                    {item.location && (
-                      <div className="text-[11px] font-mono accent-solid-text flex items-center gap-1 font-semibold truncate">
-                        <MapPin className="w-3 h-3 shrink-0" /> {item.location}
+              {todayClasses.map((item) => {
+                const now = new Date();
+                const finished = isClassFinished(item, now, now);
+                const ongoing = isClassOngoing(item, now, now);
+                const isNext = upcomingClasses[0]?.id === item.id && !finished;
+                return (
+                  <div
+                    key={item.id}
+                    className={`p-3.5 rounded-xl bg-[var(--fios-surface-2)]/80 border fios-border flex items-center justify-between gap-4 ${
+                      finished ? 'opacity-45' : ongoing ? 'border-emerald-400/50' : isNext ? 'border-cyan-400/40' : ''
+                    }`}
+                  >
+                    <div className="space-y-0.5 min-w-0">
+                      <div className={`text-[10px] font-mono font-bold ${finished ? 'text-[var(--fios-text-muted)]' : 'text-[var(--fios-text-muted)]'}`}>
+                        {formatTime(item.startDate)} - {formatTime(item.endDate)}
                       </div>
-                    )}
+                      <div className={`text-xs font-black truncate ${finished ? 'line-through text-[var(--fios-text-muted)]' : 'text-[var(--fios-text)]'}`}>
+                        {item.title}
+                      </div>
+                      {item.location && (
+                        <div className="text-[11px] font-mono accent-solid-text flex items-center gap-1 font-semibold truncate">
+                          <MapPin className="w-3 h-3 shrink-0" /> {item.location}
+                        </div>
+                      )}
+                    </div>
+                    <span className={`text-[9px] font-black font-mono uppercase tracking-widest px-2 py-0.5 rounded border shrink-0 ${
+                      finished
+                        ? 'bg-[var(--fios-surface)] text-[var(--fios-text-muted)] fios-border'
+                        : ongoing
+                        ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                        : isNext
+                        ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+                        : 'bg-emerald-500/10 accent-solid-text border-emerald-500/20'
+                    }`}>
+                      {finished ? 'Completed' : ongoing ? 'Now' : isNext ? 'Next' : 'Scheduled'}
+                    </span>
                   </div>
-                  <span className="text-[9px] font-black font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-500/10 accent-solid-text border border-emerald-500/20 shrink-0">Scheduled</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

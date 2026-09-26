@@ -130,7 +130,10 @@ export async function generateCodeExam(
       responseMimeType: 'application/json',
       responseSchema: codeExamSchema,
       systemInstruction:
-        'You are an expert programming instructor. Produce concise, self-contained coding challenges. Return well-formatted, runnable code in the requested language only.',
+        'You are an expert programming instructor. Produce concise, self-contained coding challenges. ' +
+        'CRITICAL: starterCode and solutionCode MUST be multi-line, properly indented, human-readable source ' +
+        '(never a single minified line). Use real newline characters in JSON string values. ' +
+        'Return runnable code in the requested language only.',
     },
   });
 

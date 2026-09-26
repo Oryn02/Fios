@@ -13,6 +13,23 @@ export type WidgetId = 'flightPlan' | 'heatmap' | 'dueCards' | 'calendar';
 export const DEFAULT_WIDGET_ORDER: WidgetId[] = ['flightPlan', 'heatmap', 'dueCards', 'calendar'];
 export const DEFAULT_MOBILE_NAV = ['overview', 'modules', 'code', 'documents', 'tutor'];
 
+/** Default sidebar / drawer order — keep in sync with DashboardLayout NAV_ITEMS ids. */
+export const DEFAULT_NAV_ORDER: string[] = [
+  'overview',
+  'flashcards',
+  'modules',
+  'quiz',
+  'code',
+  'documents',
+  'tutor',
+  'atu-calendar',
+  'grades',
+  'timer',
+  'schedule',
+  'settings',
+  'updates',
+];
+
 export interface PreferencesState {
   lowPower: boolean;
   zenMode: boolean;
@@ -20,6 +37,8 @@ export interface PreferencesState {
   widgetOrder: WidgetId[];
   widgetVisibility: Record<WidgetId, boolean>;
   mobileNavSlots: string[];
+  /** Desktop sidebar + drawer nav item order (ids). */
+  navOrder: string[];
 }
 
 const DEFAULTS: PreferencesState = {
@@ -34,14 +53,39 @@ const DEFAULTS: PreferencesState = {
     calendar: true,
   },
   mobileNavSlots: [...DEFAULT_MOBILE_NAV],
+  navOrder: [...DEFAULT_NAV_ORDER],
 };
 
 const LS_KEY = 'fios_preferences';
 
+function normalizeNavOrder(order: unknown): string[] {
+  const incoming = Array.isArray(order) ? order.filter((id): id is string => typeof id === 'string') : [];
+  const seen = new Set<string>();
+  const next: string[] = [];
+  for (const id of incoming) {
+    if (DEFAULT_NAV_ORDER.includes(id) && !seen.has(id)) {
+      next.push(id);
+      seen.add(id);
+    }
+  }
+  for (const id of DEFAULT_NAV_ORDER) {
+    if (!seen.has(id)) next.push(id);
+  }
+  return next;
+}
+
 function loadLocal(): PreferencesState {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return { ...DEFAULTS, widgetVisibility: { ...DEFAULTS.widgetVisibility }, widgetOrder: [...DEFAULTS.widgetOrder], mobileNavSlots: [...DEFAULTS.mobileNavSlots] };
+    if (!raw) {
+      return {
+        ...DEFAULTS,
+        widgetVisibility: { ...DEFAULTS.widgetVisibility },
+        widgetOrder: [...DEFAULTS.widgetOrder],
+        mobileNavSlots: [...DEFAULTS.mobileNavSlots],
+        navOrder: [...DEFAULTS.navOrder],
+      };
+    }
     const parsed = JSON.parse(raw);
     return {
       ...DEFAULTS,
@@ -49,9 +93,16 @@ function loadLocal(): PreferencesState {
       widgetVisibility: { ...DEFAULTS.widgetVisibility, ...(parsed.widgetVisibility || {}) },
       widgetOrder: Array.isArray(parsed.widgetOrder) ? parsed.widgetOrder : [...DEFAULTS.widgetOrder],
       mobileNavSlots: Array.isArray(parsed.mobileNavSlots) ? parsed.mobileNavSlots : [...DEFAULTS.mobileNavSlots],
+      navOrder: normalizeNavOrder(parsed.navOrder),
     };
   } catch {
-    return { ...DEFAULTS, widgetVisibility: { ...DEFAULTS.widgetVisibility }, widgetOrder: [...DEFAULTS.widgetOrder], mobileNavSlots: [...DEFAULTS.mobileNavSlots] };
+    return {
+      ...DEFAULTS,
+      widgetVisibility: { ...DEFAULTS.widgetVisibility },
+      widgetOrder: [...DEFAULTS.widgetOrder],
+      mobileNavSlots: [...DEFAULTS.mobileNavSlots],
+      navOrder: [...DEFAULTS.navOrder],
+    };
   }
 }
 
@@ -62,6 +113,7 @@ interface PreferencesContextValue extends PreferencesState {
   setWidgetOrder: (order: WidgetId[]) => void;
   setWidgetVisible: (id: WidgetId, visible: boolean) => void;
   setMobileNavSlots: (slots: string[]) => void;
+  setNavOrder: (order: string[]) => void;
   resetPreferences: () => void;
 }
 
@@ -82,6 +134,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
           widgetVisibility: { ...prev.widgetVisibility, ...(remote.widgetVisibility || {}) },
           widgetOrder: Array.isArray(remote.widgetOrder) ? remote.widgetOrder : prev.widgetOrder,
           mobileNavSlots: Array.isArray(remote.mobileNavSlots) ? remote.mobileNavSlots : prev.mobileNavSlots,
+          navOrder: normalizeNavOrder(remote.navOrder ?? prev.navOrder),
         };
         localStorage.setItem(LS_KEY, JSON.stringify(next));
         return next;
@@ -109,11 +162,13 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     patch({ widgetVisibility: { ...prefs.widgetVisibility, [id]: visible } });
   }, [patch, prefs.widgetVisibility]);
   const setMobileNavSlots = useCallback((slots: string[]) => patch({ mobileNavSlots: slots.slice(0, 5) }), [patch]);
+  const setNavOrder = useCallback((order: string[]) => patch({ navOrder: normalizeNavOrder(order) }), [patch]);
   const resetPreferences = useCallback(() => persist({
     ...DEFAULTS,
     widgetVisibility: { ...DEFAULTS.widgetVisibility },
     widgetOrder: [...DEFAULTS.widgetOrder],
     mobileNavSlots: [...DEFAULTS.mobileNavSlots],
+    navOrder: [...DEFAULTS.navOrder],
   }), [persist]);
 
   // low-power + dyslexia attributes on <html>
@@ -147,8 +202,9 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setWidgetOrder,
     setWidgetVisible,
     setMobileNavSlots,
+    setNavOrder,
     resetPreferences,
-  }), [prefs, setLowPower, setZenMode, setOpenDyslexic, setWidgetOrder, setWidgetVisible, setMobileNavSlots, resetPreferences]);
+  }), [prefs, setLowPower, setZenMode, setOpenDyslexic, setWidgetOrder, setWidgetVisible, setMobileNavSlots, setNavOrder, resetPreferences]);
 
   return (
     <PreferencesContext.Provider value={value}>

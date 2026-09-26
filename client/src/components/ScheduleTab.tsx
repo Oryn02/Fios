@@ -1,12 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Calendar as CalendarIcon, MapPin, Link2, RefreshCw,
-  Upload, ChevronLeft, ChevronRight, Check, Play, Coffee,
+  Upload, ChevronLeft, ChevronRight, Check, Play, Coffee, GraduationCap,
 } from 'lucide-react';
-import { 
-  saveCalendarUrl, getSavedCalendarUrl, fetchAndParseCalendar, 
-  parseIcsText, CalendarEvent 
+import {
+  saveCalendarUrl, getSavedCalendarUrl, fetchAndParseCalendar,
+  parseIcsText, CalendarEvent, eventsOnLocalDay, findNextClass,
+  isClassFinished, isClassOngoing,
 } from '../lib/calendarService';
+import {
+  ATU_ACADEMIC_EVENTS, ATU_CATEGORY_STYLES, atuEventsOnDay, localDateKey,
+  type AtuAcademicEvent,
+} from '../lib/atuAcademicCalendar';
 
 type ViewMode = 'day' | 'week' | 'month';
 
@@ -23,47 +28,36 @@ interface TimetableItem {
 }
 
 const ScheduleTabInner: React.FC = () => {
-  /* ==========================================================================
-     1. STATE MANAGEMENT
-     ========================================================================== */
   const [icalUrl, setIcalUrl] = useState('');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // View Controls
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  
-  // Real-time clock for status calculations
   const [now, setNow] = useState<Date>(new Date());
+  const [showAtuOverlay, setShowAtuOverlay] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
   }, []);
 
-  /* ==========================================================================
-     2. INITIAL LOAD HANDLER
-     ========================================================================== */
   useEffect(() => {
     async function loadSavedFeed() {
       try {
         const savedUrl = await getSavedCalendarUrl();
         if (savedUrl) {
           setIcalUrl(savedUrl);
-          loadEvents(savedUrl);
+          void loadEvents(savedUrl);
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Failed to load saved calendar feed:', err);
       }
     }
-    loadSavedFeed();
+    void loadSavedFeed();
   }, []);
 
-  /* ==========================================================================
-     3. EVENT PARSING & SYNC HANDLERS
-     ========================================================================== */
   const loadEvents = async (urlToFetch: string) => {
     if (!urlToFetch.trim()) return;
     setLoading(true);
@@ -72,9 +66,9 @@ const ScheduleTabInner: React.FC = () => {
     try {
       const parsedEvents = await fetchAndParseCalendar(urlToFetch);
       setEvents(parsedEvents);
-      setStatusMessage({ 
-        type: 'success', 
-        text: `Last successful sync: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+      setStatusMessage({
+        type: 'success',
+        text: `Synced ${parsedEvents.length} sessions · ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
       });
     } catch (err: any) {
       setStatusMessage({ type: 'error', text: err.message || 'Error fetching calendar feed.' });
@@ -91,10 +85,7 @@ const ScheduleTabInner: React.FC = () => {
     setStatusMessage(null);
 
     try {
-      // Immediately load and parse the calendar feed
       await loadEvents(icalUrl.trim());
-      
-      // Save the URL to Supabase in the background without blocking the UI
       saveCalendarUrl(icalUrl.trim()).catch((err) => {
         console.error('Background save failed:', err);
       });
@@ -114,32 +105,20 @@ const ScheduleTabInner: React.FC = () => {
 
     try {
       const rawText = await file.text();
-      const parsedEvents = parseIcsText(rawText);
+      const rangeStart = new Date(new Date().getFullYear() - 1, 0, 1);
+      const rangeEnd = new Date(new Date().getFullYear() + 2, 11, 31);
+      const parsedEvents = parseIcsText(rawText, rangeStart, rangeEnd);
       setEvents(parsedEvents);
-      setStatusMessage({ type: 'success', text: `Loaded ${parsedEvents.length} events directly from file!` });
-    } catch (err: any) {
+      setStatusMessage({ type: 'success', text: `Loaded ${parsedEvents.length} events from file (recurring expanded).` });
+    } catch {
       setStatusMessage({ type: 'error', text: 'Failed to parse .ics file.' });
     } finally {
       setLoading(false);
     }
   };
 
-  /* ==========================================================================
-     4. DATE & TIMELINE COMPUTATIONS
-     ========================================================================== */
-  const isSameDay = (d1: Date, d2: Date) => {
-    return (
-      d1.getFullYear() === d2.getFullYear() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getDate() === d2.getDate()
-    );
-  };
-
-  const buildDayTimeline = (targetDate: Date): TimetableItem[] => {
-    const dayClasses = events
-      .filter(e => isSameDay(e.startDate, targetDate))
-      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-
+  const buildDayTimeline = useCallback((targetDate: Date): TimetableItem[] => {
+    const dayClasses = eventsOnLocalDay(events, targetDate);
     const items: TimetableItem[] = [];
 
     for (let i = 0; i < dayClasses.length; i++) {
@@ -155,7 +134,7 @@ const ScheduleTabInner: React.FC = () => {
           items.push({
             type: 'break',
             data: {
-              id: `break-${targetDate.toDateString()}-${i}`,
+              id: `break-${localDateKey(targetDate)}-${i}`,
               startDate: current.endDate,
               endDate: next.startDate,
               durationMinutes: gapMinutes,
@@ -166,22 +145,26 @@ const ScheduleTabInner: React.FC = () => {
     }
 
     return items;
-  };
+  }, [events]);
 
-  const singleDayTimeline = useMemo(() => buildDayTimeline(selectedDate), [events, selectedDate]);
+  const singleDayTimeline = useMemo(
+    () => buildDayTimeline(selectedDate),
+    [buildDayTimeline, selectedDate]
+  );
 
-  const nextUpIndex = useMemo(() => {
-    if (!isSameDay(selectedDate, now)) return -1;
-    return singleDayTimeline.findIndex(
-      item => item.type === 'event' && (item.data as CalendarEvent).startDate > now
-    );
-  }, [singleDayTimeline, selectedDate, now]);
+  const nextClass = useMemo(() => findNextClass(events, now), [events, now]);
+
+  const nextUpEventId = useMemo(() => {
+    if (localDateKey(selectedDate) !== localDateKey(now)) return null;
+    const upcoming = eventsOnLocalDay(events, selectedDate).find((e) => e.startDate > now);
+    return upcoming?.id ?? null;
+  }, [events, selectedDate, now]);
 
   const weekDays = useMemo(() => {
     const curr = new Date(selectedDate);
-    const dayOfWeek = curr.getDay(); 
+    const dayOfWeek = curr.getDay();
     const distanceToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    
+
     const monday = new Date(curr);
     monday.setDate(curr.getDate() + distanceToMon);
 
@@ -218,7 +201,8 @@ const ScheduleTabInner: React.FC = () => {
   const resetToToday = () => setSelectedDate(new Date());
 
   const formatTimeRange = (start: Date, end: Date) => {
-    const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    const formatTime = (d: Date) =>
+      d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     return `${formatTime(start)}–${formatTime(end)}`;
   };
 
@@ -231,29 +215,155 @@ const ScheduleTabInner: React.FC = () => {
     return `${mins}m break`;
   };
 
-  return (
-    <div className="space-y-6 max-w-5xl mx-auto font-sans text-slate-100">
-      
-      {/* Header Banner */}
-      <header className="space-y-1">
-        <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-black uppercase tracking-widest">
-          <CalendarIcon className="w-3.5 h-3.5" />
-          TIMETABLE CONNECTED
+  const monthAtuByDay = useMemo(() => {
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
+    const map = new Map<string, AtuAcademicEvent[]>();
+    for (const ev of ATU_ACADEMIC_EVENTS) {
+      const [y, m] = ev.dateKey.split('-').map(Number);
+      if (y === year && m === month + 1) {
+        const list = map.get(ev.dateKey) || [];
+        list.push(ev);
+        map.set(ev.dateKey, list);
+      }
+    }
+    return map;
+  }, [selectedDate]);
+
+  const renderClassCard = (event: CalendarEvent, viewingDay: Date, compact = false) => {
+    const finished = isClassFinished(event, now, viewingDay);
+    const ongoing = isClassOngoing(event, now, viewingDay);
+    const isNextUp = event.id === nextUpEventId || (nextClass?.id === event.id && localDateKey(viewingDay) === localDateKey(now));
+
+    return (
+      <div
+        key={event.id}
+        className={`bg-[var(--fios-surface)] border rounded-xl ${compact ? 'p-4' : 'p-5'} flex flex-col sm:flex-row items-start gap-4 sm:gap-6 transition-all ${
+          ongoing
+            ? 'border-emerald-400 border-l-8 border-l-emerald-400 bg-emerald-500/10 shadow-[var(--fios-shadow-md)]'
+            : isNextUp && !finished
+            ? 'border-cyan-500/60 border-l-4 border-l-cyan-400 bg-cyan-500/5'
+            : finished
+            ? 'border-[var(--fios-border)] opacity-45 border-l-4 border-l-slate-500'
+            : 'fios-border border-l-4 border-l-emerald-400/50 hover:accent-border'
+        }`}
+      >
+        <div className={`w-28 sm:w-32 shrink-0 font-mono ${compact ? 'text-xs' : 'text-sm'} font-black pt-0.5 ${
+          finished ? 'text-[var(--fios-text-muted)]' : 'text-[var(--fios-text)]'
+        }`}>
+          {formatTimeRange(event.startDate, event.endDate)}
         </div>
-        <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">College Timetable</h1>
+
+        <div className="flex-1 space-y-1.5 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className={`${compact ? 'text-sm' : 'text-base'} font-black tracking-wide ${
+              finished ? 'line-through text-[var(--fios-text-muted)]' : 'text-[var(--fios-text)]'
+            }`}>
+              {event.title}
+            </h3>
+
+            {ongoing && (
+              <span className="bg-emerald-400/20 text-emerald-300 text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded border border-emerald-400/50 animate-pulse flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                In progress
+              </span>
+            )}
+
+            {isNextUp && !finished && !ongoing && (
+              <span className="bg-cyan-500/20 text-cyan-300 text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded border border-cyan-400/50 flex items-center gap-1">
+                <Play className="w-2.5 h-2.5 fill-cyan-300" />
+                Next
+              </span>
+            )}
+
+            {finished && (
+              <span className="bg-[var(--fios-surface-2)] text-[var(--fios-text-muted)] text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded border fios-border flex items-center gap-1">
+                <Check className="w-3 h-3" />
+                Completed
+              </span>
+            )}
+          </div>
+
+          {event.location && (
+            <p className={`text-xs font-mono flex items-center gap-1.5 font-bold ${finished ? 'text-[var(--fios-text-muted)]' : 'text-cyan-400'}`}>
+              <MapPin className="w-3.5 h-3.5 shrink-0" /> {event.location}
+            </p>
+          )}
+
+          {!compact && event.description && (
+            <p className="text-xs text-[var(--fios-text-muted)] font-mono leading-relaxed pt-1 whitespace-pre-line">
+              {event.description}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6 max-w-5xl mx-auto font-sans text-[var(--fios-text)]">
+      <header className="space-y-1">
+        <div className="flex items-center gap-2 accent-solid-text text-xs font-mono font-black uppercase tracking-widest">
+          <CalendarIcon className="w-3.5 h-3.5" />
+          Timetable connected
+        </div>
+        <h1 className="text-3xl font-black italic uppercase tracking-tight text-[var(--fios-text)]">
+          College Timetable
+        </h1>
       </header>
 
-      {/* Sync Control Card */}
-      <div className="bg-[#0e131f] border border-slate-800 rounded-xl p-4 shadow-xl space-y-3">
-        <form onSubmit={handleSaveAndFetch} className="flex flex-col sm:flex-row items-center gap-3">
+      {/* Next Class — prominent */}
+      {nextClass && (
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedDate(new Date(nextClass.startDate));
+            setViewMode('day');
+          }}
+          className="w-full text-left rounded-2xl border accent-border bg-[var(--fios-surface)] p-5 sm:p-6 shadow-[var(--fios-shadow-md)] space-y-3 cursor-pointer hover:opacity-95 transition-opacity"
+        >
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-black uppercase tracking-widest accent-solid-text">
+              <Play className="w-3.5 h-3.5 fill-current" />
+              Next class
+            </span>
+            <span className="text-xs font-mono font-bold text-[var(--fios-text-muted)]">
+              {nextClass.startDate.toLocaleDateString('en-GB', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+              })}
+              {' · '}
+              {formatTimeRange(nextClass.startDate, nextClass.endDate)}
+            </span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--fios-text)]">
+            {nextClass.title}
+          </h2>
+          {nextClass.location && (
+            <p className="text-sm font-mono text-cyan-400 flex items-center gap-1.5 font-bold">
+              <MapPin className="w-4 h-4" /> {nextClass.location}
+            </p>
+          )}
+          {isClassOngoing(nextClass, now, nextClass.startDate) && (
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-black uppercase px-2.5 py-1 rounded border border-emerald-400/50 bg-emerald-400/15 text-emerald-300">
+              Happening now
+            </span>
+          )}
+        </button>
+      )}
+
+      {/* Sync Control */}
+      <div className="bg-[var(--fios-surface)] border fios-border rounded-xl p-4 shadow-[var(--fios-shadow-sm)] space-y-3">
+        <form onSubmit={(e) => void handleSaveAndFetch(e)} className="flex flex-col sm:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
-            <Link2 className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+            <Link2 className="w-4 h-4 text-[var(--fios-text-muted)] absolute left-3 top-2.5" />
             <input
               type="url"
               value={icalUrl}
               onChange={(e) => setIcalUrl(e.target.value)}
               placeholder="https://timetables.atu.ie/Ical/StudentSet?studentSetID=..."
-              className="w-full bg-[#07090e] border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-400 transition-colors"
+              className="w-full bg-[var(--fios-surface-2)] border fios-border rounded-lg pl-9 pr-3 py-2 text-xs font-mono text-[var(--fios-text)] placeholder:opacity-50 focus:outline-none focus:accent-border transition-colors"
             />
           </div>
           <button
@@ -263,16 +373,16 @@ const ScheduleTabInner: React.FC = () => {
           >
             {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : 'Sync'}
           </button>
-          
-          <label className="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 shrink-0">
+
+          <label className="w-full sm:w-auto px-4 py-2 bg-[var(--fios-surface-2)] border fios-border hover:accent-border text-[var(--fios-text)] text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 shrink-0">
             <Upload className="w-3.5 h-3.5 text-cyan-400" />
             Import .ics
-            <input type="file" accept=".ics" onChange={handleFileUpload} className="hidden" />
+            <input type="file" accept=".ics" onChange={(e) => void handleFileUpload(e)} className="hidden" />
           </label>
         </form>
 
         {statusMessage && (
-          <p className={`text-[11px] font-mono ${statusMessage.type === 'success' ? 'text-slate-400' : 'text-rose-400'}`}>
+          <p className={`text-[11px] font-mono ${statusMessage.type === 'success' ? 'text-[var(--fios-text-muted)]' : 'text-rose-400'}`}>
             {statusMessage.text}
           </p>
         )}
@@ -280,152 +390,113 @@ const ScheduleTabInner: React.FC = () => {
 
       {/* Date Header & View Selector */}
       <div className="flex flex-col items-center justify-center space-y-4 py-2">
-        <h2 className="text-2xl font-black italic uppercase text-white tracking-wide">
+        <h2 className="text-2xl font-black italic uppercase tracking-wide text-[var(--fios-text)] text-center">
           {viewMode === 'day' && selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           {viewMode === 'week' && `Week of ${weekDays[0].toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – ${weekDays[6].toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
           {viewMode === 'month' && selectedDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
         </h2>
 
-        {/* Navigation & Controls */}
         <div className="flex flex-wrap items-center justify-center gap-3">
-          
-          {/* Day Arrows & Today */}
-          <div className="flex items-center bg-[#07090e] border border-slate-800 rounded-lg p-1 gap-1">
-            <button onClick={() => changeDate(-1)} className="p-1.5 hover:bg-slate-800 text-slate-300 rounded-md transition-colors">
+          <div className="flex items-center bg-[var(--fios-surface-2)] border fios-border rounded-lg p-1 gap-1">
+            <button type="button" onClick={() => changeDate(-1)} className="p-1.5 hover:opacity-80 text-[var(--fios-text)] rounded-md transition-colors cursor-pointer">
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <button onClick={resetToToday} className="px-3 py-1 text-xs font-mono font-bold uppercase text-slate-200 hover:bg-slate-800 rounded-md transition-colors">
+            <button type="button" onClick={resetToToday} className="px-3 py-1 text-xs font-mono font-bold uppercase text-[var(--fios-text)] hover:opacity-80 rounded-md transition-colors cursor-pointer">
               Today
             </button>
-            <button onClick={() => changeDate(1)} className="p-1.5 hover:bg-slate-800 text-slate-300 rounded-md transition-colors">
+            <button type="button" onClick={() => changeDate(1)} className="p-1.5 hover:opacity-80 text-[var(--fios-text)] rounded-md transition-colors cursor-pointer">
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Date Picker Input */}
-          <div className="relative flex items-center bg-[#07090e] border border-slate-800 rounded-lg px-3 py-1.5 hover:border-slate-700 transition-colors">
+          <div className="relative flex items-center bg-[var(--fios-surface-2)] border fios-border rounded-lg px-3 py-1.5">
             <CalendarIcon className="w-3.5 h-3.5 text-cyan-400 mr-2 shrink-0 pointer-events-none" />
             <input
               type="date"
               value={formattedInputDate}
               onChange={handleDateChange}
-              className="bg-transparent text-xs font-mono font-bold text-slate-200 focus:outline-none cursor-pointer scheme-dark"
+              className="bg-transparent text-xs font-mono font-bold text-[var(--fios-text)] focus:outline-none cursor-pointer"
             />
           </div>
 
-          {/* View Mode Toggle */}
-          <div className="flex items-center bg-[#07090e] border border-slate-800 rounded-lg p-1">
+          <div className="flex items-center bg-[var(--fios-surface-2)] border fios-border rounded-lg p-1">
             {(['day', 'week', 'month'] as ViewMode[]).map((mode) => (
               <button
                 key={mode}
+                type="button"
                 onClick={() => setViewMode(mode)}
-                className={`px-4 py-1.5 rounded-md text-xs font-mono font-bold uppercase transition-all ${
+                className={`px-4 py-1.5 rounded-md text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
                   viewMode === mode
-                    ? 'bg-emerald-400 text-slate-950 font-black shadow-md'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'accent-bg text-slate-950 font-black shadow-md'
+                    : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)]'
                 }`}
               >
                 {mode}
               </button>
             ))}
           </div>
+
+          {viewMode === 'month' && (
+            <label className="flex items-center gap-2 text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)] cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showAtuOverlay}
+                onChange={(e) => setShowAtuOverlay(e.target.checked)}
+                className="accent-[var(--fios-accent-solid)]"
+              />
+              <GraduationCap className="w-3.5 h-3.5 accent-solid-text" />
+              ATU key dates
+            </label>
+          )}
         </div>
       </div>
 
-      {/* Timetable Events Container */}
-      {events.length === 0 && !loading ? (
-        <div className="bg-[#0e131f]/50 border border-slate-800 rounded-xl p-12 text-center space-y-2">
-          <CalendarIcon className="w-8 h-8 text-slate-600 mx-auto" />
-          <p className="text-xs font-bold text-slate-400 uppercase">No Timetable Synced</p>
+      {/* Views */}
+      {events.length === 0 && !loading && viewMode !== 'month' ? (
+        <div className="bg-[var(--fios-surface)]/50 border fios-border rounded-xl p-12 text-center space-y-2">
+          <CalendarIcon className="w-8 h-8 text-[var(--fios-text-muted)] mx-auto opacity-50" />
+          <p className="text-xs font-bold text-[var(--fios-text-muted)] uppercase">No timetable synced</p>
+          <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Paste your ATU iCal URL above, or open Month to see academic key dates.</p>
         </div>
       ) : viewMode === 'day' ? (
         <div className="space-y-3">
+          {showAtuOverlay && atuEventsOnDay(selectedDate).map((atu) => (
+            <div
+              key={atu.id}
+              className="bg-[var(--fios-surface)] border fios-border rounded-xl p-4 flex items-start gap-3 border-l-4 border-l-amber-400/70"
+            >
+              <GraduationCap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-black text-[var(--fios-text)]">{atu.title}</h3>
+                  <span className={`text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded border ${ATU_CATEGORY_STYLES[atu.category]}`}>
+                    ATU · {atu.category}
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--fios-text-muted)]">{atu.description}</p>
+              </div>
+            </div>
+          ))}
+
           {singleDayTimeline.length === 0 ? (
-            <div className="bg-[#0e131f] border border-slate-800 rounded-xl p-10 text-center text-slate-400 text-xs font-mono font-bold uppercase">
+            <div className="bg-[var(--fios-surface)] border fios-border rounded-xl p-10 text-center text-[var(--fios-text-muted)] text-xs font-mono font-bold uppercase">
               No classes scheduled for this day.
             </div>
           ) : (
-            singleDayTimeline.map((item, index) => {
+            singleDayTimeline.map((item) => {
               if (item.type === 'break') {
                 const breakData = item.data as BreakData;
                 return (
                   <div key={breakData.id} className="relative flex items-center justify-center my-4">
-                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800/80"></div></div>
-                    <span className="relative bg-[#07090e] px-4 py-1 border border-slate-800 rounded-full text-[11px] font-mono font-bold text-slate-400 flex items-center gap-1.5">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t fios-border opacity-60" /></div>
+                    <span className="relative bg-[var(--fios-surface-2)] px-4 py-1 border fios-border rounded-full text-[11px] font-mono font-bold text-[var(--fios-text-muted)] flex items-center gap-1.5">
                       <Coffee className="w-3.5 h-3.5 text-amber-400" />
                       {formatBreakDuration(breakData.durationMinutes)}
                     </span>
                   </div>
                 );
               }
-
-              const event = item.data as CalendarEvent;
-              const isToday = isSameDay(selectedDate, now);
-              const isOngoing = isToday && now >= event.startDate && now <= event.endDate;
-              const isFinished = isToday && now > event.endDate;
-              const isNextUp = index === nextUpIndex;
-
-              return (
-                <div 
-                  key={event.id} 
-                  className={`bg-[#0e131f] border rounded-xl p-5 flex flex-col sm:flex-row items-start gap-6 transition-all ${
-                    isOngoing
-                      ? 'border-emerald-400 border-l-8 border-l-emerald-400 bg-emerald-950/20 shadow-[0_0_20px_rgba(52,211,153,0.12)]'
-                      : isNextUp
-                      ? 'border-cyan-500/60 border-l-4 border-l-cyan-400 bg-cyan-950/10'
-                      : isFinished
-                      ? 'border-slate-800/50 opacity-50 border-l-4 border-l-slate-700'
-                      : 'border-slate-800 border-l-4 border-l-emerald-400/50 hover:border-slate-700'
-                  }`}
-                >
-                  {/* Left Column: Time Block */}
-                  <div className="w-32 shrink-0 font-mono text-sm font-black text-slate-100 pt-0.5">
-                    {formatTimeRange(event.startDate, event.endDate)}
-                  </div>
-
-                  {/* Right Column: Lecture Metadata */}
-                  <div className="flex-1 space-y-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className={`text-base font-black text-white tracking-wide ${isFinished ? 'line-through' : ''}`}>
-                        {event.title}
-                      </h3>
-
-                      {isOngoing && (
-                        <span className="bg-emerald-400/20 text-emerald-300 text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded border border-emerald-400/50 animate-pulse flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                          IN PROGRESS
-                        </span>
-                      )}
-
-                      {isNextUp && (
-                        <span className="bg-cyan-500/20 text-cyan-300 text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded border border-cyan-400/50 flex items-center gap-1">
-                          <Play className="w-2.5 h-2.5 fill-cyan-300" />
-                          NEXT
-                        </span>
-                      )}
-
-                      {isFinished && (
-                        <span className="bg-slate-800 text-slate-400 text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded flex items-center gap-1">
-                          <Check className="w-3 h-3" />
-                          FINISHED
-                        </span>
-                      )}
-                    </div>
-
-                    {event.location && (
-                      <p className="text-xs font-mono text-cyan-400 flex items-center gap-1.5 font-bold">
-                        <MapPin className="w-3.5 h-3.5 text-cyan-500" /> {event.location}
-                      </p>
-                    )}
-
-                    {event.description && (
-                      <p className="text-xs text-slate-400 font-mono leading-relaxed pt-1 whitespace-pre-line">
-                        {event.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
+              return renderClassCard(item.data as CalendarEvent, selectedDate);
             })
           )}
         </div>
@@ -433,21 +504,32 @@ const ScheduleTabInner: React.FC = () => {
         <div className="space-y-8">
           {weekDays.map((day) => {
             const timeline = buildDayTimeline(day);
-            const isToday = isSameDay(day, now);
+            const isToday = localDateKey(day) === localDateKey(now);
+            const atuDay = showAtuOverlay ? atuEventsOnDay(day) : [];
 
             return (
               <div key={day.toDateString()} className="space-y-3">
-                <div className="border-b border-slate-800 pb-2">
-                  <h3 className={`text-sm font-black italic uppercase tracking-wider ${isToday ? 'text-emerald-400' : 'text-slate-300'}`}>
+                <div className="border-b fios-border pb-2">
+                  <h3 className={`text-sm font-black italic uppercase tracking-wider ${isToday ? 'accent-solid-text' : 'text-[var(--fios-text)]'}`}>
                     {day.toLocaleDateString('en-GB', { weekday: 'long' })}
                   </h3>
-                  <p className="text-xs font-mono text-slate-500">
+                  <p className="text-xs font-mono text-[var(--fios-text-muted)]">
                     {day.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
 
-                {timeline.length === 0 ? (
-                  <p className="text-xs font-mono text-slate-600 py-2">No classes</p>
+                {atuDay.map((atu) => (
+                  <div key={atu.id} className="text-xs font-mono px-3 py-2 rounded-lg border fios-border bg-[var(--fios-surface)] flex items-center gap-2">
+                    <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="font-bold text-[var(--fios-text)]">{atu.title}</span>
+                    <span className={`ml-auto text-[9px] font-black uppercase px-2 py-0.5 rounded border ${ATU_CATEGORY_STYLES[atu.category]}`}>
+                      {atu.category}
+                    </span>
+                  </div>
+                ))}
+
+                {timeline.length === 0 && atuDay.length === 0 ? (
+                  <p className="text-xs font-mono text-[var(--fios-text-muted)] py-2 opacity-70">No classes</p>
                 ) : (
                   <div className="space-y-3">
                     {timeline.map((item) => {
@@ -455,40 +537,14 @@ const ScheduleTabInner: React.FC = () => {
                         const breakData = item.data as BreakData;
                         return (
                           <div key={breakData.id} className="relative flex items-center justify-center my-3">
-                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800/80"></div></div>
-                            <span className="relative bg-[#07090e] px-3 text-[11px] font-mono text-slate-500 font-bold">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t fios-border opacity-50" /></div>
+                            <span className="relative bg-[var(--fios-surface-2)] px-3 text-[11px] font-mono text-[var(--fios-text-muted)] font-bold">
                               {formatBreakDuration(breakData.durationMinutes)}
                             </span>
                           </div>
                         );
                       }
-
-                      const event = item.data as CalendarEvent;
-                      const isOngoing = isToday && now >= event.startDate && now <= event.endDate;
-
-                      return (
-                        <div 
-                          key={event.id}
-                          className={`bg-[#0e131f] border border-slate-800/80 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 ${
-                            isOngoing ? 'border-l-4 border-l-emerald-400 bg-emerald-950/10' : 'border-l-4 border-l-slate-700'
-                          }`}
-                        >
-                          <div className="w-32 shrink-0 font-mono text-xs font-bold text-white pt-0.5">
-                            {formatTimeRange(event.startDate, event.endDate)}
-                          </div>
-                          <div className="flex-1 space-y-1">
-                            <h4 className="text-sm font-bold text-white">{event.title}</h4>
-                            {event.location && (
-                              <p className="text-xs font-mono text-cyan-400 flex items-center gap-1 font-bold">
-                                <MapPin className="w-3 h-3 text-cyan-500" /> {event.location}
-                              </p>
-                            )}
-                            {event.description && (
-                              <p className="text-xs text-slate-400 font-mono line-clamp-2">{event.description}</p>
-                            )}
-                          </div>
-                        </div>
-                      );
+                      return renderClassCard(item.data as CalendarEvent, day, true);
                     })}
                   </div>
                 )}
@@ -497,8 +553,17 @@ const ScheduleTabInner: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 space-y-4">
-          <div className="grid grid-cols-7 gap-2 text-center font-mono text-[11px] font-black uppercase text-slate-500 pb-2 border-b border-slate-800">
+        /* Monthly view — iCal (expanded) + ATU academic overlay */
+        <div className="bg-[var(--fios-surface)] border fios-border rounded-xl p-4 sm:p-6 space-y-4 shadow-[var(--fios-shadow-sm)]">
+          <div className="flex items-center justify-between gap-2 flex-wrap text-[11px] font-mono text-[var(--fios-text-muted)]">
+            <span className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-emerald-400" /> Timetable</span>
+              <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-400" /> ATU academic</span>
+            </span>
+            <span>{events.length} synced sessions · {monthAtuByDay.size} ATU days this month</span>
+          </div>
+
+          <div className="grid grid-cols-7 gap-2 text-center font-mono text-[11px] font-black uppercase text-[var(--fios-text-muted)] pb-2 border-b fios-border">
             <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
           </div>
 
@@ -508,7 +573,7 @@ const ScheduleTabInner: React.FC = () => {
               const month = selectedDate.getMonth();
               const firstDayOfMonth = new Date(year, month, 1);
               const lastDayOfMonth = new Date(year, month + 1, 0);
-              
+
               let startDayIndex = firstDayOfMonth.getDay() - 1;
               if (startDayIndex === -1) startDayIndex = 6;
 
@@ -516,46 +581,87 @@ const ScheduleTabInner: React.FC = () => {
               const calendarCells = [];
 
               for (let i = 0; i < startDayIndex; i++) {
-                calendarCells.push(<div key={`pad-${i}`} className="h-24 bg-[#07090e]/30 border border-slate-900 rounded-lg opacity-20" />);
+                calendarCells.push(
+                  <div key={`pad-${i}`} className="min-h-24 bg-[var(--fios-surface-2)]/40 border fios-border rounded-lg opacity-30" />
+                );
               }
 
               for (let day = 1; day <= daysInMonth; day++) {
                 const currentDate = new Date(year, month, day);
-                const dayEvents = events.filter(e => isSameDay(e.startDate, currentDate));
-                const isTodayCell = isSameDay(currentDate, now);
-                const isSelectedCell = isSameDay(currentDate, selectedDate);
+                const key = localDateKey(currentDate);
+                const dayEvents = eventsOnLocalDay(events, currentDate);
+                const atuDay = showAtuOverlay ? (monthAtuByDay.get(key) || []) : [];
+                const isTodayCell = key === localDateKey(now);
+                const isSelectedCell = key === localDateKey(selectedDate);
+                const isPastDay = key < localDateKey(now);
+                const chips = [
+                  ...dayEvents.map((ev) => ({
+                    id: ev.id,
+                    label: ev.title,
+                    kind: 'ical' as const,
+                    finished: isClassFinished(ev, now, currentDate),
+                  })),
+                  ...atuDay.map((ev) => ({
+                    id: ev.id,
+                    label: ev.title,
+                    kind: 'atu' as const,
+                    finished: isPastDay,
+                  })),
+                ];
 
                 calendarCells.push(
                   <div
                     key={`day-${day}`}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       setSelectedDate(currentDate);
                       setViewMode('day');
                     }}
-                    className={`h-24 bg-[#07090e] border rounded-lg p-2 flex flex-col justify-between cursor-pointer transition-all hover:border-emerald-400/50 ${
-                      isSelectedCell ? 'border-emerald-400 ring-1 ring-emerald-400/50' : 'border-slate-800'
-                    }`}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setSelectedDate(currentDate);
+                        setViewMode('day');
+                      }
+                    }}
+                    className={`min-h-28 bg-[var(--fios-surface-2)] border rounded-lg p-2 flex flex-col gap-1 cursor-pointer transition-all hover:accent-border ${
+                      isSelectedCell ? 'border-emerald-400 ring-1 ring-emerald-400/40' : 'fios-border'
+                    } ${isPastDay ? 'opacity-75' : ''}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs font-mono font-bold ${isTodayCell ? 'bg-emerald-400 text-slate-950 px-1.5 py-0.5 rounded-full' : 'text-slate-300'}`}>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className={`text-xs font-mono font-bold ${
+                        isTodayCell
+                          ? 'bg-emerald-400 text-slate-950 px-1.5 py-0.5 rounded-full'
+                          : 'text-[var(--fios-text)]'
+                      }`}>
                         {day}
                       </span>
-                      {dayEvents.length > 0 && (
-                        <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.2 rounded border border-cyan-500/20">
-                          {dayEvents.length}
+                      {chips.length > 0 && (
+                        <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                          {chips.length}
                         </span>
                       )}
                     </div>
 
-                    <div className="space-y-1 overflow-hidden">
-                      {dayEvents.slice(0, 2).map((ev, idx) => (
-                        <div key={idx} className="text-[9px] font-mono text-slate-400 truncate bg-slate-900/80 px-1 py-0.5 rounded">
-                          {ev.title}
+                    <div className="space-y-0.5 overflow-hidden flex-1">
+                      {chips.slice(0, 3).map((chip) => (
+                        <div
+                          key={chip.id}
+                          className={`text-[9px] font-mono truncate px-1 py-0.5 rounded border ${
+                            chip.kind === 'atu'
+                              ? 'text-amber-300 bg-amber-500/10 border-amber-500/25'
+                              : chip.finished
+                              ? 'text-[var(--fios-text-muted)] bg-[var(--fios-surface)]/60 border-transparent line-through opacity-70'
+                              : 'text-[var(--fios-text-muted)] bg-[var(--fios-surface)]/80 border-transparent'
+                          }`}
+                          title={chip.label}
+                        >
+                          {chip.kind === 'atu' ? 'ATU · ' : ''}{chip.label}
                         </div>
                       ))}
-                      {dayEvents.length > 2 && (
-                        <div className="text-[9px] font-mono text-slate-500 italic">
-                          +{dayEvents.length - 2} more
+                      {chips.length > 3 && (
+                        <div className="text-[9px] font-mono text-[var(--fios-text-muted)] italic">
+                          +{chips.length - 3} more
                         </div>
                       )}
                     </div>
@@ -568,7 +674,6 @@ const ScheduleTabInner: React.FC = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
