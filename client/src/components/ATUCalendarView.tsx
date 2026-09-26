@@ -9,84 +9,94 @@ interface AcademicEvent {
   description: string;
 }
 
+/** Strip leftover citation markers (e.g. `[cite: 6]`) from calendar copy. */
+function stripCitationMarkers(text: string): string {
+  return text
+    .replace(/\[cite:\s*\d+\]/gi, '')
+    .replace(/\[\s*\d+\s*\]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([.,;:!?])/g, '$1')
+    .trim();
+}
+
 const ATU_KEY_DATES: AcademicEvent[] = [
   {
     date: '17 August 2026',
     title: 'Start of Repeat Exam Session',
     category: 'repeat',
-    description: 'Repeat exam session running from Mon 17th to Wed 28th August, incl. Sat[cite: 6].',
+    description: 'Repeat exam session running from Mon 17th to Wed 28th August, incl. Sat.',
   },
   {
     date: '26 August 2026',
     title: 'End of Repeat Exam Session',
     category: 'repeat',
-    description: 'Conclusion of autumn repeat exams[cite: 6].',
+    description: 'Conclusion of autumn repeat exams.',
   },
   {
     date: '15 September 2026',
     title: 'Start of Teaching (All Students)',
     category: 'term',
-    description: 'Start of teaching for all full-time / CAO / OFPD new and returning students[cite: 6].',
+    description: 'Start of teaching for all full-time / CAO / OFPD new and returning students.',
   },
   {
     date: '17 September 2026',
     title: 'Deadline for Review / Appeal of Autumn Results',
     category: 'deadline',
-    description: 'Deadline for applications for review or appeal of autumn results[cite: 6].',
+    description: 'Deadline for applications for review or appeal of autumn results.',
   },
   {
     date: '27 October 2026',
     title: 'Reading Week',
     category: 'holiday',
-    description: 'Reading week for all students (excl. craft apprentices), Tue 27th Oct – Fri 30th Oct[cite: 6].',
+    description: 'Reading week for all students (excl. craft apprentices), Tue 27th Oct – Fri 30th Oct.',
   },
   {
     date: '13 November 2026',
     title: 'Week 8 Deadline for Programme Deferal',
     category: 'deadline',
-    description: 'Deadline for programme deferral[cite: 6].',
+    description: 'Deadline for programme deferral.',
   },
   {
     date: '18 December 2026',
     title: 'End of Semester 1 Teaching',
     category: 'term',
-    description: 'End of teaching term before the Christmas break[cite: 6].',
+    description: 'End of teaching term before the Christmas break.',
   },
   {
     date: '5 January 2027',
     title: 'Winter Examinations Begin',
     category: 'exam',
-    description: 'Winter exams running from 5th to 18th Jan inclusive (weekdays and Sat)[cite: 6].',
+    description: 'Winter exams running from 5th to 18th Jan inclusive (weekdays and Sat).',
   },
   {
     date: '18 January 2027',
     title: 'Teaching Start (Semester 2)',
     category: 'term',
-    description: 'Teaching start for full-time, part-time, and online students[cite: 6].',
+    description: 'Teaching start for full-time, part-time, and online students.',
   },
   {
     date: '22 March 2027',
     title: 'Easter Break',
     category: 'holiday',
-    description: 'No teaching for full-time, part-time & online students Mon 22nd Mar – Fri 2nd Apr[cite: 6].',
+    description: 'No teaching for full-time, part-time & online students Mon 22nd Mar – Fri 2nd Apr.',
   },
   {
     date: '30 April 2027',
     title: 'End of Teaching for Semester 2',
     category: 'term',
-    description: 'End of teaching for semester 2 and year-long modules[cite: 6].',
+    description: 'End of teaching for semester 2 and year-long modules.',
   },
   {
     date: '10 May 2027',
     title: 'Summer Exam Session Begins',
     category: 'exam',
-    description: 'All students main summer examination period[cite: 6].',
+    description: 'All students main summer examination period.',
   },
   {
     date: '16 August 2027',
     title: 'Autumn Repeat Exam Session',
     category: 'repeat',
-    description: 'Autumn repeat exam session running from 16th to 28th August[cite: 6].',
+    description: 'Autumn repeat exam session running from 16th to 28th August.',
   },
 ];
 
@@ -113,7 +123,7 @@ export const ATUCalendarView: React.FC = () => {
             <GraduationCap className="w-6 h-6 accent-solid-text" /> ATU Academic Calendar
           </h2>
           <p className="text-xs font-mono text-slate-400 mt-1">
-            Atlantic Technological University · Official key dates & exam schedules (2026–27)[cite: 6].
+            Atlantic Technological University · Official key dates & exam schedules (2026–27).
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -141,6 +151,7 @@ export const ATUCalendarView: React.FC = () => {
         {['all', 'term', 'exam', 'repeat', 'deadline', 'holiday'].map((cat) => (
           <button
             key={cat}
+            type="button"
             onClick={() => setFilter(cat)}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-colors cursor-pointer shrink-0 ${
               filter === cat
@@ -174,7 +185,7 @@ export const ATUCalendarView: React.FC = () => {
                     {item.category}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400">{item.description}</p>
+                <p className="text-xs text-slate-400">{stripCitationMarkers(item.description)}</p>
               </div>
             </div>
             <div className="text-xs font-mono font-bold text-slate-300 shrink-0 bg-[#07090e] border border-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-1.5 w-fit">

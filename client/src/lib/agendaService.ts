@@ -1,5 +1,6 @@
 /**
  * Unified agenda — chronologically merge classes + timed tasks for Overview/Schedule.
+ * Classes sort by start; tasks sort/appear by due date. Compact views group by calendar day.
  */
 import type { CalendarEvent } from './calendarService';
 import type { Task } from '../types/db';
@@ -14,6 +15,11 @@ export interface AgendaItem {
   title: string;
   start: Date;
   end: Date;
+  /**
+   * Calendar / sort anchor — class start, or task due (end).
+   * Used for day filtering, chronological order, and date headers.
+   */
+  anchor: Date;
   location?: string;
   completed?: boolean;
   moduleCode?: string | null;
@@ -21,6 +27,33 @@ export interface AgendaItem {
   state: ClassVisualState;
   /** Original task or event id */
   sourceId: string;
+}
+
+export interface AgendaDayGroup {
+  /** Local YYYY-MM-DD key */
+  key: string;
+  date: Date;
+  label: string;
+  items: AgendaItem[];
+}
+
+function sameLocalDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function localDayKey(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function startOfLocalDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
 }
 
 /** Parse task due/start into Dates. Supports ISO `due_at`/`start_at` and legacy `due_date` labels. */
@@ -71,7 +104,7 @@ export function buildUnifiedAgenda(opts: {
   modules?: { code: string; color: string }[];
   /** Max items after sort (compact widgets). */
   limit?: number;
-  /** Only include items whose start is on this local day. */
+  /** Only include items whose calendar anchor is on this local day. */
   day?: Date;
   /** Exclude completed tasks. */
   hideCompletedTasks?: boolean;
@@ -80,15 +113,7 @@ export function buildUnifiedAgenda(opts: {
   const items: AgendaItem[] = [];
 
   for (const ev of opts.classes) {
-    if (opts.day) {
-      if (
-        ev.startDate.getFullYear() !== opts.day.getFullYear() ||
-        ev.startDate.getMonth() !== opts.day.getMonth() ||
-        ev.startDate.getDate() !== opts.day.getDate()
-      ) {
-        continue;
-      }
-    }
+    if (opts.day && !sameLocalDay(ev.startDate, opts.day)) continue;
     const colorKey = resolveSubjectColorKey(ev.title, opts.modules);
     items.push({
       id: `class-${ev.id}`,
@@ -96,6 +121,7 @@ export function buildUnifiedAgenda(opts: {
       title: ev.title,
       start: ev.startDate,
       end: ev.endDate,
+      anchor: ev.startDate,
       location: ev.location,
       colorKey,
       state: classVisualState(ev.startDate, ev.endDate, { day: opts.day ?? ev.startDate, now }),
@@ -107,15 +133,8 @@ export function buildUnifiedAgenda(opts: {
     if (opts.hideCompletedTasks && task.completed) continue;
     const win = resolveTaskWindow(task, now);
     if (!win) continue;
-    if (opts.day) {
-      if (
-        win.start.getFullYear() !== opts.day.getFullYear() ||
-        win.start.getMonth() !== opts.day.getMonth() ||
-        win.start.getDate() !== opts.day.getDate()
-      ) {
-        continue;
-      }
-    }
+    // Tasks appear on their due date (not start date)
+    if (opts.day && !sameLocalDay(win.end, opts.day)) continue;
     const colorKey = resolveSubjectColorKey(task.module_code || task.title, opts.modules);
     items.push({
       id: `task-${task.id}`,
@@ -123,11 +142,12 @@ export function buildUnifiedAgenda(opts: {
       title: task.title,
       start: win.start,
       end: win.end,
+      anchor: win.end,
       completed: task.completed,
       moduleCode: task.module_code,
       colorKey,
       state: classVisualState(win.start, win.end, {
-        day: opts.day ?? win.start,
+        day: opts.day ?? win.end,
         now,
         isNext: false,
       }),
@@ -135,11 +155,12 @@ export function buildUnifiedAgenda(opts: {
     });
   }
 
-  items.sort((a, b) => a.start.getTime() - b.start.getTime());
+  // Chronological by calendar anchor (class start / task due)
+  items.sort((a, b) => a.anchor.getTime() - b.anchor.getTime());
 
-  // Mark immediate next upcoming (not finished) on the same day as now
+  // Mark immediate next upcoming (not finished) relative to now
   const upcomingIdx = items.findIndex(
-    (it) => it.start.getTime() > now.getTime() && it.state !== 'finished' && it.state !== 'past-day'
+    (it) => it.anchor.getTime() > now.getTime() && it.state !== 'finished' && it.state !== 'past-day'
   );
   if (upcomingIdx >= 0) {
     const it = items[upcomingIdx];
@@ -152,7 +173,46 @@ export function buildUnifiedAgenda(opts: {
   return items;
 }
 
-export function formatAgendaWhen(start: Date, end: Date): string {
+/** Group agenda items under calendar day headers (Today / Tomorrow / weekday date). */
+export function groupAgendaByDay(items: AgendaItem[], now: Date = new Date()): AgendaDayGroup[] {
+  const today = startOfLocalDay(now);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const map = new Map<string, AgendaDayGroup>();
+
+  for (const item of items) {
+    const key = localDayKey(item.anchor);
+    let group = map.get(key);
+    if (!group) {
+      const day = startOfLocalDay(item.anchor);
+      let label: string;
+      if (sameLocalDay(day, today)) {
+        label = `Today · ${day.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}`;
+      } else if (sameLocalDay(day, tomorrow)) {
+        label = `Tomorrow · ${day.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}`;
+      } else {
+        label = day.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      }
+      group = { key, date: day, label, items: [] };
+      map.set(key, group);
+    }
+    group.items.push(item);
+  }
+
+  return Array.from(map.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+}
+
+export function formatAgendaWhen(item: AgendaItem): string {
+  const fmt = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  if (item.kind === 'task') {
+    return `Due · ${fmt(item.end)}`;
+  }
+  return `${fmt(item.start)}–${fmt(item.end)}`;
+}
+
+/** @deprecated Prefer formatAgendaWhen(item) — kept for any external callers. */
+export function formatAgendaWhenRange(start: Date, end: Date): string {
   const day = start.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
   const fmt = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   return `${day} · ${fmt(start)}–${fmt(end)}`;

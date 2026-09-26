@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v2.2.4**
+**Current version: v2.2.5**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -19,7 +19,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Grade Predictor** — computes the scores you need across assessments to hit a target grade.
 - **Module Readiness Heatmap** — 0–100% readiness per module; rich module accent colors (light + dark contrast) on badges/tags/heatmap.
 - **Universal schedule** — iCal sync or manual timetable for any college; finished classes muted; Next Up highlight; institution label.
-- **Unified agenda** — classes + timed tasks interleaved chronologically (memoized CompactAgenda); tasks use start/due datetime pickers that update and save.
+- **Unified agenda** — classes + timed tasks on a calendar-day timeline (memoized CompactAgenda); tasks sort by due date; start/due datetime pickers update and save.
 - **Contact Support** — in-app message form posts to the API and emails the support inbox (Resend/SendGrid when configured); mailto remains optional.
 - **Feedback & ratings** — optional star rating, categories, and message (anonymous submit supported).
 - **Privacy & GDPR** — in-app Privacy Policy + Terms (landing footer and Settings); essential cookie/local-storage consent; Export My Data (JSON); disclosures for Supabase, Gemini (BYO key), optional GitHub, and hosting.
@@ -27,10 +27,19 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Smart Quick Widget** — expanded actions, custom order, compact FAB, metrics chip (can be fully disabled).
 - **PWA** — installable standalone app (multi-size icons + manifest) via VitePWA + Workbox; offline mutation queue (IndexedDB).
 - **Themes** — Dark / Light / System, expanded accent gradients, Low-Power mode, Zen focus (Esc / Exit Zen / mobile escape), OpenDyslexic, cream light palette with stronger cards/tabs.
-- **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar; reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs).
+- **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar (on-theme chrome control); reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs).
 - **Mermaid + Markdown + LaTeX** — diagrams, GFM markdown, and KaTeX math in AI content.
 - **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service; refreshed landing (brand-first hero + study hubs).
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v2.2.5
+
+- Header hamburger / X restyled to match top-bar chrome (size, radius, accent border, logo alignment); toggle still opens drawer / sidebar.
+- Compact agenda: tasks sort and appear by **due date** (not start); calendar day headers (Today / Tomorrow / weekday) group classes + tasks.
+- Overview Focus card waits for tasks to load before showing pending count or “You’re all caught up” (no false empty flash on tab switch).
+- ATU Academic Calendar key-date descriptions no longer show leftover `[cite: N]` markers.
+- Mobile polish for Focus/agenda/header wrap, scrollable bottom nav, and Schedule institution field.
+- See the in-app **Updates** tab for the full changelog.
 
 ### What’s new in v2.2.4
 
@@ -98,7 +107,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v2.2.4) — Render Static Site root
+├── client/                 # React + Vite frontend (v2.2.5) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/

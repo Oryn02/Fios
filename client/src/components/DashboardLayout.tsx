@@ -34,7 +34,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v2.2.4', icon: Sparkles },
+  { id: 'updates', label: 'Updates v2.2.5', icon: Sparkles },
 ];
 
 /** Tabs where Zen may hide chrome (study surfaces). Settings/Overview always keep nav. */
@@ -218,19 +218,23 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       {/* Top HUD Bar — always visible unless Zen is hiding study chrome */}
       {!hideChrome && (
         <header className="h-16 border-b fios-border bg-[var(--fios-surface)]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-[60] safe-top">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
             <button
               type="button"
               onClick={toggleNavChrome}
-              className="relative z-[70] touch-target p-2 rounded-lg text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] active:bg-[var(--fios-surface)] bg-[var(--fios-surface-2)] border fios-border cursor-pointer"
+              className={`relative z-[70] touch-target inline-flex items-center justify-center h-8 w-8 shrink-0 rounded-lg bg-[var(--fios-surface-2)] border transition-colors cursor-pointer ${
+                navToggleOpen
+                  ? 'accent-border accent-solid-text'
+                  : 'fios-border text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:accent-border'
+              }`}
               aria-label={navToggleOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={navToggleOpen}
               aria-controls={isDesktop ? 'fios-desktop-sidebar' : 'fios-mobile-drawer'}
             >
-              {navToggleOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {navToggleOpen ? <X className="w-4 h-4" strokeWidth={2.25} /> : <Menu className="w-4 h-4" strokeWidth={2.25} />}
             </button>
-            <FiosLogo size="md" />
-            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.4</span>
+            <FiosLogo size="md" className="leading-none min-w-0" />
+            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.5</span>
             {zenMode && (
               <button
                 type="button"
@@ -433,7 +437,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       {/* Mobile bottom nav — keep a Settings escape even in Zen study mode */}
       {(!hideChrome || zenMode) && (
         <nav
-          className={`fios-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-1 pt-1 pb-1 safe-bottom ${hideChrome ? 'shadow-2xl' : ''}`}
+          className={`fios-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-1 pt-1 pb-1 safe-bottom overflow-x-auto ${hideChrome ? 'shadow-2xl' : ''}`}
           aria-label="Mobile shortcuts"
         >
           {hideChrome ? (

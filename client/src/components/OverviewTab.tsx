@@ -69,6 +69,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
   const [loadingClasses, setLoadingClasses] = useState(true);
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(true);
   const [modules, setModules] = useState<DBModule[]>([]);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -82,7 +83,16 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
   );
 
   useEffect(() => {
-    getTasks().then(setTasks).catch((err) => console.error('Failed to load tasks:', err));
+    let cancelled = false;
+    setLoadingTasks(true);
+    getTasks()
+      .then((data) => {
+        if (!cancelled) setTasks(data);
+      })
+      .catch((err) => console.error('Failed to load tasks:', err))
+      .finally(() => {
+        if (!cancelled) setLoadingTasks(false);
+      });
     getUserModules().then(setModules).catch(() => {});
 
     const fetchDecks = async () => {
@@ -132,6 +142,9 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
 
     fetchDecks();
     fetchSchedule();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleAddTask = useCallback(async (e: React.FormEvent) => {
@@ -254,7 +267,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
             classes={upcomingClasses.length ? upcomingClasses : todayClasses}
             tasks={tasks}
             modules={moduleColorList}
-            loading={loadingClasses}
+            loading={loadingClasses || loadingTasks}
             limit={10}
             compact
             emptyMessage="No upcoming classes or timed tasks. Sync iCal or add a task with a due time."
@@ -275,14 +288,14 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         transition={{ duration: 0.25 }}
         className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800/80 pb-6"
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <Avatar url={profile?.avatar_url} name={preferredName} size={56} className="shrink-0 accent-ring" />
-          <div>
+          <div className="min-w-0">
             <div className="text-[11px] font-black uppercase tracking-widest accent-solid-text mb-1 flex items-center gap-2 font-mono">
-              <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-              Today · {todayLabel}
+              <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse shrink-0" />
+              <span className="truncate">Today · {todayLabel}</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black italic tracking-tight text-[var(--fios-text)]">
+            <h1 className="text-3xl sm:text-4xl font-black italic tracking-tight text-[var(--fios-text)] break-words">
               {greeting}, <span className="accent-text">{preferredName}</span>.
             </h1>
             <p className="text-[var(--fios-text-muted)] text-xs sm:text-sm font-medium mt-1">
@@ -303,28 +316,42 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
       </motion.div>
 
       {/* 2. Focus Card */}
-      <div className="bg-[#0e131f]/90 border border-slate-800 rounded-2xl p-6 relative overflow-hidden space-y-4 shadow-xl">
+      <div className="bg-[#0e131f]/90 border border-slate-800 rounded-2xl p-4 sm:p-6 relative overflow-hidden space-y-4 shadow-xl">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-transparent" />
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black uppercase tracking-widest accent-solid-text flex items-center gap-2 font-mono">
-            <Zap className="w-3.5 h-3.5" /> Focus · What should I work on right now?
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-[10px] font-black uppercase tracking-widest accent-solid-text flex items-center gap-2 font-mono min-w-0">
+            <Zap className="w-3.5 h-3.5 shrink-0" /> Focus · What should I work on right now?
           </span>
-          <span className="text-xs font-mono text-slate-500">{pendingTaskCount} pending tasks</span>
+          <span className="text-xs font-mono text-slate-500 shrink-0">
+            {loadingTasks ? '…' : `${pendingTaskCount} pending tasks`}
+          </span>
         </div>
 
         <div className="space-y-1">
-          <h2 className="text-2xl font-black italic uppercase tracking-wide text-white">
-            {pendingTaskCount > 0 ? `${pendingTaskCount} active academic tasks pending` : "You're all caught up."}
-          </h2>
-          <p className="text-slate-400 text-xs sm:text-sm">
-            {pendingTaskCount > 0
-              ? 'Review pending coursework below or convert your lecture slides into active recall cards.'
-              : 'No urgent coursework or upcoming exams need immediate attention today.'}
-          </p>
+          {loadingTasks ? (
+            <>
+              <h2 className="text-2xl font-black italic uppercase tracking-wide text-slate-500 animate-pulse">
+                Loading tasks…
+              </h2>
+              <p className="text-slate-500 text-xs sm:text-sm">Checking your academic task list.</p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-black italic uppercase tracking-wide text-white">
+                {pendingTaskCount > 0 ? `${pendingTaskCount} active academic tasks pending` : "You're all caught up."}
+              </h2>
+              <p className="text-slate-400 text-xs sm:text-sm">
+                {pendingTaskCount > 0
+                  ? 'Review pending coursework below or convert your lecture slides into active recall cards.'
+                  : 'No urgent coursework or upcoming exams need immediate attention today.'}
+              </p>
+            </>
+          )}
         </div>
 
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex flex-wrap items-center gap-3 pt-2">
           <motion.button
+            type="button"
             whileTap={{ scale: 0.98 }}
             onClick={() => onOpenFlashcards()}
             className="px-5 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase tracking-wider text-xs rounded-xl shadow-lg transition-colors flex items-center gap-2 cursor-pointer"
@@ -332,6 +359,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
             <Zap className="w-4 h-4 fill-slate-950" /> Generate Flashcards ↵
           </motion.button>
           <motion.button
+            type="button"
             whileTap={{ scale: 0.98 }}
             onClick={() => {
               setIsAddingTask((v) => {
@@ -416,7 +444,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
             classes={todayClasses}
             tasks={tasks}
             modules={moduleColorList}
-            loading={loadingClasses}
+            loading={loadingClasses || loadingTasks}
             day={todayAnchor}
             limit={20}
             emptyMessage="No classes or timed tasks for today."
@@ -431,10 +459,16 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
                 <div className="text-[10px] font-black font-mono uppercase tracking-widest text-slate-400 mb-0.5">Academic Tasks · Reminders</div>
                 <h3 className="text-lg font-black italic uppercase tracking-wide text-white">Upcoming work</h3>
               </div>
-              <span className="text-[10px] font-mono font-bold accent-solid-text bg-slate-900 border fios-border px-2 py-1 rounded">{pendingTaskCount} Active</span>
+              <span className="text-[10px] font-mono font-bold accent-solid-text bg-slate-900 border fios-border px-2 py-1 rounded">
+                {loadingTasks ? '…' : `${pendingTaskCount} Active`}
+              </span>
             </div>
 
-            {tasks.length === 0 ? (
+            {loadingTasks ? (
+              <div className="py-12 flex flex-col items-center justify-center text-center space-y-2">
+                <p className="text-xs font-mono text-slate-500 animate-pulse">Loading tasks…</p>
+              </div>
+            ) : tasks.length === 0 ? (
               <div className="py-12 flex flex-col items-center justify-center text-center space-y-2">
                 <CheckCircle2 className="w-8 h-8 opacity-40 accent-solid-text" />
                 <p className="text-xs font-medium text-slate-400">No active tasks pending. Click "Add Task" to log coursework.</p>
@@ -472,7 +506,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
           </div>
 
           <div className="pt-4 border-t border-slate-800/60 flex items-center justify-between font-mono">
-            <span className="text-[11px] text-slate-500">{pendingTaskCount} active tasks</span>
+            <span className="text-[11px] text-slate-500">{loadingTasks ? '…' : `${pendingTaskCount} active tasks`}</span>
             <button onClick={() => setIsAddingTask(true)} className="text-xs accent-solid-text hover:underline cursor-pointer flex items-center gap-1">+ Add new task</button>
           </div>
         </div>
@@ -564,7 +598,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
           <div className="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/50"><Clock className="w-4 h-4 accent-solid-text" /></div>
           <div>
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Active Tasks</div>
-            <div className="text-sm font-black text-white">{pendingTaskCount} Tasks</div>
+            <div className="text-sm font-black text-white">{loadingTasks ? '…' : `${pendingTaskCount} Tasks`}</div>
           </div>
         </div>
         <div className="bg-[#0e131f]/80 border border-slate-800 rounded-xl p-4 flex items-center gap-3">
