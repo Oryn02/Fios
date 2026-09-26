@@ -12,6 +12,7 @@ const UpdatesTabInner: React.FC = () => {
         'Compact agenda / unified timeline: timed tasks sort and appear by due date (not start), so deadlines land on the correct calendar day alongside classes.',
         'Agenda date headers: Today / Tomorrow / weekday groups so classes and tasks sit under clear calendar days instead of a flat undated list.',
         'Overview Focus card: no more “You’re all caught up” flash while tasks are still loading — shows a loading state until the real pending count arrives.',
+        'ATU Academic Calendar: stripped leftover `[cite: N]` citation markers from key-date descriptions so copy renders cleanly.',
         'Version alignment: packages, HTML title, Updates tab, and README report v2.2.5.',
       ],
     },
