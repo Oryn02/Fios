@@ -4,83 +4,121 @@ import { FileText, X } from 'lucide-react';
 
 interface TermsModalProps {
   onClose: () => void;
+  variant?: 'dashboard' | 'landing';
 }
 
-export const TermsModal: React.FC<TermsModalProps> = ({ onClose }) => (
-  <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans text-slate-100">
-    <div className="absolute inset-0" onClick={onClose} aria-hidden />
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 12 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      role="dialog"
-      aria-labelledby="tos-title"
-      className="relative z-10 w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 sm:p-8 space-y-6 shadow-2xl"
-    >
-      <div className="flex items-center justify-between border-b fios-border pb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border accent-solid-text">
-            <FileText className="w-5 h-5" />
+export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dashboard' }) => {
+  const landing = variant === 'landing';
+  const heading = landing ? 'text-emerald-400' : 'accent-solid-text';
+  const surface = landing
+    ? 'border-slate-800 bg-[#0e131f] text-slate-100'
+    : 'fios-border bg-[var(--fios-surface)] text-[var(--fios-text)]';
+  const muted = landing ? 'text-slate-400' : 'text-[var(--fios-text-muted)]';
+  const body = landing ? 'text-slate-300' : 'text-[var(--fios-text-muted)]';
+  const iconBox = landing
+    ? 'bg-[#07090e] border-slate-800 text-emerald-400'
+    : 'bg-[var(--fios-surface-2)] border fios-border accent-solid-text';
+  const closeBtn = landing ? 'bg-emerald-400 text-slate-950' : 'accent-bg text-slate-950';
+
+  return (
+    <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+      <div className="absolute inset-0" onClick={onClose} aria-hidden />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        role="dialog"
+        aria-labelledby="tos-title"
+        className={`relative z-10 w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border p-6 sm:p-8 space-y-6 shadow-2xl ${surface}`}
+      >
+        <div className={`flex items-center justify-between border-b pb-4 ${landing ? 'border-slate-800' : 'fios-border'}`}>
+          <div className="flex items-center gap-2.5">
+            <div className={`p-2 rounded-lg border ${iconBox}`}>
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 id="tos-title" className={`text-base font-black uppercase ${landing ? 'text-white' : 'text-[var(--fios-text)]'}`}>
+                Terms of Service
+              </h3>
+              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v2.2.3 · September 2026</p>
+            </div>
           </div>
-          <div>
-            <h3 id="tos-title" className="text-base font-black uppercase text-[var(--fios-text)]">Terms of Service</h3>
-            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center · v2.2.3</p>
-          </div>
+          <button type="button" onClick={onClose} className={`${muted} hover:opacity-80 cursor-pointer p-1`} aria-label="Close">
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer p-1" aria-label="Close">
-          <X className="w-5 h-5" />
-        </button>
-      </div>
 
-      <div className="space-y-4 text-xs sm:text-sm text-[var(--fios-text-muted)] leading-relaxed">
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">1. Acceptance</h4>
-          <p>
-            By using Fios you agree to these terms. Fios is a demonstration / academic study tool built with AI assistance.
-            It is provided as-is without warranties of fitness for a particular purpose.
-          </p>
-        </section>
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">2. Bring-Your-Own Key</h4>
-          <p>
-            AI features require your own Google Gemini API key. You are responsible for usage quotas, billing, and key security.
-            Fios does not resell AI access.
-          </p>
-        </section>
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">3. Acceptable use</h4>
-          <p>
-            Do not use Fios to cheat on assessments in violation of your institution&apos;s academic integrity policy,
-            upload malware, harass others, or attempt unauthorized access to systems.
-          </p>
-        </section>
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">4. Your content</h4>
-          <p>
-            You retain ownership of notes, decks, and uploads. Content is stored in your private Supabase rows under RLS.
-            You may export or delete your data from Settings at any time.
-          </p>
-        </section>
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">5. Limitation of liability</h4>
-          <p>
-            To the fullest extent permitted by law, the authors are not liable for grades, exam outcomes, data loss,
-            or third-party API outages. Always verify AI-generated study material independently.
-          </p>
-        </section>
-      </div>
+        <div className={`space-y-4 text-xs sm:text-sm leading-relaxed ${body}`}>
+          <section className="space-y-1.5">
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>1. Acceptance</h4>
+            <p>
+              By accessing or using Fios you agree to these Terms and our Privacy Policy (available from the landing footer and Settings).
+              Fios is a demonstration / academic study tool built with AI assistance and is provided as-is without warranties of fitness
+              for a particular purpose.
+            </p>
+          </section>
 
-      <div className="border-t fios-border pt-4 flex justify-end">
-        <button
-          type="button"
-          onClick={onClose}
-          className="px-5 py-2.5 accent-bg text-slate-950 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90"
-        >
-          Close
-        </button>
-      </div>
-    </motion.div>
-  </div>
-);
+          <section className="space-y-1.5">
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>2. Bring-your-own key (Gemini)</h4>
+            <p>
+              AI features require your own Google Gemini API key. You are responsible for usage quotas, billing, key security, and compliance
+              with Google’s terms. Content you send to AI endpoints is processed by Google under those terms. Fios does not resell AI access.
+            </p>
+          </section>
+
+          <section className="space-y-1.5">
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>3. Accounts & third-party services</h4>
+            <p>
+              Authentication and data storage use Supabase. Optional GitHub sign-in or gist export uses GitHub APIs you authorize.
+              Hosting (e.g. Render) may process connection logs. Your use of those services is also subject to their terms and privacy notices.
+            </p>
+          </section>
+
+          <section className="space-y-1.5">
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>4. Acceptable use</h4>
+            <p>
+              Do not use Fios to violate your institution’s academic integrity policy, upload malware, harass others, infringe IP rights,
+              or attempt unauthorized access to systems. Optional product feedback must not include secrets or others’ personal data without a lawful basis.
+            </p>
+          </section>
+
+          <section className="space-y-1.5">
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>5. Your content & privacy</h4>
+            <p>
+              You retain ownership of notes, decks, and uploads. Content is stored in your private Supabase rows under Row Level Security.
+              You may export a JSON copy of your study data from Settings or request erasure as described in the Privacy Policy.
+            </p>
+          </section>
+
+          <section className="space-y-1.5">
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>6. Limitation of liability</h4>
+            <p>
+              To the fullest extent permitted by law, the authors are not liable for grades, exam outcomes, data loss, or third-party API outages.
+              Always verify AI-generated study material independently. Nothing in these terms limits rights that cannot be waived under applicable consumer or data-protection law.
+            </p>
+          </section>
+
+          <section className="space-y-1.5">
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>7. Changes & contact</h4>
+            <p>
+              We may update these Terms as the product evolves; the version label above will change when we do. Questions:{' '}
+              <a href="mailto:oryn02@gmail.com" className={heading}>oryn02@gmail.com</a>.
+            </p>
+          </section>
+        </div>
+
+        <div className={`border-t pt-4 flex justify-end ${landing ? 'border-slate-800' : 'fios-border'}`}>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`px-5 py-2.5 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90 ${closeBtn}`}
+          >
+            Close
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 export default TermsModal;

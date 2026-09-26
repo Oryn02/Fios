@@ -20,7 +20,8 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Module Readiness Heatmap** — 0–100% readiness per module; rich module accent colors (light + dark contrast) on badges/tags/heatmap.
 - **Universal schedule** — iCal sync or manual timetable for any college; finished classes muted; Next Up highlight; institution label.
 - **Unified agenda** — classes + timed tasks interleaved chronologically (memoized CompactAgenda); tasks require start/due datetime.
-- **Feedback & ratings** — star rating, categories, message; admin inbox gated by `VITE_ADMIN_UID` + `fios_admins` RLS; API `GET /api/admin/feedback` → 403 if unauthorized.
+- **Feedback & ratings** — optional star rating, categories, and message (anonymous submit supported).
+- **Privacy & GDPR** — in-app Privacy Policy + Terms (landing footer and Settings); essential cookie/local-storage consent; Export My Data (JSON); disclosures for Supabase, Gemini (BYO key), optional GitHub, and hosting.
 - **Global Pomodoro Timer** — floating dock widget with Web Audio soundscapes and Weekly Study Goal (can be disabled in Settings).
 - **Smart Quick Widget** — expanded actions, custom order, compact FAB, metrics chip (can be fully disabled).
 - **PWA** — installable standalone app (multi-size icons + manifest) via VitePWA + Workbox; offline mutation queue (IndexedDB).
@@ -37,7 +38,8 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Landing FAQ + bug/UI polish; SM-2 / Active Recall fixes.
 - Universal/manual schedule + iCal mode; finished-class mute + Next Class highlight.
 - Expanded module accent palette; CompactAgenda performance; timed tasks on the unified timeline.
-- Admin feedback & ratings (`VITE_ADMIN_UID` / server `ADMIN_UID` gate).
+- In-app feedback & ratings; Privacy Policy / Terms / consent / export refresh for GDPR-style transparency.
+- Mobile touch targets and gesture hardening (nav, Zen exit, FAB, flashcard swipe, agenda scroll).
 - See the in-app **Updates** tab for the full changelog.
 
 ---
@@ -177,9 +179,7 @@ See also [`CONTRIBUTING.md`](CONTRIBUTING.md).
 - A Google Gemini API key ([AI Studio](https://aistudio.google.com/app/apikey)) — per-user (BYO) and/or a server fallback
 
 ### 1. Database
-In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It is idempotent and creates all tables (`user_profiles` (+ `prefs`), `modules` (+ `tags`/`parent_code`), `decks`, `cards`, `mcq_quizzes`, `code_exams`, `tasks` (+ `due_at`/`start_at`), `documents`, `document_revisions`, `tutor_messages`, `note_chunks`, `grades`, `focus_sessions`, `active_recall_logs`, `feedback`, `fios_admins`), Row Level Security policies, and a trigger that auto-provisions a **clean, empty profile** for every new signup (no sample data).
-
-For admin feedback inbox: insert your Supabase user UUID into `fios_admins`, and set the same UUID as `VITE_ADMIN_UID` (client) and `ADMIN_UID` (server).
+In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It is idempotent and creates all tables (`user_profiles` (+ `prefs`), `modules` (+ `tags`/`parent_code`), `decks`, `cards`, `mcq_quizzes`, `code_exams`, `tasks` (+ `due_at`/`start_at`), `documents`, `document_revisions`, `tutor_messages`, `note_chunks`, `grades`, `focus_sessions`, `active_recall_logs`, `feedback`), Row Level Security policies, and a trigger that auto-provisions a **clean, empty profile** for every new signup (no sample data).
 
 > In your Supabase Auth settings, disable "Confirm email" for the fastest local sign-in, or confirm the address you register with. Enable the GitHub provider if you want OAuth sign-in.
 
@@ -190,8 +190,6 @@ npm install
 # optional server-side fallback key (users can also BYO in Settings):
 echo "GEMINI_API_KEY=your_key_here" > .env
 echo "PORT=5000" >> .env
-# optional — must match client VITE_ADMIN_UID for GET /api/admin/feedback
-echo "ADMIN_UID=your-supabase-user-uuid" >> .env
 npm run dev            # http://localhost:5000
 ```
 
@@ -200,7 +198,7 @@ npm run dev            # http://localhost:5000
 cd client
 npm install
 # .env (client) — leave VITE_API_URL empty locally
-printf "VITE_SUPABASE_URL=your-project-url\nVITE_SUPABASE_ANON_KEY=your-anon-key\nVITE_ADMIN_UID=your-supabase-user-uuid\n" > .env
+printf "VITE_SUPABASE_URL=your-project-url\nVITE_SUPABASE_ANON_KEY=your-anon-key\n" > .env
 npm run dev            # http://localhost:5173
 ```
 
@@ -240,9 +238,20 @@ Click **"Explore Live Demo"** on the landing page, or build/run the client with 
 | `POST /api/upload/pdf` | Accept PDF/text upload for study-engine indexing |
 | `POST /api/rag/query` | Retrieve relevant note chunks |
 | `GET|POST /api/ical-proxy` | CORS proxy for iCal/WebCAL timetables (`?url=` or JSON `{ url }`) |
-| `GET  /api/admin/feedback` | Admin feedback inbox (Bearer Supabase JWT; 403 unless UID matches `ADMIN_UID` / `VITE_ADMIN_UID`) |
 
 All AI endpoints accept an optional `apiKey` (BYO key) in the JSON body or an `x-gemini-key` header.
+
+---
+
+## Privacy & data protection
+
+Fios is designed with GDPR-style transparency:
+
+- **In-app Privacy Policy & Terms** — landing footer and Settings (Support / Legal).
+- **Cookie / local storage banner** — essential storage only; no ad trackers; link to Privacy Policy.
+- **Export** — Settings → Export My Data (JSON) for portability.
+- **Processors** — Supabase (Auth + DB + RLS), Google Gemini (your BYO key), optional GitHub OAuth/gists, and your host (e.g. Render) for the web/API.
+- **Contact** for access/erasure requests is listed in the Privacy Policy.
 
 ---
 

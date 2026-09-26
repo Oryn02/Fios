@@ -185,15 +185,24 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     handleNext();
   }, [cards, currentCard, handleNext]);
 
-  const touchStartX = useRef<number | null>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const onTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.changedTouches[0]?.clientX ?? null;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    touchStart.current = { x: t.clientX, y: t.clientY };
   }, []);
   const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current == null || !isFlipped) return;
-    const dx = (e.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(dx) < 64) return;
+    if (touchStart.current == null || !isFlipped) return;
+    const t = e.changedTouches[0];
+    if (!t) {
+      touchStart.current = null;
+      return;
+    }
+    const dx = t.clientX - touchStart.current.x;
+    const dy = t.clientY - touchStart.current.y;
+    touchStart.current = null;
+    // Ignore mostly-vertical gestures (page scroll)
+    if (Math.abs(dx) < 72 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
     if (dx > 0) void handleRating(4);
     else void handleRating(2);
   }, [isFlipped, handleRating]);
@@ -425,7 +434,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             onClick={handleToggleFlip}
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
-            className="w-full min-h-[280px] bg-[#0e131f] rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-slate-800 hover:border-emerald-400/50 shadow-2xl transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99] touch-pan-y"
+            className="fios-swipe-card w-full min-h-[280px] bg-[#0e131f] rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-slate-800 hover:border-emerald-400/50 shadow-2xl transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99]"
           >
             <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${isFlipped ? 'from-emerald-400/20' : 'from-cyan-400/20'} to-transparent rounded-tr-xl pointer-events-none`} />
 
@@ -436,7 +445,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
                 {isFlipped ? 'ANSWER' : 'QUESTION'}
               </span>
               <span className="text-[11px] text-slate-500 uppercase tracking-wider group-hover:text-slate-300 transition-colors">
-                FLIP [SPACE]
+                TAP TO FLIP
               </span>
             </div>
 
@@ -446,7 +455,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
 
             <div className="w-full flex justify-center z-10 font-mono pt-2">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest group-hover:text-slate-400 transition-colors">
-                Click tile or press Space to flip card
+                Tap to flip · swipe right Easy / left Hard when flipped
               </span>
             </div>
           </div>
@@ -464,28 +473,28 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
                 <button
                   type="button"
                   onClick={() => handleRating(1)}
-                  className="py-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  className="min-h-12 py-3 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
                   AGAIN<br /><span className="text-[10px] opacity-80">{ratingPreview[1]}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleRating(2)}
-                  className="py-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  className="min-h-12 py-3 bg-amber-500/10 hover:bg-amber-500/20 active:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
                   HARD<br /><span className="text-[10px] opacity-80">{ratingPreview[2]}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleRating(3)}
-                  className="py-3 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  className="min-h-12 py-3 bg-cyan-500/10 hover:bg-cyan-500/20 active:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
                   GOOD<br /><span className="text-[10px] opacity-80">{ratingPreview[3]}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleRating(4)}
-                  className="py-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  className="min-h-12 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 active:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
                   EASY<br /><span className="text-[10px] opacity-80">{ratingPreview[4]}</span>
                 </button>

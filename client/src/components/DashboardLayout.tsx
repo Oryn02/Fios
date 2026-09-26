@@ -197,7 +197,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             <button
               type="button"
               onClick={() => setDrawerOpen((v) => !v)}
-              className="md:hidden p-1.5 rounded-lg text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] bg-[var(--fios-surface-2)] cursor-pointer"
+              className="md:hidden touch-target p-2 rounded-lg text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] active:bg-[var(--fios-surface)] bg-[var(--fios-surface-2)] cursor-pointer"
               aria-label={drawerOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={drawerOpen}
             >
@@ -209,7 +209,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               <button
                 type="button"
                 onClick={exitZen}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border accent-border accent-solid-text text-[10px] font-black uppercase tracking-wider cursor-pointer bg-[var(--fios-surface-2)]"
+                className="touch-target-row flex items-center gap-1.5 px-3 py-2 rounded-md border accent-border accent-solid-text text-[10px] font-black uppercase tracking-wider cursor-pointer bg-[var(--fios-surface-2)] active:opacity-80"
                 aria-label="Exit Zen mode"
               >
                 <Focus className="w-3.5 h-3.5" /> Exit Zen
@@ -271,7 +271,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
-            className="p-2.5 rounded-xl border fios-border bg-[var(--fios-surface)]/95 text-[var(--fios-text-muted)] shadow-xl cursor-pointer"
+            className="touch-target p-2.5 rounded-xl border fios-border bg-[var(--fios-surface)]/95 text-[var(--fios-text-muted)] shadow-xl cursor-pointer active:opacity-80"
             aria-label="Open navigation (command palette)"
             title="Navigate (Ctrl/Cmd+K)"
           >
@@ -280,7 +280,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           <button
             type="button"
             onClick={exitZen}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border accent-border bg-[var(--fios-surface)]/95 accent-solid-text text-[10px] font-black uppercase tracking-wider shadow-xl cursor-pointer"
+            className="touch-target-row flex items-center gap-1.5 min-h-11 px-3 py-2.5 rounded-xl border accent-border bg-[var(--fios-surface)]/95 accent-solid-text text-[10px] font-black uppercase tracking-wider shadow-xl cursor-pointer active:opacity-80"
             aria-label="Exit Zen mode"
           >
             <Focus className="w-3.5 h-3.5" /> Exit Zen
@@ -310,11 +310,11 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               >
                 <div className="flex items-center justify-between mb-4">
                   <FiosLogo size="sm" />
-                  <button type="button" onClick={() => setDrawerOpen(false)} className="p-1.5 cursor-pointer text-[var(--fios-text-muted)]" aria-label="Close menu">
+                  <button type="button" onClick={() => setDrawerOpen(false)} className="touch-target p-2 cursor-pointer text-[var(--fios-text-muted)] active:bg-[var(--fios-surface-2)] rounded-lg" aria-label="Close menu">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                <nav className="space-y-1 overflow-y-auto flex-1" aria-label="Primary">
+                <nav className="space-y-1 overflow-y-auto flex-1 scroll-touch" aria-label="Primary">
                   {orderedNav.map((item) => {
                     const Icon = item.icon;
                     const isActive = activeTab === item.id;
@@ -324,7 +324,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                         type="button"
                         onClick={() => navigate(item.id)}
                         aria-current={isActive ? 'page' : undefined}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer ${
+                        className={`w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 ${
                           isActive ? 'accent-bg text-slate-950' : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
                         }`}
                       >
@@ -406,7 +406,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       {/* Mobile bottom nav — keep a Settings escape even in Zen study mode */}
       {(!hideChrome || zenMode) && (
         <nav
-          className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-2 pt-1.5 pb-1 safe-bottom ${hideChrome ? 'shadow-2xl' : ''}`}
+          className={`fios-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-1 pt-1 pb-1 safe-bottom ${hideChrome ? 'shadow-2xl' : ''}`}
           aria-label="Mobile shortcuts"
         >
           {hideChrome ? (
@@ -414,7 +414,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               <button
                 type="button"
                 onClick={() => { setDrawerOpen(true); }}
-                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg cursor-pointer text-[var(--fios-text-muted)]"
+                className="touch-target flex flex-col items-center gap-0.5 min-w-[4.5rem] px-3 py-2 rounded-lg cursor-pointer text-[var(--fios-text-muted)] active:bg-[var(--fios-surface-2)]"
                 aria-label="Open menu"
               >
                 <Menu className="w-5 h-5" />
@@ -423,7 +423,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               <button
                 type="button"
                 onClick={exitZen}
-                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg cursor-pointer accent-solid-text"
+                className="touch-target flex flex-col items-center gap-0.5 min-w-[4.5rem] px-3 py-2 rounded-lg cursor-pointer accent-solid-text active:opacity-80"
                 aria-label="Exit Zen"
               >
                 <Focus className="w-5 h-5" />
@@ -432,7 +432,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               <button
                 type="button"
                 onClick={() => navigate('settings')}
-                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg cursor-pointer text-[var(--fios-text-muted)]"
+                className="touch-target flex flex-col items-center gap-0.5 min-w-[4.5rem] px-3 py-2 rounded-lg cursor-pointer text-[var(--fios-text-muted)] active:bg-[var(--fios-surface-2)]"
                 aria-label="Settings"
               >
                 <Settings className="w-5 h-5" />
@@ -450,7 +450,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                   onClick={() => navigate(item.id)}
                   aria-current={isActive ? 'page' : undefined}
                   aria-label={item.label}
-                  className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg cursor-pointer ${isActive ? 'accent-solid-text' : 'text-[var(--fios-text-muted)]'}`}
+                  className={`touch-target flex flex-col items-center gap-0.5 min-w-[3.5rem] px-2 py-2 rounded-lg cursor-pointer active:bg-[var(--fios-surface-2)] ${isActive ? 'accent-solid-text' : 'text-[var(--fios-text-muted)]'}`}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-[9px] font-bold uppercase tracking-wide">{item.label.split(' ')[0]}</span>
@@ -483,7 +483,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             >
               <div className="flex items-center justify-between mb-4">
                 <FiosLogo size="sm" />
-                <button type="button" onClick={() => setDrawerOpen(false)} className="p-1.5 cursor-pointer text-[var(--fios-text-muted)]" aria-label="Close menu">
+                <button type="button" onClick={() => setDrawerOpen(false)} className="touch-target p-2 cursor-pointer text-[var(--fios-text-muted)] active:bg-[var(--fios-surface-2)] rounded-lg" aria-label="Close menu">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -497,7 +497,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                       type="button"
                       onClick={() => navigate(item.id)}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer ${
+                      className={`w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 ${
                         isActive ? 'accent-bg text-slate-950' : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
                       }`}
                     >

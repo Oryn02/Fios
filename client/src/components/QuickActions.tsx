@@ -298,7 +298,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
                       whileHover={{ x: -3 }}
                       whileTap={{ scale: 0.96 }}
                       onClick={a.onClick}
-                      className="flex items-center gap-2.5 pl-4 pr-3.5 py-2.5 rounded-xl border fios-border-strong bg-[var(--fios-surface)] shadow-2xl text-[var(--fios-text)] text-xs font-bold cursor-pointer hover:bg-[var(--fios-surface-2)] transition-colors"
+                      className="touch-target-row flex items-center gap-2.5 pl-4 pr-3.5 py-3 rounded-xl border fios-border-strong bg-[var(--fios-surface)] shadow-2xl text-[var(--fios-text)] text-xs font-bold cursor-pointer hover:bg-[var(--fios-surface-2)] active:bg-[var(--fios-surface-2)] transition-colors"
                     >
                       {a.label}
                       <span className="w-6 h-6 rounded-lg accent-bg flex items-center justify-center text-slate-950"><Icon className="w-3.5 h-3.5" /></span>
@@ -314,9 +314,9 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
           type="button"
           whileTap={{ scale: 0.92 }}
           onClick={() => setOpen((v) => !v)}
-          className={`rounded-2xl accent-bg text-slate-950 shadow-2xl accent-glow cursor-pointer flex items-center justify-center gap-2 ${
-            smartWidgetCompact ? 'w-11 h-11' : 'w-12 h-12'
-          } ${smartWidgetShowMetrics && smartWidgetCompact && compactPrimary ? 'px-3 w-auto min-w-12' : ''}`}
+          className={`rounded-2xl accent-bg text-slate-950 shadow-2xl accent-glow cursor-pointer flex items-center justify-center gap-2 active:opacity-90 ${
+            smartWidgetCompact ? 'w-12 h-12 min-w-12' : 'w-14 h-14 min-w-14'
+          } ${smartWidgetShowMetrics && smartWidgetCompact && compactPrimary ? 'px-3.5 w-auto min-w-12' : ''}`}
           aria-label="Quick actions"
           aria-expanded={open}
         >

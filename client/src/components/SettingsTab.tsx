@@ -29,6 +29,7 @@ import { AvatarPicker } from './Avatar';
 import { ACCENTS, type ThemeMode } from '../types/db';
 import { validateGeminiKey } from '../services/aiApi';
 import { TermsModal } from './TermsModal';
+import { PrivacyModal } from './PrivacyModal';
 import { AdminPanel, useIsAdmin } from './AdminPanel';
 import { FeedbackForm } from './FeedbackForm';
 import { resetCookieConsent } from './CookieConsent';
@@ -101,59 +102,6 @@ const SupportModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   );
 };
 
-const PrivacyModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans text-slate-100">
-    <div className="absolute inset-0" onClick={onClose} />
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 12 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      className="relative z-10 w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 sm:p-8 space-y-6 shadow-2xl"
-    >
-      <div className="flex items-center justify-between border-b fios-border pb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border accent-solid-text">
-            <Shield className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black uppercase text-[var(--fios-text)]">Privacy Policy & GDPR Statement</h3>
-            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center</p>
-          </div>
-        </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer p-1">
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-
-      <div className="space-y-4 text-xs sm:text-sm text-[var(--fios-text-muted)] leading-relaxed font-sans">
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">1. Data Controller & Overview</h4>
-          <p>
-            Fios respects your privacy and is committed to protecting your personal data in accordance with the General Data Protection Regulation (GDPR) and Irish data protection legislation.
-          </p>
-        </section>
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">2. Information We Collect</h4>
-          <p>We process limited personal data necessary for authentication and core functionality via Supabase, alongside your encrypted API keys and private study notes.</p>
-        </section>
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">3. Your Rights</h4>
-          <p>You retain the right to access, correct, or request complete erasure of your personal data and account records at any time.</p>
-        </section>
-      </div>
-
-      <div className="border-t fios-border pt-4 flex justify-end">
-        <button
-          onClick={onClose}
-          className="px-5 py-2.5 accent-bg text-slate-950 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
-        >
-          Close Policy
-        </button>
-      </div>
-    </motion.div>
-  </div>
-);
-
 const SettingsTabInner: React.FC = () => {
   const { profile, updateProfile } = useProfile();
   const { theme, setTheme, accent, setAccent } = useTheme();
@@ -178,6 +126,11 @@ const SettingsTabInner: React.FC = () => {
 
   // Modals state
   const [showPrivacy, setShowPrivacy] = useState(false);
+  useEffect(() => {
+    const open = () => setShowPrivacy(true);
+    window.addEventListener('fios-open-privacy', open);
+    return () => window.removeEventListener('fios-open-privacy', open);
+  }, []);
   const [showTerms, setShowTerms] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
@@ -1198,9 +1151,10 @@ const SettingsTabInner: React.FC = () => {
         </h2>
 
         <div className="text-xs text-slate-400 space-y-2 leading-relaxed bg-[#07090e]/60 p-4 rounded-xl border border-slate-800/80">
-          <p>• <strong className="text-slate-200">Local API Key Storage:</strong> Your personal Gemini API key is encrypted and saved directly in your browser session/profile.</p>
-          <p>• <strong className="text-slate-200">Row Level Security:</strong> All study decks, quizzes, and timetable entries are isolated strictly to your authenticated user ID.</p>
-          <p>• <strong className="text-slate-200">No Model Training:</strong> Uploaded lecture notes and PDFs are processed in-memory solely for generate-on-demand flashcards.</p>
+          <p>• <strong className="text-slate-200">Controllers & processors:</strong> Your study data is stored in Supabase under RLS. AI calls use your Gemini key. Optional GitHub OAuth/gists and hosting logs are described in the Privacy Policy.</p>
+          <p>• <strong className="text-slate-200">BYO Gemini key:</strong> Stored on your profile (RLS). Not used to train public models from your notes.</p>
+          <p>• <strong className="text-slate-200">Your rights:</strong> Export a JSON copy below, update your profile anytime, or email support for erasure. Full GDPR statement via Privacy Policy.</p>
+          <p>• <strong className="text-slate-200">Consent:</strong> Essential browser storage only — reset the cookie banner above anytime.</p>
         </div>
 
         <div className="pt-1 flex flex-wrap gap-3">
@@ -1212,7 +1166,14 @@ const SettingsTabInner: React.FC = () => {
           </button>
 
           <button
-            onClick={() => alert('To clear local data, clear your browser local storage or reset account in Supabase.')}
+            onClick={() => {
+              if (confirm('Clear Fios localStorage on this device (theme, consent, caches, local schedule)? Cloud study data in Supabase is not deleted — use Export first, then email support for full account erasure.')) {
+                Object.keys(localStorage)
+                  .filter((k) => k.startsWith('fios_'))
+                  .forEach((k) => localStorage.removeItem(k));
+                toast('Local Fios preferences cleared', 'info');
+              }
+            }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition-colors border border-rose-500/20 cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" /> Clear Local Storage & Account Data

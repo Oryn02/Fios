@@ -9,6 +9,11 @@ export function resetCookieConsent() {
   window.dispatchEvent(new Event('fios-cookie-reset'));
 }
 
+/** Open shared Privacy Policy from the consent banner (Landing/Settings listen). */
+export function openPrivacyFromConsent() {
+  window.dispatchEvent(new Event('fios-open-privacy'));
+}
+
 export const CookieConsent: React.FC = () => {
   const [visible, setVisible] = useState(false);
 
@@ -20,7 +25,10 @@ export const CookieConsent: React.FC = () => {
   }, []);
 
   const accept = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ accepted: true, at: new Date().toISOString() }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ accepted: true, essential: true, at: new Date().toISOString() })
+    );
     setVisible(false);
   };
 
@@ -42,15 +50,26 @@ export const CookieConsent: React.FC = () => {
             <div className="space-y-2 flex-1">
               <p className="text-xs font-bold text-[var(--fios-text)]">Cookies & local storage</p>
               <p className="text-[11px] text-[var(--fios-text-muted)] leading-relaxed">
-                Fios stores preferences, session tokens, and study caches in your browser. We do not sell data or run third-party ad trackers.
+                Fios uses <strong className="text-[var(--fios-text)]">essential</strong> browser storage for sign-in,
+                preferences, and offline study caches. We do not sell data or run third-party ad trackers.
+                Details on processors (Supabase, Gemini, GitHub, hosting) are in our Privacy Policy.
               </p>
-              <button
-                type="button"
-                onClick={accept}
-                className="px-4 py-2 accent-bg text-slate-950 text-[11px] font-black uppercase rounded-lg cursor-pointer"
-              >
-                Got it
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={accept}
+                  className="touch-target-row px-4 py-2.5 min-h-11 accent-bg text-slate-950 text-[11px] font-black uppercase rounded-lg cursor-pointer active:opacity-90"
+                >
+                  Accept essential
+                </button>
+                <button
+                  type="button"
+                  onClick={openPrivacyFromConsent}
+                  className="touch-target-row px-3 py-2.5 min-h-11 text-[11px] font-mono font-bold uppercase accent-solid-text cursor-pointer underline active:opacity-80"
+                >
+                  Privacy Policy
+                </button>
+              </div>
             </div>
           </div>
         </motion.div>

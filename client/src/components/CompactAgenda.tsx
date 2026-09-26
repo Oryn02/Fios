@@ -73,7 +73,7 @@ const AgendaRow = memo(function AgendaRow({
         <button
           type="button"
           onClick={() => onToggleTask(item.sourceId, !!item.completed)}
-          className={`shrink-0 p-1.5 rounded-lg border cursor-pointer ${
+          className={`touch-target shrink-0 p-2 rounded-lg border cursor-pointer active:opacity-80 ${
             item.completed ? 'accent-bg border-transparent text-slate-950' : 'border-slate-600 text-slate-400'
           }`}
           aria-label={item.completed ? 'Mark incomplete' : 'Mark complete'}
@@ -124,7 +124,7 @@ export const CompactAgenda = memo(function CompactAgenda({
   }
 
   return (
-    <div className="space-y-2 max-h-80 overflow-y-auto pr-0.5 contain-content">
+    <div className="fios-agenda-scroll space-y-2 max-h-80 overflow-y-auto pr-0.5 contain-content">
       {items.map((item) => (
         <AgendaRow key={item.id} item={item} onToggleTask={onToggleTask} compact={compact} />
       ))}

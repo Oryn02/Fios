@@ -57,7 +57,7 @@ export const FeedbackForm: React.FC = () => {
         <MessageSquareHeart className="w-4 h-4 accent-solid-text" /> Feedback & Ratings
       </h2>
       <p className="text-xs text-[var(--fios-text-muted)] leading-relaxed">
-        Rate Fios and share bugs, feature ideas, or thoughts. Admins can review submissions in the Admin panel.
+        Rate Fios and share bugs, feature ideas, or thoughts. Submissions are stored securely; choose anonymous to omit your user id.
       </p>
 
       {done && (

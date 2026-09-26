@@ -274,7 +274,7 @@ html.theme-ready .fios-card {
 }
 
 /* ==========================================================================
-   Mobile / cross-browser optimizations
+   Mobile / cross-browser optimizations + touch (v2.2.3)
    ========================================================================== */
 input, select, textarea { font-size: 16px; }
 @media (min-width: 768px) {
@@ -288,7 +288,53 @@ input, select, textarea { font-size: 16px; }
 
 html, body, #root { min-height: 100vh; min-height: 100dvh; }
 body { background-color: var(--fios-bg, #05070b); color: var(--fios-text, #f8fafc); overscroll-behavior-y: none; }
-.scroll-touch { -webkit-overflow-scrolling: touch; }
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+/* Prefer tap over 300ms delay / hover stickiness on interactive controls */
+button,
+[role="button"],
+a,
+summary,
+.touch-target {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--fios-accent-solid) 22%, transparent);
+}
+
+/* ~44px minimum hit area for critical mobile chrome */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.touch-target-row {
+  min-height: 44px;
+}
+
+/* Bottom nav / FAB: keep taps from scrolling the page underneath */
+.fios-bottom-nav,
+.fios-fab-dock {
+  touch-action: manipulation;
+}
+
+/* Horizontal flashcard swipe without fighting vertical page scroll */
+.fios-swipe-card {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Agenda / lists: vertical scroll wins; nested buttons stay tappable */
+.fios-agenda-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
 
 /* Mermaid diagrams render on a neutral surface in both themes */
 .fios-mermaid svg { max-width: 100%; height: auto; }
