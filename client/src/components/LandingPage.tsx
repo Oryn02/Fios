@@ -38,19 +38,43 @@ const walkthrough = [
 const faqs = [
   {
     q: 'Is Fios completely free to use?',
-    a: 'Yes! Fios is open for personal academic use. You can sign up, manage modules, run focus sessions, and use flashcards for free.',
+    a: 'Yes. Fios is free for personal academic use. Sign up, manage modules, run focus sessions, and study with flashcards at no cost. AI features use your own free Google Gemini API key (BYO-Key).',
+  },
+  {
+    q: 'How do I create an account?',
+    a: 'Open Fios and choose Sign up. You can register with email/password through Supabase Auth, or continue with GitHub OAuth when the GitHub provider is enabled on the project. After sign-in you land in the dashboard with an empty profile ready for modules and notes.',
+  },
+  {
+    q: 'How does GitHub / Supabase authentication work?',
+    a: 'Fios uses Supabase Auth for sessions. Email sign-up stores credentials in your Supabase project under Row Level Security. GitHub OAuth (optional) links your GitHub identity for one-click sign-in and helpers like gist export. Sessions refresh automatically; idle timeout signs you out after prolonged inactivity.',
   },
   {
     q: 'How does the Bring Your Own Key (BYO-Key) system work?',
-    a: 'To unlock AI-powered features like note summarization, quiz generation, and code grading, you simply enter your own free Google Gemini API key in settings. It is stored securely on your account profile and used exclusively for your requests.',
+    a: 'To unlock AI features (summaries, quizzes, code grading, tutor), paste your free Google Gemini API key in Settings. It is stored on your profile under RLS and sent only with your own requests. You can test, replace, or remove the key anytime.',
   },
   {
-    q: 'Are my uploaded lecture slides and notes secure?',
-    a: 'Absolutely. Your notes and documents are stored securely in your private database schema via Supabase. We adhere strictly to GDPR guidelines and never share or use your study data for public model training.',
+    q: 'How do I sync my ATU / college timetable (iCal)?',
+    a: 'In Schedule or Settings, paste your ATU (or other) HTTPS iCal feed URL and save. Fios fetches it through the Render API `/api/ical-proxy` (POST/GET) so the browser never hits CORS-blocked campus hosts. Events appear on Overview and the ATU Calendar views after a successful sync.',
+  },
+  {
+    q: 'Are my notes and data private? (GDPR)',
+    a: 'Yes. Study data lives in your private Supabase schema with Row Level Security. Fios follows GDPR principles: you can export or request erasure, and we do not use your lecture notes for public model training. See Privacy in the app footer and Settings for the full statement.',
+  },
+  {
+    q: 'What is the AI Tutor and how do I use it?',
+    a: 'AI Tutor is a full-screen chat tab. Add a Gemini key, open Tutor (or Smart Notes → Ask AI), and ask questions. Optional RAG grounding uses your uploaded note chunks when available. Guests on the live demo must sign in before AI calls.',
+  },
+  {
+    q: 'What are the core study hubs in Fios?',
+    a: 'Overview (flight plan, heatmap, tasks), Flashcards (SM-2), Modules, Exam Mode (MCQ), Code Lab, Smart Notes, AI Tutor, Grades, Focus Timer / Pomodoro, Schedule / ATU Calendar, plus Settings and Updates. Customize the mobile bottom nav and desktop sidebar order in Settings.',
+  },
+  {
+    q: 'Can I install Fios as an app (PWA)?',
+    a: 'Yes. Fios ships as an installable PWA with the current logo icons (iOS apple-touch, Android/Chrome maskable, favicon). Use Install in Settings or your browser’s “Add to Home Screen”. Offline mutation queue covers common writes when you reconnect.',
   },
   {
     q: 'Can I access Fios across multiple devices?',
-    a: 'Yes. Because your account and study progress are synchronized via cloud infrastructure, your modules, flashcards, and study timers stay updated whether you are on your laptop or mobile device.',
+    a: 'Yes. Account data syncs via Supabase. Preferences (theme, accent, nav slots, widget toggles) persist locally and to your profile prefs when available.',
   },
 ];
 

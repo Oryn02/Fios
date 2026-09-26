@@ -376,9 +376,9 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                           if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); moveNav(item.id, 1); }
                         }}
                         aria-current={isActive ? 'page' : undefined}
-                        className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-black italic uppercase tracking-wider transition-colors cursor-pointer ${
+                        className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-black italic uppercase tracking-wider transition-colors cursor-pointer fios-tab ${
                           isActive
-                            ? 'bg-[var(--fios-surface-2)] accent-solid-text border-l-2 accent-border shadow-md'
+                            ? 'bg-[var(--fios-surface-2)] accent-solid-text border-l-2 accent-border shadow-md fios-tab-active'
                             : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
                         }`}
                       >

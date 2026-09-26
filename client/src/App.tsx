@@ -219,11 +219,17 @@ const Dashboard: React.FC = () => {
         </motion.div>
       </AnimatePresence>
 
-      <PomodoroWidget />
-      <QuickActions
-        onNavigate={handleTabChange}
-        onOpenTutor={() => handleTabChange('tutor')}
-      />
+      {/* Shared bottom-right dock — avoids FAB/Pomodoro overlap; clears mobile bottom nav */}
+      <div
+        className="fixed z-[70] bottom-24 md:bottom-6 right-3 md:right-6 flex flex-row-reverse items-end gap-3 safe-bottom pointer-events-none"
+        aria-label="Floating study tools"
+      >
+        <QuickActions
+          onNavigate={handleTabChange}
+          onOpenTutor={() => handleTabChange('tutor')}
+        />
+        <PomodoroWidget />
+      </div>
     </DashboardLayout>
   );
 };
@@ -342,6 +348,9 @@ export function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setCheckingAuth(false);
+    }).catch(() => {
+      setSession(null);
+      setCheckingAuth(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -364,7 +373,7 @@ export function App() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-[#07090e] flex items-center justify-center accent-solid-text font-mono text-xs">
+      <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
           Initializing Fios v2.2.3…

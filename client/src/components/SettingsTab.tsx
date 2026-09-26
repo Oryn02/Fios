@@ -17,23 +17,23 @@ import {
   DEFAULT_MOBILE_NAV,
   DEFAULT_NAV_ORDER,
   DEFAULT_SMART_ACTIONS,
+  DEFAULT_SMART_METRICS,
+  ALL_SMART_ACTIONS,
+  ALL_SMART_METRICS,
+  SMART_ACTION_LABELS,
+  SMART_METRIC_LABELS,
   type SmartActionId,
+  type SmartMetricId,
 } from '../context/PreferencesContext';
 import { AvatarPicker } from './Avatar';
 import { ACCENTS, type ThemeMode } from '../types/db';
 import { validateGeminiKey } from '../services/aiApi';
 import { TermsModal } from './TermsModal';
 import { AdminPanel, useIsAdmin } from './AdminPanel';
+import { FeedbackForm } from './FeedbackForm';
 import { resetCookieConsent } from './CookieConsent';
 import { toast } from '../lib/toast';
 import { NAV_ITEMS } from './DashboardLayout';
-
-const SMART_ACTION_LABELS: Record<SmartActionId, string> = {
-  flashcard: 'Quick Add Flashcard',
-  note: 'New Note',
-  pomodoro: 'Start Pomodoro',
-  tutor: 'Ask AI',
-};
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
 
@@ -164,6 +164,7 @@ const SettingsTabInner: React.FC = () => {
     showPomodoroWidget, setShowPomodoroWidget,
     showSmartWidget, setShowSmartWidget,
     smartWidgetActions, setSmartWidgetActions,
+    smartWidgetMetrics, setSmartWidgetMetrics,
     smartWidgetCompact, setSmartWidgetCompact,
     smartWidgetShowMetrics, setSmartWidgetShowMetrics,
   } = usePreferences();
@@ -832,7 +833,7 @@ const SettingsTabInner: React.FC = () => {
         </div>
 
         {showSmartWidget && (
-          <div className="space-y-3 rounded-xl border fios-border bg-[var(--fios-surface-2)]/50 p-4">
+          <div className="space-y-3 rounded-xl border fios-border-strong bg-[var(--fios-surface-2)]/50 p-4">
             <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Smart Quick Widget layout</span>
             <div className="flex flex-wrap gap-2">
               <button
@@ -850,9 +851,55 @@ const SettingsTabInner: React.FC = () => {
                 Metrics chip {smartWidgetShowMetrics ? 'On' : 'Off'}
               </button>
             </div>
+
+            {smartWidgetShowMetrics && (
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-mono text-[var(--fios-text-muted)] uppercase">Metrics (toggle + reorder)</span>
+                {ALL_SMART_METRICS.map((id) => {
+                  const on = smartWidgetMetrics.includes(id);
+                  const idx = smartWidgetMetrics.indexOf(id);
+                  return (
+                    <div key={id} className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (on) setSmartWidgetMetrics(smartWidgetMetrics.filter((m) => m !== id));
+                          else setSmartWidgetMetrics([...smartWidgetMetrics, id]);
+                        }}
+                        className={`flex-1 px-3 py-2 rounded-lg border text-xs font-bold text-left cursor-pointer ${on ? 'accent-border accent-solid-text bg-[var(--fios-surface)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+                      >
+                        {SMART_METRIC_LABELS[id]}
+                      </button>
+                      {on && (
+                        <>
+                          <button type="button" disabled={idx <= 0} onClick={() => {
+                            const next = [...smartWidgetMetrics];
+                            [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                            setSmartWidgetMetrics(next);
+                          }} className="p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move metric up">
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" disabled={idx < 0 || idx >= smartWidgetMetrics.length - 1} onClick={() => {
+                            const next = [...smartWidgetMetrics];
+                            [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                            setSmartWidgetMetrics(next);
+                          }} className="p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move metric down">
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+                <button type="button" onClick={() => setSmartWidgetMetrics([...DEFAULT_SMART_METRICS])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
+                  Reset metrics
+                </button>
+              </div>
+            )}
+
             <div className="space-y-1.5">
-              <span className="text-[10px] font-mono text-[var(--fios-text-muted)] uppercase">Actions (order = menu order)</span>
-              {(DEFAULT_SMART_ACTIONS as SmartActionId[]).map((id) => {
+              <span className="text-[10px] font-mono text-[var(--fios-text-muted)] uppercase">Shortcuts (order = menu order)</span>
+              {ALL_SMART_ACTIONS.map((id) => {
                 const on = smartWidgetActions.includes(id);
                 const idx = smartWidgetActions.indexOf(id);
                 return (
@@ -1141,6 +1188,8 @@ const SettingsTabInner: React.FC = () => {
         {gistStatus && <p className="text-[11px] font-mono text-slate-400">{gistStatus}</p>}
         <p className="text-[10px] text-slate-500">Optional: set <code className="accent-solid-text">fios_github_token</code> in localStorage or <code className="accent-solid-text">VITE_GITHUB_TOKEN</code> for automatic gist creation.</p>
       </section>
+
+      <FeedbackForm />
 
       {/* PRIVACY & DATA RIGHTS */}
       <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">

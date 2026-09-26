@@ -10,7 +10,22 @@ import { useProfile } from './ProfileContext';
 
 export type WidgetId = 'flightPlan' | 'heatmap' | 'dueCards' | 'calendar';
 
-export type SmartActionId = 'flashcard' | 'note' | 'pomodoro' | 'tutor';
+/** Shortcuts / chips available in the Smart Quick Widget. */
+export type SmartActionId =
+  | 'flashcard'
+  | 'note'
+  | 'pomodoro'
+  | 'tutor'
+  | 'tasks'
+  | 'schedule'
+  | 'quiz'
+  | 'modules'
+  | 'grades'
+  | 'flashcards'
+  | 'timer'
+  | 'calendar';
+
+export type SmartMetricId = 'dueCards' | 'tasks' | 'streak' | 'timer' | 'upcoming';
 
 export const DEFAULT_WIDGET_ORDER: WidgetId[] = ['flightPlan', 'heatmap', 'dueCards', 'calendar'];
 export const DEFAULT_MOBILE_NAV = ['overview', 'modules', 'code', 'documents', 'tutor'];
@@ -18,7 +33,41 @@ export const DEFAULT_NAV_ORDER = [
   'overview', 'flashcards', 'modules', 'quiz', 'code', 'documents', 'tutor',
   'atu-calendar', 'grades', 'timer', 'schedule', 'settings', 'updates',
 ];
+
+/** Default enabled shortcuts (subset of the full catalog). */
 export const DEFAULT_SMART_ACTIONS: SmartActionId[] = ['flashcard', 'note', 'pomodoro', 'tutor'];
+
+/** Full catalog users can enable / reorder in Settings. */
+export const ALL_SMART_ACTIONS: SmartActionId[] = [
+  'flashcard', 'note', 'pomodoro', 'tutor',
+  'tasks', 'schedule', 'quiz', 'modules', 'grades', 'flashcards', 'timer', 'calendar',
+];
+
+export const DEFAULT_SMART_METRICS: SmartMetricId[] = ['dueCards', 'tasks'];
+export const ALL_SMART_METRICS: SmartMetricId[] = ['dueCards', 'tasks', 'streak', 'timer', 'upcoming'];
+
+export const SMART_ACTION_LABELS: Record<SmartActionId, string> = {
+  flashcard: 'Quick Add Flashcard',
+  note: 'New Quick Note',
+  pomodoro: 'Start Pomodoro',
+  tutor: 'Ask AI Tutor',
+  tasks: 'Open Tasks',
+  schedule: 'College Schedule',
+  quiz: 'Exam Mode',
+  modules: 'Modules',
+  grades: 'Grade Predictor',
+  flashcards: 'Flashcard Decks',
+  timer: 'Focus Timer',
+  calendar: 'ATU Calendar',
+};
+
+export const SMART_METRIC_LABELS: Record<SmartMetricId, string> = {
+  dueCards: 'Due SM-2 cards',
+  tasks: 'Open tasks',
+  streak: 'Study streak (days)',
+  timer: 'Active Pomodoro clock',
+  upcoming: 'Upcoming classes',
+};
 
 export interface PreferencesState {
   lowPower: boolean;
@@ -29,15 +78,17 @@ export interface PreferencesState {
   mobileNavSlots: string[];
   /** Desktop sidebar order (and mobile drawer order). */
   navOrder: string[];
-  /** Floating Pomodoro widget (desktop). */
+  /** Floating Pomodoro widget. */
   showPomodoroWidget: boolean;
-  /** Floating Smart Quick Actions FAB (desktop). */
+  /** Floating Smart Quick Actions FAB. */
   showSmartWidget: boolean;
   /** Which Smart Quick actions appear, in order. */
   smartWidgetActions: SmartActionId[];
+  /** Which metric chips appear on the Smart Quick panel / FAB. */
+  smartWidgetMetrics: SmartMetricId[];
   /** Compact vs expanded default for Smart Quick metrics strip. */
   smartWidgetCompact: boolean;
-  /** Show due-card / task metrics chip on the Smart Quick FAB. */
+  /** Show metrics chip(s) on the Smart Quick FAB. */
   smartWidgetShowMetrics: boolean;
 }
 
@@ -57,25 +108,41 @@ const DEFAULTS: PreferencesState = {
   showPomodoroWidget: true,
   showSmartWidget: true,
   smartWidgetActions: [...DEFAULT_SMART_ACTIONS],
+  smartWidgetMetrics: [...DEFAULT_SMART_METRICS],
   smartWidgetCompact: false,
   smartWidgetShowMetrics: true,
 };
 
 const LS_KEY = 'fios_preferences';
 
+function sanitizeActions(raw: unknown): SmartActionId[] {
+  if (!Array.isArray(raw)) return [...DEFAULT_SMART_ACTIONS];
+  const allowed = new Set(ALL_SMART_ACTIONS);
+  return raw.filter((id): id is SmartActionId => typeof id === 'string' && allowed.has(id as SmartActionId));
+}
+
+function sanitizeMetrics(raw: unknown): SmartMetricId[] {
+  if (!Array.isArray(raw)) return [...DEFAULT_SMART_METRICS];
+  const allowed = new Set(ALL_SMART_METRICS);
+  return raw.filter((id): id is SmartMetricId => typeof id === 'string' && allowed.has(id as SmartMetricId));
+}
+
+function cloneDefaults(): PreferencesState {
+  return {
+    ...DEFAULTS,
+    widgetVisibility: { ...DEFAULTS.widgetVisibility },
+    widgetOrder: [...DEFAULTS.widgetOrder],
+    mobileNavSlots: [...DEFAULTS.mobileNavSlots],
+    navOrder: [...DEFAULTS.navOrder],
+    smartWidgetActions: [...DEFAULTS.smartWidgetActions],
+    smartWidgetMetrics: [...DEFAULTS.smartWidgetMetrics],
+  };
+}
+
 function loadLocal(): PreferencesState {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (!raw) {
-      return {
-        ...DEFAULTS,
-        widgetVisibility: { ...DEFAULTS.widgetVisibility },
-        widgetOrder: [...DEFAULTS.widgetOrder],
-        mobileNavSlots: [...DEFAULTS.mobileNavSlots],
-        navOrder: [...DEFAULTS.navOrder],
-        smartWidgetActions: [...DEFAULTS.smartWidgetActions],
-      };
-    }
+    if (!raw) return cloneDefaults();
     const parsed = JSON.parse(raw);
     return {
       ...DEFAULTS,
@@ -84,23 +151,15 @@ function loadLocal(): PreferencesState {
       widgetOrder: Array.isArray(parsed.widgetOrder) ? parsed.widgetOrder : [...DEFAULTS.widgetOrder],
       mobileNavSlots: Array.isArray(parsed.mobileNavSlots) ? parsed.mobileNavSlots : [...DEFAULTS.mobileNavSlots],
       navOrder: Array.isArray(parsed.navOrder) ? parsed.navOrder : [...DEFAULTS.navOrder],
-      smartWidgetActions: Array.isArray(parsed.smartWidgetActions)
-        ? parsed.smartWidgetActions
-        : [...DEFAULTS.smartWidgetActions],
+      smartWidgetActions: sanitizeActions(parsed.smartWidgetActions),
+      smartWidgetMetrics: sanitizeMetrics(parsed.smartWidgetMetrics),
       showPomodoroWidget: parsed.showPomodoroWidget !== false,
       showSmartWidget: parsed.showSmartWidget !== false,
       smartWidgetCompact: !!parsed.smartWidgetCompact,
       smartWidgetShowMetrics: parsed.smartWidgetShowMetrics !== false,
     };
   } catch {
-    return {
-      ...DEFAULTS,
-      widgetVisibility: { ...DEFAULTS.widgetVisibility },
-      widgetOrder: [...DEFAULTS.widgetOrder],
-      mobileNavSlots: [...DEFAULTS.mobileNavSlots],
-      navOrder: [...DEFAULTS.navOrder],
-      smartWidgetActions: [...DEFAULTS.smartWidgetActions],
-    };
+    return cloneDefaults();
   }
 }
 
@@ -115,6 +174,7 @@ interface PreferencesContextValue extends PreferencesState {
   setShowPomodoroWidget: (v: boolean) => void;
   setShowSmartWidget: (v: boolean) => void;
   setSmartWidgetActions: (actions: SmartActionId[]) => void;
+  setSmartWidgetMetrics: (metrics: SmartMetricId[]) => void;
   setSmartWidgetCompact: (v: boolean) => void;
   setSmartWidgetShowMetrics: (v: boolean) => void;
   resetPreferences: () => void;
@@ -138,9 +198,11 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
           mobileNavSlots: Array.isArray(remote.mobileNavSlots) ? remote.mobileNavSlots : prev.mobileNavSlots,
           navOrder: Array.isArray(remote.navOrder) ? remote.navOrder : prev.navOrder,
           smartWidgetActions: Array.isArray(remote.smartWidgetActions)
-            ? remote.smartWidgetActions
+            ? sanitizeActions(remote.smartWidgetActions)
             : prev.smartWidgetActions,
-          // Only adopt remote booleans when explicitly present — avoid reviving disabled widgets.
+          smartWidgetMetrics: Array.isArray(remote.smartWidgetMetrics)
+            ? sanitizeMetrics(remote.smartWidgetMetrics)
+            : prev.smartWidgetMetrics,
           showPomodoroWidget: typeof remote.showPomodoroWidget === 'boolean'
             ? remote.showPomodoroWidget
             : prev.showPomodoroWidget,
@@ -199,23 +261,16 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [updateProfile]);
   const setMobileNavSlots = useCallback((slots: string[]) => {
     const trimmed = slots.filter(Boolean).slice(0, 5);
-    // Never persist an empty list — fall back to defaults so hide/reorder stay consistent.
     patch({ mobileNavSlots: trimmed.length ? trimmed : [...DEFAULT_MOBILE_NAV] });
   }, [patch]);
   const setNavOrder = useCallback((order: string[]) => patch({ navOrder: order }), [patch]);
   const setShowPomodoroWidget = useCallback((v: boolean) => patch({ showPomodoroWidget: v }), [patch]);
   const setShowSmartWidget = useCallback((v: boolean) => patch({ showSmartWidget: v }), [patch]);
   const setSmartWidgetActions = useCallback((actions: SmartActionId[]) => patch({ smartWidgetActions: actions }), [patch]);
+  const setSmartWidgetMetrics = useCallback((metrics: SmartMetricId[]) => patch({ smartWidgetMetrics: metrics }), [patch]);
   const setSmartWidgetCompact = useCallback((v: boolean) => patch({ smartWidgetCompact: v }), [patch]);
   const setSmartWidgetShowMetrics = useCallback((v: boolean) => patch({ smartWidgetShowMetrics: v }), [patch]);
-  const resetPreferences = useCallback(() => persist({
-    ...DEFAULTS,
-    widgetVisibility: { ...DEFAULTS.widgetVisibility },
-    widgetOrder: [...DEFAULTS.widgetOrder],
-    mobileNavSlots: [...DEFAULTS.mobileNavSlots],
-    navOrder: [...DEFAULTS.navOrder],
-    smartWidgetActions: [...DEFAULTS.smartWidgetActions],
-  }), [persist]);
+  const resetPreferences = useCallback(() => persist(cloneDefaults()), [persist]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -251,13 +306,14 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setShowPomodoroWidget,
     setShowSmartWidget,
     setSmartWidgetActions,
+    setSmartWidgetMetrics,
     setSmartWidgetCompact,
     setSmartWidgetShowMetrics,
     resetPreferences,
   }), [
     prefs, setLowPower, setZenMode, setOpenDyslexic, setWidgetOrder, setWidgetVisible,
     setMobileNavSlots, setNavOrder, setShowPomodoroWidget, setShowSmartWidget,
-    setSmartWidgetActions, setSmartWidgetCompact, setSmartWidgetShowMetrics, resetPreferences,
+    setSmartWidgetActions, setSmartWidgetMetrics, setSmartWidgetCompact, setSmartWidgetShowMetrics, resetPreferences,
   ]);
 
   return (

@@ -1,6 +1,21 @@
 // Shared database entity types matching the Supabase schema in supabase/schema.sql
 
-export type AccentKey = 'emerald' | 'violet' | 'sunset' | 'ocean' | 'lime';
+export type AccentKey =
+  | 'emerald'
+  | 'ocean'
+  | 'sunset'
+  | 'lime'
+  | 'copper'
+  | 'aurora'
+  | 'glacier'
+  | 'ember'
+  | 'violet'
+  | 'deep-emerald'
+  | 'vibrant-indigo'
+  | 'sunset-amber'
+  | 'slate-teal'
+  | 'rose-quartz'
+  | 'neon-violet';
 export type ThemeMode = 'dark' | 'light' | 'system';
 
 export interface UserProfile {
@@ -37,15 +52,34 @@ export interface AccentDef {
   solid: string;
 }
 
-// Secondary gradient accents selectable in Settings. Each is a 3-stop gradient
-// driving the universal gradient engine (buttons, gradient text, glows, rings).
+/**
+ * User-selectable 3-stop accent gradients for the dashboard (not the locked landing brand).
+ * Emerald is the Fios signature; other options stay off the purple-default AI look.
+ */
 export const ACCENTS: AccentDef[] = [
-  { key: 'emerald', label: 'Emerald Blue', from: '#34d399', via: '#2dd4bf', to: '#3b82f6', solid: '#34d399' },
-  { key: 'violet', label: 'Cyber Violet', from: '#c084fc', via: '#a78bfa', to: '#6366f1', solid: '#a78bfa' },
+  { key: 'emerald', label: 'Emerald Teal', from: '#34d399', via: '#2dd4bf', to: '#14b8a6', solid: '#34d399' },
+  { key: 'deep-emerald', label: 'Deep Emerald', from: '#34d399', via: '#10b981', to: '#047857', solid: '#10b981' },
+  { key: 'ocean', label: 'Electric Ocean', from: '#22d3ee', via: '#38bdf8', to: '#2563eb', solid: '#38bdf8' },
+  { key: 'vibrant-indigo', label: 'Vibrant Indigo', from: '#a5b4fc', via: '#818cf8', to: '#4f46e5', solid: '#818cf8' },
   { key: 'sunset', label: 'Sunset Fire', from: '#fbbf24', via: '#fb923c', to: '#f43f5e', solid: '#fb923c' },
-  { key: 'ocean', label: 'Electric Ocean', from: '#22d3ee', via: '#38bdf8', to: '#6366f1', solid: '#38bdf8' },
+  { key: 'sunset-amber', label: 'Sunset Amber', from: '#fde68a', via: '#fbbf24', to: '#f59e0b', solid: '#fbbf24' },
+  { key: 'slate-teal', label: 'Slate Teal', from: '#5eead4', via: '#2dd4bf', to: '#0f766e', solid: '#2dd4bf' },
   { key: 'lime', label: 'Neon Lime', from: '#bef264', via: '#a3e635', to: '#22c55e', solid: '#84cc16' },
+  { key: 'copper', label: 'Copper Bronze', from: '#f59e0b', via: '#d97706', to: '#b45309', solid: '#d97706' },
+  { key: 'aurora', label: 'Aurora Mint', from: '#5eead4', via: '#34d399', to: '#f472b6', solid: '#2dd4bf' },
+  { key: 'glacier', label: 'Glacier Ice', from: '#a5f3fc', via: '#67e8f9', to: '#0ea5e9', solid: '#22d3ee' },
+  { key: 'ember', label: 'Ember Rose', from: '#fb7185', via: '#f43f5e', to: '#e11d48', solid: '#f43f5e' },
+  { key: 'rose-quartz', label: 'Rose Quartz', from: '#fda4af', via: '#fb7185', to: '#e11d48', solid: '#fb7185' },
+  { key: 'violet', label: 'Cyber Violet', from: '#c084fc', via: '#a78bfa', to: '#6366f1', solid: '#a78bfa' },
+  { key: 'neon-violet', label: 'Neon Violet', from: '#e9d5ff', via: '#c084fc', to: '#7c3aed', solid: '#c084fc' },
 ];
+
+export const ACCENT_KEYS = new Set(ACCENTS.map((a) => a.key));
+
+export function normalizeAccent(raw: string | null | undefined): AccentKey {
+  if (raw && ACCENT_KEYS.has(raw as AccentKey)) return raw as AccentKey;
+  return 'emerald';
+}
 
 export interface RecallConcept {
   concept: string;
@@ -171,7 +205,12 @@ export interface Task {
   user_id?: string;
   module_code?: string | null;
   title: string;
+  /** Legacy free-text label (e.g. "Tomorrow"); kept for older rows. */
   due_date?: string | null;
+  /** Specific due datetime (ISO). Preferred for agenda interleaving. */
+  due_at?: string | null;
+  /** Optional start datetime (ISO). Defaults to 30m before due_at in agenda. */
+  start_at?: string | null;
   completed: boolean;
   created_at?: string;
 }

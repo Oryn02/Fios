@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { ACCENTS, type AccentKey, type ThemeMode } from '../types/db';
+import { ACCENTS, normalizeAccent, type AccentKey, type ThemeMode } from '../types/db';
 import { useProfile } from './ProfileContext';
 
 type ResolvedTheme = 'dark' | 'light';
@@ -15,13 +15,15 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-function applyAccent(accent: AccentKey) {
+export function applyAccentVars(accent: AccentKey) {
   const def = ACCENTS.find((a) => a.key === accent) || ACCENTS[0];
   const root = document.documentElement;
+  // Write as a batch so paint sees a coherent gradient (avoids mid-frame flashes).
   root.style.setProperty('--fios-accent-from', def.from);
   root.style.setProperty('--fios-accent-via', def.via);
   root.style.setProperty('--fios-accent-to', def.to);
   root.style.setProperty('--fios-accent-solid', def.solid);
+  root.dataset.accent = accent;
 }
 
 function resolveSystem(): ResolvedTheme {
@@ -29,11 +31,14 @@ function resolveSystem(): ResolvedTheme {
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
 
-function applyResolved(resolved: ResolvedTheme) {
+export function applyResolvedTheme(resolved: ResolvedTheme) {
   const root = document.documentElement;
   root.setAttribute('data-theme', resolved);
   root.classList.remove('light', 'dark');
   root.classList.add(resolved);
+  // Keep browser chrome / PWA status bar in sync without a white flash.
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', resolved === 'light' ? '#e4dfd4' : '#07090e');
 }
 
 function normalizeTheme(raw: string | null | undefined): ThemeMode {
@@ -41,6 +46,11 @@ function normalizeTheme(raw: string | null | undefined): ThemeMode {
   return 'dark';
 }
 
+/**
+ * ThemeProvider requires ProfileProvider only for cloud persistence.
+ * Accent/theme are applied immediately from localStorage (and the HTML boot script)
+ * so auth/landing/dashboard transitions do not flash default emerald/dark.
+ */
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile, updateProfile } = useProfile();
 
@@ -49,7 +59,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [accent, setAccentState] = useState<AccentKey>(() => {
-    return (localStorage.getItem('fios_accent') as AccentKey) || 'emerald';
+    return normalizeAccent(localStorage.getItem('fios_accent'));
   });
 
   const [systemPref, setSystemPref] = useState<ResolvedTheme>(() => resolveSystem());
@@ -64,30 +74,27 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     if (profile?.theme) {
       const t = normalizeTheme(profile.theme);
-      setThemeState(t);
+      setThemeState((prev) => (prev === t ? prev : t));
       localStorage.setItem('fios_theme', t);
     }
     if (profile?.accent_color) {
-      setAccentState(profile.accent_color);
-      localStorage.setItem('fios_accent', profile.accent_color);
+      const a = normalizeAccent(profile.accent_color);
+      setAccentState((prev) => (prev === a ? prev : a));
+      localStorage.setItem('fios_accent', a);
     }
   }, [profile]);
 
   const resolvedTheme: ResolvedTheme = theme === 'system' ? systemPref : theme;
 
-  useEffect(() => { applyResolved(resolvedTheme); }, [resolvedTheme]);
-  useEffect(() => { applyAccent(accent); }, [accent]);
+  useEffect(() => { applyResolvedTheme(resolvedTheme); }, [resolvedTheme]);
+  useEffect(() => { applyAccentVars(accent); }, [accent]);
 
-  useEffect(() => {
-    return () => {
-      applyResolved('dark');
-      applyAccent('emerald');
-    };
-  }, []);
+  // Do NOT reset accent/theme on unmount — remounts during auth would flash defaults.
 
   const setTheme = useCallback((t: ThemeMode) => {
     setThemeState(t);
     localStorage.setItem('fios_theme', t);
+    applyResolvedTheme(t === 'system' ? resolveSystem() : t);
     updateProfile({ theme: t }).catch((e: any) => console.error('Failed to persist theme:', e));
   }, [updateProfile]);
 
@@ -96,15 +103,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const current = prev === 'system' ? systemPref : prev;
       const next: ThemeMode = current === 'dark' ? 'light' : 'dark';
       localStorage.setItem('fios_theme', next);
+      applyResolvedTheme(next);
       updateProfile({ theme: next }).catch((e: any) => console.error('Failed to persist theme:', e));
       return next;
     });
   }, [updateProfile, systemPref]);
 
   const setAccent = useCallback((a: AccentKey) => {
-    setAccentState(a);
-    localStorage.setItem('fios_accent', a);
-    updateProfile({ accent_color: a }).catch((e: any) => console.error('Failed to persist accent:', e));
+    const next = normalizeAccent(a);
+    setAccentState(next);
+    localStorage.setItem('fios_accent', next);
+    applyAccentVars(next);
+    updateProfile({ accent_color: next }).catch((e: any) => console.error('Failed to persist accent:', e));
   }, [updateProfile]);
 
   const value = useMemo(

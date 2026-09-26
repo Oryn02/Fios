@@ -10,22 +10,35 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 
 ## Highlights
 
-- **SM-2 Flashcards** — AI-generated decks scheduled with the SM-2 algorithm; touch swipe Easy/Hard on mobile.
+- **SM-2 Flashcards** — AI-generated decks with corrected Hard/Easy intervals, local-day due dates, and rating previews; touch swipe Easy/Hard on mobile.
 - **MCQ Quiz Generator** — practice exams with explanations, saved per module.
 - **Monaco Code Exams** — bug-fix, output-prediction, and logic-completion challenges with optional custom prompts.
 - **Smart Notes & AI Tutor** — upload PDFs/notes for summaries, glossaries, revision history, and a dedicated full-screen tutor tab (RAG-aware).
-- **AI Active Recall ("Blurting")** — write everything you remember; Gemini returns a color-coded report and Recall Accuracy %.
+- **AI Active Recall ("Blurting")** — Browse vs Recall modes; quiz answer hidden until Reveal; Gemini color-coded report + Recall Accuracy %.
 - **Revision Flight Plan** — dashboard queue prioritized by exam proximity, overdue SM-2 cards, and readiness (modular / reorderable widgets).
 - **Grade Predictor** — computes the scores you need across assessments to hit a target grade.
-- **Module Readiness Heatmap** — 0–100% readiness per module; modules support tag/folder groups.
-- **Global Pomodoro Timer** — floating widget with Web Audio soundscapes and Weekly Study Goal tracker (can be disabled in Settings).
-- **Smart Quick Widget** — floating quick actions with customizable metrics/actions (can be fully disabled).
-- **PWA** — installable standalone app via VitePWA + Workbox; offline mutation queue (IndexedDB).
-- **Themes** — Dark / Light / System, Low-Power mode, Zen focus (Esc / Exit Zen / mobile Menu+Settings — no nav traps), OpenDyslexic, warm light palette.
+- **Module Readiness Heatmap** — 0–100% readiness per module; rich module accent colors (light + dark contrast) on badges/tags/heatmap.
+- **Universal schedule** — iCal sync or manual timetable for any college; finished classes muted; Next Up highlight; institution label.
+- **Unified agenda** — classes + timed tasks interleaved chronologically (memoized CompactAgenda); tasks require start/due datetime.
+- **Feedback & ratings** — star rating, categories, message; admin inbox gated by `VITE_ADMIN_UID` + `fios_admins` RLS; API `GET /api/admin/feedback` → 403 if unauthorized.
+- **Global Pomodoro Timer** — floating dock widget with Web Audio soundscapes and Weekly Study Goal (can be disabled in Settings).
+- **Smart Quick Widget** — expanded actions, custom order, compact FAB, metrics chip (can be fully disabled).
+- **PWA** — installable standalone app (multi-size icons + manifest) via VitePWA + Workbox; offline mutation queue (IndexedDB).
+- **Themes** — Dark / Light / System, expanded accent gradients, Low-Power mode, Zen focus (Esc / Exit Zen / mobile escape), OpenDyslexic, cream light palette with stronger cards/tabs.
 - **Nav customization** — reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs).
 - **Mermaid + Markdown + LaTeX** — diagrams, GFM markdown, and KaTeX math in AI content.
-- **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service.
-- **Render hosting** — Express Web Service (`server/`) + Static Site (`client/`); client calls API via `VITE_API_URL` (fixes production 405s from SPA/static intercepts).
+- **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service; landing FAQ.
+- **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v2.2.3
+
+- Zen/mobile escape hardening, bottom-nav + widget prefs, FAB/Pomodoro dock, expanded Smart Quick catalog.
+- Icons, accent gradients, light-mode cream/contrast, card/tab hierarchy.
+- Landing FAQ + bug/UI polish; SM-2 / Active Recall fixes.
+- Universal/manual schedule + iCal mode; finished-class mute + Next Class highlight.
+- Expanded module accent palette; CompactAgenda performance; timed tasks on the unified timeline.
+- Admin feedback & ratings (`VITE_ADMIN_UID` / server `ADMIN_UID` gate).
+- See the in-app **Updates** tab for the full changelog.
 
 ---
 
@@ -164,7 +177,9 @@ See also [`CONTRIBUTING.md`](CONTRIBUTING.md).
 - A Google Gemini API key ([AI Studio](https://aistudio.google.com/app/apikey)) — per-user (BYO) and/or a server fallback
 
 ### 1. Database
-In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It is idempotent and creates all tables (`user_profiles` (+ `prefs`), `modules` (+ `tags`/`parent_code`), `decks`, `cards`, `mcq_quizzes`, `code_exams`, `tasks`, `documents`, `document_revisions`, `tutor_messages`, `note_chunks`, `grades`, `focus_sessions`, `active_recall_logs`), Row Level Security policies, and a trigger that auto-provisions a **clean, empty profile** for every new signup (no sample data).
+In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It is idempotent and creates all tables (`user_profiles` (+ `prefs`), `modules` (+ `tags`/`parent_code`), `decks`, `cards`, `mcq_quizzes`, `code_exams`, `tasks` (+ `due_at`/`start_at`), `documents`, `document_revisions`, `tutor_messages`, `note_chunks`, `grades`, `focus_sessions`, `active_recall_logs`, `feedback`, `fios_admins`), Row Level Security policies, and a trigger that auto-provisions a **clean, empty profile** for every new signup (no sample data).
+
+For admin feedback inbox: insert your Supabase user UUID into `fios_admins`, and set the same UUID as `VITE_ADMIN_UID` (client) and `ADMIN_UID` (server).
 
 > In your Supabase Auth settings, disable "Confirm email" for the fastest local sign-in, or confirm the address you register with. Enable the GitHub provider if you want OAuth sign-in.
 
@@ -175,6 +190,8 @@ npm install
 # optional server-side fallback key (users can also BYO in Settings):
 echo "GEMINI_API_KEY=your_key_here" > .env
 echo "PORT=5000" >> .env
+# optional — must match client VITE_ADMIN_UID for GET /api/admin/feedback
+echo "ADMIN_UID=your-supabase-user-uuid" >> .env
 npm run dev            # http://localhost:5000
 ```
 
@@ -183,7 +200,7 @@ npm run dev            # http://localhost:5000
 cd client
 npm install
 # .env (client) — leave VITE_API_URL empty locally
-printf "VITE_SUPABASE_URL=your-project-url\nVITE_SUPABASE_ANON_KEY=your-anon-key\n" > .env
+printf "VITE_SUPABASE_URL=your-project-url\nVITE_SUPABASE_ANON_KEY=your-anon-key\nVITE_ADMIN_UID=your-supabase-user-uuid\n" > .env
 npm run dev            # http://localhost:5173
 ```
 
@@ -223,6 +240,7 @@ Click **"Explore Live Demo"** on the landing page, or build/run the client with 
 | `POST /api/upload/pdf` | Accept PDF/text upload for study-engine indexing |
 | `POST /api/rag/query` | Retrieve relevant note chunks |
 | `GET|POST /api/ical-proxy` | CORS proxy for iCal/WebCAL timetables (`?url=` or JSON `{ url }`) |
+| `GET  /api/admin/feedback` | Admin feedback inbox (Bearer Supabase JWT; 403 unless UID matches `ADMIN_UID` / `VITE_ADMIN_UID`) |
 
 All AI endpoints accept an optional `apiKey` (BYO key) in the JSON body or an `x-gemini-key` header.
 

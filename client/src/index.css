@@ -9,25 +9,32 @@
 :root {
   --fios-accent-from: #34d399;
   --fios-accent-via: #2dd4bf;
-  --fios-accent-to: #3b82f6;
+  --fios-accent-to: #14b8a6;
   --fios-accent-solid: #34d399;
 
-  /* Dark theme (default) */
-  --fios-bg: #000000;
+  /* Dark theme (default) — stronger borders for scannable cards/tabs */
+  --fios-bg: #05070b;
   --fios-surface: #0e131f;
   --fios-surface-2: #07090e;
-  --fios-border: rgba(255, 255, 255, 0.08);
-  --fios-text: #f1f5f9;
+  --fios-border: rgba(148, 163, 184, 0.18);
+  --fios-border-strong: rgba(148, 163, 184, 0.32);
+  --fios-text: #f8fafc;
   --fios-text-muted: #94a3b8;
+  --fios-card-shadow: 0 10px 28px -14px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(148, 163, 184, 0.08);
+  --fios-tab-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.55);
 }
 
 [data-theme="light"] {
-  --fios-bg: #f7f4ef;          /* Warm off-white canvas */
-  --fios-surface: #f5f2eb;     /* Soft stone card surface */
-  --fios-surface-2: #efeae1;   /* Nested inputs / chips */
-  --fios-border: #d6d0c4;      /* Warm stone border */
-  --fios-text: #1c1917;        /* Stone-900 primary text */
-  --fios-text-muted: #57534e;  /* Stone-600 secondary */
+  /* Softer, slightly darker cream — not harsh pure white */
+  --fios-bg: #e4dfd4;
+  --fios-surface: #efe9de;
+  --fios-surface-2: #e7e0d3;
+  --fios-border: #c9c0b0;
+  --fios-border-strong: #a89f8e;
+  --fios-text: #1c1917;
+  --fios-text-muted: #44403c;
+  --fios-card-shadow: 0 10px 28px -16px rgba(28, 25, 23, 0.22), 0 0 0 1px rgba(28, 25, 23, 0.06);
+  --fios-tab-shadow: 0 4px 12px -6px rgba(28, 25, 23, 0.16);
 }
 
 /* Semantic helpers used by theme-aware surfaces */
@@ -35,24 +42,169 @@
 .fios-surface { background-color: var(--fios-surface); }
 .fios-surface-2 { background-color: var(--fios-surface-2); }
 .fios-border { border-color: var(--fios-border); }
+.fios-border-strong { border-color: var(--fios-border-strong); }
 .fios-text { color: var(--fios-text); }
 .fios-text-muted { color: var(--fios-text-muted); }
 
-/* Universal gradient engine (3-stop, accent-driven) */
+/* Card / panel / tab hierarchy */
+.fios-card {
+  background-color: var(--fios-surface);
+  border: 1px solid var(--fios-border-strong);
+  border-radius: 0.75rem;
+  box-shadow: var(--fios-card-shadow);
+  color: var(--fios-text);
+}
+.fios-tab {
+  border: 1px solid var(--fios-border);
+  box-shadow: var(--fios-tab-shadow);
+}
+.fios-tab-active {
+  border-color: color-mix(in srgb, var(--fios-accent-solid) 55%, var(--fios-border-strong));
+  box-shadow: var(--fios-tab-shadow), 0 0 0 1px color-mix(in srgb, var(--fios-accent-solid) 25%, transparent);
+}
+
+/* Stabilize accent-driven fills across theme/page switches (no opacity flicker). */
 .accent-text {
-  background-image: linear-gradient(90deg, var(--fios-accent-from), var(--fios-accent-via), var(--fios-accent-to)) !important;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
-  color: transparent !important;
+  background-image: linear-gradient(90deg, var(--fios-accent-from), var(--fios-accent-via), var(--fios-accent-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .accent-bg {
-  background-image: linear-gradient(120deg, var(--fios-accent-from), var(--fios-accent-via), var(--fios-accent-to)) !important;
+  background-image: linear-gradient(120deg, var(--fios-accent-from), var(--fios-accent-via), var(--fios-accent-to));
+  background-size: 100% 100%;
 }
-.accent-bg:hover { opacity: 0.92; }
-.accent-ring { box-shadow: 0 0 0 1px color-mix(in srgb, var(--fios-accent-solid) 55%, transparent) !important; }
-.accent-glow { box-shadow: 0 10px 40px -12px color-mix(in srgb, var(--fios-accent-solid) 45%, transparent) !important; }
-.accent-solid-text { color: var(--fios-accent-solid) !important; }
-.accent-border { border-color: color-mix(in srgb, var(--fios-accent-solid) 45%, transparent) !important; }
+.accent-bg:hover { filter: brightness(0.96); }
+.accent-ring { box-shadow: 0 0 0 1px color-mix(in srgb, var(--fios-accent-solid) 55%, transparent); }
+.accent-glow { box-shadow: 0 10px 40px -12px color-mix(in srgb, var(--fios-accent-solid) 45%, transparent); }
+.accent-solid-text { color: var(--fios-accent-solid); }
+.accent-border { border-color: color-mix(in srgb, var(--fios-accent-solid) 50%, var(--fios-border)); }
+
+/* ==========================================================================
+   Module accent palette — paired contrast for dark + light (v2.2.3)
+   Use: data-mod-color="deep-emerald" + .mod-badge / .mod-pill / .mod-card-accent
+   ========================================================================== */
+:root,
+[data-theme="dark"] {
+  --mod-deep-emerald-solid: #10b981;
+  --mod-deep-emerald-text: #6ee7b7;
+  --mod-vibrant-indigo-solid: #818cf8;
+  --mod-vibrant-indigo-text: #c7d2fe;
+  --mod-sunset-amber-solid: #fbbf24;
+  --mod-sunset-amber-text: #fde68a;
+  --mod-slate-teal-solid: #2dd4bf;
+  --mod-slate-teal-text: #99f6e4;
+  --mod-rose-quartz-solid: #fb7185;
+  --mod-rose-quartz-text: #fecdd3;
+  --mod-neon-violet-solid: #c084fc;
+  --mod-neon-violet-text: #e9d5ff;
+  --mod-ocean-cyan-solid: #22d3ee;
+  --mod-ocean-cyan-text: #a5f3fc;
+  --mod-copper-solid: #f59e0b;
+  --mod-copper-text: #fcd34d;
+  --mod-glacier-solid: #67e8f9;
+  --mod-glacier-text: #cffafe;
+  --mod-lime-solid: #a3e635;
+  --mod-lime-text: #d9f99d;
+}
+
+[data-theme="light"] {
+  --mod-deep-emerald-solid: #047857;
+  --mod-deep-emerald-text: #065f46;
+  --mod-vibrant-indigo-solid: #4338ca;
+  --mod-vibrant-indigo-text: #312e81;
+  --mod-sunset-amber-solid: #b45309;
+  --mod-sunset-amber-text: #92400e;
+  --mod-slate-teal-solid: #0f766e;
+  --mod-slate-teal-text: #115e59;
+  --mod-rose-quartz-solid: #be123c;
+  --mod-rose-quartz-text: #9f1239;
+  --mod-neon-violet-solid: #7e22ce;
+  --mod-neon-violet-text: #6b21a8;
+  --mod-ocean-cyan-solid: #0e7490;
+  --mod-ocean-cyan-text: #155e75;
+  --mod-copper-solid: #c2410c;
+  --mod-copper-text: #9a3412;
+  --mod-glacier-solid: #0369a1;
+  --mod-glacier-text: #075985;
+  --mod-lime-solid: #4d7c0f;
+  --mod-lime-text: #3f6212;
+}
+
+[data-mod-color="deep-emerald"],
+[data-mod-color="emerald"] {
+  --mod-solid: var(--mod-deep-emerald-solid);
+  --mod-text: var(--mod-deep-emerald-text);
+}
+[data-mod-color="vibrant-indigo"],
+[data-mod-color="indigo"] {
+  --mod-solid: var(--mod-vibrant-indigo-solid);
+  --mod-text: var(--mod-vibrant-indigo-text);
+}
+[data-mod-color="sunset-amber"],
+[data-mod-color="amber"] {
+  --mod-solid: var(--mod-sunset-amber-solid);
+  --mod-text: var(--mod-sunset-amber-text);
+}
+[data-mod-color="slate-teal"],
+[data-mod-color="teal"] {
+  --mod-solid: var(--mod-slate-teal-solid);
+  --mod-text: var(--mod-slate-teal-text);
+}
+[data-mod-color="rose-quartz"],
+[data-mod-color="rose"] {
+  --mod-solid: var(--mod-rose-quartz-solid);
+  --mod-text: var(--mod-rose-quartz-text);
+}
+[data-mod-color="neon-violet"],
+[data-mod-color="purple"],
+[data-mod-color="violet"] {
+  --mod-solid: var(--mod-neon-violet-solid);
+  --mod-text: var(--mod-neon-violet-text);
+}
+[data-mod-color="ocean-cyan"],
+[data-mod-color="cyan"] {
+  --mod-solid: var(--mod-ocean-cyan-solid);
+  --mod-text: var(--mod-ocean-cyan-text);
+}
+[data-mod-color="copper"] {
+  --mod-solid: var(--mod-copper-solid);
+  --mod-text: var(--mod-copper-text);
+}
+[data-mod-color="glacier"] {
+  --mod-solid: var(--mod-glacier-solid);
+  --mod-text: var(--mod-glacier-text);
+}
+[data-mod-color="lime"] {
+  --mod-solid: var(--mod-lime-solid);
+  --mod-text: var(--mod-lime-text);
+}
+
+[data-mod-color] {
+  --mod-bg: color-mix(in srgb, var(--mod-solid) 14%, transparent);
+  --mod-border: color-mix(in srgb, var(--mod-solid) 40%, transparent);
+}
+
+.mod-badge,
+.mod-pill {
+  color: var(--mod-text);
+  background-color: var(--mod-bg);
+  border-color: var(--mod-border);
+}
+
+.mod-border { border-color: var(--mod-solid) !important; }
+.mod-card-accent { border-left-color: var(--mod-solid) !important; }
+.mod-text { color: var(--mod-text); }
+.mod-solid-bg { background-color: var(--mod-solid); }
+
+/* Smooth surface color changes without animating gradients (avoids stutter). */
+html.theme-ready body,
+html.theme-ready .fios-app-bg,
+html.theme-ready .fios-surface,
+html.theme-ready .fios-surface-2,
+html.theme-ready .fios-card {
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
 
 /* ==========================================================================
    Global Accent Override: Forces hardcoded emerald/cyan legacy classes
@@ -79,18 +231,20 @@
 /* ==========================================================================
    Comprehensive Light Mode remap.
    Legacy views use hard-coded dark tokens; when the dashboard root is in
-   light mode we remap those tokens to the light palette so every card,
-   sidebar, modal and drawer flips to a clean white/soft-grey surface.
+   light mode we remap those tokens to the cream palette so every card,
+   sidebar, modal and drawer stays readable.
    ========================================================================== */
-[data-theme="light"] body { background-color: var(--fios-bg) !important; }
+[data-theme="light"] body { background-color: var(--fios-bg) !important; color: var(--fios-text); }
 [data-theme="light"] [class*="#0e131f"] { background-color: var(--fios-surface) !important; }
 [data-theme="light"] [class*="#07090e"] { background-color: var(--fios-surface-2) !important; }
 [data-theme="light"] [class*="bg-slate-800"],
 [data-theme="light"] [class*="bg-slate-900"],
-[data-theme="light"] [class*="bg-slate-700"] { background-color: var(--fios-surface-2) !important; }
+[data-theme="light"] [class*="bg-slate-700"],
+[data-theme="light"] [class*="bg-black"] { background-color: var(--fios-surface-2) !important; }
 
 [data-theme="light"] [class*="border-slate-800"],
-[data-theme="light"] [class*="border-slate-700"] { border-color: var(--fios-border) !important; }
+[data-theme="light"] [class*="border-slate-700"],
+[data-theme="light"] [class*="border-slate-600"] { border-color: var(--fios-border-strong) !important; }
 
 [data-theme="light"] [class*="text-white"],
 [data-theme="light"] [class*="text-slate-100"],
@@ -103,9 +257,21 @@
 /* Keep dark text legible on accent-filled buttons in both themes. */
 [data-theme="light"] [class*="text-slate-950"] { color: #020617 !important; }
 
-/* Soft shadows for cards in light mode */
+/* Stronger card elevation in light mode */
 [data-theme="light"] [class*="shadow-xl"],
-[data-theme="light"] [class*="shadow-2xl"] { box-shadow: 0 8px 24px -12px rgba(15, 23, 42, 0.18) !important; }
+[data-theme="light"] [class*="shadow-2xl"] {
+  box-shadow: var(--fios-card-shadow) !important;
+}
+
+/* Dark mode: lift borders on common card patterns */
+[data-theme="dark"] [class*="border-slate-800"],
+[data-theme="dark"] [class*="border-slate-700"] {
+  border-color: var(--fios-border-strong) !important;
+}
+[data-theme="dark"] [class*="shadow-xl"],
+[data-theme="dark"] [class*="shadow-2xl"] {
+  box-shadow: var(--fios-card-shadow) !important;
+}
 
 /* ==========================================================================
    Mobile / cross-browser optimizations
@@ -121,7 +287,7 @@ input, select, textarea { font-size: 16px; }
 .h-dvh { height: 100vh; height: 100dvh; }
 
 html, body, #root { min-height: 100vh; min-height: 100dvh; }
-body { background-color: #000; overscroll-behavior-y: none; }
+body { background-color: var(--fios-bg, #05070b); color: var(--fios-text, #f8fafc); overscroll-behavior-y: none; }
 .scroll-touch { -webkit-overflow-scrolling: touch; }
 
 /* Mermaid diagrams render on a neutral surface in both themes */
@@ -143,6 +309,11 @@ body { background-color: #000; overscroll-behavior-y: none; }
 [data-low-power="true"] .blur-\[100px\] {
   filter: none !important;
   opacity: 0 !important;
+}
+[data-low-power="true"] html.theme-ready body,
+[data-low-power="true"] html.theme-ready .fios-app-bg,
+[data-low-power="true"] html.theme-ready .fios-card {
+  transition: none !important;
 }
 
 /* OpenDyslexic accessibility font */

@@ -5,7 +5,8 @@ import {
   HelpCircle, Code2, CheckSquare, Square, Bug, Terminal, PencilRuler, Brain, FileText,
 } from 'lucide-react';
 import { getUserDecksWithCards } from '../lib/deckService';
-import { getUserModules, createModule, deleteModule, DBModule, COLOR_OPTIONS } from '../lib/moduleService';
+import { getUserModules, createModule, deleteModule, DBModule, COLOR_OPTIONS, normalizeModuleColor } from '../lib/moduleService';
+import { MOD_BADGE_CLASS } from '../lib/moduleColors';
 import { getQuizzes } from '../lib/mcqService';
 import { getCodeExams } from '../lib/codeExamService';
 import { getTasks, toggleTask } from '../lib/taskService';
@@ -59,7 +60,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   const [isCreatingModule, setIsCreatingModule] = useState(false);
   const [newCode, setNewCode] = useState('');
   const [newName, setNewName] = useState('');
-  const [newColor, setNewColor] = useState('emerald');
+  const [newColor, setNewColor] = useState('deep-emerald');
   const [newTags, setNewTags] = useState('');
   const [creating, setCreating] = useState(false);
   const [recallOpen, setRecallOpen] = useState(false);
@@ -256,9 +257,18 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
             <div className="space-y-2">
               <label className="text-[10px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1.5"><Palette className="w-3.5 h-3.5 text-cyan-400" /> Module Accent Color</label>
               <div className="flex flex-wrap gap-2">
-                {Object.keys(COLOR_OPTIONS).map((cKey) => (
-                  <button type="button" key={cKey} onClick={() => setNewColor(cKey)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase border transition-transform cursor-pointer ${COLOR_OPTIONS[cKey].badge} ${newColor === cKey ? 'ring-2 ring-white scale-105' : 'opacity-70 hover:opacity-100'}`}>
+                {Object.keys(COLOR_OPTIONS)
+                  .filter((k) => !['emerald', 'cyan', 'indigo', 'amber', 'rose', 'purple', 'teal', 'violet'].includes(k))
+                  .map((cKey) => (
+                  <button
+                    type="button"
+                    key={cKey}
+                    data-mod-color={cKey}
+                    onClick={() => setNewColor(cKey)}
+                    className={`${MOD_BADGE_CLASS} !text-[10px] !px-3 !py-1.5 cursor-pointer transition-transform ${
+                      newColor === cKey ? 'ring-2 ring-[var(--mod-solid)] scale-105' : 'opacity-70 hover:opacity-100'
+                    }`}
+                  >
                     {COLOR_OPTIONS[cKey].label}
                   </button>
                 ))}
@@ -311,13 +321,18 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
         {visibleModules.map((mod) => {
           const counts = countsFor(mod.code);
           const isSelected = selectedModule === mod.code;
-          const colorTheme = COLOR_OPTIONS[mod.color] || COLOR_OPTIONS['emerald'];
+          const colorKey = normalizeModuleColor(mod.color);
           return (
-            <motion.div key={mod.id} whileHover={{ y: -2 }} onClick={() => setSelectedModule(mod.code)}
-              className={`p-4 rounded-xl border text-left transition-colors cursor-pointer relative group flex flex-col justify-between ${isSelected ? `${colorTheme.border} bg-[#0e131f] shadow-xl` : 'border-slate-800 bg-[#0e131f]/60 hover:border-slate-700'}`}>
+            <motion.div
+              key={mod.id}
+              whileHover={{ y: -2 }}
+              onClick={() => setSelectedModule(mod.code)}
+              data-mod-color={colorKey}
+              className={`p-4 rounded-xl border text-left transition-colors cursor-pointer relative group flex flex-col justify-between ${isSelected ? 'mod-border bg-[#0e131f] shadow-xl' : 'border-slate-800 bg-[#0e131f]/60 hover:border-slate-700'}`}
+            >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className={`inline-block px-2 py-0.5 text-[9px] font-black uppercase rounded border ${colorTheme.badge}`}>{mod.code}</span>
+                  <span data-mod-color={colorKey} className={MOD_BADGE_CLASS}>{mod.code}</span>
                   <button onClick={(e) => handleDeleteModule(e, mod.id, mod.code)} className="text-slate-600 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 cursor-pointer" title="Delete Module Folder">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -326,7 +341,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                 {mod.tags && mod.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
                     {mod.tags.map((t) => (
-                      <span key={t} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">{t}</span>
+                      <span key={t} data-mod-color={colorKey} className="mod-pill text-[9px] font-mono px-1.5 py-0.5 rounded border">{t}</span>
                     ))}
                   </div>
                 )}
@@ -417,7 +432,14 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{quiz.questions.length} Q</span>
-                          {quiz.module_code && <span className="text-[10px] font-mono text-cyan-400">{quiz.module_code}</span>}
+                          {quiz.module_code && (() => {
+                            const m = modules.find((x) => x.code === quiz.module_code);
+                            return (
+                              <span data-mod-color={normalizeModuleColor(m?.color)} className={MOD_BADGE_CLASS}>
+                                {quiz.module_code}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <h4 className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors line-clamp-2 flex items-center gap-2">
                           <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -448,7 +470,14 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">{exam.language}</span>
-                          {exam.module_code && <span className="text-[10px] font-mono text-indigo-400">{exam.module_code}</span>}
+                          {exam.module_code && (() => {
+                            const m = modules.find((x) => x.code === exam.module_code);
+                            return (
+                              <span data-mod-color={normalizeModuleColor(m?.color)} className={MOD_BADGE_CLASS}>
+                                {exam.module_code}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <h4 className="text-sm font-bold text-slate-100 group-hover:text-indigo-300 transition-colors line-clamp-2 flex items-center gap-2">
                           <Code2 className="w-4 h-4 text-indigo-400 shrink-0" />
@@ -477,7 +506,14 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                           <span className={`text-xs font-mono truncate ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}>{task.title}</span>
                         </button>
                         <div className="flex items-center gap-2 shrink-0">
-                          {task.module_code && <span className="text-[10px] font-mono text-cyan-400">{task.module_code}</span>}
+                          {task.module_code && (() => {
+                            const m = modules.find((x) => x.code === task.module_code);
+                            return (
+                              <span data-mod-color={normalizeModuleColor(m?.color)} className={MOD_BADGE_CLASS}>
+                                {task.module_code}
+                              </span>
+                            );
+                          })()}
                           {task.due_date && <span className="text-[10px] font-mono text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">{task.due_date}</span>}
                         </div>
                       </div>
@@ -511,7 +547,14 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                             {doc.glossary?.length || 0} terms
                           </span>
                           <div className="flex items-center gap-2">
-                            {doc.module_code && <span className="text-[10px] font-mono text-cyan-400">{doc.module_code}</span>}
+                            {doc.module_code && (() => {
+                              const m = modules.find((x) => x.code === doc.module_code);
+                              return (
+                                <span data-mod-color={normalizeModuleColor(m?.color)} className={MOD_BADGE_CLASS}>
+                                  {doc.module_code}
+                                </span>
+                              );
+                            })()}
                             <button
                               onClick={(e) => handleDeleteDocument(e, doc.id)}
                               className="text-slate-600 hover:text-rose-400 p-1 transition-colors cursor-pointer"

@@ -99,15 +99,18 @@ export const ActiveRecallQuiz: React.FC<ActiveRecallQuizProps> = ({ cards, onFin
 
   return (
     <div className="space-y-6 font-sans">
-      <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-        <span className="flex items-center gap-2">
+      <div className="flex items-center justify-between text-xs font-mono text-slate-400 gap-2">
+        <span className="flex items-center gap-2" title="Answer stays hidden until you tap Reveal — then self-grade honestly.">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          ACTIVE RECALL MODE
+          ACTIVE RECALL · HIDDEN UNTIL REVEAL
         </span>
         <span>
           Card {currentIndex + 1} of {cards.length}
         </span>
       </div>
+      <p className="text-[10px] font-mono text-slate-500">
+        Think of the answer first. Reveal only when ready — grading yourself is what makes recall practice work.
+      </p>
 
       <div className="w-full bg-slate-800/60 h-1.5 rounded-full overflow-hidden">
         <div

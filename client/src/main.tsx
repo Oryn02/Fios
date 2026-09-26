@@ -10,3 +10,8 @@ createRoot(rootElement).render(
     <App />
   </StrictMode>
 )
+
+// Enable smooth theme surface transitions only after first paint (boot script already set tokens).
+requestAnimationFrame(() => {
+  document.documentElement.classList.add('theme-ready');
+});

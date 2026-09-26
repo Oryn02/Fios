@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Grid3x3, Layers, HelpCircle, Code2 } from 'lucide-react';
-import { getUserModules, type DBModule } from '../lib/moduleService';
+import { getUserModules, normalizeModuleColor, type DBModule } from '../lib/moduleService';
+import { MOD_BADGE_CLASS } from '../lib/moduleColors';
 import { getUserDecksWithCards } from '../lib/deckService';
 import { getQuizzes } from '../lib/mcqService';
 import { getCodeExams } from '../lib/codeExamService';
@@ -73,14 +74,15 @@ export const ModuleHeatmap: React.FC = () => {
         {rows.map((r, i) => (
           <motion.div
             key={r.module.id}
+            data-mod-color={normalizeModuleColor(r.module.color)}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.04 }}
-            className="rounded-xl border fios-border p-3.5 relative overflow-hidden"
+            className="rounded-xl border fios-border mod-card-accent border-l-4 p-3.5 relative overflow-hidden"
             style={{ backgroundColor: tone(r.score) }}
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] font-black font-mono uppercase text-[var(--fios-text)]">{r.module.code}</span>
+            <div className="flex items-center justify-between gap-2">
+              <span data-mod-color={normalizeModuleColor(r.module.color)} className={MOD_BADGE_CLASS}>{r.module.code}</span>
               <span className="text-lg font-black text-[var(--fios-text)]">{r.score}%</span>
             </div>
             <p className="text-[11px] font-bold text-[var(--fios-text)] truncate mt-1">{r.module.name}</p>
