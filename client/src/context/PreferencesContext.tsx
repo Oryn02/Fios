@@ -84,6 +84,11 @@ export interface PreferencesState {
   showPomodoroWidget: boolean;
   /** Floating Smart Quick Actions FAB. */
   showSmartWidget: boolean;
+  /**
+   * True only after the user toggles Pomodoro / Smart Quick in Settings.
+   * Absent/false means values may be baked system defaults — re-resolve from viewport.
+   */
+  floatingWidgetsExplicit: boolean;
   /** Which Smart Quick actions appear, in order. */
   smartWidgetActions: SmartActionId[];
   /** Which metric chips appear on the Smart Quick panel / FAB. */
@@ -110,6 +115,38 @@ export function defaultFloatingWidgetsOn(): boolean {
   return !isMobileViewport();
 }
 
+/**
+ * Resolve floating-widget visibility.
+ * v2.2.7 only defaulted when keys were missing — but older builds always
+ * persisted `true` into localStorage / profile prefs, so the “unset” path
+ * never ran for returning users. Use `floatingWidgetsExplicit` to tell
+ * intentional Settings toggles apart from baked defaults.
+ */
+export function resolveFloatingWidgets(raw: {
+  showPomodoroWidget?: unknown;
+  showSmartWidget?: unknown;
+  floatingWidgetsExplicit?: unknown;
+} | null | undefined): {
+  showPomodoroWidget: boolean;
+  showSmartWidget: boolean;
+  floatingWidgetsExplicit: boolean;
+} {
+  const explicit = raw?.floatingWidgetsExplicit === true;
+  if (explicit) {
+    return {
+      showPomodoroWidget: raw?.showPomodoroWidget === true,
+      showSmartWidget: raw?.showSmartWidget === true,
+      floatingWidgetsExplicit: true,
+    };
+  }
+  const on = defaultFloatingWidgetsOn();
+  return {
+    showPomodoroWidget: on,
+    showSmartWidget: on,
+    floatingWidgetsExplicit: false,
+  };
+}
+
 const DEFAULTS: PreferencesState = {
   lowPower: false,
   zenMode: false,
@@ -125,6 +162,7 @@ const DEFAULTS: PreferencesState = {
   navOrder: [...DEFAULT_NAV_ORDER],
   showPomodoroWidget: true,
   showSmartWidget: true,
+  floatingWidgetsExplicit: false,
   smartWidgetActions: [...DEFAULT_SMART_ACTIONS],
   smartWidgetMetrics: [...DEFAULT_SMART_METRICS],
   smartWidgetCompact: false,
@@ -146,7 +184,7 @@ function sanitizeMetrics(raw: unknown): SmartMetricId[] {
 }
 
 function cloneDefaults(): PreferencesState {
-  const floatingOn = defaultFloatingWidgetsOn();
+  const floating = resolveFloatingWidgets(null);
   return {
     ...DEFAULTS,
     widgetVisibility: { ...DEFAULTS.widgetVisibility },
@@ -155,8 +193,7 @@ function cloneDefaults(): PreferencesState {
     navOrder: [...DEFAULTS.navOrder],
     smartWidgetActions: [...DEFAULTS.smartWidgetActions],
     smartWidgetMetrics: [...DEFAULTS.smartWidgetMetrics],
-    showPomodoroWidget: floatingOn,
-    showSmartWidget: floatingOn,
+    ...floating,
   };
 }
 
@@ -165,7 +202,7 @@ function loadLocal(): PreferencesState {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return cloneDefaults();
     const parsed = JSON.parse(raw);
-    const floatingFallback = defaultFloatingWidgetsOn();
+    const floating = resolveFloatingWidgets(parsed);
     return {
       ...DEFAULTS,
       ...parsed,
@@ -175,13 +212,7 @@ function loadLocal(): PreferencesState {
       navOrder: Array.isArray(parsed.navOrder) ? parsed.navOrder : [...DEFAULTS.navOrder],
       smartWidgetActions: sanitizeActions(parsed.smartWidgetActions),
       smartWidgetMetrics: sanitizeMetrics(parsed.smartWidgetMetrics),
-      // Preserve explicit booleans; only viewport-default when the key was never saved
-      showPomodoroWidget: typeof parsed.showPomodoroWidget === 'boolean'
-        ? parsed.showPomodoroWidget
-        : floatingFallback,
-      showSmartWidget: typeof parsed.showSmartWidget === 'boolean'
-        ? parsed.showSmartWidget
-        : floatingFallback,
+      ...floating,
       smartWidgetCompact: !!parsed.smartWidgetCompact,
       smartWidgetShowMetrics: parsed.smartWidgetShowMetrics !== false,
     };
@@ -217,6 +248,25 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const remote = (profile as any)?.prefs;
     if (remote && typeof remote === 'object') {
       setPrefs((prev) => {
+        // Prefer an explicit user choice from either side; otherwise keep
+        // viewport defaults (do not re-bake remote `true` from old defaults).
+        let floating: ReturnType<typeof resolveFloatingWidgets>;
+        if (remote.floatingWidgetsExplicit === true) {
+          floating = resolveFloatingWidgets({
+            floatingWidgetsExplicit: true,
+            showPomodoroWidget: remote.showPomodoroWidget,
+            showSmartWidget: remote.showSmartWidget,
+          });
+        } else if (prev.floatingWidgetsExplicit === true) {
+          floating = {
+            showPomodoroWidget: prev.showPomodoroWidget,
+            showSmartWidget: prev.showSmartWidget,
+            floatingWidgetsExplicit: true,
+          };
+        } else {
+          floating = resolveFloatingWidgets(null);
+        }
+
         const next: PreferencesState = {
           ...prev,
           ...remote,
@@ -230,12 +280,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
           smartWidgetMetrics: Array.isArray(remote.smartWidgetMetrics)
             ? sanitizeMetrics(remote.smartWidgetMetrics)
             : prev.smartWidgetMetrics,
-          showPomodoroWidget: typeof remote.showPomodoroWidget === 'boolean'
-            ? remote.showPomodoroWidget
-            : prev.showPomodoroWidget,
-          showSmartWidget: typeof remote.showSmartWidget === 'boolean'
-            ? remote.showSmartWidget
-            : prev.showSmartWidget,
+          ...floating,
           smartWidgetCompact: typeof remote.smartWidgetCompact === 'boolean'
             ? remote.smartWidgetCompact
             : prev.smartWidgetCompact,
@@ -291,13 +336,42 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     patch({ mobileNavSlots: trimmed.length ? trimmed : [...DEFAULT_MOBILE_NAV] });
   }, [patch]);
   const setNavOrder = useCallback((order: string[]) => patch({ navOrder: order }), [patch]);
-  const setShowPomodoroWidget = useCallback((v: boolean) => patch({ showPomodoroWidget: v }), [patch]);
-  const setShowSmartWidget = useCallback((v: boolean) => patch({ showSmartWidget: v }), [patch]);
+  const setShowPomodoroWidget = useCallback((v: boolean) => {
+    patch({ showPomodoroWidget: v, floatingWidgetsExplicit: true });
+  }, [patch]);
+  const setShowSmartWidget = useCallback((v: boolean) => {
+    patch({ showSmartWidget: v, floatingWidgetsExplicit: true });
+  }, [patch]);
   const setSmartWidgetActions = useCallback((actions: SmartActionId[]) => patch({ smartWidgetActions: actions }), [patch]);
   const setSmartWidgetMetrics = useCallback((metrics: SmartMetricId[]) => patch({ smartWidgetMetrics: metrics }), [patch]);
   const setSmartWidgetCompact = useCallback((v: boolean) => patch({ smartWidgetCompact: v }), [patch]);
   const setSmartWidgetShowMetrics = useCallback((v: boolean) => patch({ smartWidgetShowMetrics: v }), [patch]);
   const resetPreferences = useCallback(() => persist(cloneDefaults()), [persist]);
+
+  // If the user never explicitly chose floating widgets, keep them aligned with
+  // the current viewport (mobile OFF / desktop ON) across resize / rotate.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia(MOBILE_WIDGET_MQ);
+    const syncViewportDefaults = () => {
+      setPrefs((prev) => {
+        if (prev.floatingWidgetsExplicit) return prev;
+        const floating = resolveFloatingWidgets(null);
+        if (
+          prev.showPomodoroWidget === floating.showPomodoroWidget
+          && prev.showSmartWidget === floating.showSmartWidget
+        ) {
+          return prev;
+        }
+        const next = { ...prev, ...floating };
+        localStorage.setItem(LS_KEY, JSON.stringify(next));
+        return next;
+      });
+    };
+    syncViewportDefaults();
+    mq.addEventListener('change', syncViewportDefaults);
+    return () => mq.removeEventListener('change', syncViewportDefaults);
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
