@@ -1,0 +1,17 @@
+{
+  "name": "fios",
+  "private": true,
+  "version": "2.2.2",
+  "description": "Fios monorepo — Render single-service build helpers",
+  "scripts": {
+    "build:server": "npm install --prefix server --include=dev && npm run build --prefix server",
+    "build:client": "npm install --prefix client --include=dev && npm run build --prefix client",
+    "build": "npm run build:server && npm run build:client",
+    "start": "npm start --prefix server",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

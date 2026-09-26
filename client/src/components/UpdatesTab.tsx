@@ -8,8 +8,9 @@ const UpdatesTabInner: React.FC = () => {
       date: 'September 2026',
       title: 'Render deploy, API 405 fix, Zen escape & widget prefs',
       highlights: [
-        'Migrated hosting docs to Render: Web Service root `server` + Static Site root `client` (`render.yaml`). Never set Root Directory to `src` (fixes ENOENT package.json).',
-        'Production API via `VITE_API_URL` (Render API origin) — client `apiBase` helper; Express always listens + CORS `CLIENT_ORIGIN`; /health for Render.',
+        'Migrated hosting docs to Render: single Web Service (repo root) can serve API+SPA, or split `server` + Static Site `client`. Never Root Directory=`src` (ENOENT package.json).',
+        'Production API URL guidance: `VITE_API_URL=https://fios-akjy.onrender.com` for split Static Site; leave empty for same-origin single service.',
+        'server `npm run build` (`tsc` → `dist/`); Render build uses `npm install --include=dev` so tsc works with NODE_ENV=production.',
         'Fixes production 405s on flashcards, AI tutor, iCal timetable sync, PDF upload, and related POSTs (no more SPA/static intercepting `/api/*`).',
         'College Timetable uses same-origin or Render `/api/ical-proxy` (POST + GET); Workbox NetworkOnly for `/api/*`.',
         'Zen / Deep Focus: chrome hide only on study tabs; Esc, floating Exit Zen, mobile Menu/Settings escape — no nav traps.',
