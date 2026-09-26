@@ -81,16 +81,26 @@ const ScheduleTabInner: React.FC = () => {
     e.preventDefault();
     if (!icalUrl.trim()) return;
 
+    const checked = validateClientIcalUrl(icalUrl);
+    if (!checked.ok) {
+      setStatusMessage({ type: 'error', text: checked.error });
+      return;
+    }
+
     setLoading(true);
     setStatusMessage(null);
 
     try {
-      await loadEvents(icalUrl.trim());
-      saveCalendarUrl(icalUrl.trim()).catch((err) => {
+      await loadEvents(checked.url);
+      setIcalUrl(checked.url);
+      saveCalendarUrl(checked.url).catch((err) => {
         console.error('Background save failed:', err);
       });
     } catch (err: any) {
-      setStatusMessage({ type: 'error', text: err.message || 'Failed to fetch calendar feed.' });
+      setStatusMessage({
+        type: 'error',
+        text: err?.message || 'Timetable sync failed. The feed is loaded via /api/ical-proxy (not directly from ATU).',
+      });
     } finally {
       setLoading(false);
     }
