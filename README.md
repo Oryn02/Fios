@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v2.2.5**
+**Current version: v2.2.6**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -27,10 +27,17 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Smart Quick Widget** — expanded actions, custom order, compact FAB, metrics chip (can be fully disabled).
 - **PWA** — installable standalone app (multi-size icons + manifest) via VitePWA + Workbox; offline mutation queue (IndexedDB).
 - **Themes** — Dark / Light / System, expanded accent gradients, Low-Power mode, Zen focus (Esc / Exit Zen / mobile escape), OpenDyslexic, cream light palette with stronger cards/tabs.
-- **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar (on-theme chrome control); reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs).
+- **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar (compact chrome control, larger Fios wordmark); reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs).
 - **Mermaid + Markdown + LaTeX** — diagrams, GFM markdown, and KaTeX math in AI content.
-- **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service; refreshed landing (brand-first hero + study hubs).
+- **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service; refreshed landing (tighter hero + study hubs + FAQ).
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v2.2.6
+
+- Landing: tighter hero/nav spacing so content sits higher; smaller inset product mockup (no heavy window on the section divider).
+- Landing: expanded study-hubs blurb + FAQ (tutor grounding, unified agenda, multi-device) for a fuller page below the fold.
+- Dashboard header: smaller hamburger / X aligned inside the header row; larger Fios logo + wordmark.
+- See the in-app **Updates** tab for the full changelog.
 
 ### What’s new in v2.2.5
 
@@ -107,7 +114,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v2.2.5) — Render Static Site root
+├── client/                 # React + Vite frontend (v2.2.6) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/
