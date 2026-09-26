@@ -30,22 +30,33 @@ function applyTheme(theme: ThemeMode) {
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile, updateProfile } = useProfile();
-  const [theme, setThemeState] = useState<ThemeMode>('dark');
-  const [accent, setAccentState] = useState<AccentKey>('emerald');
+  
+  // Initialize immediately from localStorage to prevent reload amnesia
+  const [theme, setThemeState] = useState<ThemeMode>(() => {
+    return (localStorage.getItem('fios_theme') as ThemeMode) || 'dark';
+  });
+  
+  const [accent, setAccentState] = useState<AccentKey>(() => {
+    return (localStorage.getItem('fios_accent') as AccentKey) || 'emerald';
+  });
 
-  // Sync from the loaded profile.
+  // Sync from profile when it loads, and keep localStorage updated
   useEffect(() => {
-    if (profile) {
-      setThemeState(profile.theme || 'dark');
-      setAccentState(profile.accent_color || 'emerald');
+    if (profile?.theme) {
+      setThemeState(profile.theme);
+      localStorage.setItem('fios_theme', profile.theme);
+    }
+    if (profile?.accent_color) {
+      setAccentState(profile.accent_color);
+      localStorage.setItem('fios_accent', profile.accent_color);
     }
   }, [profile]);
 
-  // Apply to the document whenever they change.
+  // Apply to document whenever they change
   useEffect(() => { applyTheme(theme); }, [theme]);
   useEffect(() => { applyAccent(accent); }, [accent]);
 
-  // Reset to the landing page's fixed identity on unmount (logout).
+  // Reset to default on unmount (logout)
   useEffect(() => {
     return () => {
       applyTheme('dark');
@@ -55,20 +66,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setTheme = useCallback((t: ThemeMode) => {
     setThemeState(t);
-    updateProfile({ theme: t }).catch((e) => console.error('Failed to persist theme:', e));
+    localStorage.setItem('fios_theme', t);
+    updateProfile({ theme: t }).catch((e: any) => console.error('Failed to persist theme:', e));
   }, [updateProfile]);
 
   const toggleTheme = useCallback(() => {
     setThemeState((prev) => {
       const next: ThemeMode = prev === 'dark' ? 'light' : 'dark';
-      updateProfile({ theme: next }).catch((e) => console.error('Failed to persist theme:', e));
+      localStorage.setItem('fios_theme', next);
+      updateProfile({ theme: next }).catch((e: any) => console.error('Failed to persist theme:', e));
       return next;
     });
   }, [updateProfile]);
 
   const setAccent = useCallback((a: AccentKey) => {
     setAccentState(a);
-    updateProfile({ accent_color: a }).catch((e) => console.error('Failed to persist accent:', e));
+    localStorage.setItem('fios_accent', a);
+    updateProfile({ accent_color: a }).catch((e: any) => console.error('Failed to persist accent:', e));
   }, [updateProfile]);
 
   const value = useMemo(

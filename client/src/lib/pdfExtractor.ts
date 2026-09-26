@@ -12,8 +12,12 @@ export async function extractTextFromPDF(file: File): Promise<string> {
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum);
     const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item: any) => item.str)
+    
+    // Safely check if items exists and is an array to prevent crashes
+    const items = Array.isArray(textContent?.items) ? textContent.items : [];
+    
+    const pageText = items
+      .map((item: any) => item.str || '')
       .join(' ');
       
     extractedText += `--- Page ${pageNum} ---\n${pageText}\n\n`;
