@@ -25,18 +25,21 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Privacy & GDPR** — in-app Privacy Policy + Terms (landing footer and Settings); essential cookie/local-storage consent; Export My Data (JSON); disclosures for Supabase, Gemini (BYO key), optional GitHub, and hosting.
 - **Global Pomodoro Timer** — floating dock widget with Web Audio soundscapes and Weekly Study Goal (can be disabled in Settings).
 - **Smart Quick Widget** — expanded actions, custom order, compact FAB, metrics chip (can be fully disabled).
-- **PWA** — installable standalone app (multi-size icons + manifest) via VitePWA + Workbox; offline mutation queue (IndexedDB).
 - **Themes** — Dark / Light / System, expanded accent gradients, Low-Power mode, Zen focus (Esc / Exit Zen / mobile escape), OpenDyslexic, cream light palette with stronger cards/tabs.
-- **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar (compact chrome control, larger Fios wordmark); reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs).
+- **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar (compact chrome control, larger Fios wordmark; logo opens Overview); reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs).
 - **Mermaid + Markdown + LaTeX** — diagrams, GFM markdown, and KaTeX math in AI content.
 - **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service; refreshed landing (tighter hero + study hubs + FAQ).
+- **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
+- **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable) via VitePWA + Workbox; offline mutation queue (IndexedDB).
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
 
 ### What’s new in v2.2.6
 
 - Landing: tighter hero/nav spacing so content sits higher; smaller inset product mockup (no heavy window on the section divider).
 - Landing: expanded study-hubs blurb + FAQ (tutor grounding, unified agenda, multi-device) for a fuller page below the fold.
-- Dashboard header: smaller hamburger / X aligned inside the header row; larger Fios logo + wordmark.
+- Dashboard header: smaller hamburger / X aligned inside the header row; larger Fios logo + wordmark; logo click opens **Overview**.
+- Mobile uploads: iOS PDF block removed; PDFs extract on the server when needed; images from Photos / gallery via Vision; flashcards generate crash fixed.
+- PWA: apple-touch-icon **180×180** plus 192/512 icons regenerated from the current Fios logo with safe padding (manifest + HTML tags).
 - See the in-app **Updates** tab for the full changelog.
 
 ### What’s new in v2.2.5

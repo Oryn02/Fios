@@ -77,8 +77,8 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
   }, [isSaved]);
 
   // SM-2 due filter — local calendar day (see isCardDue)
-  const dueCards = cards.filter((c: any) => isCardDue(c.next_review));
-  const activeCards = studyFilter === 'due' ? dueCards : cards;
+  const dueCards = (Array.isArray(cards) ? cards : []).filter((c: any) => isCardDue(c?.next_review));
+  const activeCards = studyFilter === 'due' ? dueCards : (Array.isArray(cards) ? cards : []);
 
   const handleNext = useCallback(() => {
     setIsFlipped(false);
@@ -207,7 +207,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     else void handleRating(2);
   }, [isFlipped, handleRating]);
 
-  if (!cards || cards.length === 0) return null;
+  if (!Array.isArray(cards) || cards.length === 0) return null;
 
   const handleSaveDeck = async () => {
     setSaving(true);

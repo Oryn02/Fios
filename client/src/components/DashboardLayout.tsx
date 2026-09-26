@@ -233,7 +233,15 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             >
               {navToggleOpen ? <X className="w-3.5 h-3.5" strokeWidth={2.25} /> : <Menu className="w-3.5 h-3.5" strokeWidth={2.25} />}
             </button>
-            <FiosLogo size="lg" className="leading-none min-w-0" />
+            <button
+              type="button"
+              onClick={() => navigate('overview')}
+              className="min-w-0 cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fios-accent-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fios-surface)]"
+              aria-label="Go to Overview"
+              title="Overview"
+            >
+              <FiosLogo size="lg" className="leading-none min-w-0 pointer-events-none" />
+            </button>
             <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.6</span>
             {zenMode && (
               <button

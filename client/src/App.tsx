@@ -77,7 +77,10 @@ const Dashboard: React.FC = () => {
 
     try {
       const data = await generateFlashcards(studyNotes);
-      const cardsList = Array.isArray(data) ? data : data?.cards || [];
+      const cardsList = Array.isArray(data?.cards) ? data.cards : [];
+      if (!cardsList.length) {
+        throw new Error('No flashcards were returned. Try longer notes or regenerate.');
+      }
       setCards(cardsList);
       setSelectedDeck({
         cards: cardsList,
@@ -85,7 +88,9 @@ const Dashboard: React.FC = () => {
         isSaved: false,
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to connect to server.');
+      const msg = err?.message || String(err) || 'Failed to connect to server.';
+      // Guard against opaque runtime TypeErrors bubbling as "undefined is not a function"
+      setError(msg.includes('is not a function') ? 'Flashcard generation failed. Check your Gemini key in Settings and try again.' : msg);
     } finally {
       setLoading(false);
     }
