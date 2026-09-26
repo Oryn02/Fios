@@ -136,7 +136,7 @@ export const CompactAgenda = memo(function CompactAgenda({
         <section key={group.key} className="space-y-2" aria-labelledby={`agenda-day-${group.key}`}>
           <h4
             id={`agenda-day-${group.key}`}
-            className="sticky top-0 z-[1] text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text bg-[var(--fios-surface)]/95 backdrop-blur-sm py-1.5 border-b border-slate-800/60"
+            className="sticky top-0 z-[1] text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text bg-[var(--fios-surface)]/95 backdrop-blur-sm py-1.5 border-b border-slate-800/60 truncate"
           >
             {group.label}
           </h4>

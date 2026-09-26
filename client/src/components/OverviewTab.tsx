@@ -288,14 +288,14 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         transition={{ duration: 0.25 }}
         className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800/80 pb-6"
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <Avatar url={profile?.avatar_url} name={preferredName} size={56} className="shrink-0 accent-ring" />
-          <div>
+          <div className="min-w-0">
             <div className="text-[11px] font-black uppercase tracking-widest accent-solid-text mb-1 flex items-center gap-2 font-mono">
-              <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-              Today · {todayLabel}
+              <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse shrink-0" />
+              <span className="truncate">Today · {todayLabel}</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black italic tracking-tight text-[var(--fios-text)]">
+            <h1 className="text-3xl sm:text-4xl font-black italic tracking-tight text-[var(--fios-text)] break-words">
               {greeting}, <span className="accent-text">{preferredName}</span>.
             </h1>
             <p className="text-[var(--fios-text-muted)] text-xs sm:text-sm font-medium mt-1">
@@ -316,13 +316,13 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
       </motion.div>
 
       {/* 2. Focus Card */}
-      <div className="bg-[#0e131f]/90 border border-slate-800 rounded-2xl p-6 relative overflow-hidden space-y-4 shadow-xl">
+      <div className="bg-[#0e131f]/90 border border-slate-800 rounded-2xl p-4 sm:p-6 relative overflow-hidden space-y-4 shadow-xl">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-transparent" />
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black uppercase tracking-widest accent-solid-text flex items-center gap-2 font-mono">
-            <Zap className="w-3.5 h-3.5" /> Focus · What should I work on right now?
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-[10px] font-black uppercase tracking-widest accent-solid-text flex items-center gap-2 font-mono min-w-0">
+            <Zap className="w-3.5 h-3.5 shrink-0" /> Focus · What should I work on right now?
           </span>
-          <span className="text-xs font-mono text-slate-500">
+          <span className="text-xs font-mono text-slate-500 shrink-0">
             {loadingTasks ? '…' : `${pendingTaskCount} pending tasks`}
           </span>
         </div>
@@ -349,8 +349,9 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
           )}
         </div>
 
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex flex-wrap items-center gap-3 pt-2">
           <motion.button
+            type="button"
             whileTap={{ scale: 0.98 }}
             onClick={() => onOpenFlashcards()}
             className="px-5 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase tracking-wider text-xs rounded-xl shadow-lg transition-colors flex items-center gap-2 cursor-pointer"
@@ -358,6 +359,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
             <Zap className="w-4 h-4 fill-slate-950" /> Generate Flashcards ↵
           </motion.button>
           <motion.button
+            type="button"
             whileTap={{ scale: 0.98 }}
             onClick={() => {
               setIsAddingTask((v) => {

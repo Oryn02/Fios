@@ -38,6 +38,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Compact agenda: tasks sort and appear by **due date** (not start); calendar day headers (Today / Tomorrow / weekday) group classes + tasks.
 - Overview Focus card waits for tasks to load before showing pending count or “You’re all caught up” (no false empty flash on tab switch).
 - ATU Academic Calendar key-date descriptions no longer show leftover `[cite: N]` markers.
+- Mobile polish for Focus/agenda/header wrap, scrollable bottom nav, and Schedule institution field.
 - See the in-app **Updates** tab for the full changelog.
 
 ### What’s new in v2.2.4

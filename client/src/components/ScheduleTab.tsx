@@ -322,7 +322,7 @@ const ScheduleTabInner: React.FC = () => {
               saveScheduleMeta({ mode: scheduleMode, institutionName: v });
             }}
             placeholder="Institution (optional)"
-            className="flex-1 min-w-[10rem] bg-[#07090e] border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:accent-border"
+            className="w-full sm:flex-1 sm:min-w-[10rem] bg-[#07090e] border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:accent-border"
           />
         </div>
         <form onSubmit={handleSaveAndFetch} className={`flex flex-col sm:flex-row items-center gap-3 ${scheduleMode === 'manual' ? 'opacity-50 pointer-events-none' : ''}`}>

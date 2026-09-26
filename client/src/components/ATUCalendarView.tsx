@@ -98,7 +98,7 @@ const ATU_KEY_DATES: AcademicEvent[] = [
     category: 'repeat',
     description: 'Autumn repeat exam session running from 16th to 28th August.',
   },
-].map((e): AcademicEvent => ({ ...e, description: stripCitationMarkers(e.description) }));
+];
 
 const CATEGORY_STYLES = {
   term: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -151,6 +151,7 @@ export const ATUCalendarView: React.FC = () => {
         {['all', 'term', 'exam', 'repeat', 'deadline', 'holiday'].map((cat) => (
           <button
             key={cat}
+            type="button"
             onClick={() => setFilter(cat)}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-colors cursor-pointer shrink-0 ${
               filter === cat

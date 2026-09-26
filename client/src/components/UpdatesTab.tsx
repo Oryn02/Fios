@@ -13,6 +13,7 @@ const UpdatesTabInner: React.FC = () => {
         'Agenda date headers: Today / Tomorrow / weekday groups so classes and tasks sit under clear calendar days instead of a flat undated list.',
         'Overview Focus card: no more “You’re all caught up” flash while tasks are still loading — shows a loading state until the real pending count arrives.',
         'ATU Academic Calendar: stripped leftover `[cite: N]` citation markers from key-date descriptions so copy renders cleanly.',
+        'Mobile polish: Focus/agenda/header wrap without overflow; bottom nav scrollable; Schedule institution field full-width on small screens; ATU filter chips typed as buttons.',
         'Version alignment: packages, HTML title, Updates tab, and README report v2.2.5.',
       ],
     },
