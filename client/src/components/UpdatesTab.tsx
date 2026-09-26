@@ -4,6 +4,17 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v2.2.8',
+      date: 'September 2026',
+      title: 'Logo & PWA icon polish',
+      highlights: [
+        'In-app Fios mark: rebalanced `</>` proportions — wider optical balance, even gaps between `<` `/` `>`, comfortable padding inside the square, slightly more space before the wordmark.',
+        'PWA / Add to Home Screen / Apple touch: regenerated white `</>` on solid black with ~18–22% inset (centered, not tall-stretched or edge-cramped); apple-touch 180×180, 192/512, maskable, and favicon share the same geometry.',
+        'Header logo → Overview and landing emerald brand lock unchanged from v2.2.7.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.8.',
+      ],
+    },
+    {
       version: 'v2.2.7',
       date: 'September 2026',
       title: 'Mobile widget defaults, SM-2 previews & brand polish',
@@ -149,7 +160,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v2.2.7</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v2.2.8</p>
       </header>
 
       <div className="space-y-4">

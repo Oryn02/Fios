@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Fios">
   <!-- Solid black plate; white </> mark — matches PWA / home-screen icons -->
   <rect width="48" height="48" fill="#000000"/>
-  <path d="M15 10L6 24L15 38" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <path d="M33 10L42 24L33 38" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <path d="M29 9L19 39" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <path d="M15.5 13L9.5 24L15.5 35" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M32.5 13L38.5 24L32.5 35" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M26.4 13L21.6 35" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" fill="none"/>
 </svg>
