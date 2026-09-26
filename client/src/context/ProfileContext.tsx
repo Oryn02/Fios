@@ -20,15 +20,26 @@ interface ProfileContextValue {
 const ProfileContext = createContext<ProfileContextValue | undefined>(undefined);
 
 export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  // 1. Initialize state instantly from localStorage if available to prevent null flashes
+  const [profile, setProfile] = useState<UserProfile | null>(() => {
+    try {
+      const cached = localStorage.getItem('fios_user_profile');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  
+  const [loading, setLoading] = useState(!profile);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
     try {
       const p = await getMyProfile();
-      setProfile(p);
-      setGeminiKey(p?.gemini_api_key ?? null);
+      if (p) {
+        setProfile(p);
+        localStorage.setItem('fios_user_profile', JSON.stringify(p));
+        setGeminiKey(p?.gemini_api_key ?? null);
+      }
     } catch (err) {
       console.error('Failed to load profile:', err);
     } finally {
@@ -39,6 +50,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateProfile = useCallback(async (patch: Partial<UserProfile>) => {
     const updated = await updateMyProfile(patch);
     setProfile(updated);
+    localStorage.setItem('fios_user_profile', JSON.stringify(updated));
     if ('gemini_api_key' in patch) setGeminiKey(updated.gemini_api_key ?? null);
   }, []);
 
