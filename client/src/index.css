@@ -304,6 +304,21 @@ summary,
   -webkit-tap-highlight-color: color-mix(in srgb, var(--fios-accent-solid) 22%, transparent);
 }
 
+/* Native datetime-local: readable under dark/light themes + clickable calendar UI */
+.fios-datetime-local {
+  color-scheme: dark;
+  -webkit-appearance: none;
+  appearance: auto;
+}
+[data-theme="light"] .fios-datetime-local {
+  color-scheme: light;
+}
+.fios-datetime-local::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
 /* ~44px minimum hit area for critical mobile chrome */
 .touch-target {
   min-width: 44px;

@@ -4,6 +4,18 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v2.2.4',
+      date: 'September 2026',
+      title: 'Nav toggle, task dates, support send & landing refresh',
+      highlights: [
+        'Header menu (hamburger / X) beside the Fios logo toggles the mobile drawer and the desktop sidebar; drawer sits below the header so the toggle always stays clickable.',
+        'Task create Start / Due fields use a reliable datetime-local control (theme-aware color-scheme + open-picker button) that updates state and saves timed agenda tasks.',
+        'Contact Support: keep showing the support inbox (`VITE_SUPPORT_EMAIL` or oryn02@gmail.com); add an in-app message form that POSTs to `/api/support` and emails the inbox via Resend/SendGrid when configured — clear error if the provider key is missing (no crash). Mailto remains optional.',
+        'Landing page refresh: brand-first hero, schedule/agenda, study hubs, AI Tutor, SM-2 flashcards, Smart Notes, Code Lab, themes, PWA, and privacy/legal links — purposeful motion, responsive, aligned with the emerald/teal Fios identity.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.4.',
+      ],
+    },
+    {
       version: 'v2.2.3',
       date: 'September 2026',
       title: 'Zen, schedule, agenda, privacy & visual polish',
@@ -92,7 +104,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v2.2.3</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v2.2.4</p>
       </header>
 
       <div className="space-y-4">

@@ -9,6 +9,8 @@ interface ImportMetaEnv {
   readonly VITE_GITHUB_TOKEN?: string;
   /** Render API origin, e.g. https://fios-api.onrender.com (no trailing slash). */
   readonly VITE_API_URL?: string;
+  /** Support inbox shown in Contact Support (optional). */
+  readonly VITE_SUPPORT_EMAIL?: string;
 }
 
 interface ImportMeta {
