@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Camera, Mic, Loader2 } from 'lucide-react';
 import { getGeminiKey } from '../lib/geminiKey';
+import { apiUrl } from '../lib/apiBase';
 import { useAiAuth } from '../context/AiAuthContext';
 import { toast } from '../lib/toast';
 
@@ -33,7 +34,7 @@ export const MediaStudyInput: React.FC<MediaStudyInputProps> = ({ onNotes }) => 
       const mediaBase64 = btoa(binary);
       const mimeType = mimeHint || file.type || 'application/octet-stream';
 
-      const response = await fetch('/api/media/process', {
+      const response = await fetch(apiUrl('/api/media/process'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

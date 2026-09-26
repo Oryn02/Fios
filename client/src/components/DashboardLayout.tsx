@@ -3,13 +3,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutDashboard, Layers, Calendar, Settings, BookOpen,
   LogOut, Menu, X, Timer, HelpCircle, Code2, FileText, Target,
-  Sun, Moon, GraduationCap, Sparkles, Bot, Monitor, Command,
+  Sun, Moon, GraduationCap, Sparkles, Bot, Monitor, Command, Focus, GripVertical,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, disableDemo } from '../lib/demo';
 import { useProfile, usePreferredName } from '../context/ProfileContext';
 import { useTheme } from '../context/ThemeContext';
-import { usePreferences } from '../context/PreferencesContext';
+import { usePreferences, DEFAULT_NAV_ORDER, DEFAULT_MOBILE_NAV } from '../context/PreferencesContext';
 import { FiosLogo } from './FiosLogo';
 import { Avatar } from './Avatar';
 import { WeeklyGoalWidget } from './WeeklyGoalWidget';
@@ -37,14 +37,22 @@ export const NAV_ITEMS = [
   { id: 'updates', label: 'Updates v2.2', icon: Sparkles },
 ];
 
+/** Tabs where Zen may hide chrome (study surfaces). Settings/Overview always keep nav. */
+const ZEN_STUDY_TABS = new Set([
+  'flashcards', 'quiz', 'code', 'documents', 'tutor', 'timer',
+]);
+
 const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, activeTab, setActiveTab }) => {
   const { profile } = useProfile();
   const preferredName = usePreferredName();
   const { theme, resolvedTheme, toggleTheme } = useTheme();
-  const { zenMode, mobileNavSlots } = usePreferences();
+  const { zenMode, setZenMode, mobileNavSlots, navOrder, setNavOrder } = usePreferences();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+
+  const hideChrome = zenMode && ZEN_STUDY_TABS.has(activeTab);
 
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
@@ -57,19 +65,68 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
     setDrawerOpen(false);
   }, [setActiveTab]);
 
+  const exitZen = useCallback(() => setZenMode(false), [setZenMode]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setPaletteOpen((v) => !v);
+        return;
+      }
+      if (e.key === 'Escape' && zenMode) {
+        e.preventDefault();
+        exitZen();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [zenMode, exitZen]);
+
+  const orderedNav = useMemo(() => {
+    const order = navOrder?.length ? navOrder : DEFAULT_NAV_ORDER;
+    const byId = new Map(NAV_ITEMS.map((n) => [n.id, n]));
+    const seen = new Set<string>();
+    const list: typeof NAV_ITEMS = [];
+    for (const id of order) {
+      const item = byId.get(id);
+      if (item && !seen.has(id)) {
+        list.push(item);
+        seen.add(id);
+      }
+    }
+    for (const item of NAV_ITEMS) {
+      if (!seen.has(item.id)) list.push(item);
+    }
+    return list;
+  }, [navOrder]);
+
+  const moveNav = useCallback((id: string, dir: -1 | 1) => {
+    const order = [...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)];
+    const idx = order.indexOf(id);
+    if (idx < 0) return;
+    const next = idx + dir;
+    if (next < 0 || next >= order.length) return;
+    [order[idx], order[next]] = [order[next], order[idx]];
+    setNavOrder(order);
+  }, [navOrder, setNavOrder]);
+
+  const onDragStart = useCallback((id: string) => setDragId(id), []);
+  const onDragOver = useCallback((e: React.DragEvent, overId: string) => {
+    e.preventDefault();
+    if (!dragId || dragId === overId) return;
+    const order = [...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)];
+    const from = order.indexOf(dragId);
+    const to = order.indexOf(overId);
+    if (from < 0 || to < 0) return;
+    order.splice(from, 1);
+    order.splice(to, 0, dragId);
+    setNavOrder(order);
+  }, [dragId, navOrder, setNavOrder]);
+  const onDragEnd = useCallback(() => setDragId(null), []);
 
   const commandItems: CommandItem[] = useMemo(() => [
-    ...NAV_ITEMS.map((item) => ({
+    ...orderedNav.map((item) => ({
       id: `nav-${item.id}`,
       label: item.label,
       hint: 'Navigate',
@@ -84,19 +141,26 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       action: () => toggleTheme(),
     },
     {
+      id: 'action-zen',
+      label: zenMode ? 'Exit Zen / Deep Focus' : 'Enter Zen / Deep Focus',
+      hint: 'Action',
+      keywords: ['zen', 'focus', 'escape'],
+      action: () => setZenMode(!zenMode),
+    },
+    {
       id: 'action-logout',
       label: 'Sign out',
       hint: 'Action',
       keywords: ['logout'],
       action: () => { void handleLogout(); },
     },
-  ], [navigate, toggleTheme, handleLogout]);
+  ], [orderedNav, navigate, toggleTheme, handleLogout, zenMode, setZenMode]);
 
   const displayName = profile?.full_name?.trim() || preferredName;
   const ThemeIcon = theme === 'system' ? Monitor : (resolvedTheme === 'dark' ? Sun : Moon);
 
   const mobileItems = useMemo(() => {
-    const slots = mobileNavSlots?.length ? mobileNavSlots : ['overview', 'modules', 'code', 'documents', 'tutor'];
+    const slots = mobileNavSlots?.length ? mobileNavSlots : DEFAULT_MOBILE_NAV;
     return slots
       .map((id) => NAV_ITEMS.find((n) => n.id === id))
       .filter(Boolean) as typeof NAV_ITEMS;
@@ -104,8 +168,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
   return (
     <div className="min-h-dvh fios-app-bg flex flex-col font-sans overflow-x-hidden">
-      {/* Top HUD Bar */}
-      {!zenMode && (
+      {/* Top HUD Bar — always visible unless Zen is hiding study chrome */}
+      {!hideChrome && (
         <header className="h-16 border-b fios-border bg-[var(--fios-surface)]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-50 safe-top">
           <div className="flex items-center gap-3">
             <button
@@ -118,7 +182,17 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               {drawerOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             <FiosLogo size="md" />
-            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.0</span>
+            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.2</span>
+            {zenMode && (
+              <button
+                type="button"
+                onClick={exitZen}
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md border accent-border accent-solid-text text-[10px] font-black uppercase tracking-wider cursor-pointer bg-[var(--fios-surface-2)]"
+                aria-label="Exit Zen mode"
+              >
+                <Focus className="w-3.5 h-3.5" /> Exit Zen
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -169,10 +243,32 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         </header>
       )}
 
+      {/* Persistent Zen escape — always reachable when chrome is hidden */}
+      {hideChrome && (
+        <div className="fixed top-3 right-3 z-[80] flex items-center gap-2 safe-top">
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            className="p-2.5 rounded-xl border fios-border bg-[var(--fios-surface)]/95 text-[var(--fios-text-muted)] shadow-xl cursor-pointer"
+            aria-label="Open navigation (command palette)"
+            title="Navigate (Ctrl/Cmd+K)"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={exitZen}
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border accent-border bg-[var(--fios-surface)]/95 accent-solid-text text-[10px] font-black uppercase tracking-wider shadow-xl cursor-pointer"
+            aria-label="Exit Zen mode"
+          >
+            <Focus className="w-3.5 h-3.5" /> Exit Zen
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-1 relative">
-        {/* Mobile slide-out drawer */}
         <AnimatePresence>
-          {drawerOpen && !zenMode && (
+          {drawerOpen && !hideChrome && (
             <>
               <motion.div
                 initial={{ opacity: 0 }}
@@ -197,7 +293,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                   </button>
                 </div>
                 <nav className="space-y-1 overflow-y-auto flex-1" aria-label="Primary">
-                  {NAV_ITEMS.map((item) => {
+                  {orderedNav.map((item) => {
                     const Icon = item.icon;
                     const isActive = activeTab === item.id;
                     return (
@@ -221,32 +317,53 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           )}
         </AnimatePresence>
 
-        {/* Desktop Sidebar */}
-        {!zenMode && (
+        {!hideChrome && (
           <aside className="w-60 border-r fios-border bg-[var(--fios-surface)]/40 p-4 hidden md:flex flex-col justify-between" aria-label="Sidebar">
             <div className="space-y-6">
-              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--fios-text-muted)] px-3">Navigation</div>
-              <nav className="space-y-1" aria-label="Primary">
-                {NAV_ITEMS.map((item) => {
+              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--fios-text-muted)] px-3">
+                Navigation
+                <span id="nav-reorder-hint" className="sr-only">Drag handles to reorder. Alt+Up or Alt+Down moves the focused item.</span>
+              </div>
+              <nav className="space-y-1" aria-label="Primary" aria-describedby="nav-reorder-hint">
+                {orderedNav.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
                   return (
-                    <motion.button
+                    <div
                       key={item.id}
-                      whileHover={{ x: 2 }}
-                      whileTap={{ scale: 0.98 }}
-                      type="button"
-                      onClick={() => navigate(item.id)}
-                      aria-current={isActive ? 'page' : undefined}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-black italic uppercase tracking-wider transition-colors cursor-pointer ${
-                        isActive
-                          ? 'bg-[var(--fios-surface-2)] accent-solid-text border-l-2 accent-border shadow-md'
-                          : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
-                      }`}
+                      draggable
+                      onDragStart={() => onDragStart(item.id)}
+                      onDragOver={(e) => onDragOver(e, item.id)}
+                      onDragEnd={onDragEnd}
+                      className={`flex items-center gap-1 rounded-lg ${dragId === item.id ? 'opacity-60' : ''}`}
                     >
-                      <Icon className={`w-4 h-4 ${isActive ? 'accent-solid-text' : ''}`} />
-                      {item.label}
-                    </motion.button>
+                      <span
+                        className="p-1 cursor-grab text-[var(--fios-text-muted)] shrink-0"
+                        title="Drag to reorder"
+                        aria-hidden
+                      >
+                        <GripVertical className="w-3.5 h-3.5" />
+                      </span>
+                      <motion.button
+                        whileHover={{ x: 2 }}
+                        whileTap={{ scale: 0.98 }}
+                        type="button"
+                        onClick={() => navigate(item.id)}
+                        onKeyDown={(e) => {
+                          if (e.altKey && e.key === 'ArrowUp') { e.preventDefault(); moveNav(item.id, -1); }
+                          if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); moveNav(item.id, 1); }
+                        }}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-black italic uppercase tracking-wider transition-colors cursor-pointer ${
+                          isActive
+                            ? 'bg-[var(--fios-surface-2)] accent-solid-text border-l-2 accent-border shadow-md'
+                            : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 ${isActive ? 'accent-solid-text' : ''}`} />
+                        {item.label}
+                      </motion.button>
+                    </div>
                   );
                 })}
               </nav>
@@ -256,40 +373,122 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           </aside>
         )}
 
-        {/* Main Content Viewport */}
-        <main className={`flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full relative ${zenMode ? 'pb-8' : 'pb-24 md:pb-8'}`} id="main-content">
-          {!zenMode && (
+        <main className={`flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full relative ${hideChrome ? 'pb-8' : 'pb-24 md:pb-8'}`} id="main-content">
+          {!hideChrome && (
             <div className="absolute top-10 left-10 w-96 h-96 rounded-full blur-[100px] pointer-events-none opacity-40" style={{ backgroundColor: 'color-mix(in srgb, var(--fios-accent-solid) 8%, transparent)' }} />
           )}
           <div className="relative z-10">{children}</div>
         </main>
       </div>
 
-      {/* Hot-swappable mobile bottom nav */}
-      {!zenMode && (
+      {/* Mobile bottom nav — keep a Settings escape even in Zen study mode */}
+      {(!hideChrome || zenMode) && (
         <nav
-          className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-2 pt-1.5 pb-1 safe-bottom"
+          className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-2 pt-1.5 pb-1 safe-bottom ${hideChrome ? 'shadow-2xl' : ''}`}
           aria-label="Mobile shortcuts"
         >
-          {mobileItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
+          {hideChrome ? (
+            <>
               <button
-                key={item.id}
                 type="button"
-                onClick={() => navigate(item.id)}
-                aria-current={isActive ? 'page' : undefined}
-                aria-label={item.label}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg cursor-pointer ${isActive ? 'accent-solid-text' : 'text-[var(--fios-text-muted)]'}`}
+                onClick={() => { setDrawerOpen(true); }}
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg cursor-pointer text-[var(--fios-text-muted)]"
+                aria-label="Open menu"
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-[9px] font-bold uppercase tracking-wide">{item.label.split(' ')[0]}</span>
+                <Menu className="w-5 h-5" />
+                <span className="text-[9px] font-bold uppercase tracking-wide">Menu</span>
               </button>
-            );
-          })}
+              <button
+                type="button"
+                onClick={exitZen}
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg cursor-pointer accent-solid-text"
+                aria-label="Exit Zen"
+              >
+                <Focus className="w-5 h-5" />
+                <span className="text-[9px] font-bold uppercase tracking-wide">Exit Zen</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('settings')}
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg cursor-pointer text-[var(--fios-text-muted)]"
+                aria-label="Settings"
+              >
+                <Settings className="w-5 h-5" />
+                <span className="text-[9px] font-bold uppercase tracking-wide">Settings</span>
+              </button>
+            </>
+          ) : (
+            mobileItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => navigate(item.id)}
+                  aria-current={isActive ? 'page' : undefined}
+                  aria-label={item.label}
+                  className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg cursor-pointer ${isActive ? 'accent-solid-text' : 'text-[var(--fios-text-muted)]'}`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="text-[9px] font-bold uppercase tracking-wide">{item.label.split(' ')[0]}</span>
+                </button>
+              );
+            })
+          )}
         </nav>
       )}
+
+      {/* When Zen hides chrome on mobile, still allow drawer via Menu above */}
+      <AnimatePresence>
+        {drawerOpen && hideChrome && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="md:hidden fixed inset-0 z-40 bg-black/50"
+              onClick={() => setDrawerOpen(false)}
+              aria-hidden
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+              className="md:hidden fixed top-0 left-0 bottom-0 z-50 w-[80vw] max-w-xs bg-[var(--fios-surface)] border-r fios-border p-4 flex flex-col safe-top safe-bottom"
+              aria-label="Mobile navigation"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <FiosLogo size="sm" />
+                <button type="button" onClick={() => setDrawerOpen(false)} className="p-1.5 cursor-pointer text-[var(--fios-text-muted)]" aria-label="Close menu">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <nav className="space-y-1 overflow-y-auto flex-1" aria-label="Primary">
+                {orderedNav.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => navigate(item.id)}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer ${
+                        isActive ? 'accent-bg text-slate-950' : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </nav>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} items={commandItems} />
     </div>

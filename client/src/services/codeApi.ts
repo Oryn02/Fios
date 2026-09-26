@@ -1,5 +1,6 @@
 import type { CodeExamType, CodeLanguage } from '../types/db';
 import { getGeminiKey } from '../lib/geminiKey';
+import { apiUrl } from '../lib/apiBase';
 
 export interface GeneratedCodeExam {
   title: string;
@@ -18,7 +19,8 @@ export interface CodeGradeResult {
   feedback: string;
 }
 
-async function postJson<T>(url: string, body: Record<string, unknown>): Promise<T> {
+async function postJson<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  const url = apiUrl(path);
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -30,7 +32,7 @@ async function postJson<T>(url: string, body: Record<string, unknown>): Promise<
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    throw new Error(`Server returned non-JSON output (Status ${response.status}).`);
+    throw new Error(`Server returned non-JSON output (Status ${response.status}) for ${path}`);
   }
 
   if (!response.ok) {

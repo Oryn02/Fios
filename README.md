@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v2.2.0**
+**Current version: v2.2.2**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -18,11 +18,14 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Revision Flight Plan** — dashboard queue prioritized by exam proximity, overdue SM-2 cards, and readiness (modular / reorderable widgets).
 - **Grade Predictor** — computes the scores you need across assessments to hit a target grade.
 - **Module Readiness Heatmap** — 0–100% readiness per module; modules support tag/folder groups.
-- **Global Pomodoro Timer** — floating widget with Web Audio soundscapes and Weekly Study Goal tracker.
+- **Global Pomodoro Timer** — floating widget with Web Audio soundscapes and Weekly Study Goal tracker (can be disabled in Settings).
+- **Smart Quick Widget** — floating quick actions with customizable metrics/actions (can be fully disabled).
 - **PWA** — installable standalone app via VitePWA + Workbox; offline mutation queue (IndexedDB).
-- **Themes** — Dark / Light / System, Low-Power mode, Zen focus, OpenDyslexic, warm light palette.
+- **Themes** — Dark / Light / System, Low-Power mode, Zen focus (with Esc / Exit Zen escape), OpenDyslexic, warm light palette.
+- **Nav customization** — reorder desktop sidebar; add/hide/reorder mobile bottom-nav slots.
 - **Mermaid + Markdown + LaTeX** — diagrams, GFM markdown, and KaTeX math in AI content.
 - **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service.
+- **Render hosting** — Express Web Service (`server/`) + Static Site (`client/`); client calls API via `VITE_API_URL` (fixes production 405s from SPA/static intercepts).
 
 ---
 
@@ -41,7 +44,8 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 | Layer | Technology |
 | --- | --- |
 | Frontend | React 19, Vite 8, TypeScript, Tailwind CSS 4, Framer Motion, `@monaco-editor/react`, Mermaid.js, KaTeX, react-markdown, VitePWA, Web Audio API, lucide-react |
-| Backend | Node.js, Express 5, TypeScript (`tsx`), `@google/genai` (Gemini), multer |
+| Backend | Node.js, Express 5, TypeScript (`tsc` build / `tsx` dev), `@google/genai` (Gemini), multer |
+| Hosting | **Render** — Web Service (`server`) + Static Site (`client`); see [`render.yaml`](render.yaml) |
 | Data & Auth | Supabase (Postgres + Auth + Row Level Security); optional GitHub OAuth |
 | AI | Google Gemini API (BYO key) |
 
@@ -67,20 +71,82 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ## Project structure
 
 ```
-ai-study-app/
-├── client/                 # React + Vite frontend (v2.2.0)
+Fios/
+├── render.yaml             # Render Blueprint (API + Static Site)
+├── client/                 # React + Vite frontend (v2.2.2) — Render Static Site root
+│   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
-│   │   ├── components/      # UI (dashboard, landing, code lab, AI tutor, …)
-│   │   ├── context/         # Profile, Theme, Preferences, Pomodoro
-│   │   ├── lib/             # Supabase + offline queue + RAG + services
-│   │   ├── services/        # API clients (flashcards, quiz, code, ai)
-│   │   └── types/           # Shared DB + API types
-│   └── public/favicon.svg
-├── server/                 # Express + Gemini study engine
-│   └── src/                # routes.ts, geminiService.ts, schemas.ts
-├── supabase/schema.sql     # Idempotent schema + RLS + v2.2.0 tables
-└── CONTRIBUTING.md         # Dev setup & migration notes
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── lib/apiBase.ts  # VITE_API_URL → Render API origin
+│   │   ├── services/
+│   │   └── types/
+│   └── public/
+├── server/                 # Express API — Render Web Service root
+│   ├── package.json        # ← Root Directory must point HERE (not server/src)
+│   └── src/                # routes.ts, geminiService.ts, index.ts
+├── supabase/schema.sql
+└── CONTRIBUTING.md
 ```
+
+> **Common Render failure:** Root Directory set to `src` → `ENOENT …/src/package.json`. Always use `server` or `client` (the folders that contain `package.json`).
+
+---
+
+## Deploy on Render
+
+Blueprint: commit [`render.yaml`](render.yaml) and **New → Blueprint** from the repo, or create two services manually:
+
+### 1) API — Web Service
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | **`server`** (not `src`, not `server/src`) |
+| Runtime | Node |
+| Build Command | `npm install && npm run build` |
+| Start Command | `npm start` |
+| Health Check Path | `/health` |
+
+**Env vars (API):**
+
+| Key | Notes |
+| --- | --- |
+| `GEMINI_API_KEY` | Optional server fallback key |
+| `CLIENT_ORIGIN` | Your Static Site origin, e.g. `https://fios-web.onrender.com` (comma-separated if multiple) |
+| `PORT` | Set automatically by Render — do not hardcode |
+
+After deploy, copy the service URL (e.g. `https://fios-api.onrender.com`).
+
+### 2) Frontend — Static Site
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | **`client`** (not `src`, not `client/src`) |
+| Build Command | `npm install && npm run build` |
+| Publish Directory | `dist` |
+
+**Env vars (Static Site — baked in at build time):**
+
+| Key | Notes |
+| --- | --- |
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon key |
+| `VITE_API_URL` | **API origin only** — e.g. `https://fios-api.onrender.com` (no `/api` suffix, no trailing slash) |
+| `VITE_ADMIN_UID` | Optional admin UUID |
+| `VITE_DEMO_MODE` | `false` for production |
+
+`VITE_API_URL` is required when the static site and API are separate hosts. Leaving it empty makes the browser call relative `/api/…` (works locally via Vite proxy; fails on a Static Site alone → 405/HTML).
+
+Redeploy the Static Site after changing any `VITE_*` variable.
+
+### Assumed vs you must set
+
+| Item | Assumed in repo | You must set |
+| --- | --- | --- |
+| Split services (API + Static) | Yes (`render.yaml`) | Confirm service names/URLs |
+| `VITE_API_URL` | Placeholder in examples | Real `https://<api-service>.onrender.com` |
+| `CLIENT_ORIGIN` | Placeholder | Real Static Site URL |
+| Supabase keys | Examples only | Your project credentials |
 
 ---
 
@@ -112,7 +178,7 @@ npm run dev            # http://localhost:5000
 ```bash
 cd client
 npm install
-# .env (client)
+# .env (client) — leave VITE_API_URL empty locally
 printf "VITE_SUPABASE_URL=your-project-url\nVITE_SUPABASE_ANON_KEY=your-anon-key\n" > .env
 npm run dev            # http://localhost:5173
 ```
@@ -132,6 +198,8 @@ Click **"Explore Live Demo"** on the landing page, or build/run the client with 
 | `client` | `npm run build` | Type-check (`tsc`) + production build (PWA) |
 | `client` | `npm run typecheck` | Type-check only |
 | `server` | `npm run dev` | Start the API with hot reload |
+| `server` | `npm run build` | Compile TypeScript → `dist/` (Render) |
+| `server` | `npm start` | Run `node dist/index.js` (Render) |
 
 ---
 
@@ -139,6 +207,7 @@ Click **"Explore Live Demo"** on the landing page, or build/run the client with 
 
 | Endpoint | Purpose |
 | --- | --- |
+| `GET  /health` | Health check for Render |
 | `POST /api/generate/flashcards` | Generate flashcards from notes |
 | `POST /api/generate/quiz` | Generate an MCQ quiz |
 | `POST /api/generate/code-exam` | Generate a coding challenge (`customPrompt` supported) |
@@ -149,7 +218,7 @@ Click **"Explore Live Demo"** on the landing page, or build/run the client with 
 | `POST /api/validate-key` | Validate a Gemini API key |
 | `POST /api/upload/pdf` | Accept PDF/text upload for study-engine indexing |
 | `POST /api/rag/query` | Retrieve relevant note chunks |
-| `GET  /api/ical-proxy` | CORS proxy for iCal/WebCAL timetables |
+| `GET|POST /api/ical-proxy` | CORS proxy for iCal/WebCAL timetables (`?url=` or JSON `{ url }`) |
 
 All AI endpoints accept an optional `apiKey` (BYO key) in the JSON body or an `x-gemini-key` header.
 

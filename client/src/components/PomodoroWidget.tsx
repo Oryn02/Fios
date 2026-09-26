@@ -8,6 +8,7 @@ import {
   usePomodoroState, usePomodoroControls, formatClock, modeLabel, type PomodoroMode,
 } from '../context/PomodoroContext';
 import { useProfile } from '../context/ProfileContext';
+import { usePreferences } from '../context/PreferencesContext';
 import { soundscapeEngine, SOUNDSCAPES, type Soundscape } from '../lib/soundscapes';
 
 const MODES: PomodoroMode[] = ['work', 'shortBreak', 'longBreak'];
@@ -120,8 +121,11 @@ const SoundscapePanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 export const PomodoroWidget: React.FC = () => {
   const { mode, isActive } = usePomodoroState();
   const { toggle, reset, skip, switchMode } = usePomodoroControls();
+  const { showPomodoroWidget } = usePreferences();
   const [expanded, setExpanded] = useState(false);
   const [panel, setPanel] = useState<'none' | 'settings' | 'sound'>('none');
+
+  if (!showPomodoroWidget) return null;
 
   return (
     <>

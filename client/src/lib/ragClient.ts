@@ -2,6 +2,7 @@ import { getGeminiKey } from './geminiKey';
 import { chunkText } from './chunkText';
 import { supabase } from './supabase';
 import { IS_DEMO } from './demo';
+import { apiUrl } from './apiBase';
 
 export interface RagQueryResult {
   passages: string[];
@@ -86,7 +87,7 @@ export async function queryRag(params: {
     return { passages: [] };
   }
 
-  const response = await fetch('/api/rag/query', {
+  const response = await fetch(apiUrl('/api/rag/query'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -102,7 +103,7 @@ export async function queryRag(params: {
   try {
     data = bodyText ? JSON.parse(bodyText) : {};
   } catch {
-    throw new Error(`RAG returned non-JSON (Status ${response.status}).`);
+    throw new Error(`RAG returned non-JSON (Status ${response.status}) for /api/rag/query`);
   }
   if (!response.ok) throw new Error(data?.error || `RAG error: ${response.status}`);
 
@@ -127,7 +128,7 @@ export async function uploadPdfToServer(file: File, text?: string): Promise<{ ok
   if (key) form.append('apiKey', key);
 
   try {
-    const response = await fetch('/api/upload/pdf', {
+    const response = await fetch(apiUrl('/api/upload/pdf'), {
       method: 'POST',
       body: form,
     });

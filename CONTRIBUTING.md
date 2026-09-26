@@ -32,6 +32,8 @@ GEMINI_API_KEY=optional-server-fallback-key
 
 The Vite dev server proxies `/api` → `http://localhost:5000`.
 
+For production on **Render**, set Static Site Root Directory to `client` and Web Service Root Directory to `server` (never `src`). See [`README.md`](README.md#deploy-on-render) and [`render.yaml`](render.yaml). Bake `VITE_API_URL=https://<your-api>.onrender.com` into the client build.
+
 ## Database migrations
 
 1. Open the Supabase SQL editor.

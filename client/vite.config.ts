@@ -34,12 +34,9 @@ export default defineConfig({
         navigateFallback: '/index.html',
         runtimeCaching: [
           {
+            // Never cache API responses — HTML/405 fallthrough must not stick in SW.
             urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'fios-api',
-              networkTimeoutSeconds: 8,
-            },
+            handler: 'NetworkOnly',
           },
           {
             // Cache diagram vendor on first use (not in precache — too large).

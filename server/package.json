@@ -1,9 +1,10 @@
 {
   "name": "server",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "2.2.2",
+  "description": "Fios Express API (Render Web Service)",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts"
   },
@@ -26,5 +27,8 @@
     "nodemon": "^3.1.14",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

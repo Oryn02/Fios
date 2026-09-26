@@ -4,14 +4,21 @@ import {
   User, Shield, Calendar, LogOut, Save, Trash2,
   Sliders, Timer, Check, MapPin, IdCard, Palette, Sun, Moon,
   KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Copy, CheckCircle2, X, Smartphone,
-  Monitor, BatteryLow, Type, Focus, GitBranch, Cookie, FileText, ShieldCheck
+  Monitor, BatteryLow, Type, Focus, GitBranch, Cookie, FileText, ShieldCheck,
+  GripVertical, LayoutGrid, ChevronUp, ChevronDown, Zap
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, DEMO_USER, disableDemo, demoFocusSessions } from '../lib/demo';
 import { getSavedCalendarUrl, saveCalendarUrl } from '../lib/calendarService';
 import { useProfile } from '../context/ProfileContext';
 import { useTheme } from '../context/ThemeContext';
-import { usePreferences } from '../context/PreferencesContext';
+import {
+  usePreferences,
+  DEFAULT_MOBILE_NAV,
+  DEFAULT_NAV_ORDER,
+  DEFAULT_SMART_ACTIONS,
+  type SmartActionId,
+} from '../context/PreferencesContext';
 import { AvatarPicker } from './Avatar';
 import { ACCENTS, type ThemeMode } from '../types/db';
 import { validateGeminiKey } from '../services/aiApi';
@@ -20,7 +27,13 @@ import { AdminPanel, useIsAdmin } from './AdminPanel';
 import { resetCookieConsent } from './CookieConsent';
 import { toast } from '../lib/toast';
 import { NAV_ITEMS } from './DashboardLayout';
-import { DEFAULT_MOBILE_NAV } from '../context/PreferencesContext';
+
+const SMART_ACTION_LABELS: Record<SmartActionId, string> = {
+  flashcard: 'Quick Add Flashcard',
+  note: 'New Note',
+  pomodoro: 'Start Pomodoro',
+  tutor: 'Ask AI',
+};
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
 
@@ -147,6 +160,12 @@ const SettingsTabInner: React.FC = () => {
   const {
     lowPower, setLowPower, zenMode, setZenMode, openDyslexic, setOpenDyslexic,
     mobileNavSlots, setMobileNavSlots,
+    navOrder, setNavOrder,
+    showPomodoroWidget, setShowPomodoroWidget,
+    showSmartWidget, setShowSmartWidget,
+    smartWidgetActions, setSmartWidgetActions,
+    smartWidgetCompact, setSmartWidgetCompact,
+    smartWidgetShowMetrics, setSmartWidgetShowMetrics,
   } = usePreferences();
   const isAdmin = useIsAdmin();
 
@@ -401,7 +420,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '2.2.0',
+      version: '2.2.2',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -784,30 +803,172 @@ const SettingsTabInner: React.FC = () => {
             <Focus className="w-3.5 h-3.5" /> Zen mode {zenMode ? 'On' : 'Off'}
           </button>
         </div>
+        {zenMode && (
+          <p className="text-[11px] text-[var(--fios-text-muted)]">
+            Zen hides chrome on study tabs only. Press <kbd className="font-mono accent-solid-text">Esc</kbd>, use Exit Zen, or open Settings — you will not get trapped.
+          </p>
+        )}
 
         <div className="space-y-2">
-          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Mobile bottom nav slots (max 5)</span>
-          <div className="flex flex-wrap gap-1.5">
-            {NAV_ITEMS.slice(0, 10).map((item) => {
-              const on = mobileNavSlots.includes(item.id);
+          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)] flex items-center gap-1.5">
+            <LayoutGrid className="w-3.5 h-3.5" /> Floating widgets
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setShowPomodoroWidget(!showPomodoroWidget)}
+              className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${showPomodoroWidget ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+            >
+              <Timer className="w-3.5 h-3.5" /> Pomodoro Widget {showPomodoroWidget ? 'On' : 'Off'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSmartWidget(!showSmartWidget)}
+              className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${showSmartWidget ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+            >
+              <Zap className="w-3.5 h-3.5" /> Smart Quick Widget {showSmartWidget ? 'On' : 'Off'}
+            </button>
+          </div>
+        </div>
+
+        {showSmartWidget && (
+          <div className="space-y-3 rounded-xl border fios-border bg-[var(--fios-surface-2)]/50 p-4">
+            <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Smart Quick Widget layout</span>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setSmartWidgetCompact(!smartWidgetCompact)}
+                className={`px-3 py-2 rounded-lg border text-[10px] font-bold uppercase cursor-pointer ${smartWidgetCompact ? 'accent-bg text-slate-950 border-transparent' : 'fios-border text-[var(--fios-text-muted)]'}`}
+              >
+                Compact FAB {smartWidgetCompact ? 'On' : 'Off'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSmartWidgetShowMetrics(!smartWidgetShowMetrics)}
+                className={`px-3 py-2 rounded-lg border text-[10px] font-bold uppercase cursor-pointer ${smartWidgetShowMetrics ? 'accent-bg text-slate-950 border-transparent' : 'fios-border text-[var(--fios-text-muted)]'}`}
+              >
+                Metrics chip {smartWidgetShowMetrics ? 'On' : 'Off'}
+              </button>
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-mono text-[var(--fios-text-muted)] uppercase">Actions (order = menu order)</span>
+              {(DEFAULT_SMART_ACTIONS as SmartActionId[]).map((id) => {
+                const on = smartWidgetActions.includes(id);
+                const idx = smartWidgetActions.indexOf(id);
+                return (
+                  <div key={id} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (on) setSmartWidgetActions(smartWidgetActions.filter((a) => a !== id));
+                        else setSmartWidgetActions([...smartWidgetActions, id]);
+                      }}
+                      className={`flex-1 px-3 py-2 rounded-lg border text-xs font-bold text-left cursor-pointer ${on ? 'accent-border accent-solid-text bg-[var(--fios-surface)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+                    >
+                      {SMART_ACTION_LABELS[id]}
+                    </button>
+                    {on && (
+                      <>
+                        <button type="button" disabled={idx <= 0} onClick={() => {
+                          const next = [...smartWidgetActions];
+                          [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                          setSmartWidgetActions(next);
+                        }} className="p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move up">
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button type="button" disabled={idx < 0 || idx >= smartWidgetActions.length - 1} onClick={() => {
+                          const next = [...smartWidgetActions];
+                          [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                          setSmartWidgetActions(next);
+                        }} className="p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move down">
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+              <button type="button" onClick={() => setSmartWidgetActions([...DEFAULT_SMART_ACTIONS])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
+                Reset Smart actions
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Mobile bottom nav (add / hide / reorder · max 5)</span>
+          <div className="space-y-1.5">
+            {(mobileNavSlots.length ? mobileNavSlots : DEFAULT_MOBILE_NAV).map((id, idx) => {
+              const item = NAV_ITEMS.find((n) => n.id === id);
+              if (!item) return null;
               return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    if (on) setMobileNavSlots(mobileNavSlots.filter((s) => s !== item.id));
-                    else if (mobileNavSlots.length < 5) setMobileNavSlots([...mobileNavSlots, item.id]);
-                  }}
-                  className={`px-2 py-1 rounded text-[10px] font-mono font-bold uppercase border cursor-pointer ${on ? 'accent-bg text-slate-950 border-transparent' : 'fios-border text-[var(--fios-text-muted)]'}`}
-                >
-                  {item.label}
-                </button>
+                <div key={id} className="flex items-center gap-2 rounded-lg border fios-border bg-[var(--fios-surface-2)] px-2 py-1.5">
+                  <GripVertical className="w-3.5 h-3.5 text-[var(--fios-text-muted)]" />
+                  <span className="flex-1 text-xs font-bold text-[var(--fios-text)]">{item.label}</span>
+                  <button type="button" disabled={idx === 0} onClick={() => {
+                    const next = [...mobileNavSlots];
+                    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                    setMobileNavSlots(next);
+                  }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move up"><ChevronUp className="w-3.5 h-3.5" /></button>
+                  <button type="button" disabled={idx >= mobileNavSlots.length - 1} onClick={() => {
+                    const next = [...mobileNavSlots];
+                    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                    setMobileNavSlots(next);
+                  }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move down"><ChevronDown className="w-3.5 h-3.5" /></button>
+                  <button type="button" onClick={() => setMobileNavSlots(mobileNavSlots.filter((s) => s !== id))} className="text-[10px] text-rose-400 font-bold cursor-pointer px-1">
+                    Hide
+                  </button>
+                </div>
               );
             })}
+          </div>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {NAV_ITEMS.filter((item) => !mobileNavSlots.includes(item.id)).map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                disabled={mobileNavSlots.length >= 5}
+                onClick={() => {
+                  if (mobileNavSlots.length < 5) setMobileNavSlots([...mobileNavSlots, item.id]);
+                }}
+                className="px-2 py-1 rounded text-[10px] font-mono font-bold uppercase border fios-border text-[var(--fios-text-muted)] cursor-pointer disabled:opacity-40"
+              >
+                + {item.label}
+              </button>
+            ))}
             <button type="button" onClick={() => setMobileNavSlots([...DEFAULT_MOBILE_NAV])} className="px-2 py-1 text-[10px] font-mono accent-solid-text cursor-pointer">
               Reset
             </button>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Desktop sidebar order</span>
+          <p className="text-[10px] text-[var(--fios-text-muted)]">Drag in the sidebar or reorder here. Persists to localStorage / profile prefs.</p>
+          <div className="max-h-48 overflow-y-auto space-y-1">
+            {(navOrder.length ? navOrder : DEFAULT_NAV_ORDER).map((id, idx) => {
+              const item = NAV_ITEMS.find((n) => n.id === id);
+              if (!item) return null;
+              return (
+                <div key={id} className="flex items-center gap-2 px-2 py-1 rounded border fios-border text-xs">
+                  <span className="flex-1 font-bold text-[var(--fios-text)]">{item.label}</span>
+                  <button type="button" disabled={idx === 0} onClick={() => {
+                    const next = [...navOrder];
+                    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                    setNavOrder(next);
+                  }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move up"><ChevronUp className="w-3.5 h-3.5" /></button>
+                  <button type="button" disabled={idx >= navOrder.length - 1} onClick={() => {
+                    const next = [...navOrder];
+                    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                    setNavOrder(next);
+                  }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move down"><ChevronDown className="w-3.5 h-3.5" /></button>
+                </div>
+              );
+            })}
+          </div>
+          <button type="button" onClick={() => setNavOrder([...DEFAULT_NAV_ORDER])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
+            Reset sidebar order
+          </button>
         </div>
 
         <div className="space-y-2">
@@ -905,7 +1066,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.0.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.2.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
