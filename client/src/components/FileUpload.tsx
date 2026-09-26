@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { Upload, FileText, X, Loader2 } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Upload, FileText, X, Loader2, AlertCircle } from 'lucide-react';
 import { extractTextFromPDF } from '../lib/pdfExtractor';
 
 interface FileUploadProps {
@@ -10,12 +10,24 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isIOS, setIsIOS] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Detect iOS on component mount
+  useEffect(() => {
+    const checkIOS = 
+      /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+      (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+    setIsIOS(checkIOS);
+  }, []);
 
   const processFile = async (file: File) => {
     if (!file) return;
 
-    if (file.type !== 'application/pdf' && !file.type.startsWith('text/')) {
+    const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isText = file.type.startsWith('text/') || file.name.toLowerCase().endsWith('.txt');
+
+    if (!isPDF && !isText) {
       setError('Please upload a PDF or plain text (.txt) file.');
       return;
     }
@@ -26,7 +38,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
 
     try {
       let extracted = '';
-      if (file.type === 'application/pdf') {
+      if (isPDF) {
         extracted = await extractTextFromPDF(file);
       } else {
         extracted = await file.text();
@@ -73,11 +85,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          style={
-            {
-              '--tw-border-opacity': '1',
-            } as React.CSSProperties
-          }
+          style={{ '--tw-border-opacity': '1' } as React.CSSProperties}
           className="border-2 border-dashed border-slate-700 hover:border-[var(--fios-accent-solid)] rounded-xl p-5 text-center bg-[#07090e]/50 hover:bg-[#07090e] transition-all cursor-pointer group hover:shadow-[0_0_20px_color-mix(in_srgb,var(--fios-accent-solid)_25%,transparent)]"
         >
           <div className="flex flex-col items-center gap-2">
@@ -109,6 +117,16 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
           >
             <X className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {/* iOS-specific warning message */}
+      {isIOS && !fileName && (
+        <div className="flex items-center gap-1.5 mt-2 text-amber-500/80 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          <p className="text-[10px] font-medium leading-tight">
+            Due to Apple iCloud restrictions, PDF extraction is currently unavailable on iOS devices. Please paste your text directly or use a desktop.
+          </p>
         </div>
       )}
 
