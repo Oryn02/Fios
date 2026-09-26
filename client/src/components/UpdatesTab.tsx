@@ -4,6 +4,33 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v2.2.3',
+      date: 'September 2026',
+      title: 'Zen, schedule, agenda, privacy & visual polish',
+      highlights: [
+        'Zen / Deep Focus: Esc closes the mobile drawer first, then exits Zen; Exit Zen stays visible on mobile when Zen is armed; chrome hide remains study-tab only with no nav traps.',
+        'Bottom nav + sidebar: customize add/hide/reorder (up to 5 mobile slots); Settings reorder uses the effective list when prefs were never saved; desktop sidebar drag + Settings persist.',
+        'Floating widgets: Settings can fully disable Pomodoro and Smart Quick; profile sync no longer re-enables omitted boolean prefs; FAB / Pomodoro dock positioning hardened via FloatingDock.',
+        'Smart Quick Widget: expanded action catalog, custom order, compact FAB, metrics chip; empty action list shows a clear Settings hint.',
+        'PWA icons & branding: multi-size icons (192/512/maskable/apple-touch), favicon, manifest, and VitePWA alignment for installable Fios.',
+        'Accent gradients: expanded theme accents (deep emerald, vibrant indigo, sunset amber, slate teal, rose quartz, neon violet, …) with FOUC-safe boot-script + ThemeContext CSS vars.',
+        'Light mode: warmer cream surfaces, stronger border/contrast tokens, card/tab hierarchy (`.fios-card` / `.fios-tab`) for scannable panels.',
+        'Landing FAQ: expanded Q&A section; assorted bug/UI polish across study and dashboard surfaces.',
+        'SM-2 spaced repetition: Hard no longer resets like Again; Easy bonus intervals; due dates use local start-of-day; rating buttons show projected intervals; Overview/Quick due counts use `isCardDue`.',
+        'Active Recall: clearer Browse vs Recall modes; quiz answer hidden until Reveal; grading copy explains why SM-2 updates matter.',
+        'Universal schedule: iCal sync or manual mode for any college; institution label; unified loader for Overview + Timetable.',
+        'Timetable visual states: muted/greyed finished classes (today + past days) with strikethrough/badge; Next Up highlight (accent border + badge) for the immediate upcoming class.',
+        'Module accent colors: rich palette with paired light/dark text contrast; applied to module badges, subject tags, class cards, calendar pills, and heatmap chips (legacy color keys aliased).',
+        'Unified agenda: CompactAgenda memoized/deferred list; classes + timed tasks interleaved chronologically with matching card styling; capped render for no freeze on load/toggles.',
+        'Tasks: specific start/due date-and-time on create; timed tasks appear on the agenda timeline alongside classes.',
+        'In-app Feedback & Ratings: star rating, category tags, optional anonymous message — stored securely with your profile or without a user id.',
+        'Privacy & GDPR: expanded Privacy Policy and Terms (landing footer + Settings); clearer cookie/local-storage consent; Export My Data (JSON) and erasure guidance aligned with processors (Supabase, Gemini, GitHub, hosting).',
+        'Mobile touch: ~44px targets on bottom nav, Zen Exit, drawer, FAB/Pomodoro; flashcard swipe ignores vertical scroll; agenda scroll uses touch-action pan-y; active: states so critical actions are not hover-only.',
+        'Settings: helpful tip that a paid Gemini plan via Google AI Studio can avoid slowdowns when the free tier is overloaded (optional; link to AI Studio).',
+        'Version alignment: packages, HTML title, Updates tab, and README all report v2.2.3. Builds on v2.2.2 Render/Zen/widget work without regressing Bugbot fixes.',
+      ],
+    },
+    {
       version: 'v2.2.2',
       date: 'September 2026',
       title: 'Render deploy, API 405 fix, Zen escape & widget prefs',
@@ -65,7 +92,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v2.2.2</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v2.2.3</p>
       </header>
 
       <div className="space-y-4">

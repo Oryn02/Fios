@@ -219,11 +219,17 @@ const Dashboard: React.FC = () => {
         </motion.div>
       </AnimatePresence>
 
-      <PomodoroWidget />
-      <QuickActions
-        onNavigate={handleTabChange}
-        onOpenTutor={() => handleTabChange('tutor')}
-      />
+      {/* Shared bottom-right dock — avoids FAB/Pomodoro overlap; clears mobile bottom nav */}
+      <div
+        className="fios-fab-dock fixed z-[70] bottom-24 md:bottom-6 right-3 md:right-6 flex flex-row-reverse items-end gap-3 safe-bottom pointer-events-none"
+        aria-label="Floating study tools"
+      >
+        <QuickActions
+          onNavigate={handleTabChange}
+          onOpenTutor={() => handleTabChange('tutor')}
+        />
+        <PomodoroWidget />
+      </div>
     </DashboardLayout>
   );
 };
@@ -239,7 +245,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v2.2.2
+        Academic Suite · Study Lab · v2.2.3
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -316,7 +322,7 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v2.2.2 — Your Academic Command Center';
+    document.title = 'Fios v2.2.3 — Your Academic Command Center';
   }, []);
 
   useEffect(() => startOfflineQueueListener(), []);
@@ -342,6 +348,9 @@ export function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setCheckingAuth(false);
+    }).catch(() => {
+      setSession(null);
+      setCheckingAuth(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -364,10 +373,10 @@ export function App() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-[#07090e] flex items-center justify-center accent-solid-text font-mono text-xs">
+      <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v2.2.2…
+          Initializing Fios v2.2.3…
         </div>
       </div>
     );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, Layers, HelpCircle, Code2, FileText, Target, Timer,
@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { FiosLogo } from './FiosLogo';
 import { enableDemoAndReload } from '../lib/demo';
+import { PrivacyModal } from './PrivacyModal';
+import { TermsModal } from './TermsModal';
 
 interface LandingPageProps {
   onOpenAuth: (mode: 'signin' | 'signup') => void;
@@ -38,93 +40,47 @@ const walkthrough = [
 const faqs = [
   {
     q: 'Is Fios completely free to use?',
-    a: 'Yes! Fios is open for personal academic use. You can sign up, manage modules, run focus sessions, and use flashcards for free.',
+    a: 'Yes. Fios is free for personal academic use. Sign up, manage modules, run focus sessions, and study with flashcards at no cost. AI features use your own free Google Gemini API key (BYO-Key).',
+  },
+  {
+    q: 'How do I create an account?',
+    a: 'Open Fios and choose Sign up. You can register with email/password through Supabase Auth, or continue with GitHub OAuth when the GitHub provider is enabled on the project. After sign-in you land in the dashboard with an empty profile ready for modules and notes.',
+  },
+  {
+    q: 'How does GitHub / Supabase authentication work?',
+    a: 'Fios uses Supabase Auth for sessions. Email sign-up stores credentials in your Supabase project under Row Level Security. GitHub OAuth (optional) links your GitHub identity for one-click sign-in and helpers like gist export. Sessions refresh automatically; idle timeout signs you out after prolonged inactivity.',
   },
   {
     q: 'How does the Bring Your Own Key (BYO-Key) system work?',
-    a: 'To unlock AI-powered features like note summarization, quiz generation, and code grading, you simply enter your own free Google Gemini API key in settings. It is stored securely on your account profile and used exclusively for your requests.',
+    a: 'To unlock AI features (summaries, quizzes, code grading, tutor), paste your free Google Gemini API key in Settings. It is stored on your profile under RLS and sent only with your own requests. You can test, replace, or remove the key anytime.',
   },
   {
-    q: 'Are my uploaded lecture slides and notes secure?',
-    a: 'Absolutely. Your notes and documents are stored securely in your private database schema via Supabase. We adhere strictly to GDPR guidelines and never share or use your study data for public model training.',
+    q: 'How do I sync my ATU / college timetable (iCal)?',
+    a: 'In Schedule or Settings, paste your ATU (or other) HTTPS iCal feed URL and save. Fios fetches it through the Render API `/api/ical-proxy` (POST/GET) so the browser never hits CORS-blocked campus hosts. Events appear on Overview and the ATU Calendar views after a successful sync.',
+  },
+  {
+    q: 'Are my notes and data private? (GDPR)',
+    a: 'Yes. Study data lives in your private Supabase schema with Row Level Security. Fios follows GDPR-style transparency: what we store, processors (Supabase, Gemini with your key, optional GitHub, hosting), retention, and your rights (export/erasure). See Privacy Policy and Terms in the footer — and Export My Data in Settings after sign-in.',
+  },
+  {
+    q: 'What is the AI Tutor and how do I use it?',
+    a: 'AI Tutor is a full-screen chat tab. Add a Gemini key, open Tutor (or Smart Notes → Ask AI), and ask questions. Optional RAG grounding uses your uploaded note chunks when available. Guests on the live demo must sign in before AI calls.',
+  },
+  {
+    q: 'What are the core study hubs in Fios?',
+    a: 'Overview (flight plan, heatmap, tasks), Flashcards (SM-2), Modules, Exam Mode (MCQ), Code Lab, Smart Notes, AI Tutor, Grades, Focus Timer / Pomodoro, Schedule / ATU Calendar, plus Settings and Updates. Customize the mobile bottom nav and desktop sidebar order in Settings.',
+  },
+  {
+    q: 'Can I install Fios as an app (PWA)?',
+    a: 'Yes. Fios ships as an installable PWA with the current logo icons (iOS apple-touch, Android/Chrome maskable, favicon). Use Install in Settings or your browser’s “Add to Home Screen”. Offline mutation queue covers common writes when you reconnect.',
   },
   {
     q: 'Can I access Fios across multiple devices?',
-    a: 'Yes. Because your account and study progress are synchronized via cloud infrastructure, your modules, flashcards, and study timers stay updated whether you are on your laptop or mobile device.',
+    a: 'Yes. Account data syncs via Supabase. Preferences (theme, accent, nav slots, widget toggles) persist locally and to your profile prefs when available.',
   },
 ];
 
 const techBadges = ['React 19', 'TypeScript', 'Tailwind CSS', 'Supabase', 'Gemini API', 'Framer Motion'];
-
-const PrivacyModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans text-slate-100">
-    <div className="absolute inset-0" onClick={onClose} />
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 12 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      className="relative z-10 w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-800 bg-[#0e131f] p-6 sm:p-8 space-y-6 shadow-2xl"
-    >
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-[#07090e] border border-slate-800 text-emerald-400">
-            <Shield className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black uppercase text-white">Privacy Policy & GDPR Statement</h3>
-            <p className="text-[11px] font-mono text-slate-400">Fios Academic Command Center</p>
-          </div>
-        </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer p-1">
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-
-      <div className="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400">1. Data Controller & Overview</h4>
-          <p>
-            Fios ("we", "our", or "us") respects your privacy and is committed to protecting your personal data in accordance with the General Data Protection Regulation (GDPR) and Irish data protection legislation. This privacy statement explains how we handle information within this academic command center application.
-          </p>
-        </section>
-
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400">2. Information We Collect</h4>
-          <p>
-            When you register or sign in, we process limited personal data necessary for authentication and core functionality, including:
-          </p>
-          <ul className="list-disc list-inside space-y-1 text-slate-400 pl-2">
-            <li>Account credentials (email address and encrypted authentication tokens managed securely via Supabase).</li>
-            <li>User-generated academic data (notes, uploaded documents, flashcard decks, focus session logs, and profile preferences).</li>
-          </ul>
-        </section>
-
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400">3. Purpose and Legal Basis</h4>
-          <p>
-            Your information is processed strictly to provide, maintain, and secure your personal study environment, synchronize your academic modules, and power AI-driven study tools. Data is never sold, rented, or shared with third-party advertisers.
-          </p>
-        </section>
-
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400">4. Data Security and Your Rights</h4>
-          <p>
-            We implement robust technical and organizational security measures to protect your data. Under the GDPR, you retain the right to access, correct, or request complete erasure of your personal data and account records at any time by contacting support or deleting your account from your settings.
-          </p>
-        </section>
-      </div>
-
-      <div className="border-t border-slate-800 pt-4 flex justify-end">
-        <button
-          onClick={onClose}
-          className="px-5 py-2.5 bg-emerald-400 text-slate-950 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
-        >
-          Close Policy
-        </button>
-      </div>
-    </motion.div>
-  </div>
-);
 
 const SupportModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [copied, setCopied] = useState(false);
@@ -193,6 +149,13 @@ const SupportModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
   const [tab, setTab] = useState('flashcards');
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+
+  useEffect(() => {
+    const open = () => setShowPrivacy(true);
+    window.addEventListener('fios-open-privacy', open);
+    return () => window.removeEventListener('fios-open-privacy', open);
+  }, []);
   const [showSupport, setShowSupport] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const activeWalk = walkthrough.find((w) => w.id === tab) || walkthrough[0];
@@ -400,7 +363,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <button onClick={() => onOpenAuth('signin')} className="hover:text-white cursor-pointer">Sign in</button>
               <button onClick={() => onOpenAuth('signup')} className="hover:text-white cursor-pointer">Sign up</button>
               <button onClick={enableDemoAndReload} className="hover:text-white cursor-pointer">Live demo</button>
-              <button onClick={() => setShowPrivacy(true)} className="hover:text-emerald-400 cursor-pointer underline">Privacy Policy</button>
+              <button type="button" onClick={() => setShowPrivacy(true)} className="hover:text-emerald-400 cursor-pointer underline">Privacy Policy</button>
+              <button type="button" onClick={() => setShowTerms(true)} className="hover:text-emerald-400 cursor-pointer underline">Terms of Service</button>
               <button onClick={() => setShowSupport(true)} className="hover:text-emerald-400 transition-colors inline-flex items-center gap-1 cursor-pointer">
                 <Mail className="w-3.5 h-3.5" /> Support
               </button>
@@ -411,11 +375,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <span key={b} className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono text-slate-400">{b}</span>
             ))}
           </div>
-          <p className="text-[11px] text-slate-600">Fios v2.2.2 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
+          <p className="text-[11px] text-slate-600">Fios v2.2.3 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
         </div>
       </footer>
 
-      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      {showPrivacy && <PrivacyModal variant="landing" onClose={() => setShowPrivacy(false)} />}
+      {showTerms && <TermsModal variant="landing" onClose={() => setShowTerms(false)} />}
       {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
     </div>
   );

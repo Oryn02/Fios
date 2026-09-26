@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v2.2.2**
+**Current version: v2.2.3**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -10,22 +10,38 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 
 ## Highlights
 
-- **SM-2 Flashcards** — AI-generated decks scheduled with the SM-2 algorithm; touch swipe Easy/Hard on mobile.
+- **SM-2 Flashcards** — AI-generated decks with corrected Hard/Easy intervals, local-day due dates, and rating previews; touch swipe Easy/Hard on mobile.
 - **MCQ Quiz Generator** — practice exams with explanations, saved per module.
 - **Monaco Code Exams** — bug-fix, output-prediction, and logic-completion challenges with optional custom prompts.
 - **Smart Notes & AI Tutor** — upload PDFs/notes for summaries, glossaries, revision history, and a dedicated full-screen tutor tab (RAG-aware).
-- **AI Active Recall ("Blurting")** — write everything you remember; Gemini returns a color-coded report and Recall Accuracy %.
+- **AI Active Recall ("Blurting")** — Browse vs Recall modes; quiz answer hidden until Reveal; Gemini color-coded report + Recall Accuracy %.
 - **Revision Flight Plan** — dashboard queue prioritized by exam proximity, overdue SM-2 cards, and readiness (modular / reorderable widgets).
 - **Grade Predictor** — computes the scores you need across assessments to hit a target grade.
-- **Module Readiness Heatmap** — 0–100% readiness per module; modules support tag/folder groups.
-- **Global Pomodoro Timer** — floating widget with Web Audio soundscapes and Weekly Study Goal tracker (can be disabled in Settings).
-- **Smart Quick Widget** — floating quick actions with customizable metrics/actions (can be fully disabled).
-- **PWA** — installable standalone app via VitePWA + Workbox; offline mutation queue (IndexedDB).
-- **Themes** — Dark / Light / System, Low-Power mode, Zen focus (with Esc / Exit Zen escape), OpenDyslexic, warm light palette.
-- **Nav customization** — reorder desktop sidebar; add/hide/reorder mobile bottom-nav slots.
+- **Module Readiness Heatmap** — 0–100% readiness per module; rich module accent colors (light + dark contrast) on badges/tags/heatmap.
+- **Universal schedule** — iCal sync or manual timetable for any college; finished classes muted; Next Up highlight; institution label.
+- **Unified agenda** — classes + timed tasks interleaved chronologically (memoized CompactAgenda); tasks require start/due datetime.
+- **Feedback & ratings** — optional star rating, categories, and message (anonymous submit supported).
+- **Privacy & GDPR** — in-app Privacy Policy + Terms (landing footer and Settings); essential cookie/local-storage consent; Export My Data (JSON); disclosures for Supabase, Gemini (BYO key), optional GitHub, and hosting.
+- **Global Pomodoro Timer** — floating dock widget with Web Audio soundscapes and Weekly Study Goal (can be disabled in Settings).
+- **Smart Quick Widget** — expanded actions, custom order, compact FAB, metrics chip (can be fully disabled).
+- **PWA** — installable standalone app (multi-size icons + manifest) via VitePWA + Workbox; offline mutation queue (IndexedDB).
+- **Themes** — Dark / Light / System, expanded accent gradients, Low-Power mode, Zen focus (Esc / Exit Zen / mobile escape), OpenDyslexic, cream light palette with stronger cards/tabs.
+- **Nav customization** — reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs).
 - **Mermaid + Markdown + LaTeX** — diagrams, GFM markdown, and KaTeX math in AI content.
-- **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service.
-- **Render hosting** — Express Web Service (`server/`) + Static Site (`client/`); client calls API via `VITE_API_URL` (fixes production 405s from SPA/static intercepts).
+- **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service; landing FAQ.
+- **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v2.2.3
+
+- Zen/mobile escape hardening, bottom-nav + widget prefs, FAB/Pomodoro dock, expanded Smart Quick catalog.
+- Icons, accent gradients, light-mode cream/contrast, card/tab hierarchy.
+- Landing FAQ + bug/UI polish; SM-2 / Active Recall fixes.
+- Universal/manual schedule + iCal mode; finished-class mute + Next Class highlight.
+- Expanded module accent palette; CompactAgenda performance; timed tasks on the unified timeline.
+- In-app feedback & ratings; Privacy Policy / Terms / consent / export refresh for GDPR-style transparency.
+- Mobile touch targets and gesture hardening (nav, Zen exit, FAB, flashcard swipe, agenda scroll).
+- Settings tip: optional paid Gemini (Google AI Studio) when free-tier capacity is overloaded.
+- See the in-app **Updates** tab for the full changelog.
 
 ---
 
@@ -73,7 +89,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v2.2.2) — Render Static Site root
+├── client/                 # React + Vite frontend (v2.2.3) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/
@@ -99,19 +115,13 @@ Fios/
 
 Blueprint: [`render.yaml`](render.yaml).
 
-### Urgent: `Missing script: "build"`
+### Build Command (API)
 
-`main` historically only had `start` / `dev` in `server/package.json`. v2.2.2 adds:
+`server/package.json` includes `"build": "tsc"` (since v2.2.2). Use:
 
-```json
-"build": "tsc"
-```
+`npm install --include=dev && npm run build`
 
-Until this PR is merged, either merge [#3](https://github.com/Oryn02/Fios/pull/3) or temporarily set Build Command to:
-
-`npm install --include=dev && npx tsc`
-
-(`--include=dev` matters when `NODE_ENV=production` would otherwise skip `typescript`.)
+(`--include=dev` matters when `NODE_ENV=production` would otherwise skip `typescript` / `@types/*`. v2.2.2+ also keeps those packages in `dependencies` for Render.)
 
 ### Option A — single Web Service (recommended for your workspace)
 
@@ -170,7 +180,7 @@ See also [`CONTRIBUTING.md`](CONTRIBUTING.md).
 - A Google Gemini API key ([AI Studio](https://aistudio.google.com/app/apikey)) — per-user (BYO) and/or a server fallback
 
 ### 1. Database
-In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It is idempotent and creates all tables (`user_profiles` (+ `prefs`), `modules` (+ `tags`/`parent_code`), `decks`, `cards`, `mcq_quizzes`, `code_exams`, `tasks`, `documents`, `document_revisions`, `tutor_messages`, `note_chunks`, `grades`, `focus_sessions`, `active_recall_logs`), Row Level Security policies, and a trigger that auto-provisions a **clean, empty profile** for every new signup (no sample data).
+In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It is idempotent and creates all tables (`user_profiles` (+ `prefs`), `modules` (+ `tags`/`parent_code`), `decks`, `cards`, `mcq_quizzes`, `code_exams`, `tasks` (+ `due_at`/`start_at`), `documents`, `document_revisions`, `tutor_messages`, `note_chunks`, `grades`, `focus_sessions`, `active_recall_logs`, `feedback`), Row Level Security policies, and a trigger that auto-provisions a **clean, empty profile** for every new signup (no sample data).
 
 > In your Supabase Auth settings, disable "Confirm email" for the fastest local sign-in, or confirm the address you register with. Enable the GitHub provider if you want OAuth sign-in.
 
@@ -231,6 +241,18 @@ Click **"Explore Live Demo"** on the landing page, or build/run the client with 
 | `GET|POST /api/ical-proxy` | CORS proxy for iCal/WebCAL timetables (`?url=` or JSON `{ url }`) |
 
 All AI endpoints accept an optional `apiKey` (BYO key) in the JSON body or an `x-gemini-key` header.
+
+---
+
+## Privacy & data protection
+
+Fios is designed with GDPR-style transparency:
+
+- **In-app Privacy Policy & Terms** — landing footer and Settings (Support / Legal).
+- **Cookie / local storage banner** — essential storage only; no ad trackers; link to Privacy Policy.
+- **Export** — Settings → Export My Data (JSON) for portability.
+- **Processors** — Supabase (Auth + DB + RLS), Google Gemini (your BYO key), optional GitHub OAuth/gists, and your host (e.g. Render) for the web/API.
+- **Contact** for access/erasure requests is listed in the Privacy Policy.
 
 ---
 

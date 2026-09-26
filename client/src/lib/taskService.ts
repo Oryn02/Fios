@@ -4,6 +4,16 @@ import { IS_DEMO, demoTasks, DEMO_USER } from './demo';
 
 let demoTaskState: Task[] = [...demoTasks];
 
+export interface CreateTaskInput {
+  title: string;
+  /** ISO datetime — required for timed agenda placement when provided. */
+  dueAt?: string | null;
+  startAt?: string | null;
+  /** Legacy free-text fallback */
+  dueDate?: string | null;
+  moduleCode?: string | null;
+}
+
 export async function getTasks(): Promise<Task[]> {
   if (IS_DEMO) return [...demoTaskState];
 
@@ -13,7 +23,7 @@ export async function getTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('due_at', { ascending: true, nullsFirst: false });
 
   if (error) {
     console.error('Error loading tasks:', error);
@@ -23,16 +33,30 @@ export async function getTasks(): Promise<Task[]> {
 }
 
 export async function createTask(
-  title: string,
+  titleOrInput: string | CreateTaskInput,
   dueDate?: string,
   moduleCode?: string | null
 ): Promise<Task> {
+  const input: CreateTaskInput =
+    typeof titleOrInput === 'string'
+      ? { title: titleOrInput, dueDate, moduleCode }
+      : titleOrInput;
+
+  const title = input.title.trim();
+  if (!title) throw new Error('Task title is required.');
+
+  const dueAt = input.dueAt?.trim() || null;
+  const startAt = input.startAt?.trim() || null;
+  const dueLabel = input.dueDate?.trim() || (dueAt ? new Date(dueAt).toLocaleString() : null);
+
   if (IS_DEMO) {
     const task: Task = {
       id: `demo-${Date.now()}`,
       title,
-      due_date: dueDate || null,
-      module_code: moduleCode || null,
+      due_date: dueLabel,
+      due_at: dueAt,
+      start_at: startAt,
+      module_code: input.moduleCode || null,
       completed: false,
       created_at: new Date().toISOString(),
     };
@@ -47,9 +71,11 @@ export async function createTask(
     .from('tasks')
     .insert({
       user_id: user.id,
-      title: title.trim(),
-      due_date: dueDate?.trim() || null,
-      module_code: moduleCode || null,
+      title,
+      due_date: dueLabel,
+      due_at: dueAt,
+      start_at: startAt,
+      module_code: input.moduleCode || null,
     })
     .select()
     .single();
@@ -58,13 +84,20 @@ export async function createTask(
   return data as Task;
 }
 
-export async function toggleTask(id: string, completed: boolean): Promise<void> {
+export async function updateTask(
+  id: string,
+  patch: Partial<Pick<Task, 'title' | 'due_at' | 'start_at' | 'due_date' | 'module_code' | 'completed'>>
+): Promise<void> {
   if (IS_DEMO) {
-    demoTaskState = demoTaskState.map((t) => (t.id === id ? { ...t, completed } : t));
+    demoTaskState = demoTaskState.map((t) => (t.id === id ? { ...t, ...patch } : t));
     return;
   }
-  const { error } = await supabase.from('tasks').update({ completed }).eq('id', id);
+  const { error } = await supabase.from('tasks').update(patch).eq('id', id);
   if (error) throw error;
+}
+
+export async function toggleTask(id: string, completed: boolean): Promise<void> {
+  return updateTask(id, { completed });
 }
 
 export async function deleteTask(id: string): Promise<void> {

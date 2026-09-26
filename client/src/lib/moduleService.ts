@@ -1,5 +1,11 @@
 import { supabase } from './supabase';
 import { IS_DEMO, demoModules } from './demo';
+import {
+  MODULE_COLORS,
+  buildColorOptions,
+  normalizeModuleColor,
+  MOD_BADGE_CLASS,
+} from './moduleColors';
 
 export interface DBModule {
   id: string;
@@ -15,14 +21,11 @@ export interface DBModule {
 
 let demoModuleState: DBModule[] = [...demoModules];
 
-export const COLOR_OPTIONS: Record<string, { label: string; badge: string; border: string }> = {
-  emerald: { label: 'Emerald', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', border: 'border-emerald-400' },
-  cyan: { label: 'Cyan', badge: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', border: 'border-cyan-400' },
-  indigo: { label: 'Indigo', badge: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20', border: 'border-indigo-400' },
-  amber: { label: 'Amber', badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20', border: 'border-amber-400' },
-  rose: { label: 'Rose', badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20', border: 'border-rose-400' },
-  purple: { label: 'Purple', badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20', border: 'border-purple-400' },
-};
+/** Rich module accent picker (CSS `data-mod-color` tokens; light + dark contrast). */
+export const COLOR_OPTIONS: Record<string, { label: string; badge: string; border: string }> =
+  buildColorOptions();
+
+export { MODULE_COLORS, normalizeModuleColor, MOD_BADGE_CLASS };
 
 export async function getUserModules(): Promise<DBModule[]> {
   if (IS_DEMO) return [...demoModuleState];
@@ -49,13 +52,14 @@ export async function createModule(
   color: string,
   opts?: { tags?: string[]; parent_code?: string | null }
 ): Promise<DBModule | null> {
+  const normalizedColor = normalizeModuleColor(color);
   if (IS_DEMO) {
     const mod: DBModule = {
       id: `demo-${Date.now()}`,
       user_id: 'demo',
       code: code.trim().toUpperCase(),
       name: name.trim(),
-      color,
+      color: normalizedColor,
       tags: opts?.tags || [],
       parent_code: opts?.parent_code || null,
       created_at: new Date().toISOString(),
@@ -73,7 +77,7 @@ export async function createModule(
       user_id: user.id,
       code: code.trim().toUpperCase(),
       name: name.trim(),
-      color,
+      color: normalizedColor,
       tags: opts?.tags || [],
       parent_code: opts?.parent_code || null,
     })

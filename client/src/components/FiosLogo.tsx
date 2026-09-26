@@ -107,7 +107,7 @@ export const FiosLogo: React.FC<FiosLogoProps> = ({
 
       {withWordmark && (
         <span className={`font-black italic tracking-tight leading-none ${TEXT_CLASS[size]}`}>
-          <span className="text-white">Fios</span>
+          <span className={fixedEmerald ? 'text-white' : 'text-[var(--fios-text)]'}>Fios</span>
         </span>
       )}
     </span>

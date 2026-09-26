@@ -552,4 +552,78 @@ const handleRagQuery = async (req: Request, res: Response) => {
 
 router.post('/rag/query', handleRagQuery);
 
+/**
+ * Admin-only feedback inbox.
+ * Requires `Authorization: Bearer <supabase_access_token>` and
+ * `ADMIN_UID` (or `VITE_ADMIN_UID`) matching the JWT subject. Returns 403 otherwise.
+ * Also needs `SUPABASE_URL` + `SUPABASE_ANON_KEY` so the server can validate the user
+ * and query `feedback` under the caller's JWT (RLS: fios_admins).
+ */
+async function requireAdminUid(req: Request, res: Response): Promise<string | null> {
+  const adminUid = String(process.env.ADMIN_UID || process.env.VITE_ADMIN_UID || '').trim();
+  const auth = String(req.headers.authorization || '');
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  const supabaseUrl = String(process.env.SUPABASE_URL || '').replace(/\/$/, '');
+  const anon = String(process.env.SUPABASE_ANON_KEY || '').trim();
+
+  if (!adminUid || !token) {
+    res.status(403).json({ error: 'Forbidden' });
+    return null;
+  }
+  if (!supabaseUrl || !anon) {
+    res.status(503).json({ error: 'Admin API not configured (SUPABASE_URL / SUPABASE_ANON_KEY).' });
+    return null;
+  }
+
+  try {
+    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: anon },
+    });
+    if (!userRes.ok) {
+      res.status(403).json({ error: 'Forbidden' });
+      return null;
+    }
+    const user = (await userRes.json()) as { id?: string };
+    if (!user?.id || user.id !== adminUid) {
+      res.status(403).json({ error: 'Forbidden' });
+      return null;
+    }
+    return token;
+  } catch {
+    res.status(403).json({ error: 'Forbidden' });
+    return null;
+  }
+}
+
+router.get('/admin/feedback', async (req: Request, res: Response) => {
+  const token = await requireAdminUid(req, res);
+  if (!token) return;
+
+  const supabaseUrl = String(process.env.SUPABASE_URL || '').replace(/\/$/, '');
+  const anon = String(process.env.SUPABASE_ANON_KEY || '').trim();
+
+  try {
+    const r = await fetch(
+      `${supabaseUrl}/rest/v1/feedback?select=*&order=created_at.desc&limit=200`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: anon,
+        },
+      }
+    );
+    if (r.status === 401 || r.status === 403) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    if (!r.ok) {
+      const body = await r.text();
+      return res.status(502).json({ error: 'Failed to load feedback', detail: body.slice(0, 200) });
+    }
+    const rows = await r.json();
+    return res.status(200).json({ feedback: rows });
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || 'Admin feedback failed' });
+  }
+});
+
 export default router;

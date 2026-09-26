@@ -4,8 +4,8 @@ import { supabase } from '../lib/supabase';
 import { getUserModules, DBModule } from '../lib/moduleService';
 import { ActiveRecallQuiz } from './ActiveRecallQuiz';
 import { FormattedContent } from './FormattedContent';
-import { calculateSM2 } from '../lib/spacedRepetition';
-import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers } from 'lucide-react';
+import { calculateSM2, isCardDue, previewIntervalDays, formatIntervalLabel } from '../lib/spacedRepetition';
+import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle } from 'lucide-react';
 import { toast } from '../lib/toast';
 
 interface FlashcardDeckProps {
@@ -76,9 +76,8 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     if (!isSaved) fetchModules();
   }, [isSaved]);
 
-  // SM-2 Due Filter calculation
-  const nowIso = new Date().toISOString();
-  const dueCards = cards.filter((c: any) => !c.next_review || c.next_review <= nowIso);
+  // SM-2 due filter — local calendar day (see isCardDue)
+  const dueCards = cards.filter((c: any) => isCardDue(c.next_review));
   const activeCards = studyFilter === 'due' ? dueCards : cards;
 
   const handleNext = useCallback(() => {
@@ -123,6 +122,22 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
   const currentCard = activeCards[currentIndex] || activeCards[0] || cards[0];
   const questionText = currentCard?.front || (currentCard as any)?.question || '';
   const answerText = currentCard?.back || (currentCard as any)?.answer || '';
+
+  const sm2Base = currentCard
+    ? {
+        easeFactor: (currentCard as any).ease_factor || 2.5,
+        interval: (currentCard as any).interval || 0,
+        repetitions: (currentCard as any).repetitions || 0,
+        nextReview: (currentCard as any).next_review || new Date().toISOString(),
+      }
+    : { easeFactor: 2.5, interval: 0, repetitions: 0, nextReview: new Date().toISOString() };
+
+  const ratingPreview = {
+    1: formatIntervalLabel(previewIntervalDays(sm2Base, 1)),
+    2: formatIntervalLabel(previewIntervalDays(sm2Base, 2)),
+    3: formatIntervalLabel(previewIntervalDays(sm2Base, 3)),
+    4: formatIntervalLabel(previewIntervalDays(sm2Base, 4)),
+  };
 
   const handleRating = useCallback(async (rating: number) => {
     if (!currentCard) return;
@@ -170,15 +185,24 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     handleNext();
   }, [cards, currentCard, handleNext]);
 
-  const touchStartX = useRef<number | null>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const onTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.changedTouches[0]?.clientX ?? null;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    touchStart.current = { x: t.clientX, y: t.clientY };
   }, []);
   const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current == null || !isFlipped) return;
-    const dx = (e.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(dx) < 64) return;
+    if (touchStart.current == null || !isFlipped) return;
+    const t = e.changedTouches[0];
+    if (!t) {
+      touchStart.current = null;
+      return;
+    }
+    const dx = t.clientX - touchStart.current.x;
+    const dy = t.clientY - touchStart.current.y;
+    touchStart.current = null;
+    // Ignore mostly-vertical gestures (page scroll)
+    if (Math.abs(dx) < 72 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
     if (dx > 0) void handleRating(4);
     else void handleRating(2);
   }, [isFlipped, handleRating]);
@@ -339,6 +363,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
           <div className="flex items-center gap-1 bg-[#07090e] p-1 rounded-xl border border-slate-800 w-full sm:w-auto justify-end">
             <button
               onClick={() => setMode('browse')}
+              title="Browse: flip freely. Grading still updates your SM-2 schedule when you rate after reveal."
               className={`px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                 mode === 'browse' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
               }`}
@@ -347,6 +372,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             </button>
             <button
               onClick={() => setMode('test')}
+              title="Active Recall: answer stays hidden until you tap Reveal, then self-grade."
               className={`px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                 mode === 'test' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
               }`}
@@ -355,6 +381,13 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             </button>
           </div>
         </div>
+        <p className="text-[10px] font-mono text-slate-500 flex items-start gap-1.5 pt-1">
+          <Info className="w-3 h-3 shrink-0 mt-0.5 accent-solid-text" />
+          <span>
+            <strong className="text-slate-400">Browse</strong> = flip when ready (answer hidden until flip).{' '}
+            <strong className="text-slate-400">Recall</strong> = quiz with explicit Reveal. Again/Hard/Good/Easy grades schedule the next review — Hard no longer resets your streak.
+          </span>
+        </p>
       </div>
 
       {/* Save Status Banner */}
@@ -401,7 +434,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             onClick={handleToggleFlip}
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
-            className="w-full min-h-[280px] bg-[#0e131f] rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-slate-800 hover:border-emerald-400/50 shadow-2xl transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99] touch-pan-y"
+            className="fios-swipe-card w-full min-h-[280px] bg-[#0e131f] rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-slate-800 hover:border-emerald-400/50 shadow-2xl transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99]"
           >
             <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${isFlipped ? 'from-emerald-400/20' : 'from-cyan-400/20'} to-transparent rounded-tr-xl pointer-events-none`} />
 
@@ -412,7 +445,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
                 {isFlipped ? 'ANSWER' : 'QUESTION'}
               </span>
               <span className="text-[11px] text-slate-500 uppercase tracking-wider group-hover:text-slate-300 transition-colors">
-                FLIP [SPACE]
+                TAP TO FLIP
               </span>
             </div>
 
@@ -422,7 +455,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
 
             <div className="w-full flex justify-center z-10 font-mono pt-2">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest group-hover:text-slate-400 transition-colors">
-                Click tile or press Space to flip card
+                Tap to flip · swipe right Easy / left Hard when flipped
               </span>
             </div>
           </div>
@@ -430,33 +463,40 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
           {/* SM-2 Spaced Repetition Rating Buttons */}
           {isFlipped ? (
             <div className="space-y-2">
-              <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500 text-center">
-                Rate Recall Difficulty (Spaced Repetition)
+              <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500 text-center flex items-center justify-center gap-1">
+                Rate recall (updates SM-2 queue)
+                <span title="Grading chooses the next local-calendar due date. Again lapses; Hard keeps progress.">
+                  <HelpCircle className="w-3 h-3" />
+                </span>
               </div>
               <div className="grid grid-cols-4 gap-2 font-mono">
                 <button
+                  type="button"
                   onClick={() => handleRating(1)}
-                  className="py-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  className="min-h-12 py-3 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
-                  AGAIN (1d)
+                  AGAIN<br /><span className="text-[10px] opacity-80">{ratingPreview[1]}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleRating(2)}
-                  className="py-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  className="min-h-12 py-3 bg-amber-500/10 hover:bg-amber-500/20 active:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
-                  HARD
+                  HARD<br /><span className="text-[10px] opacity-80">{ratingPreview[2]}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleRating(3)}
-                  className="py-3 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  className="min-h-12 py-3 bg-cyan-500/10 hover:bg-cyan-500/20 active:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
-                  GOOD
+                  GOOD<br /><span className="text-[10px] opacity-80">{ratingPreview[3]}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleRating(4)}
-                  className="py-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  className="min-h-12 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 active:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
-                  EASY
+                  EASY<br /><span className="text-[10px] opacity-80">{ratingPreview[4]}</span>
                 </button>
               </div>
             </div>

@@ -3,18 +3,63 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Fios — your academic command center. AI flashcards, quizzes, a code lab, focus timer, and timetable in one hub." />
     <meta name="theme-color" content="#07090e" />
     
     <!-- PWA & Mobile App Configuration -->
     <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/icon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Fios" />
+    <meta name="mobile-web-app-capable" content="yes" />
 
-    <title>Fios v2.2.2 — Your Academic Command Center</title>
+    <title>Fios v2.2.3 — Your Academic Command Center</title>
+    <!-- Apply stored theme/accent before first paint to avoid auth/theme flashes -->
+    <script>
+      (function () {
+        try {
+          var accents = {
+            emerald: ['#34d399', '#2dd4bf', '#14b8a6', '#34d399'],
+            'deep-emerald': ['#34d399', '#10b981', '#047857', '#10b981'],
+            ocean: ['#22d3ee', '#38bdf8', '#2563eb', '#38bdf8'],
+            'vibrant-indigo': ['#a5b4fc', '#818cf8', '#4f46e5', '#818cf8'],
+            sunset: ['#fbbf24', '#fb923c', '#f43f5e', '#fb923c'],
+            'sunset-amber': ['#fde68a', '#fbbf24', '#f59e0b', '#fbbf24'],
+            'slate-teal': ['#5eead4', '#2dd4bf', '#0f766e', '#2dd4bf'],
+            lime: ['#bef264', '#a3e635', '#22c55e', '#84cc16'],
+            copper: ['#f59e0b', '#d97706', '#b45309', '#d97706'],
+            aurora: ['#5eead4', '#34d399', '#f472b6', '#2dd4bf'],
+            glacier: ['#a5f3fc', '#67e8f9', '#0ea5e9', '#22d3ee'],
+            ember: ['#fb7185', '#f43f5e', '#e11d48', '#f43f5e'],
+            'rose-quartz': ['#fda4af', '#fb7185', '#e11d48', '#fb7185'],
+            violet: ['#c084fc', '#a78bfa', '#6366f1', '#a78bfa'],
+            'neon-violet': ['#e9d5ff', '#c084fc', '#7c3aed', '#c084fc']
+          };
+          var root = document.documentElement;
+          var storedTheme = localStorage.getItem('fios_theme') || 'dark';
+          var resolved = storedTheme;
+          if (storedTheme === 'system') {
+            resolved = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          }
+          if (resolved !== 'light' && resolved !== 'dark') resolved = 'dark';
+          root.setAttribute('data-theme', resolved);
+          root.classList.add(resolved);
+          var key = localStorage.getItem('fios_accent') || 'emerald';
+          var stops = accents[key] || accents.emerald;
+          root.style.setProperty('--fios-accent-from', stops[0]);
+          root.style.setProperty('--fios-accent-via', stops[1]);
+          root.style.setProperty('--fios-accent-to', stops[2]);
+          root.style.setProperty('--fios-accent-solid', stops[3]);
+          root.dataset.accent = accents[key] ? key : 'emerald';
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', resolved === 'light' ? '#e4dfd4' : '#07090e');
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

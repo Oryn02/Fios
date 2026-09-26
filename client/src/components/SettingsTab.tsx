@@ -17,23 +17,24 @@ import {
   DEFAULT_MOBILE_NAV,
   DEFAULT_NAV_ORDER,
   DEFAULT_SMART_ACTIONS,
+  DEFAULT_SMART_METRICS,
+  ALL_SMART_ACTIONS,
+  ALL_SMART_METRICS,
+  SMART_ACTION_LABELS,
+  SMART_METRIC_LABELS,
   type SmartActionId,
+  type SmartMetricId,
 } from '../context/PreferencesContext';
 import { AvatarPicker } from './Avatar';
 import { ACCENTS, type ThemeMode } from '../types/db';
 import { validateGeminiKey } from '../services/aiApi';
 import { TermsModal } from './TermsModal';
+import { PrivacyModal } from './PrivacyModal';
 import { AdminPanel, useIsAdmin } from './AdminPanel';
+import { FeedbackForm } from './FeedbackForm';
 import { resetCookieConsent } from './CookieConsent';
 import { toast } from '../lib/toast';
 import { NAV_ITEMS } from './DashboardLayout';
-
-const SMART_ACTION_LABELS: Record<SmartActionId, string> = {
-  flashcard: 'Quick Add Flashcard',
-  note: 'New Note',
-  pomodoro: 'Start Pomodoro',
-  tutor: 'Ask AI',
-};
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
 
@@ -101,59 +102,6 @@ const SupportModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   );
 };
 
-const PrivacyModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans text-slate-100">
-    <div className="absolute inset-0" onClick={onClose} />
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 12 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      className="relative z-10 w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 sm:p-8 space-y-6 shadow-2xl"
-    >
-      <div className="flex items-center justify-between border-b fios-border pb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border accent-solid-text">
-            <Shield className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black uppercase text-[var(--fios-text)]">Privacy Policy & GDPR Statement</h3>
-            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center</p>
-          </div>
-        </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer p-1">
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-
-      <div className="space-y-4 text-xs sm:text-sm text-[var(--fios-text-muted)] leading-relaxed font-sans">
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">1. Data Controller & Overview</h4>
-          <p>
-            Fios respects your privacy and is committed to protecting your personal data in accordance with the General Data Protection Regulation (GDPR) and Irish data protection legislation.
-          </p>
-        </section>
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">2. Information We Collect</h4>
-          <p>We process limited personal data necessary for authentication and core functionality via Supabase, alongside your encrypted API keys and private study notes.</p>
-        </section>
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-black uppercase tracking-wider accent-solid-text">3. Your Rights</h4>
-          <p>You retain the right to access, correct, or request complete erasure of your personal data and account records at any time.</p>
-        </section>
-      </div>
-
-      <div className="border-t fios-border pt-4 flex justify-end">
-        <button
-          onClick={onClose}
-          className="px-5 py-2.5 accent-bg text-slate-950 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
-        >
-          Close Policy
-        </button>
-      </div>
-    </motion.div>
-  </div>
-);
-
 const SettingsTabInner: React.FC = () => {
   const { profile, updateProfile } = useProfile();
   const { theme, setTheme, accent, setAccent } = useTheme();
@@ -164,6 +112,7 @@ const SettingsTabInner: React.FC = () => {
     showPomodoroWidget, setShowPomodoroWidget,
     showSmartWidget, setShowSmartWidget,
     smartWidgetActions, setSmartWidgetActions,
+    smartWidgetMetrics, setSmartWidgetMetrics,
     smartWidgetCompact, setSmartWidgetCompact,
     smartWidgetShowMetrics, setSmartWidgetShowMetrics,
   } = usePreferences();
@@ -177,6 +126,11 @@ const SettingsTabInner: React.FC = () => {
 
   // Modals state
   const [showPrivacy, setShowPrivacy] = useState(false);
+  useEffect(() => {
+    const open = () => setShowPrivacy(true);
+    window.addEventListener('fios-open-privacy', open);
+    return () => window.removeEventListener('fios-open-privacy', open);
+  }, []);
   const [showTerms, setShowTerms] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
@@ -420,7 +374,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '2.2.2',
+      version: '2.2.3',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -832,7 +786,7 @@ const SettingsTabInner: React.FC = () => {
         </div>
 
         {showSmartWidget && (
-          <div className="space-y-3 rounded-xl border fios-border bg-[var(--fios-surface-2)]/50 p-4">
+          <div className="space-y-3 rounded-xl border fios-border-strong bg-[var(--fios-surface-2)]/50 p-4">
             <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Smart Quick Widget layout</span>
             <div className="flex flex-wrap gap-2">
               <button
@@ -850,9 +804,55 @@ const SettingsTabInner: React.FC = () => {
                 Metrics chip {smartWidgetShowMetrics ? 'On' : 'Off'}
               </button>
             </div>
+
+            {smartWidgetShowMetrics && (
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-mono text-[var(--fios-text-muted)] uppercase">Metrics (toggle + reorder)</span>
+                {ALL_SMART_METRICS.map((id) => {
+                  const on = smartWidgetMetrics.includes(id);
+                  const idx = smartWidgetMetrics.indexOf(id);
+                  return (
+                    <div key={id} className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (on) setSmartWidgetMetrics(smartWidgetMetrics.filter((m) => m !== id));
+                          else setSmartWidgetMetrics([...smartWidgetMetrics, id]);
+                        }}
+                        className={`flex-1 px-3 py-2 rounded-lg border text-xs font-bold text-left cursor-pointer ${on ? 'accent-border accent-solid-text bg-[var(--fios-surface)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+                      >
+                        {SMART_METRIC_LABELS[id]}
+                      </button>
+                      {on && (
+                        <>
+                          <button type="button" disabled={idx <= 0} onClick={() => {
+                            const next = [...smartWidgetMetrics];
+                            [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                            setSmartWidgetMetrics(next);
+                          }} className="p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move metric up">
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" disabled={idx < 0 || idx >= smartWidgetMetrics.length - 1} onClick={() => {
+                            const next = [...smartWidgetMetrics];
+                            [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                            setSmartWidgetMetrics(next);
+                          }} className="p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move metric down">
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+                <button type="button" onClick={() => setSmartWidgetMetrics([...DEFAULT_SMART_METRICS])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
+                  Reset metrics
+                </button>
+              </div>
+            )}
+
             <div className="space-y-1.5">
-              <span className="text-[10px] font-mono text-[var(--fios-text-muted)] uppercase">Actions (order = menu order)</span>
-              {(DEFAULT_SMART_ACTIONS as SmartActionId[]).map((id) => {
+              <span className="text-[10px] font-mono text-[var(--fios-text-muted)] uppercase">Shortcuts (order = menu order)</span>
+              {ALL_SMART_ACTIONS.map((id) => {
                 const on = smartWidgetActions.includes(id);
                 const idx = smartWidgetActions.indexOf(id);
                 return (
@@ -955,25 +955,28 @@ const SettingsTabInner: React.FC = () => {
           <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Desktop sidebar order</span>
           <p className="text-[10px] text-[var(--fios-text-muted)]">Drag in the sidebar or reorder here. Persists to localStorage / profile prefs.</p>
           <div className="max-h-48 overflow-y-auto space-y-1">
-            {(navOrder.length ? navOrder : DEFAULT_NAV_ORDER).map((id, idx) => {
+            {(() => {
+              const order = navOrder.length ? navOrder : [...DEFAULT_NAV_ORDER];
+              return order.map((id, idx) => {
               const item = NAV_ITEMS.find((n) => n.id === id);
               if (!item) return null;
               return (
                 <div key={id} className="flex items-center gap-2 px-2 py-1 rounded border fios-border text-xs">
                   <span className="flex-1 font-bold text-[var(--fios-text)]">{item.label}</span>
                   <button type="button" disabled={idx === 0} onClick={() => {
-                    const next = [...navOrder];
+                    const next = [...order];
                     [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
                     setNavOrder(next);
                   }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move up"><ChevronUp className="w-3.5 h-3.5" /></button>
-                  <button type="button" disabled={idx >= navOrder.length - 1} onClick={() => {
-                    const next = [...navOrder];
+                  <button type="button" disabled={idx >= order.length - 1} onClick={() => {
+                    const next = [...order];
                     [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
                     setNavOrder(next);
                   }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move down"><ChevronDown className="w-3.5 h-3.5" /></button>
                 </div>
               );
-            })}
+              });
+            })()}
           </div>
           <button type="button" onClick={() => setNavOrder([...DEFAULT_NAV_ORDER])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
             Reset sidebar order
@@ -1039,8 +1042,28 @@ const SettingsTabInner: React.FC = () => {
         <p className="text-xs text-[var(--fios-text-muted)]">
           {profile?.gemini_api_key
             ? 'A key is configured. AI features are unlocked. You can replace or remove it below.'
-            : 'Add your free Gemini API key to unlock AI features. It is stored on your profile and used only for your requests.'}
+            : 'Add your Gemini API key to unlock AI features. It is stored on your profile and used only for your requests.'}
         </p>
+
+        <div className="rounded-xl border fios-border bg-[var(--fios-surface-2)]/80 px-3.5 py-3 space-y-1.5">
+          <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--fios-text-muted)]">
+            Tip · Free tier capacity
+          </p>
+          <p className="text-xs text-[var(--fios-text-muted)] leading-relaxed">
+            When Google&apos;s free Gemini tier is busy (high demand / many active users), flashcards, quizzes, and the tutor
+            can feel slow or fail intermittently. If that happens often, consider upgrading to a{' '}
+            <strong className="text-[var(--fios-text)]">paid Gemini plan in Google AI Studio</strong> for more reliable
+            throughput — optional, and only if you need steadier AI responses.
+          </p>
+          <a
+            href="https://aistudio.google.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] font-mono font-bold accent-solid-text hover:underline cursor-pointer"
+          >
+            Open Google AI Studio <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
 
         <div className="flex flex-col sm:flex-row items-stretch gap-2">
           <input type="password" value={keyInput} onChange={(e) => { setKeyInput(e.target.value); setKeyStatus('idle'); }}
@@ -1059,12 +1082,12 @@ const SettingsTabInner: React.FC = () => {
           )}
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           {keyStatus === 'valid' && <span className="text-[11px] font-bold accent-solid-text flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Key is valid</span>}
           {keyStatus === 'invalid' && <span className="text-[11px] font-bold text-rose-400">Key could not be validated.</span>}
           {keyStatus === 'saved' && <span className="text-[11px] font-bold accent-solid-text flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Saved</span>}
           <a href={AI_STUDIO_URL} target="_blank" rel="noreferrer" className="ml-auto text-[11px] font-mono text-[var(--fios-text-muted)] hover:accent-solid-text flex items-center gap-1">
-            Get a free key <ExternalLink className="w-3.5 h-3.5" />
+            Get an API key <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       </section>
@@ -1075,7 +1098,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.2.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.3.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
@@ -1139,6 +1162,8 @@ const SettingsTabInner: React.FC = () => {
         <p className="text-[10px] text-slate-500">Optional: set <code className="accent-solid-text">fios_github_token</code> in localStorage or <code className="accent-solid-text">VITE_GITHUB_TOKEN</code> for automatic gist creation.</p>
       </section>
 
+      <FeedbackForm />
+
       {/* PRIVACY & DATA RIGHTS */}
       <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
@@ -1146,9 +1171,10 @@ const SettingsTabInner: React.FC = () => {
         </h2>
 
         <div className="text-xs text-slate-400 space-y-2 leading-relaxed bg-[#07090e]/60 p-4 rounded-xl border border-slate-800/80">
-          <p>• <strong className="text-slate-200">Local API Key Storage:</strong> Your personal Gemini API key is encrypted and saved directly in your browser session/profile.</p>
-          <p>• <strong className="text-slate-200">Row Level Security:</strong> All study decks, quizzes, and timetable entries are isolated strictly to your authenticated user ID.</p>
-          <p>• <strong className="text-slate-200">No Model Training:</strong> Uploaded lecture notes and PDFs are processed in-memory solely for generate-on-demand flashcards.</p>
+          <p>• <strong className="text-slate-200">Controllers & processors:</strong> Your study data is stored in Supabase under RLS. AI calls use your Gemini key. Optional GitHub OAuth/gists and hosting logs are described in the Privacy Policy.</p>
+          <p>• <strong className="text-slate-200">BYO Gemini key:</strong> Stored on your profile (RLS). Not used to train public models from your notes.</p>
+          <p>• <strong className="text-slate-200">Your rights:</strong> Export a JSON copy below, update your profile anytime, or email support for erasure. Full GDPR statement via Privacy Policy.</p>
+          <p>• <strong className="text-slate-200">Consent:</strong> Essential browser storage only — reset the cookie banner above anytime.</p>
         </div>
 
         <div className="pt-1 flex flex-wrap gap-3">
@@ -1160,7 +1186,14 @@ const SettingsTabInner: React.FC = () => {
           </button>
 
           <button
-            onClick={() => alert('To clear local data, clear your browser local storage or reset account in Supabase.')}
+            onClick={() => {
+              if (confirm('Clear Fios localStorage on this device (theme, consent, caches, local schedule)? Cloud study data in Supabase is not deleted — use Export first, then email support for full account erasure.')) {
+                Object.keys(localStorage)
+                  .filter((k) => k.startsWith('fios_'))
+                  .forEach((k) => localStorage.removeItem(k));
+                toast('Local Fios preferences cleared', 'info');
+              }
+            }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition-colors border border-rose-500/20 cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" /> Clear Local Storage & Account Data

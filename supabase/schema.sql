@@ -121,7 +121,11 @@ create table if not exists public.tasks (
   completed boolean not null default false,
   created_at timestamptz not null default now()
 );
+-- v2.2.3 — specific start/due datetimes for unified agenda
+alter table public.tasks add column if not exists due_at timestamptz;
+alter table public.tasks add column if not exists start_at timestamptz;
 create index if not exists tasks_user_idx on public.tasks (user_id);
+create index if not exists tasks_due_at_idx on public.tasks (user_id, due_at);
 
 -- ----------------------------------------------------------------------------
 -- documents: uploaded notes/PDFs with AI summary + glossary for the AI Tutor
@@ -346,5 +350,74 @@ begin
   if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'note_chunks' and policyname = 'note_chunks_owner') then
     create policy note_chunks_owner on public.note_chunks
       for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  end if;
+end $$;
+
+-- ============================================================================
+-- v2.2.3 — user feedback & ratings (admin inbox)
+-- ============================================================================
+
+create table if not exists public.fios_admins (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete set null,
+  rating integer not null check (rating >= 1 and rating <= 5),
+  categories text[] not null default '{}',
+  message text not null default '',
+  anonymous boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists feedback_created_idx on public.feedback (created_at desc);
+create index if not exists feedback_user_idx on public.feedback (user_id);
+
+alter table public.fios_admins enable row level security;
+alter table public.feedback enable row level security;
+
+create or replace function public.current_user_is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.fios_admins a where a.user_id = auth.uid()
+  );
+$$;
+
+revoke all on function public.current_user_is_admin() from public;
+grant execute on function public.current_user_is_admin() to authenticated;
+
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'fios_admins' and policyname = 'fios_admins_self_read') then
+    create policy fios_admins_self_read on public.fios_admins
+      for select using (auth.uid() = user_id OR public.current_user_is_admin());
+  end if;
+
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'feedback' and policyname = 'feedback_insert_own') then
+    create policy feedback_insert_own on public.feedback
+      for insert to authenticated
+      with check (
+        (anonymous = false and user_id = auth.uid())
+        or (anonymous = true and user_id is null)
+      );
+  end if;
+
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'feedback' and policyname = 'feedback_select_own_or_admin') then
+    create policy feedback_select_own_or_admin on public.feedback
+      for select to authenticated
+      using (user_id = auth.uid() or public.current_user_is_admin());
+  end if;
+
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'feedback' and policyname = 'feedback_admin_delete') then
+    create policy feedback_admin_delete on public.feedback
+      for delete to authenticated
+      using (public.current_user_is_admin());
   end if;
 end $$;

@@ -6,15 +6,20 @@ import {
   GripVertical, Eye, EyeOff,
 } from 'lucide-react';
 import { IS_DEMO } from '../lib/demo';
-import { getSavedCalendarUrl, fetchAndParseCalendar, CalendarEvent } from '../lib/calendarService';
+import { CalendarEvent } from '../lib/calendarService';
+import { loadUnifiedScheduleEvents } from '../lib/scheduleService';
+import { isCardDue } from '../lib/spacedRepetition';
 import { getTasks, createTask, toggleTask, deleteTask } from '../lib/taskService';
 import { getUserDecksWithCards } from '../lib/deckService';
+import { getUserModules, type DBModule } from '../lib/moduleService';
+import { toDatetimeLocalValue, fromDatetimeLocalValue } from '../lib/agendaService';
 import type { Task } from '../types/db';
 import { usePreferredName, useProfile } from '../context/ProfileContext';
 import { usePreferences, type WidgetId, DEFAULT_WIDGET_ORDER } from '../context/PreferencesContext';
 import { Avatar } from './Avatar';
 import { ModuleHeatmap } from './ModuleHeatmap';
 import { RevisionFlightPlan } from './RevisionFlightPlan';
+import { CompactAgenda } from './CompactAgenda';
 
 interface OverviewTabProps {
   onOpenFlashcards: (deckCards?: any[], title?: string, moduleCode?: string, isSaved?: boolean) => void;
@@ -62,9 +67,11 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
   const [loadingClasses, setLoadingClasses] = useState(true);
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [modules, setModules] = useState<DBModule[]>([]);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskDue, setNewTaskDue] = useState('');
+  const [newTaskStart, setNewTaskStart] = useState('');
+  const [newTaskDueAt, setNewTaskDueAt] = useState('');
 
   const greeting = useMemo(() => greetingFor(new Date()), []);
   const todayLabel = useMemo(
@@ -74,6 +81,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
 
   useEffect(() => {
     getTasks().then(setTasks).catch((err) => console.error('Failed to load tasks:', err));
+    getUserModules().then(setModules).catch(() => {});
 
     const fetchDecks = async () => {
       setLoadingDecks(true);
@@ -84,7 +92,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         let due = 0;
         for (const deck of data || []) {
           for (const c of (deck as any).cards || []) {
-            if (!c.next_review || c.next_review <= nowIso) due++;
+            if (isCardDue(c.next_review)) due++;
           }
         }
         setDueCardCount(due);
@@ -98,22 +106,21 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
     const fetchSchedule = async () => {
       setLoadingClasses(true);
       try {
-        const savedUrl = await getSavedCalendarUrl();
-        if (savedUrl) {
-          const events = await fetchAndParseCalendar(savedUrl);
-          const now = new Date();
-          const todayEvents = events.filter((e) =>
-            e.startDate.getFullYear() === now.getFullYear() &&
-            e.startDate.getMonth() === now.getMonth() &&
-            e.startDate.getDate() === now.getDate()
-          ).sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-          setTodayClasses(todayEvents);
-          const upcoming = events
-            .filter((e) => e.startDate.getTime() >= now.getTime())
-            .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
-            .slice(0, 5);
-          setUpcomingClasses(upcoming);
-        }
+        const now = new Date();
+        const rangeEnd = new Date(now);
+        rangeEnd.setDate(rangeEnd.getDate() + 21);
+        const { events } = await loadUnifiedScheduleEvents(now, rangeEnd);
+        const todayEvents = events.filter((e) =>
+          e.startDate.getFullYear() === now.getFullYear() &&
+          e.startDate.getMonth() === now.getMonth() &&
+          e.startDate.getDate() === now.getDate()
+        ).sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+        setTodayClasses(todayEvents);
+        const upcoming = events
+          .filter((e) => e.startDate.getTime() >= now.getTime())
+          .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
+          .slice(0, 5);
+        setUpcomingClasses(upcoming);
       } catch (err) {
         console.error('Failed to load today classes:', err);
       } finally {
@@ -128,16 +135,38 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
   const handleAddTask = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
+    const due = fromDatetimeLocalValue(newTaskDueAt);
+    if (!due) {
+      console.error('Due date/time is required');
+      return;
+    }
+    const start = fromDatetimeLocalValue(newTaskStart) || new Date(due.getTime() - 30 * 60 * 1000);
     try {
-      const created = await createTask(newTaskTitle, newTaskDue || 'Today');
+      const created = await createTask({
+        title: newTaskTitle,
+        dueAt: due.toISOString(),
+        startAt: start.toISOString(),
+      });
       setTasks((prev) => [created, ...prev]);
       setNewTaskTitle('');
-      setNewTaskDue('');
+      setNewTaskStart('');
+      setNewTaskDueAt('');
       setIsAddingTask(false);
     } catch (err) {
       console.error('Failed to add task:', err);
     }
-  }, [newTaskTitle, newTaskDue]);
+  }, [newTaskTitle, newTaskStart, newTaskDueAt]);
+
+  const moduleColorList = useMemo(
+    () => modules.map((m) => ({ code: m.code, color: m.color })),
+    [modules]
+  );
+
+  const todayAnchor = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   const handleToggleTask = useCallback(async (id: string, completed: boolean) => {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !completed } : t)));
@@ -210,32 +239,23 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         <div key={id} className="bg-[#0e131f]/60 border border-slate-800/80 rounded-2xl p-6 space-y-3 shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
             <div>
-              <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-0.5">iCal Overlay</div>
+              <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-0.5">Unified timeline</div>
               <h3 className="text-lg font-black italic uppercase tracking-wide text-white">Compact agenda</h3>
             </div>
             <button type="button" onClick={() => onNavigate?.('atu-calendar')} className="text-xs font-mono accent-solid-text hover:underline cursor-pointer">
               Full calendar →
             </button>
           </div>
-          {loadingClasses ? (
-            <div className="py-6 text-center text-xs font-mono text-slate-500 animate-pulse">Syncing feed…</div>
-          ) : upcomingClasses.length === 0 ? (
-            <p className="text-xs text-slate-400 py-4">No upcoming events. Add an iCal URL in Settings.</p>
-          ) : (
-            <div className="space-y-2">
-              {upcomingClasses.map((item) => (
-                <div key={item.id} className="p-3 rounded-xl bg-[#07090e]/80 border border-slate-800/80 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-mono text-slate-400">
-                      {item.startDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · {formatTime(item.startDate)}
-                    </div>
-                    <div className="text-xs font-bold text-white truncate">{item.title}</div>
-                  </div>
-                  {item.location && <MapPin className="w-3.5 h-3.5 accent-solid-text shrink-0" />}
-                </div>
-              ))}
-            </div>
-          )}
+          <CompactAgenda
+            classes={upcomingClasses.length ? upcomingClasses : todayClasses}
+            tasks={tasks}
+            modules={moduleColorList}
+            loading={loadingClasses}
+            limit={10}
+            compact
+            emptyMessage="No upcoming classes or timed tasks. Sync iCal or add a task with a due time."
+            onToggleTask={handleToggleTask}
+          />
         </div>
       );
     }
@@ -309,7 +329,19 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.98 }}
-            onClick={() => setIsAddingTask((v) => !v)}
+            onClick={() => {
+              setIsAddingTask((v) => {
+                const next = !v;
+                if (next && !newTaskDueAt) {
+                  const due = new Date();
+                  due.setHours(due.getHours() + 2, 0, 0, 0);
+                  setNewTaskDueAt(toDatetimeLocalValue(due));
+                  const start = new Date(due.getTime() - 30 * 60 * 1000);
+                  setNewTaskStart(toDatetimeLocalValue(start));
+                }
+                return next;
+              });
+            }}
             className="px-5 py-3 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 text-slate-200 font-bold uppercase tracking-wider text-xs rounded-xl transition-colors cursor-pointer flex items-center gap-2"
           >
             <Plus className="w-4 h-4 accent-solid-text" /> Add Task
@@ -326,7 +358,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
             </span>
             <button type="button" onClick={() => setIsAddingTask(false)} className="text-xs text-slate-500 hover:text-slate-300 cursor-pointer">Cancel</button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input
               type="text"
               placeholder="Task title (e.g., Complete C Pointers Exercise)…"
@@ -335,14 +367,27 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
               className="sm:col-span-2 bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border"
               autoFocus
             />
-            <input
-              type="text"
-              placeholder="Due date (e.g., Friday 5 PM)…"
-              value={newTaskDue}
-              onChange={(e) => setNewTaskDue(e.target.value)}
-              className="bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border"
-            />
+            <label className="space-y-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-500">Start (optional)</span>
+              <input
+                type="datetime-local"
+                value={newTaskStart}
+                onChange={(e) => setNewTaskStart(e.target.value)}
+                className="w-full bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-500">Due date & time *</span>
+              <input
+                type="datetime-local"
+                required
+                value={newTaskDueAt}
+                onChange={(e) => setNewTaskDueAt(e.target.value)}
+                className="w-full bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border"
+              />
+            </label>
           </div>
+          <p className="text-[10px] font-mono text-slate-500">Timed tasks appear on the unified agenda interleaved with classes.</p>
           <div className="flex justify-end">
             <button type="submit" className="px-5 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors cursor-pointer">
               Save Task
@@ -356,40 +401,23 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         <div className="bg-[#0e131f]/60 border border-slate-800/80 rounded-2xl p-6 space-y-4 shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
             <div>
-              <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-0.5">Schedule</div>
-              <h3 className="text-lg font-black italic uppercase tracking-wide text-white">Today's classes</h3>
+              <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-0.5">Unified agenda</div>
+              <h3 className="text-lg font-black italic uppercase tracking-wide text-white">Today's timeline</h3>
             </div>
             <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 accent-solid-text" /> {new Date().toLocaleDateString('en-GB', { weekday: 'short' })}
             </span>
           </div>
-
-          {loadingClasses ? (
-            <div className="py-12 text-center text-xs font-mono text-slate-500 animate-pulse">Syncing today's classes…</div>
-          ) : todayClasses.length === 0 ? (
-            <div className="py-12 flex flex-col items-center justify-center text-center space-y-2">
-              <Calendar className="w-8 h-8 text-slate-600" />
-              <p className="text-xs font-bold text-slate-400 uppercase">No classes scheduled for today</p>
-              <p className="text-[11px] font-mono text-slate-600">Enjoy your focus time or study your flashcard decks.</p>
-            </div>
-          ) : (
-            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-              {todayClasses.map((item) => (
-                <div key={item.id} className="p-3.5 rounded-xl bg-[#07090e]/80 border border-slate-800/80 flex items-center justify-between gap-4">
-                  <div className="space-y-0.5 min-w-0">
-                    <div className="text-[10px] font-mono font-bold text-slate-400">{formatTime(item.startDate)} - {formatTime(item.endDate)}</div>
-                    <div className="text-xs font-black text-white truncate">{item.title}</div>
-                    {item.location && (
-                      <div className="text-[11px] font-mono accent-solid-text flex items-center gap-1 font-semibold truncate">
-                        <MapPin className="w-3 h-3 shrink-0" /> {item.location}
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-[9px] font-black font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-500/10 accent-solid-text border border-emerald-500/20 shrink-0">Scheduled</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <CompactAgenda
+            classes={todayClasses}
+            tasks={tasks}
+            modules={moduleColorList}
+            loading={loadingClasses}
+            day={todayAnchor}
+            limit={20}
+            emptyMessage="No classes or timed tasks for today."
+            onToggleTask={handleToggleTask}
+          />
         </div>
 
         <div className="bg-[#0e131f]/60 border border-slate-800/80 rounded-2xl p-6 space-y-4 flex flex-col justify-between shadow-xl">
@@ -428,7 +456,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
                       <span className={`text-xs font-mono font-medium truncate ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}>{task.title}</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      {task.due_date && <span className="text-[10px] font-mono text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">{task.due_date}</span>}
+                      {(task.due_at || task.due_date) && <span className="text-[10px] font-mono text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">{task.due_at ? new Date(task.due_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : task.due_date}</span>}
                       <button onClick={() => handleDeleteTask(task.id)} className="text-slate-600 hover:text-rose-400 transition-colors p-1 cursor-pointer">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

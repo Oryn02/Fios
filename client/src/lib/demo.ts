@@ -69,9 +69,9 @@ function daysFromNow(d: number): string {
 }
 
 export const demoModules: DBModule[] = [
-  { id: 'm1', user_id: DEMO_USER.id, code: 'SOFT06001', name: 'Software Engineering', color: 'emerald', exam_date: daysFromNow(6), created_at: new Date().toISOString() },
-  { id: 'm2', user_id: DEMO_USER.id, code: 'COMP07020', name: 'Data Structures & Algorithms', color: 'cyan', exam_date: daysFromNow(14), created_at: new Date().toISOString() },
-  { id: 'm3', user_id: DEMO_USER.id, code: 'DBMS06110', name: 'Database Systems', color: 'indigo', exam_date: null, created_at: new Date().toISOString() },
+  { id: 'm1', user_id: DEMO_USER.id, code: 'SOFT06001', name: 'Software Engineering', color: 'deep-emerald', exam_date: daysFromNow(6), created_at: new Date().toISOString() },
+  { id: 'm2', user_id: DEMO_USER.id, code: 'COMP07020', name: 'Data Structures & Algorithms', color: 'ocean-cyan', exam_date: daysFromNow(14), created_at: new Date().toISOString() },
+  { id: 'm3', user_id: DEMO_USER.id, code: 'DBMS06110', name: 'Database Systems', color: 'vibrant-indigo', exam_date: null, created_at: new Date().toISOString() },
 ];
 
 export const demoDecks: Deck[] = [
@@ -115,10 +115,38 @@ export const demoCodeExams: CodeExam[] = [
   },
 ];
 
+function hoursFromNow(h: number): string {
+  return new Date(Date.now() + h * 3600_000).toISOString();
+}
+
 export const demoTasks: Task[] = [
-  { id: 't1', title: 'Submit Software Quality & Testing documentation', due_date: 'Tomorrow', completed: false, module_code: 'SOFT06001' },
-  { id: 't2', title: 'Review Systems Analysis lecture slides', due_date: 'In 3 days', completed: false, module_code: 'SOFT06001' },
-  { id: 't3', title: 'Implement AVL tree rotations', due_date: 'Friday', completed: true, module_code: 'COMP07020' },
+  {
+    id: 't1',
+    title: 'Submit Software Quality & Testing documentation',
+    due_date: 'Tomorrow',
+    due_at: hoursFromNow(26),
+    start_at: hoursFromNow(25.5),
+    completed: false,
+    module_code: 'SOFT06001',
+  },
+  {
+    id: 't2',
+    title: 'Review Systems Analysis lecture slides',
+    due_date: 'In 3 days',
+    due_at: hoursFromNow(72),
+    start_at: hoursFromNow(71.5),
+    completed: false,
+    module_code: 'SOFT06001',
+  },
+  {
+    id: 't3',
+    title: 'Implement AVL tree rotations',
+    due_date: 'Friday',
+    due_at: hoursFromNow(4),
+    start_at: hoursFromNow(3.5),
+    completed: true,
+    module_code: 'COMP07020',
+  },
 ];
 
 export const demoDocuments: FiosDocument[] = [

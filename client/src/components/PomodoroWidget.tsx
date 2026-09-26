@@ -146,13 +146,14 @@ export const PomodoroWidget: React.FC = () => {
         initial={{ opacity: 0, y: 24, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-        className="hidden md:block fixed bottom-6 right-20 z-[70] select-none font-sans"
+        className="relative z-[68] select-none font-sans pointer-events-auto"
         style={{ willChange: 'transform, opacity' }}
       >
         <div className={`rounded-3xl border fios-border bg-[var(--fios-surface)]/90 backdrop-blur-2xl shadow-2xl accent-glow overflow-hidden transition-all ${expanded ? 'w-[280px]' : 'w-auto'}`}>
           <button
+            type="button"
             onClick={() => setExpanded((e) => !e)}
-            className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer text-left"
+            className="touch-target-row w-full flex items-center justify-between gap-3 px-3.5 py-3 min-h-12 cursor-pointer text-left active:bg-[var(--fios-surface-2)]"
           >
             <div className="flex items-center gap-2.5">
               <Timer className={`w-4 h-4 ${isActive ? 'accent-solid-text' : 'text-[var(--fios-text-muted)]'}`} />
