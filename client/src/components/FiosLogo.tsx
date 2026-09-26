@@ -19,7 +19,7 @@ const TEXT_CLASS: Record<LogoSize, string> = {
 };
 
 /**
- * Fios brandmark — geometric terminal brackets `</>` with a glowing core node.
+ * Fios brandmark — terminal brackets `</>` only (no decorative dots / frame).
  * Recolours with the active accent via CSS variables unless `fixedEmerald` is set.
  */
 export const FiosLogo: React.FC<FiosLogoProps> = ({
@@ -30,7 +30,6 @@ export const FiosLogo: React.FC<FiosLogoProps> = ({
 }) => {
   const id = useId().replace(/:/g, '');
   const gradId = `fios-grad-${id}`;
-  const glowId = `fios-glow-${id}`;
   const px = ICON_PX[size];
 
   const from = fixedEmerald ? '#34d399' : 'var(--fios-accent-from, #34d399)';
@@ -54,55 +53,29 @@ export const FiosLogo: React.FC<FiosLogoProps> = ({
             <stop offset="0.5" stopColor={via} />
             <stop offset="1" stopColor={to} />
           </linearGradient>
-          <radialGradient id={glowId} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={from} stopOpacity="0.9" />
-            <stop offset="100%" stopColor={from} stopOpacity="0" />
-          </radialGradient>
         </defs>
 
-        {/* Soft glow core */}
-        <circle cx="24" cy="24" r="14" fill={`url(#${glowId})`} opacity="0.55" />
-
-        {/* Outer geometric frame */}
-        <rect
-          x="2"
-          y="2"
-          width="44"
-          height="44"
-          rx="12"
-          stroke={`url(#${gradId})`}
-          strokeWidth="2"
-          opacity="0.5"
-        />
-
-        {/* Terminal brackets </> */}
+        {/* Terminal brackets </> — scaled up, no dots / frame / glow */}
         <path
-          d="M16 14L9 24L16 34"
+          d="M15 10L6 24L15 38"
           stroke={`url(#${gradId})`}
-          strokeWidth="3.2"
+          strokeWidth="4"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <path
-          d="M32 14L39 24L32 34"
+          d="M33 10L42 24L33 38"
           stroke={`url(#${gradId})`}
-          strokeWidth="3.2"
+          strokeWidth="4"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <path
-          d="M27.5 13.5L20.5 34.5"
+          d="M29 9L19 39"
           stroke={`url(#${gradId})`}
-          strokeWidth="3"
+          strokeWidth="4"
           strokeLinecap="round"
         />
-
-        {/* Orbit nodes */}
-        <circle cx="24" cy="24" r="2.4" fill={`url(#${gradId})`} />
-        <circle cx="12" cy="12" r="1.6" fill={from} opacity="0.85" />
-        <circle cx="36" cy="12" r="1.6" fill={to} opacity="0.85" />
-        <circle cx="12" cy="36" r="1.6" fill={via} opacity="0.85" />
-        <circle cx="36" cy="36" r="1.6" fill={from} opacity="0.85" />
       </svg>
 
       {withWordmark && (

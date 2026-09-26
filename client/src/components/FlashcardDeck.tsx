@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { getUserModules, DBModule } from '../lib/moduleService';
 import { ActiveRecallQuiz } from './ActiveRecallQuiz';
 import { FormattedContent } from './FormattedContent';
-import { calculateSM2, isCardDue, previewIntervalDays, formatIntervalLabel } from '../lib/spacedRepetition';
+import { calculateSM2, isCardDue, previewIntervalLabel } from '../lib/spacedRepetition';
 import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle } from 'lucide-react';
 import { toast } from '../lib/toast';
 
@@ -133,10 +133,10 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     : { easeFactor: 2.5, interval: 0, repetitions: 0, nextReview: new Date().toISOString() };
 
   const ratingPreview = {
-    1: formatIntervalLabel(previewIntervalDays(sm2Base, 1)),
-    2: formatIntervalLabel(previewIntervalDays(sm2Base, 2)),
-    3: formatIntervalLabel(previewIntervalDays(sm2Base, 3)),
-    4: formatIntervalLabel(previewIntervalDays(sm2Base, 4)),
+    1: previewIntervalLabel(sm2Base, 1),
+    2: previewIntervalLabel(sm2Base, 2),
+    3: previewIntervalLabel(sm2Base, 3),
+    4: previewIntervalLabel(sm2Base, 4),
   };
 
   const handleRating = useCallback(async (rating: number) => {

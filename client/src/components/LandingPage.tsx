@@ -166,7 +166,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
     : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 } };
 
   return (
-    <div data-theme="dark" className="min-h-dvh bg-black text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-black overflow-x-hidden">
+    <div data-theme="dark" data-landing className="min-h-dvh bg-black text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-black overflow-x-hidden">
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(16,185,129,0.18),_transparent_55%),radial-gradient(ellipse_at_bottom_right,_rgba(20,184,166,0.12),_transparent_50%)]" />
         <div
@@ -457,7 +457,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <span key={b} className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono text-slate-400">{b}</span>
             ))}
           </div>
-          <p className="text-[11px] text-slate-600">Fios v2.2.6 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
+          <p className="text-[11px] text-slate-600">Fios v2.2.7 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
         </div>
       </footer>
 

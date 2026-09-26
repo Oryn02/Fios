@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v2.2.6**
+**Current version: v2.2.7**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -10,7 +10,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 
 ## Highlights
 
-- **SM-2 Flashcards** — AI-generated decks with corrected Hard/Easy intervals, local-day due dates, and rating previews; touch swipe Easy/Hard on mobile.
+- **SM-2 Flashcards** — AI-generated decks with differentiated Again/Hard/Good/Easy interval previews (learning steps in minutes), local-day due dates, and touch swipe Easy/Hard on mobile.
 - **MCQ Quiz Generator** — practice exams with explanations, saved per module.
 - **Monaco Code Exams** — bug-fix, output-prediction, and logic-completion challenges with optional custom prompts.
 - **Smart Notes & AI Tutor** — upload PDFs/notes for summaries, glossaries, revision history, and a dedicated full-screen tutor tab (RAG-aware).
@@ -23,15 +23,25 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Contact Support** — in-app message form posts to the API and emails the support inbox (Resend/SendGrid when configured); mailto remains optional.
 - **Feedback & ratings** — optional star rating, categories, and message (anonymous submit supported).
 - **Privacy & GDPR** — in-app Privacy Policy + Terms (landing footer and Settings); essential cookie/local-storage consent; Export My Data (JSON); disclosures for Supabase, Gemini (BYO key), optional GitHub, and hosting.
-- **Global Pomodoro Timer** — floating dock widget with Web Audio soundscapes and Weekly Study Goal (can be disabled in Settings).
-- **Smart Quick Widget** — expanded actions, custom order, compact FAB, metrics chip (can be fully disabled).
-- **Themes** — Dark / Light / System, expanded accent gradients, Low-Power mode, Zen focus (Esc / Exit Zen / mobile escape), OpenDyslexic, cream light palette with stronger cards/tabs.
+- **Global Pomodoro Timer** — floating dock widget with Web Audio soundscapes and Weekly Study Goal (defaults off on mobile until enabled in Settings).
+- **Smart Quick Widget** — expanded actions, custom order, compact FAB, metrics chip (defaults off on mobile until enabled).
+- **Themes** — Dark / Light / System, expanded accent gradients, Low-Power mode, Zen focus (Esc / Exit Zen / mobile escape), OpenDyslexic, cream light palette with stronger cards/tabs. Landing marketing stays locked to default emerald.
 - **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar (compact chrome control, larger Fios wordmark; logo opens Overview); reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs).
 - **Mermaid + Markdown + LaTeX** — diagrams, GFM markdown, and KaTeX math in AI content.
 - **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service; refreshed landing (tighter hero + study hubs + FAQ).
 - **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
-- **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable) via VitePWA + Workbox; offline mutation queue (IndexedDB).
+- **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB).
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v2.2.7
+
+- Mobile: Quick Widget + Pomodoro default **off** for new / unsaved prefs (saved prefs preserved); desktop defaults unchanged.
+- SM-2 rating previews: Again ~1m, Hard ~10m, Good 1d, Easy 4d on new cards — labels match scheduled `next_review`.
+- Landing locked to default emerald brand (ignores Settings accent / Light remaps); in-app theme unchanged.
+- Logo: in-app `</>` mark without decorative dots; PWA / Apple touch icons rebuilt (white glyph, solid black, no frame).
+- Command palette: **⌘K / Ctrl+K** opens the same palette as the header chip.
+- Smart Quick: **Zen / Deep Focus** toggle available in the Quick Widget action catalog.
+- See the in-app **Updates** tab for the full changelog.
 
 ### What’s new in v2.2.6
 
@@ -102,7 +112,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 - **RAG study engine** — `POST /api/rag/query` + `POST /api/upload/pdf`; client helpers in `lib/ragClient.ts`.
 
 ### Brand & design
-- Custom vector **`<FiosLogo />`** (geometric `</>` + glowing core nodes; sizes `sm`–`xl`) used in the navbar, mobile header, landing hero, auth screens, and favicon.
+- Custom vector **`<FiosLogo />`** (`</>` mark only; sizes `sm`–`xl`) used in the navbar, mobile header, landing hero, auth screens, and favicon.
 - The public **landing page is theme-locked** to Fios's signature pitch-black + emerald identity; dashboard theming never applies to it.
 
 ### Mobile & cross-browser
@@ -117,7 +127,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v2.2.6) — Render Static Site root
+├── client/                 # React + Vite frontend (v2.2.7) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/
