@@ -74,17 +74,21 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         setPaletteOpen((v) => !v);
         return;
       }
-      if (e.key === 'Escape' && zenMode) {
+      // Esc closes the palette first; only exit Zen when the palette is closed.
+      if (e.key === 'Escape' && zenMode && !paletteOpen) {
         e.preventDefault();
         exitZen();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [zenMode, exitZen]);
+  }, [zenMode, exitZen, paletteOpen]);
+
+  const [draftNavOrder, setDraftNavOrder] = useState<string[] | null>(null);
+  const effectiveNavOrder = draftNavOrder ?? (navOrder?.length ? navOrder : DEFAULT_NAV_ORDER);
 
   const orderedNav = useMemo(() => {
-    const order = navOrder?.length ? navOrder : DEFAULT_NAV_ORDER;
+    const order = effectiveNavOrder;
     const byId = new Map(NAV_ITEMS.map((n) => [n.id, n]));
     const seen = new Set<string>();
     const list: typeof NAV_ITEMS = [];
@@ -99,7 +103,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       if (!seen.has(item.id)) list.push(item);
     }
     return list;
-  }, [navOrder]);
+  }, [effectiveNavOrder]);
 
   const moveNav = useCallback((id: string, dir: -1 | 1) => {
     const order = [...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)];
@@ -111,19 +115,30 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
     setNavOrder(order);
   }, [navOrder, setNavOrder]);
 
-  const onDragStart = useCallback((id: string) => setDragId(id), []);
+  const onDragStart = useCallback((id: string) => {
+    setDragId(id);
+    setDraftNavOrder([...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)]);
+  }, [navOrder]);
+
   const onDragOver = useCallback((e: React.DragEvent, overId: string) => {
     e.preventDefault();
     if (!dragId || dragId === overId) return;
-    const order = [...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)];
-    const from = order.indexOf(dragId);
-    const to = order.indexOf(overId);
-    if (from < 0 || to < 0) return;
-    order.splice(from, 1);
-    order.splice(to, 0, dragId);
-    setNavOrder(order);
-  }, [dragId, navOrder, setNavOrder]);
-  const onDragEnd = useCallback(() => setDragId(null), []);
+    setDraftNavOrder((prev) => {
+      const order = [...(prev ?? (navOrder?.length ? navOrder : DEFAULT_NAV_ORDER))];
+      const from = order.indexOf(dragId);
+      const to = order.indexOf(overId);
+      if (from < 0 || to < 0 || from === to) return prev;
+      order.splice(from, 1);
+      order.splice(to, 0, dragId);
+      return order;
+    });
+  }, [dragId, navOrder]);
+
+  const onDragEnd = useCallback(() => {
+    if (draftNavOrder) setNavOrder(draftNavOrder);
+    setDraftNavOrder(null);
+    setDragId(null);
+  }, [draftNavOrder, setNavOrder]);
 
   const commandItems: CommandItem[] = useMemo(() => [
     ...orderedNav.map((item) => ({
@@ -373,7 +388,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           </aside>
         )}
 
-        <main className={`flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full relative ${hideChrome ? 'pb-8' : 'pb-24 md:pb-8'}`} id="main-content">
+        <main className={`flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full relative ${hideChrome ? 'pb-24 md:pb-8' : 'pb-24 md:pb-8'}`} id="main-content">
           {!hideChrome && (
             <div className="absolute top-10 left-10 w-96 h-96 rounded-full blur-[100px] pointer-events-none opacity-40" style={{ backgroundColor: 'color-mix(in srgb, var(--fios-accent-solid) 8%, transparent)' }} />
           )}

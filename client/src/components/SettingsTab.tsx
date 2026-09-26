@@ -898,7 +898,9 @@ const SettingsTabInner: React.FC = () => {
         <div className="space-y-2">
           <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Mobile bottom nav (add / hide / reorder · max 5)</span>
           <div className="space-y-1.5">
-            {(mobileNavSlots.length ? mobileNavSlots : DEFAULT_MOBILE_NAV).map((id, idx) => {
+            {(() => {
+              const slots = mobileNavSlots.length ? mobileNavSlots : [...DEFAULT_MOBILE_NAV];
+              return slots.map((id, idx) => {
               const item = NAV_ITEMS.find((n) => n.id === id);
               if (!item) return null;
               return (
@@ -906,30 +908,37 @@ const SettingsTabInner: React.FC = () => {
                   <GripVertical className="w-3.5 h-3.5 text-[var(--fios-text-muted)]" />
                   <span className="flex-1 text-xs font-bold text-[var(--fios-text)]">{item.label}</span>
                   <button type="button" disabled={idx === 0} onClick={() => {
-                    const next = [...mobileNavSlots];
+                    const next = [...slots];
                     [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
                     setMobileNavSlots(next);
                   }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move up"><ChevronUp className="w-3.5 h-3.5" /></button>
-                  <button type="button" disabled={idx >= mobileNavSlots.length - 1} onClick={() => {
-                    const next = [...mobileNavSlots];
+                  <button type="button" disabled={idx >= slots.length - 1} onClick={() => {
+                    const next = [...slots];
                     [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
                     setMobileNavSlots(next);
                   }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move down"><ChevronDown className="w-3.5 h-3.5" /></button>
-                  <button type="button" onClick={() => setMobileNavSlots(mobileNavSlots.filter((s) => s !== id))} className="text-[10px] text-rose-400 font-bold cursor-pointer px-1">
+                  <button
+                    type="button"
+                    disabled={slots.length <= 1}
+                    onClick={() => setMobileNavSlots(slots.filter((s) => s !== id))}
+                    className="text-[10px] text-rose-400 font-bold cursor-pointer px-1 disabled:opacity-30"
+                  >
                     Hide
                   </button>
                 </div>
               );
-            })}
+              });
+            })()}
           </div>
           <div className="flex flex-wrap gap-1.5 pt-1">
-            {NAV_ITEMS.filter((item) => !mobileNavSlots.includes(item.id)).map((item) => (
+            {NAV_ITEMS.filter((item) => !(mobileNavSlots.length ? mobileNavSlots : DEFAULT_MOBILE_NAV).includes(item.id)).map((item) => (
               <button
                 key={item.id}
                 type="button"
-                disabled={mobileNavSlots.length >= 5}
+                disabled={(mobileNavSlots.length ? mobileNavSlots : DEFAULT_MOBILE_NAV).length >= 5}
                 onClick={() => {
-                  if (mobileNavSlots.length < 5) setMobileNavSlots([...mobileNavSlots, item.id]);
+                  const slots = mobileNavSlots.length ? mobileNavSlots : [...DEFAULT_MOBILE_NAV];
+                  if (slots.length < 5) setMobileNavSlots([...slots, item.id]);
                 }}
                 className="px-2 py-1 rounded text-[10px] font-mono font-bold uppercase border fios-border text-[var(--fios-text-muted)] cursor-pointer disabled:opacity-40"
               >
