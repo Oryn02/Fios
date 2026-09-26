@@ -43,6 +43,7 @@ export function generateCodeExam(params: {
   language: CodeLanguage;
   examType: CodeExamType;
   topic?: string;
+  customPrompt?: string;
   difficulty?: string;
 }): Promise<GeneratedCodeExam> {
   return postJson<GeneratedCodeExam>('/api/generate/code-exam', params);

@@ -175,3 +175,38 @@ export const summarySchema = {
   },
   required: ['summary', 'glossary'],
 };
+
+/** Structured notes returned from vision/audio multimodal processing. */
+export const mediaNotesSchema = {
+  type: Type.OBJECT,
+  properties: {
+    title: {
+      type: Type.STRING,
+      description: 'A short descriptive title for the extracted notes',
+    },
+    markdown: {
+      type: Type.STRING,
+      description: 'Structured study notes in Markdown (headings, bullets, code fences)',
+    },
+    codeBlocks: {
+      type: Type.ARRAY,
+      description: 'Any code snippets extracted or transcribed from the media',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          language: { type: Type.STRING, description: 'Programming language identifier' },
+          code: { type: Type.STRING, description: 'The code content' },
+        },
+        required: ['language', 'code'],
+      },
+    },
+  },
+  required: ['title', 'markdown'],
+};
+
+/** Response shape for RAG chunk retrieval (documented for clients; not a Gemini schema). */
+export const ragQueryResponseShape = {
+  chunks: 'string[] — top-k retrieved chunk texts ranked by relevance',
+  scores: 'number[] — parallel relevance scores (higher = better match)',
+  query: 'string — echoed query',
+} as const;

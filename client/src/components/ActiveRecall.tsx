@@ -6,6 +6,7 @@ import { getDocuments } from '../lib/documentService';
 import { saveRecallLog } from '../lib/activeRecallService';
 import type { DBModule, RecallConcept } from '../types/db';
 import { useHasGeminiKey, GeminiKeyModal } from './GeminiGate';
+import { useAiAuth } from '../context/AiAuthContext';
 
 interface Props {
   modules: DBModule[];
@@ -27,6 +28,7 @@ function fmt(sec: number) {
 
 export const ActiveRecall: React.FC<Props> = ({ modules, initialModule = '', onClose }) => {
   const hasKey = useHasGeminiKey();
+  const { requireAiAuth } = useAiAuth();
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [topic, setTopic] = useState('');
   const [moduleCode, setModuleCode] = useState(initialModule);
@@ -49,6 +51,7 @@ export const ActiveRecall: React.FC<Props> = ({ modules, initialModule = '', onC
 
   const handleEvaluate = async () => {
     if (!text.trim()) return;
+    if (!requireAiAuth()) return;
     if (!hasKey) { setShowKeyModal(true); return; }
     setRunning(false);
     setEvaluating(true);

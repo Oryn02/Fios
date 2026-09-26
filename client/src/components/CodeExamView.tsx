@@ -6,6 +6,7 @@ import {
   Trophy, Bug, Terminal, PencilRuler, Trash2, Folder, Loader2, Eye,
 } from 'lucide-react';
 import { generateCodeExam, gradeCodeExam, type CodeGradeResult } from '../services/codeApi';
+import { useAiAuth } from '../context/AiAuthContext';
 import { getCodeExams, saveCodeExam, deleteCodeExam } from '../lib/codeExamService';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import {
@@ -37,11 +38,13 @@ interface CodeExamViewProps {
 }
 
 export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => {
-  const { theme } = useTheme();
-  const monacoTheme = theme === 'light' ? 'vs' : 'vs-dark';
+  const { resolvedTheme } = useTheme();
+  const { requireAiAuth } = useAiAuth();
+  const monacoTheme = resolvedTheme === 'light' ? 'vs' : 'vs-dark';
   const [language, setLanguage] = useState<CodeLanguage>('javascript');
   const [examType, setExamType] = useState<CodeExamType>('bug_fix');
   const [topic, setTopic] = useState('');
+  const [customPrompt, setCustomPrompt] = useState('');
   const [moduleCode, setModuleCode] = useState('');
   const [modules, setModules] = useState<DBModule[]>([]);
 
@@ -98,12 +101,18 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
   }, [loadSaved, initialExamId, openSaved]);
 
   const handleGenerate = useCallback(async () => {
+    if (!requireAiAuth()) return;
     setGenerating(true);
     setError(null);
     setGrade(null);
     setShowSolution(false);
     try {
-      const result = await generateCodeExam({ language, examType, topic });
+      const result = await generateCodeExam({
+        language,
+        examType,
+        topic,
+        customPrompt: customPrompt.trim() || undefined,
+      });
       const active: ActiveChallenge = {
         title: result.title,
         language: (result.language as CodeLanguage) || language,
@@ -121,10 +130,11 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
     } finally {
       setGenerating(false);
     }
-  }, [language, examType, topic]);
+  }, [language, examType, topic, customPrompt, requireAiAuth]);
 
   const handleGrade = useCallback(async () => {
     if (!challenge) return;
+    if (!requireAiAuth()) return;
     setGrading(true);
     setError(null);
     try {
@@ -140,7 +150,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
     } finally {
       setGrading(false);
     }
-  }, [challenge, userCode]);
+  }, [challenge, userCode, requireAiAuth]);
 
   const handleSave = useCallback(async () => {
     if (!challenge) return;
@@ -237,6 +247,17 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
               ))}
             </select>
           </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-mono font-bold uppercase text-slate-400">Custom challenge prompt (optional)</label>
+          <textarea
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            placeholder="Describe a targeted challenge — e.g. ‘Write a recursive DFS that detects cycles in an adjacency list’…"
+            rows={3}
+            className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-400 resize-y"
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

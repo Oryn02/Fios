@@ -1,5 +1,4 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import mermaid from 'mermaid';
 import { useTheme } from '../context/ThemeContext';
 
 interface Props {
@@ -9,26 +8,26 @@ interface Props {
 let initializedTheme: string | null = null;
 
 /**
- * Renders a Mermaid diagram from a chart definition. Used to visualize
- * ```mermaid code blocks returned by Gemini in summaries, tutor answers,
- * and code-exam explanations.
+ * Renders a Mermaid diagram from a chart definition. Mermaid (+ elk/cytoscape)
+ * is loaded on demand so the main bundle stays under Workbox precache limits.
  */
 export const MermaidDiagram: React.FC<Props> = ({ chart }) => {
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const id = useId().replace(/:/g, '');
   const ref = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    const mermaidTheme = theme === 'light' ? 'default' : 'dark';
-    if (initializedTheme !== mermaidTheme) {
-      mermaid.initialize({ startOnLoad: false, theme: mermaidTheme, securityLevel: 'strict' });
-      initializedTheme = mermaidTheme;
-    }
+    const mermaidTheme = resolvedTheme === 'light' ? 'default' : 'dark';
 
     (async () => {
       try {
+        const mermaid = (await import('mermaid')).default;
+        if (initializedTheme !== mermaidTheme) {
+          mermaid.initialize({ startOnLoad: false, theme: mermaidTheme, securityLevel: 'strict' });
+          initializedTheme = mermaidTheme;
+        }
         const { svg } = await mermaid.render(`m-${id}`, chart.trim());
         if (!cancelled && ref.current) {
           ref.current.innerHTML = svg;
@@ -40,7 +39,7 @@ export const MermaidDiagram: React.FC<Props> = ({ chart }) => {
     })();
 
     return () => { cancelled = true; };
-  }, [chart, theme, id]);
+  }, [chart, resolvedTheme, id]);
 
   if (error) {
     return (

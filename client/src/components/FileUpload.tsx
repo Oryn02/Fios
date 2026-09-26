@@ -1,28 +1,31 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Upload, FileText, X, Loader2, AlertCircle } from 'lucide-react';
 import { extractTextFromPDF } from '../lib/pdfExtractor';
+import { uploadPdfToServer } from '../lib/ragClient';
+import { useAiAuth } from '../context/AiAuthContext';
 
 interface FileUploadProps {
-  onTextExtracted: (text: string, filename: string) => void;
+  onTextExtracted: (text: string, filename?: string) => void;
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
+  const { requireAiAuth } = useAiAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Detect iOS on component mount
   useEffect(() => {
-    const checkIOS = 
-      /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-      (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+    const checkIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
     setIsIOS(checkIOS);
   }, []);
 
   const processFile = async (file: File) => {
     if (!file) return;
+    if (!requireAiAuth()) return;
 
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     const isText = file.type.startsWith('text/') || file.name.toLowerCase().endsWith('.txt');
@@ -45,6 +48,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
       }
 
       onTextExtracted(extracted, file.name);
+
+      // Exercise server upload route (soft-fail)
+      if (isPDF) {
+        void uploadPdfToServer(file, extracted).then((res) => {
+          if (!res.ok) console.info('[FileUpload] server PDF upload soft-failed', res.data);
+        });
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to extract text from file.');
       setFileName(null);
@@ -56,12 +66,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
-    if (file) processFile(file);
+    if (file) void processFile(file);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) processFile(file);
+    if (file) void processFile(file);
   };
 
   const clearFile = () => {
@@ -84,7 +94,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            if (!requireAiAuth()) return;
+            fileInputRef.current?.click();
+          }}
           style={{ '--tw-border-opacity': '1' } as React.CSSProperties}
           className="border-2 border-dashed border-slate-700 hover:border-[var(--fios-accent-solid)] rounded-xl p-5 text-center bg-[#07090e]/50 hover:bg-[#07090e] transition-all cursor-pointer group hover:shadow-[0_0_20px_color-mix(in_srgb,var(--fios-accent-solid)_25%,transparent)]"
         >
@@ -120,7 +133,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
         </div>
       )}
 
-      {/* iOS-specific warning message */}
       {isIOS && !fileName && (
         <div className="flex items-center gap-1.5 mt-2 text-amber-500/80 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />

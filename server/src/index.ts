@@ -1,14 +1,22 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import routes from './routes.js';
 
+// Load root .env then server/.env (local overrides). Never commit real secrets.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+// 15mb limit supports base64-encoded images/audio in JSON bodies
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // Dual mounting guarantees Vite proxy hits the route handler
 app.use('/api', routes);

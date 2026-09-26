@@ -2,8 +2,11 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { ACCENTS, type AccentKey, type ThemeMode } from '../types/db';
 import { useProfile } from './ProfileContext';
 
+type ResolvedTheme = 'dark' | 'light';
+
 interface ThemeContextValue {
   theme: ThemeMode;
+  resolvedTheme: ResolvedTheme;
   accent: AccentKey;
   setTheme: (t: ThemeMode) => void;
   toggleTheme: () => void;
@@ -21,30 +24,48 @@ function applyAccent(accent: AccentKey) {
   root.style.setProperty('--fios-accent-solid', def.solid);
 }
 
-function applyTheme(theme: ThemeMode) {
+function resolveSystem(): ResolvedTheme {
+  if (typeof window === 'undefined') return 'dark';
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+function applyResolved(resolved: ResolvedTheme) {
   const root = document.documentElement;
-  root.setAttribute('data-theme', theme);
+  root.setAttribute('data-theme', resolved);
   root.classList.remove('light', 'dark');
-  root.classList.add(theme);
+  root.classList.add(resolved);
+}
+
+function normalizeTheme(raw: string | null | undefined): ThemeMode {
+  if (raw === 'light' || raw === 'dark' || raw === 'system') return raw;
+  return 'dark';
 }
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile, updateProfile } = useProfile();
-  
-  // Initialize immediately from localStorage to prevent reload amnesia
+
   const [theme, setThemeState] = useState<ThemeMode>(() => {
-    return (localStorage.getItem('fios_theme') as ThemeMode) || 'dark';
+    return normalizeTheme(localStorage.getItem('fios_theme'));
   });
-  
+
   const [accent, setAccentState] = useState<AccentKey>(() => {
     return (localStorage.getItem('fios_accent') as AccentKey) || 'emerald';
   });
 
-  // Sync from profile when it loads, and keep localStorage updated
+  const [systemPref, setSystemPref] = useState<ResolvedTheme>(() => resolveSystem());
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: light)');
+    const onChange = () => setSystemPref(mq.matches ? 'light' : 'dark');
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   useEffect(() => {
     if (profile?.theme) {
-      setThemeState(profile.theme);
-      localStorage.setItem('fios_theme', profile.theme);
+      const t = normalizeTheme(profile.theme);
+      setThemeState(t);
+      localStorage.setItem('fios_theme', t);
     }
     if (profile?.accent_color) {
       setAccentState(profile.accent_color);
@@ -52,14 +73,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [profile]);
 
-  // Apply to document whenever they change
-  useEffect(() => { applyTheme(theme); }, [theme]);
+  const resolvedTheme: ResolvedTheme = theme === 'system' ? systemPref : theme;
+
+  useEffect(() => { applyResolved(resolvedTheme); }, [resolvedTheme]);
   useEffect(() => { applyAccent(accent); }, [accent]);
 
-  // Reset to default on unmount (logout)
   useEffect(() => {
     return () => {
-      applyTheme('dark');
+      applyResolved('dark');
       applyAccent('emerald');
     };
   }, []);
@@ -72,12 +93,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleTheme = useCallback(() => {
     setThemeState((prev) => {
-      const next: ThemeMode = prev === 'dark' ? 'light' : 'dark';
+      const current = prev === 'system' ? systemPref : prev;
+      const next: ThemeMode = current === 'dark' ? 'light' : 'dark';
       localStorage.setItem('fios_theme', next);
       updateProfile({ theme: next }).catch((e: any) => console.error('Failed to persist theme:', e));
       return next;
     });
-  }, [updateProfile]);
+  }, [updateProfile, systemPref]);
 
   const setAccent = useCallback((a: AccentKey) => {
     setAccentState(a);
@@ -86,8 +108,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [updateProfile]);
 
   const value = useMemo(
-    () => ({ theme, accent, setTheme, toggleTheme, setAccent }),
-    [theme, accent, setTheme, toggleTheme, setAccent]
+    () => ({ theme, resolvedTheme, accent, setTheme, toggleTheme, setAccent }),
+    [theme, resolvedTheme, accent, setTheme, toggleTheme, setAccent]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -1,58 +1,64 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { MermaidDiagram } from './MermaidDiagram';
+import 'katex/dist/katex.min.css';
 
 interface FormattedContentProps {
   text?: string;
 }
 
 export const FormattedContent: React.FC<FormattedContentProps> = ({ text = '' }) => {
-  if (!text) return null;
-
-  // Regex to detect markdown code fences (```lang ... ```)
-  const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
-  const parts: { type: 'text' | 'code'; language?: string; content: string }[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = codeBlockRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
-    }
-    parts.push({
-      type: 'code',
-      language: match[1] || 'javascript',
-      content: match[2].trim(),
-    });
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', content: text.slice(lastIndex) });
-  }
+  const content = useMemo(() => text || '', [text]);
+  if (!content) return null;
 
   return (
-    <div className="space-y-2">
-      {parts.map((part, i) =>
-        part.type === 'code' && part.language === 'mermaid' ? (
-          <MermaidDiagram key={i} chart={part.content} />
-        ) : part.type === 'code' ? (
-          <div key={i} className="rounded-lg overflow-hidden border border-slate-800 text-xs font-mono text-left">
-            <SyntaxHighlighter 
-              language={part.language} 
-              style={vscDarkPlus} 
-              customStyle={{ margin: 0, padding: '1rem', background: '#07090e' }}
-            >
-              {part.content}
-            </SyntaxHighlighter>
-          </div>
-        ) : (
-          <p key={i} className="whitespace-pre-wrap leading-relaxed">
-            {part.content}
-          </p>
-        )
-      )}
+    <div className="fios-prose text-sm text-[var(--fios-text)]">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={{
+          code({ className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || '');
+            const lang = match?.[1];
+            const code = String(children).replace(/\n$/, '');
+            const isInline = !className && !String(children).includes('\n');
+
+            if (isInline) {
+              return (
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              );
+            }
+
+            if (lang === 'mermaid') {
+              return <MermaidDiagram chart={code} />;
+            }
+
+            return (
+              <div className="rounded-lg overflow-hidden border border-slate-800 text-xs font-mono text-left my-2">
+                <SyntaxHighlighter
+                  language={lang || 'javascript'}
+                  style={vscDarkPlus}
+                  customStyle={{ margin: 0, padding: '1rem', background: '#07090e' }}
+                >
+                  {code}
+                </SyntaxHighlighter>
+              </div>
+            );
+          },
+          pre({ children }) {
+            return <>{children}</>;
+          },
+        }}
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   );
 };

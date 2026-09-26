@@ -281,3 +281,70 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- ============================================================================
+-- v2.2.0 additive migrations (idempotent)
+-- ============================================================================
+
+-- user_profiles.prefs: free-form client preferences (widgets, a11y, nav)
+alter table public.user_profiles add column if not exists prefs jsonb not null default '{}'::jsonb;
+
+-- modules: nested folders via parent_code + tags
+alter table public.modules add column if not exists parent_code text;
+alter table public.modules add column if not exists tags text[] not null default '{}';
+
+-- document_revisions: AI notes summary edit history
+create table if not exists public.document_revisions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  document_id uuid not null references public.documents (id) on delete cascade,
+  summary text not null default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists document_revisions_doc_idx on public.document_revisions (document_id, created_at desc);
+create index if not exists document_revisions_user_idx on public.document_revisions (user_id);
+
+-- tutor_messages: independent AI Tutor chat persistence
+create table if not exists public.tutor_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  role text not null default 'user',
+  content text not null default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists tutor_messages_user_idx on public.tutor_messages (user_id, created_at);
+
+-- note_chunks: RAG index passages for uploaded notes
+create table if not exists public.note_chunks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  document_id uuid references public.documents (id) on delete cascade,
+  chunk_index integer not null default 0,
+  content text not null default '',
+  embedding jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists note_chunks_user_idx on public.note_chunks (user_id);
+create index if not exists note_chunks_doc_idx on public.note_chunks (document_id);
+
+alter table public.document_revisions enable row level security;
+alter table public.tutor_messages enable row level security;
+alter table public.note_chunks enable row level security;
+
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'document_revisions' and policyname = 'document_revisions_owner') then
+    create policy document_revisions_owner on public.document_revisions
+      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  end if;
+
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'tutor_messages' and policyname = 'tutor_messages_owner') then
+    create policy tutor_messages_owner on public.tutor_messages
+      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  end if;
+
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'note_chunks' and policyname = 'note_chunks_owner') then
+    create policy note_chunks_owner on public.note_chunks
+      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  end if;
+end $$;

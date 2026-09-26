@@ -3,14 +3,15 @@ import { motion } from 'framer-motion';
 import {
   Zap, Plus, ArrowRight, Calendar, CheckCircle2,
   Clock, Layers, FolderKanban, Trash2, MapPin, Sparkles, Check,
+  GripVertical, Eye, EyeOff,
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { IS_DEMO } from '../lib/demo';
 import { getSavedCalendarUrl, fetchAndParseCalendar, CalendarEvent } from '../lib/calendarService';
 import { getTasks, createTask, toggleTask, deleteTask } from '../lib/taskService';
 import { getUserDecksWithCards } from '../lib/deckService';
 import type { Task } from '../types/db';
 import { usePreferredName, useProfile } from '../context/ProfileContext';
+import { usePreferences, type WidgetId, DEFAULT_WIDGET_ORDER } from '../context/PreferencesContext';
 import { Avatar } from './Avatar';
 import { ModuleHeatmap } from './ModuleHeatmap';
 import { RevisionFlightPlan } from './RevisionFlightPlan';
@@ -35,9 +36,17 @@ function greetingFor(date: Date): string {
   return 'Good evening';
 }
 
+const WIDGET_LABELS: Record<WidgetId, string> = {
+  flightPlan: 'Flight Plan',
+  heatmap: 'Heatmap',
+  dueCards: 'Due Cards',
+  calendar: 'iCal Agenda',
+};
+
 const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavigate }) => {
   const rawPreferredName = usePreferredName();
   const { profile } = useProfile();
+  const { widgetOrder, widgetVisibility, setWidgetOrder, setWidgetVisible } = usePreferences();
   
   // Guard demo mode to fallback to "Student" instead of personal name strings
   const preferredName = IS_DEMO 
@@ -46,8 +55,10 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
 
   const [savedDecks, setSavedDecks] = useState<SavedDeck[]>([]);
   const [loadingDecks, setLoadingDecks] = useState(true);
+  const [dueCardCount, setDueCardCount] = useState(0);
 
   const [todayClasses, setTodayClasses] = useState<CalendarEvent[]>([]);
+  const [upcomingClasses, setUpcomingClasses] = useState<CalendarEvent[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -69,6 +80,14 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
       try {
         const data = await getUserDecksWithCards();
         setSavedDecks((data || []).slice(0, 3) as SavedDeck[]);
+        const nowIso = new Date().toISOString();
+        let due = 0;
+        for (const deck of data || []) {
+          for (const c of (deck as any).cards || []) {
+            if (!c.next_review || c.next_review <= nowIso) due++;
+          }
+        }
+        setDueCardCount(due);
       } catch (err) {
         console.error('Failed to load decks:', err);
       } finally {
@@ -89,6 +108,11 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
             e.startDate.getDate() === now.getDate()
           ).sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
           setTodayClasses(todayEvents);
+          const upcoming = events
+            .filter((e) => e.startDate.getTime() >= now.getTime())
+            .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
+            .slice(0, 5);
+          setUpcomingClasses(upcoming);
         }
       } catch (err) {
         console.error('Failed to load today classes:', err);
@@ -135,6 +159,88 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
 
   const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   const pendingTaskCount = tasks.filter((t) => !t.completed).length;
+
+  const orderedWidgets = useMemo(() => {
+    const order = widgetOrder?.length ? widgetOrder : DEFAULT_WIDGET_ORDER;
+    return order.filter((id) => widgetVisibility[id] !== false);
+  }, [widgetOrder, widgetVisibility]);
+
+  const moveWidget = (id: WidgetId, dir: -1 | 1) => {
+    const order = [...(widgetOrder?.length ? widgetOrder : DEFAULT_WIDGET_ORDER)];
+    const i = order.indexOf(id);
+    if (i < 0) return;
+    const j = i + dir;
+    if (j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j], order[i]];
+    setWidgetOrder(order);
+  };
+
+  const renderWidget = (id: WidgetId) => {
+    if (id === 'flightPlan') {
+      return <RevisionFlightPlan key={id} onNavigate={(tab) => onNavigate?.(tab)} />;
+    }
+    if (id === 'heatmap') {
+      return <ModuleHeatmap key={id} />;
+    }
+    if (id === 'dueCards') {
+      return (
+        <div key={id} className="bg-[#0e131f]/60 border border-slate-800/80 rounded-2xl p-6 space-y-3 shadow-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-1 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5" /> Due SM-2 Cards
+              </div>
+              <h3 className="text-lg font-black italic uppercase tracking-wide text-white">Review queue</h3>
+            </div>
+            <span className="text-2xl font-black accent-solid-text font-mono">{dueCardCount}</span>
+          </div>
+          <p className="text-xs text-slate-400">Cards due today across all decks according to your SM-2 schedule.</p>
+          <button
+            type="button"
+            onClick={() => onOpenFlashcards()}
+            className="text-xs font-mono accent-solid-text hover:underline cursor-pointer"
+          >
+            Open Study Lab →
+          </button>
+        </div>
+      );
+    }
+    if (id === 'calendar') {
+      return (
+        <div key={id} className="bg-[#0e131f]/60 border border-slate-800/80 rounded-2xl p-6 space-y-3 shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <div>
+              <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-0.5">iCal Overlay</div>
+              <h3 className="text-lg font-black italic uppercase tracking-wide text-white">Compact agenda</h3>
+            </div>
+            <button type="button" onClick={() => onNavigate?.('atu-calendar')} className="text-xs font-mono accent-solid-text hover:underline cursor-pointer">
+              Full calendar →
+            </button>
+          </div>
+          {loadingClasses ? (
+            <div className="py-6 text-center text-xs font-mono text-slate-500 animate-pulse">Syncing feed…</div>
+          ) : upcomingClasses.length === 0 ? (
+            <p className="text-xs text-slate-400 py-4">No upcoming events. Add an iCal URL in Settings.</p>
+          ) : (
+            <div className="space-y-2">
+              {upcomingClasses.map((item) => (
+                <div key={item.id} className="p-3 rounded-xl bg-[#07090e]/80 border border-slate-800/80 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-mono text-slate-400">
+                      {item.startDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · {formatTime(item.startDate)}
+                    </div>
+                    <div className="text-xs font-bold text-white truncate">{item.title}</div>
+                  </div>
+                  {item.location && <MapPin className="w-3.5 h-3.5 accent-solid-text shrink-0" />}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto font-sans text-slate-100">
@@ -340,13 +446,38 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         </div>
       </div>
 
-      {/* 4. Revision Flight Plan */}
-      <RevisionFlightPlan onNavigate={(tab) => onNavigate?.(tab)} />
+      {/* Modular widgets — toggle / reorder via Preferences */}
+      <div className="rounded-2xl border fios-border bg-[var(--fios-surface)]/40 p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-xs font-black uppercase tracking-widest text-[var(--fios-text-muted)]">Dashboard widgets</h3>
+          <div className="flex flex-wrap gap-1.5">
+            {(widgetOrder?.length ? widgetOrder : DEFAULT_WIDGET_ORDER).map((id) => (
+              <div key={id} className="flex items-center gap-0.5 rounded-lg border fios-border bg-[var(--fios-surface-2)] px-1.5 py-1">
+                <button type="button" onClick={() => moveWidget(id, -1)} className="p-0.5 text-[var(--fios-text-muted)] cursor-pointer" aria-label={`Move ${id} up`}>
+                  <GripVertical className="w-3 h-3" />
+                </button>
+                <span className="text-[10px] font-mono font-bold text-[var(--fios-text)] px-1">{WIDGET_LABELS[id]}</span>
+                <button
+                  type="button"
+                  onClick={() => setWidgetVisible(id, widgetVisibility[id] === false)}
+                  className="p-0.5 cursor-pointer text-[var(--fios-text-muted)]"
+                  aria-label={`Toggle ${id}`}
+                >
+                  {widgetVisibility[id] === false ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3 accent-solid-text" />}
+                </button>
+                <button type="button" onClick={() => moveWidget(id, 1)} className="p-0.5 text-[var(--fios-text-muted)] cursor-pointer text-[10px] font-mono" aria-label={`Move ${id} down`}>
+                  ↓
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-6">
+          {orderedWidgets.map((id) => renderWidget(id))}
+        </div>
+      </div>
 
-      {/* 5. Subject Readiness Heatmap */}
-      <ModuleHeatmap />
-
-      {/* 6. Saved Study Decks */}
+      {/* Saved Study Decks */}
       <div className="bg-[#0e131f]/60 border border-slate-800/80 rounded-2xl p-6 space-y-4 shadow-xl">
         <div className="flex items-center justify-between">
           <div>
