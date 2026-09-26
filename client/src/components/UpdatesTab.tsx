@@ -4,6 +4,18 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v2.2.9',
+      date: 'September 2026',
+      title: 'Mobile widgets OFF + drawer scroll lock',
+      highlights: [
+        'Mobile: Quick Widget FAB and Pomodoro floating widget now reliably default OFF when the user has not toggled them in Settings — including for returning users whose prefs still had the old baked-in `true` defaults.',
+        'Adds `floatingWidgetsExplicit` so intentional Settings toggles are preserved; profile sync no longer re-enables widgets from legacy remote prefs.',
+        'Desktop viewport defaults stay ON until the user changes them; Reset Preferences returns to viewport-aware defaults.',
+        'Mobile nav drawer: background page scroll is locked while the drawer/overlay is open (body position fixed + touchmove blocked on backdrop); scroll position restored on close. Drawer panel itself still scrolls.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.9.',
+      ],
+    },
+    {
       version: 'v2.2.8',
       date: 'September 2026',
       title: 'Logo & PWA icon polish',
@@ -160,7 +172,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v2.2.8</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v2.2.9</p>
       </header>
 
       <div className="space-y-4">

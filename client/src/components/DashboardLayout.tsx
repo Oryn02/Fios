@@ -34,7 +34,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v2.2.8', icon: Sparkles },
+  { id: 'updates', label: 'Updates v2.2.9', icon: Sparkles },
 ];
 
 /** Tabs where Zen may hide chrome (study surfaces). Settings/Overview always keep nav. */
@@ -91,6 +91,52 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
   }, [isDesktop]);
 
   const navToggleOpen = isDesktop ? sidebarOpen : drawerOpen;
+
+  /** Lock background page scroll while the mobile drawer/overlay is open (iOS-safe). */
+  useEffect(() => {
+    if (!drawerOpen || isDesktop) return;
+
+    const html = document.documentElement;
+    const body = document.body;
+    const scrollY = window.scrollY;
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+      bodyWidth: body.style.width,
+    };
+
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+
+    const onTouchMove = (e: TouchEvent) => {
+      const target = e.target as Element | null;
+      // Allow scrolling inside the drawer panel itself
+      if (target?.closest?.('[data-mobile-drawer-scroll]')) return;
+      e.preventDefault();
+    };
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+
+    return () => {
+      document.removeEventListener('touchmove', onTouchMove);
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.position = prev.bodyPosition;
+      body.style.top = prev.bodyTop;
+      body.style.left = prev.bodyLeft;
+      body.style.right = prev.bodyRight;
+      body.style.width = prev.bodyWidth;
+      window.scrollTo(0, scrollY);
+    };
+  }, [drawerOpen, isDesktop]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -249,7 +295,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             >
               <FiosLogo size="lg" className="leading-none min-w-0 pointer-events-none" />
             </button>
-            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.8</span>
+            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.9</span>
             {zenMode && (
               <button
                 type="button"
@@ -344,10 +390,12 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 top-14 sm:top-16 z-40 bg-black/50"
                 onClick={() => setDrawerOpen(false)}
+                onTouchMove={(e) => e.preventDefault()}
                 aria-hidden
               />
               <motion.aside
                 id="fios-mobile-drawer"
+                data-mobile-drawer-scroll
                 initial={{ x: '-100%' }}
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
@@ -518,10 +566,12 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-40 bg-black/50"
               onClick={() => setDrawerOpen(false)}
+              onTouchMove={(e) => e.preventDefault()}
               aria-hidden
             />
             <motion.aside
               id="fios-mobile-drawer-zen"
+              data-mobile-drawer-scroll
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
