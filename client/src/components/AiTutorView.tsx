@@ -5,6 +5,7 @@ import { askTutor } from '../services/aiApi';
 import { queryRag } from '../lib/ragClient';
 import { FormattedContent } from './FormattedContent';
 import { GeminiGate } from './GeminiGate';
+import { useAiAuth } from '../context/AiAuthContext';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO } from '../lib/demo';
 import { toast } from '../lib/toast';
@@ -32,6 +33,7 @@ function saveLocal(msgs: ChatMessage[]) {
 }
 
 const AiTutorInner: React.FC = () => {
+  const { requireAiAuth } = useAiAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [question, setQuestion] = useState('');
   const [thinking, setThinking] = useState(false);
@@ -71,6 +73,7 @@ const AiTutorInner: React.FC = () => {
 
   const send = async () => {
     if (!question.trim() || thinking) return;
+    if (!requireAiAuth()) return;
     const q = question.trim();
     setQuestion('');
     const userMsg: ChatMessage = {

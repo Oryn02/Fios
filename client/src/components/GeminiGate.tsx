@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { KeyRound, Lock, ExternalLink, Check, Loader2, X, HelpCircle } from 'lucide-react';
+import { KeyRound, Lock, ExternalLink, Check, Loader2, X, HelpCircle, GitBranch } from 'lucide-react';
 import { useProfile } from '../context/ProfileContext';
+import { useAiAuth } from '../context/AiAuthContext';
 import { validateGeminiKey } from '../services/aiApi';
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
@@ -142,10 +143,34 @@ export const GeminiKeyModal: React.FC<{ onClose: () => void; onSaved?: () => voi
   );
 };
 
-/** Wrap an AI feature. Renders children when a key is configured, otherwise a lock callout. */
+/** Wrap an AI feature. Auth guard first, then Gemini key gate. */
 export const GeminiGate: React.FC<{ feature: string; children: React.ReactNode }> = ({ feature, children }) => {
   const hasKey = useHasGeminiKey();
+  const { allowed, openLock } = useAiAuth();
   const [open, setOpen] = useState(false);
+
+  if (!allowed) {
+    return (
+      <div className="max-w-lg mx-auto my-10 text-center rounded-2xl border fios-border bg-[var(--fios-surface)] p-8 space-y-4">
+        <div className="w-14 h-14 rounded-2xl accent-bg flex items-center justify-center text-slate-950 mx-auto">
+          <Lock className="w-6 h-6" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-lg font-black text-[var(--fios-text)]">{feature} is locked in the live demo</h3>
+          <p className="text-sm text-[var(--fios-text-muted)]">
+            AI features and cloud generation need a signed-in account. Sign in with GitHub to unlock Fios v2.2.0.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={openLock}
+          className="px-5 py-2.5 accent-bg text-slate-950 font-black uppercase text-xs rounded-xl transition-transform active:scale-[0.98] cursor-pointer inline-flex items-center gap-2"
+        >
+          <GitBranch className="w-4 h-4" /> Sign In with GitHub
+        </button>
+      </div>
+    );
+  }
 
   if (hasKey) return <>{children}</>;
 

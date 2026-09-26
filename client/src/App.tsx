@@ -31,7 +31,9 @@ import { ProfileProvider } from './context/ProfileContext';
 import { PomodoroProvider } from './context/PomodoroContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PreferencesProvider } from './context/PreferencesContext';
+import { AiAuthProvider } from './context/AiAuthContext';
 import { startOfflineQueueListener } from './lib/offlineQueue';
+import { useAiAuth } from './context/AiAuthContext';
 
 interface SelectedDeck {
   cards: Flashcard[];
@@ -43,6 +45,7 @@ interface SelectedDeck {
 const IDLE_MS = 24 * 60 * 60 * 1000;
 
 const Dashboard: React.FC = () => {
+  const { requireAiAuth } = useAiAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [studyNotes, setStudyNotes] = useState('');
   const [cards, setCards] = useState<Flashcard[]>([]);
@@ -67,6 +70,7 @@ const Dashboard: React.FC = () => {
   const handleGenerate = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!studyNotes.trim()) return;
+    if (!requireAiAuth()) return;
 
     setLoading(true);
     setError(null);
@@ -85,7 +89,7 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [studyNotes]);
+  }, [studyNotes, requireAiAuth]);
 
   const handleOpenFlashcards = useCallback((
     deckCards?: any[],
@@ -391,10 +395,12 @@ export function App() {
       <ThemeProvider>
         <PreferencesProvider>
           <PomodoroProvider>
-            <ToastProvider>
-              <Dashboard />
-              <CookieConsent />
-            </ToastProvider>
+            <AiAuthProvider>
+              <ToastProvider>
+                <Dashboard />
+                <CookieConsent />
+              </ToastProvider>
+            </AiAuthProvider>
           </PomodoroProvider>
         </PreferencesProvider>
       </ThemeProvider>

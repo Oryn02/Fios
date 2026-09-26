@@ -2,12 +2,14 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Upload, FileText, X, Loader2, AlertCircle } from 'lucide-react';
 import { extractTextFromPDF } from '../lib/pdfExtractor';
 import { uploadPdfToServer } from '../lib/ragClient';
+import { useAiAuth } from '../context/AiAuthContext';
 
 interface FileUploadProps {
-  onTextExtracted: (text: string, filename: string) => void;
+  onTextExtracted: (text: string, filename?: string) => void;
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
+  const { requireAiAuth } = useAiAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +25,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
 
   const processFile = async (file: File) => {
     if (!file) return;
+    if (!requireAiAuth()) return;
 
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     const isText = file.type.startsWith('text/') || file.name.toLowerCase().endsWith('.txt');
@@ -91,7 +94,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            if (!requireAiAuth()) return;
+            fileInputRef.current?.click();
+          }}
           style={{ '--tw-border-opacity': '1' } as React.CSSProperties}
           className="border-2 border-dashed border-slate-700 hover:border-[var(--fios-accent-solid)] rounded-xl p-5 text-center bg-[#07090e]/50 hover:bg-[#07090e] transition-all cursor-pointer group hover:shadow-[0_0_20px_color-mix(in_srgb,var(--fios-accent-solid)_25%,transparent)]"
         >

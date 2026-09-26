@@ -6,6 +6,7 @@ import {
   Trophy, Bug, Terminal, PencilRuler, Trash2, Folder, Loader2, Eye,
 } from 'lucide-react';
 import { generateCodeExam, gradeCodeExam, type CodeGradeResult } from '../services/codeApi';
+import { useAiAuth } from '../context/AiAuthContext';
 import { getCodeExams, saveCodeExam, deleteCodeExam } from '../lib/codeExamService';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import {
@@ -38,6 +39,7 @@ interface CodeExamViewProps {
 
 export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => {
   const { resolvedTheme } = useTheme();
+  const { requireAiAuth } = useAiAuth();
   const monacoTheme = resolvedTheme === 'light' ? 'vs' : 'vs-dark';
   const [language, setLanguage] = useState<CodeLanguage>('javascript');
   const [examType, setExamType] = useState<CodeExamType>('bug_fix');
@@ -99,6 +101,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
   }, [loadSaved, initialExamId, openSaved]);
 
   const handleGenerate = useCallback(async () => {
+    if (!requireAiAuth()) return;
     setGenerating(true);
     setError(null);
     setGrade(null);
@@ -127,10 +130,11 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
     } finally {
       setGenerating(false);
     }
-  }, [language, examType, topic, customPrompt]);
+  }, [language, examType, topic, customPrompt, requireAiAuth]);
 
   const handleGrade = useCallback(async () => {
     if (!challenge) return;
+    if (!requireAiAuth()) return;
     setGrading(true);
     setError(null);
     try {
@@ -146,7 +150,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
     } finally {
       setGrading(false);
     }
-  }, [challenge, userCode]);
+  }, [challenge, userCode, requireAiAuth]);
 
   const handleSave = useCallback(async () => {
     if (!challenge) return;

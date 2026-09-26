@@ -6,12 +6,14 @@ import { getQuizzes, saveQuiz, deleteQuiz } from '../lib/mcqService';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { MCQQuestion, MCQQuiz } from '../types/db';
 import { FileUpload } from './FileUpload';
+import { useAiAuth } from '../context/AiAuthContext';
 
 interface QuizExamViewProps {
   initialQuizId?: string | null;
 }
 
 export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => {
+  const { requireAiAuth } = useAiAuth();
   const [studyNotes, setStudyNotes] = useState('');
   const [title, setTitle] = useState('');
   const [moduleCode, setModuleCode] = useState('');
@@ -62,6 +64,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
   const handleGenerateQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studyNotes.trim()) return;
+    if (!requireAiAuth()) return;
     setLoading(true);
     setError(null);
     setQuestions([]);

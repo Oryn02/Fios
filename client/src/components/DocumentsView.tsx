@@ -11,6 +11,8 @@ import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { FiosDocument } from '../types/db';
 import { GeminiGate } from './GeminiGate';
 import { FormattedContent } from './FormattedContent';
+import { MediaStudyInput } from './MediaStudyInput';
+import { useAiAuth } from '../context/AiAuthContext';
 import { toast } from '../lib/toast';
 
 interface ChatMessage { role: 'user' | 'assistant'; text: string; }
@@ -26,6 +28,7 @@ interface SummaryRevision {
 }
 
 const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenTutor }) => {
+  const { requireAiAuth } = useAiAuth();
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
   const [moduleCode, setModuleCode] = useState('');
@@ -137,6 +140,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
 
   const handleSummarize = async () => {
     if (!text.trim()) return;
+    if (!requireAiAuth()) return;
     setBusy(true);
     setError(null);
     try {
@@ -179,6 +183,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
 
   const send = async () => {
     if (!question.trim()) return;
+    if (!requireAiAuth()) return;
     const q = question.trim();
     setQuestion('');
     setMessages((prev) => [...prev, { role: 'user', text: q }]);
@@ -231,6 +236,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         </div>
 
         <FileUpload onTextExtracted={(t) => setText(t)} />
+        <MediaStudyInput onNotes={(md) => setText((prev) => (prev.trim() ? `${prev}\n\n${md}` : md))} />
 
         <textarea
           value={text}
