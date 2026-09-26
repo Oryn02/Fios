@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Zap, FileText, Timer, Bot, X, Layers, Check, Loader2, Folder } from 'lucide-react';
 import { usePomodoroControls } from '../context/PomodoroContext';
+import { usePreferences, type SmartActionId, DEFAULT_SMART_ACTIONS } from '../context/PreferencesContext';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO } from '../lib/demo';
 import { getUserModules, type DBModule } from '../lib/moduleService';
+import { getUserDecksWithCards } from '../lib/deckService';
+import { getTasks } from '../lib/taskService';
 
 interface QuickActionsProps {
   onNavigate: (tab: string, options?: { openTutor?: boolean }) => void;
   onOpenTutor?: () => void;
 }
+
+const ACTION_META: Record<SmartActionId, { icon: typeof Zap; label: string }> = {
+  flashcard: { icon: Zap, label: 'Quick Add Flashcard' },
+  note: { icon: FileText, label: 'New Note' },
+  pomodoro: { icon: Timer, label: 'Start Pomodoro' },
+  tutor: { icon: Bot, label: 'Ask AI' },
+};
 
 const QuickAddFlashcardModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [front, setFront] = useState('');
@@ -90,28 +100,68 @@ const QuickAddFlashcardModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
 
 export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTutor }) => {
   const { start } = usePomodoroControls();
+  const {
+    showSmartWidget,
+    smartWidgetActions,
+    smartWidgetCompact,
+    smartWidgetShowMetrics,
+  } = usePreferences();
   const [open, setOpen] = useState(false);
   const [showFlashcard, setShowFlashcard] = useState(false);
+  const [dueCount, setDueCount] = useState(0);
+  const [taskCount, setTaskCount] = useState(0);
+
+  useEffect(() => {
+    if (!showSmartWidget || !smartWidgetShowMetrics) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [decks, tasks] = await Promise.all([
+          getUserDecksWithCards().catch(() => []),
+          getTasks().catch(() => []),
+        ]);
+        if (cancelled) return;
+        const nowIso = new Date().toISOString();
+        let due = 0;
+        for (const deck of decks || []) {
+          for (const c of (deck as any).cards || []) {
+            if (!c.next_review || c.next_review <= nowIso) due++;
+          }
+        }
+        setDueCount(due);
+        setTaskCount((tasks || []).filter((t: any) => !t.completed).length);
+      } catch {
+        /* ignore metrics failures */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [showSmartWidget, smartWidgetShowMetrics]);
 
   const handleAskAI = () => {
     setOpen(false);
-    if (onOpenTutor) {
-      onOpenTutor();
-    } else {
-      onNavigate('tutor');
-    }
+    if (onOpenTutor) onOpenTutor();
+    else onNavigate('tutor');
   };
 
-  const actions = [
-    { icon: Zap, label: 'Quick Add Flashcard', onClick: () => { setShowFlashcard(true); setOpen(false); } },
-    { icon: FileText, label: 'New Note', onClick: () => { onNavigate('documents'); setOpen(false); } },
-    { icon: Timer, label: 'Start Pomodoro', onClick: () => { start(); onNavigate('timer'); setOpen(false); } },
-    { icon: Bot, label: 'Ask AI', onClick: handleAskAI },
-  ];
+  const actionHandlers: Record<SmartActionId, () => void> = {
+    flashcard: () => { setShowFlashcard(true); setOpen(false); },
+    note: () => { onNavigate('documents'); setOpen(false); },
+    pomodoro: () => { start(); onNavigate('timer'); setOpen(false); },
+    tutor: handleAskAI,
+  };
+
+  const actions = useMemo(() => {
+    const ids = (smartWidgetActions?.length ? smartWidgetActions : DEFAULT_SMART_ACTIONS) as SmartActionId[];
+    return ids
+      .filter((id) => ACTION_META[id])
+      .map((id) => ({ id, ...ACTION_META[id], onClick: actionHandlers[id] }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handlers close over latest navigate
+  }, [smartWidgetActions, onNavigate, onOpenTutor]);
+
+  if (!showSmartWidget) return null;
 
   return (
     <>
-      {/* Click-outside backdrop when floating menu is open */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -128,11 +178,18 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
         <AnimatePresence>
           {open && (
             <motion.div initial={{ opacity: 0, y: 8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.95 }} className="flex flex-col gap-2 items-end">
+              {smartWidgetShowMetrics && !smartWidgetCompact && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border fios-border bg-[var(--fios-surface)] text-[10px] font-mono font-bold text-[var(--fios-text-muted)] shadow-xl">
+                  <span className="accent-solid-text">{dueCount} due</span>
+                  <span>·</span>
+                  <span>{taskCount} tasks</span>
+                </div>
+              )}
               {actions.map((a) => {
                 const Icon = a.icon;
                 return (
                   <motion.button
-                    key={a.label}
+                    key={a.id}
                     whileHover={{ x: -3 }}
                     whileTap={{ scale: 0.96 }}
                     onClick={a.onClick}
@@ -150,9 +207,14 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={() => setOpen((v) => !v)}
-          className="w-12 h-12 rounded-2xl accent-bg text-slate-950 shadow-2xl accent-glow cursor-pointer flex items-center justify-center"
+          className={`rounded-2xl accent-bg text-slate-950 shadow-2xl accent-glow cursor-pointer flex items-center justify-center gap-2 ${
+            smartWidgetCompact ? 'w-11 h-11' : 'w-12 h-12'
+          } ${smartWidgetShowMetrics && smartWidgetCompact ? 'px-3 w-auto min-w-12' : ''}`}
           aria-label="Quick actions"
         >
+          {smartWidgetShowMetrics && smartWidgetCompact && (
+            <span className="text-[10px] font-black font-mono pl-1">{dueCount}</span>
+          )}
           <motion.span animate={{ rotate: open ? 45 : 0 }} className="block"><Plus className="w-6 h-6" /></motion.span>
         </motion.button>
       </div>

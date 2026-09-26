@@ -4,6 +4,20 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v2.2.2',
+      date: 'September 2026',
+      title: 'Render deploy, API 405 fix, Zen escape & widget prefs',
+      highlights: [
+        'Migrated hosting docs to Render: Web Service root `server` + Static Site root `client` (`render.yaml`). Never set Root Directory to `src` (fixes ENOENT package.json).',
+        'Production API via `VITE_API_URL` (Render API origin) — client `apiBase` helper; Express always listens + CORS `CLIENT_ORIGIN`; /health for Render.',
+        'Fixes production 405s on flashcards, AI tutor, iCal timetable sync, PDF upload, and related POSTs (no more SPA/static intercepting `/api/*`).',
+        'College Timetable uses same-origin or Render `/api/ical-proxy` (POST + GET); Workbox NetworkOnly for `/api/*`.',
+        'Zen / Deep Focus: chrome hide only on study tabs; Esc, floating Exit Zen, mobile Menu/Settings escape — no nav traps.',
+        'Bottom navbar customization: add, hide, reorder up to 5 slots; desktop sidebar drag + Settings reorder (persisted prefs).',
+        'Settings toggles to fully disable Pomodoro Widget and Smart Quick Widget; tailor Smart Quick actions, order, compact FAB, and metrics chip.',
+      ],
+    },
+    {
       version: 'v2.2.0',
       date: 'September 2026',
       title: 'PWA, Themes, Tutor & Study Engine UI',
@@ -50,7 +64,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v2.2.0</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v2.2.2</p>
       </header>
 
       <div className="space-y-4">

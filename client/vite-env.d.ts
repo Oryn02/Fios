@@ -7,6 +7,8 @@ interface ImportMetaEnv {
   readonly VITE_DEMO_MODE?: string;
   readonly VITE_ADMIN_UID?: string;
   readonly VITE_GITHUB_TOKEN?: string;
+  /** Render API origin, e.g. https://fios-api.onrender.com (no trailing slash). */
+  readonly VITE_API_URL?: string;
 }
 
 interface ImportMeta {

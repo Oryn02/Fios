@@ -1,5 +1,6 @@
 import ICAL from 'ical.js';
 import { supabase } from './supabase';
+import { apiUrl } from './apiBase';
 
 export interface CalendarEvent {
   id: string;
@@ -46,15 +47,37 @@ export function parseIcsText(icsData: string): CalendarEvent[] {
   return events.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 }
 
+/**
+ * Fetch an iCal/WebCAL feed via the Express proxy on Render (or local Vite proxy).
+ * Uses VITE_API_URL when the static site and API are split services.
+ */
 export async function fetchAndParseCalendar(icalUrl: string): Promise<CalendarEvent[]> {
-  const backendProxyUrl = `http://localhost:5000/ical-proxy?url=${encodeURIComponent(icalUrl)}`;
+  const trimmed = icalUrl.trim();
+  if (!trimmed) throw new Error('Calendar URL is required.');
 
-  const response = await fetch(backendProxyUrl);
+  let response = await fetch(apiUrl('/api/ical-proxy'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: trimmed }),
+  });
+
+  if (response.status === 405 || response.status === 404) {
+    response = await fetch(`${apiUrl('/api/ical-proxy')}?url=${encodeURIComponent(trimmed)}`, {
+      method: 'GET',
+    });
+  }
+
   if (!response.ok) {
-    const errJson = await response.json().catch(() => ({}));
-    throw new Error(errJson.error || 'Failed to fetch timetable feed from server proxy.');
+    const errJson = await response.json().catch(() => ({} as { error?: string }));
+    throw new Error(
+      errJson.error || `Timetable sync failed (HTTP ${response.status})`
+    );
   }
 
   const icsData = await response.text();
+  if (!icsData || !/BEGIN:VCALENDAR/i.test(icsData)) {
+    throw new Error('Timetable proxy returned an empty or invalid calendar feed.');
+  }
+
   return parseIcsText(icsData);
 }

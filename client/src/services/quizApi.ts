@@ -1,4 +1,5 @@
 import { getGeminiKey } from '../lib/geminiKey';
+import { apiUrl } from '../lib/apiBase';
 
 export interface QuizQuestion {
   id: string;
@@ -9,7 +10,8 @@ export interface QuizQuestion {
 }
 
 export async function generateQuizFromNotes(notes: string): Promise<QuizQuestion[]> {
-  const response = await fetch('/api/generate/quiz', {
+  const path = '/api/generate/quiz';
+  const response = await fetch(apiUrl(path), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: notes, apiKey: getGeminiKey() }),
@@ -24,15 +26,14 @@ export async function generateQuizFromNotes(notes: string): Promise<QuizQuestion
   let data: any;
   try {
     data = JSON.parse(responseText);
-  } catch (err) {
-    throw new Error(`Server returned non-JSON output (Status ${response.status}): ${responseText.slice(0, 100)}`);
+  } catch {
+    throw new Error(`Server returned non-JSON output (Status ${response.status}) for ${path}`);
   }
 
   if (!response.ok) {
     throw new Error(data.error || `Server error: ${response.status}`);
   }
 
-  // Handle both direct arrays or nested { questions: [...] }
   const questions = Array.isArray(data) ? data : data?.questions || [];
 
   if (questions.length === 0) {

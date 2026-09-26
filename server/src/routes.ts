@@ -276,35 +276,59 @@ router.post('/validate-key', async (req: Request, res: Response) => {
    ========================================================================== */
 
 /**
- * GET /ical-proxy?url=...
+ * GET|POST /ical-proxy
+ * - GET  ?url=...
+ * - POST { url } (preferred — avoids long-query issues)
  * Proxies an iCal/WebCAL feed with browser-spoof headers for ATU timetables.
  */
 const handleICalProxy = async (req: Request, res: Response) => {
   try {
-    const { url } = req.query;
+    const rawUrl =
+      (typeof req.body?.url === 'string' && req.body.url.trim()) ||
+      (typeof req.query.url === 'string' && req.query.url.trim()) ||
+      '';
 
-    if (!url || typeof url !== 'string') {
-      return res.status(400).json({ error: 'Missing or invalid "url" query parameter.' });
+    if (!rawUrl) {
+      return res.status(400).json({
+        error: 'Missing or invalid "url". Pass ?url= on GET or JSON { "url" } on POST.',
+      });
     }
 
     // Convert webcal protocol to standard https
-    const targetUrl = url.replace(/^webcal:\/\//i, 'https://');
+    const targetUrl = rawUrl.replace(/^webcal:\/\//i, 'https://');
+
+    let parsed: URL;
+    try {
+      parsed = new URL(targetUrl);
+    } catch {
+      return res.status(400).json({ error: 'Invalid calendar URL.' });
+    }
+
+    if (!/^https?:$/i.test(parsed.protocol)) {
+      return res.status(400).json({ error: 'Calendar URL must be http(s) or webcal.' });
+    }
 
     // Add browser spoof headers so ATU timetable server accepts request
     const response = await fetch(targetUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/calendar, text/plain, */*',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'text/calendar, text/plain, */*',
       },
     });
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: `ATU server responded with status code ${response.status}`,
+        error: `Timetable upstream responded with status code ${response.status}`,
       });
     }
 
     const icsData = await response.text();
+    if (!/BEGIN:VCALENDAR/i.test(icsData)) {
+      return res.status(502).json({
+        error: 'Upstream response was not a valid iCalendar (VCALENDAR) feed.',
+      });
+    }
 
     // Set as text/plain so the frontend fetch() reads it as a string instead of triggering browser download
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -316,7 +340,9 @@ const handleICalProxy = async (req: Request, res: Response) => {
 };
 
 router.get('/ical-proxy', handleICalProxy);
+router.post('/ical-proxy', handleICalProxy);
 router.get('/api/ical-proxy', handleICalProxy);
+router.post('/api/ical-proxy', handleICalProxy);
 
 /* ==========================================================================
    9. PDF UPLOAD (multipart) — fixes prior 405 on POST /upload/pdf

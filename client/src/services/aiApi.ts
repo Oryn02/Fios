@@ -1,11 +1,13 @@
 import { getGeminiKey } from '../lib/geminiKey';
+import { apiUrl } from '../lib/apiBase';
 
 export interface SummaryResult {
   summary: string;
   glossary: { term: string; definition: string }[];
 }
 
-async function postJson<T>(url: string, body: Record<string, unknown>): Promise<T> {
+async function postJson<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  const url = apiUrl(path);
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -16,7 +18,7 @@ async function postJson<T>(url: string, body: Record<string, unknown>): Promise<
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    throw new Error(`Server returned non-JSON output (Status ${response.status}).`);
+    throw new Error(`Server returned non-JSON output (Status ${response.status}) for ${path}`);
   }
   if (!response.ok) throw new Error(data?.error || `Server error: ${response.status}`);
   return data as T;
@@ -39,9 +41,8 @@ export function evaluateRecall(topic: string, userText: string, context: string)
   return postJson<RecallResult>('/api/active-recall', { topic, userText, context });
 }
 
-// Validate a candidate key directly (used by the Settings "Test key" button).
 export async function validateGeminiKey(apiKey: string): Promise<boolean> {
-  const response = await fetch('/api/validate-key', {
+  const response = await fetch(apiUrl('/api/validate-key'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ apiKey }),
