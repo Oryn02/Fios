@@ -1,15 +1,16 @@
 {
-  "name": "Fios Academic Command Center",
+  "name": "Fios",
   "short_name": "Fios",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#0e131f",
+  "background_color": "#07090e",
+  "theme_color": "#10b981",
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
