@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Shield, Calendar, LogOut, Save, Trash2,
   Sliders, Timer, Check, MapPin, IdCard, Palette, Sun, Moon,
-  KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Copy, CheckCircle2, X
+  KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Copy, CheckCircle2, X, Smartphone
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, DEMO_USER, disableDemo, demoFocusSessions } from '../lib/demo';
@@ -147,6 +147,10 @@ const SettingsTabInner: React.FC = () => {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
 
+  // PWA Install Prompt State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
   // Weekly Study Goal State
   const [goalHours, setGoalHours] = useState(profile?.weekly_study_goal_hours ?? 10);
   const [goalSaved, setGoalSaved] = useState(false);
@@ -177,6 +181,27 @@ const SettingsTabInner: React.FC = () => {
   const [longBreak, setLongBreak] = useState(15);
   const [pomodoroSaved, setPomodoroSaved] = useState(false);
   const [savingPomodoro, setSavingPomodoro] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+    }
+    setDeferredPrompt(null);
+  };
 
   useEffect(() => {
     if (profile) {
@@ -408,6 +433,37 @@ const SettingsTabInner: React.FC = () => {
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Account & Studio Settings</h1>
         <p className="text-xs text-slate-400 font-medium">Manage your Fios profile, focus timer defaults, and connected feeds.</p>
       </header>
+
+      {/* INSTALL APP SECTION */}
+      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+            <Smartphone className="w-4 h-4 accent-solid-text" /> Install Fios as an App
+          </h2>
+          <span className="text-[10px] font-mono accent-solid-text bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">PWA Ready</span>
+        </div>
+        <p className="text-xs text-slate-400 leading-relaxed">
+          Pin Fios directly to your phone or desktop home screen for a full-screen, native app experience with zero browser clutter.
+        </p>
+
+        {isInstallable && (
+          <div className="pt-1">
+            <button
+              onClick={handleInstallClick}
+              className="px-5 py-2.5 accent-bg text-slate-950 font-black uppercase text-xs rounded-xl shadow-lg transition-transform active:scale-95 flex items-center gap-2 cursor-pointer"
+            >
+              <Download className="w-4 h-4 fill-slate-950" /> Install Fios App Now
+            </button>
+          </div>
+        )}
+
+        <div className="bg-[#07090e] p-4 rounded-xl border border-slate-800/80 space-y-2 text-xs font-mono text-slate-300">
+          <p className="font-bold text-white uppercase tracking-wide text-[11px] accent-solid-text">📱 How to add on iOS / iPhone:</p>
+          <p className="text-slate-400">1. Open this page in <strong className="text-slate-200">Safari</strong>.</p>
+          <p className="text-slate-400">2. Tap the <strong className="text-slate-200">Share</strong> button in the bottom menu bar.</p>
+          <p className="text-slate-400">3. Scroll down and select <strong className="text-slate-200">"Add to Home Screen"</strong>.</p>
+        </div>
+      </section>
 
       {/* 1. PROFILE */}
       <form onSubmit={handleSaveProfile} className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-5">

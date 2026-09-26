@@ -395,8 +395,8 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         )}
       </div>
 
-      {/* 7. Stats Footer */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
+      {/* 7. Stats Footer (Hidden on mobile to avoid bottom nav overlap, visible on desktop) */}
+      <div className="hidden md:grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
         <div className="bg-[#0e131f]/80 border border-slate-800 rounded-xl p-4 flex items-center gap-3">
           <div className="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/50"><Clock className="w-4 h-4 accent-solid-text" /></div>
           <div>
