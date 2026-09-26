@@ -4,6 +4,18 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v2.2.3',
+      date: 'September 2026',
+      title: 'Zen / nav / widget prefs hardening',
+      highlights: [
+        'Zen Mode: Esc closes mobile drawer first, then exits Zen; Exit Zen stays visible on mobile when Zen is armed (not only desktop).',
+        'Bottom / sidebar nav: Settings reorder uses the effective list when prefs were never saved (no empty-array no-op).',
+        'Widget prefs: profile sync no longer re-enables Pomodoro / Smart Quick (or other booleans) when remote prefs omit those keys.',
+        'Smart Quick Widget: empty action list shows a clear Settings hint instead of a blank menu.',
+        'Builds on v2.2.2 Zen escape, bottom-nav customization, and floating-widget toggles (PR #3 / #4) without regressing Bugbot fixes.',
+      ],
+    },
+    {
       version: 'v2.2.2',
       date: 'September 2026',
       title: 'Render deploy, API 405 fix, Zen escape & widget prefs',
@@ -65,7 +77,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v2.2.2</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v2.2.3</p>
       </header>
 
       <div className="space-y-4">

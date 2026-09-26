@@ -24,7 +24,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose }) => (
           </div>
           <div>
             <h3 id="tos-title" className="text-base font-black uppercase text-[var(--fios-text)]">Terms of Service</h3>
-            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center · v2.2.2</p>
+            <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">Fios Academic Command Center · v2.2.3</p>
           </div>
         </div>
         <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-200 cursor-pointer p-1" aria-label="Close">

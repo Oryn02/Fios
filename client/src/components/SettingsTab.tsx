@@ -420,7 +420,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '2.2.2',
+      version: '2.2.3',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -955,25 +955,28 @@ const SettingsTabInner: React.FC = () => {
           <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Desktop sidebar order</span>
           <p className="text-[10px] text-[var(--fios-text-muted)]">Drag in the sidebar or reorder here. Persists to localStorage / profile prefs.</p>
           <div className="max-h-48 overflow-y-auto space-y-1">
-            {(navOrder.length ? navOrder : DEFAULT_NAV_ORDER).map((id, idx) => {
+            {(() => {
+              const order = navOrder.length ? navOrder : [...DEFAULT_NAV_ORDER];
+              return order.map((id, idx) => {
               const item = NAV_ITEMS.find((n) => n.id === id);
               if (!item) return null;
               return (
                 <div key={id} className="flex items-center gap-2 px-2 py-1 rounded border fios-border text-xs">
                   <span className="flex-1 font-bold text-[var(--fios-text)]">{item.label}</span>
                   <button type="button" disabled={idx === 0} onClick={() => {
-                    const next = [...navOrder];
+                    const next = [...order];
                     [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
                     setNavOrder(next);
                   }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move up"><ChevronUp className="w-3.5 h-3.5" /></button>
-                  <button type="button" disabled={idx >= navOrder.length - 1} onClick={() => {
-                    const next = [...navOrder];
+                  <button type="button" disabled={idx >= order.length - 1} onClick={() => {
+                    const next = [...order];
                     [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
                     setNavOrder(next);
                   }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move down"><ChevronDown className="w-3.5 h-3.5" /></button>
                 </div>
               );
-            })}
+              });
+            })()}
           </div>
           <button type="button" onClick={() => setNavOrder([...DEFAULT_NAV_ORDER])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
             Reset sidebar order
@@ -1075,7 +1078,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.2.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.3.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button

@@ -140,10 +140,22 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
           smartWidgetActions: Array.isArray(remote.smartWidgetActions)
             ? remote.smartWidgetActions
             : prev.smartWidgetActions,
-          showPomodoroWidget: remote.showPomodoroWidget !== false,
-          showSmartWidget: remote.showSmartWidget !== false,
-          smartWidgetCompact: !!remote.smartWidgetCompact,
-          smartWidgetShowMetrics: remote.smartWidgetShowMetrics !== false,
+          // Only adopt remote booleans when explicitly present — avoid reviving disabled widgets.
+          showPomodoroWidget: typeof remote.showPomodoroWidget === 'boolean'
+            ? remote.showPomodoroWidget
+            : prev.showPomodoroWidget,
+          showSmartWidget: typeof remote.showSmartWidget === 'boolean'
+            ? remote.showSmartWidget
+            : prev.showSmartWidget,
+          smartWidgetCompact: typeof remote.smartWidgetCompact === 'boolean'
+            ? remote.smartWidgetCompact
+            : prev.smartWidgetCompact,
+          smartWidgetShowMetrics: typeof remote.smartWidgetShowMetrics === 'boolean'
+            ? remote.smartWidgetShowMetrics
+            : prev.smartWidgetShowMetrics,
+          zenMode: typeof remote.zenMode === 'boolean' ? remote.zenMode : prev.zenMode,
+          lowPower: typeof remote.lowPower === 'boolean' ? remote.lowPower : prev.lowPower,
+          openDyslexic: typeof remote.openDyslexic === 'boolean' ? remote.openDyslexic : prev.openDyslexic,
         };
         localStorage.setItem(LS_KEY, JSON.stringify(next));
         return next;

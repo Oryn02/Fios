@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v2.2.2**
+**Current version: v2.2.3**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -21,8 +21,8 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Global Pomodoro Timer** — floating widget with Web Audio soundscapes and Weekly Study Goal tracker (can be disabled in Settings).
 - **Smart Quick Widget** — floating quick actions with customizable metrics/actions (can be fully disabled).
 - **PWA** — installable standalone app via VitePWA + Workbox; offline mutation queue (IndexedDB).
-- **Themes** — Dark / Light / System, Low-Power mode, Zen focus (with Esc / Exit Zen escape), OpenDyslexic, warm light palette.
-- **Nav customization** — reorder desktop sidebar; add/hide/reorder mobile bottom-nav slots.
+- **Themes** — Dark / Light / System, Low-Power mode, Zen focus (Esc / Exit Zen / mobile Menu+Settings — no nav traps), OpenDyslexic, warm light palette.
+- **Nav customization** — reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs).
 - **Mermaid + Markdown + LaTeX** — diagrams, GFM markdown, and KaTeX math in AI content.
 - **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service.
 - **Render hosting** — Express Web Service (`server/`) + Static Site (`client/`); client calls API via `VITE_API_URL` (fixes production 405s from SPA/static intercepts).
@@ -73,7 +73,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v2.2.2) — Render Static Site root
+├── client/                 # React + Vite frontend (v2.2.3) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/
@@ -99,19 +99,13 @@ Fios/
 
 Blueprint: [`render.yaml`](render.yaml).
 
-### Urgent: `Missing script: "build"`
+### Build Command (API)
 
-`main` historically only had `start` / `dev` in `server/package.json`. v2.2.2 adds:
+`server/package.json` includes `"build": "tsc"` (since v2.2.2). Use:
 
-```json
-"build": "tsc"
-```
+`npm install --include=dev && npm run build`
 
-Until this PR is merged, either merge [#3](https://github.com/Oryn02/Fios/pull/3) or temporarily set Build Command to:
-
-`npm install --include=dev && npx tsc`
-
-(`--include=dev` matters when `NODE_ENV=production` would otherwise skip `typescript`.)
+(`--include=dev` matters when `NODE_ENV=production` would otherwise skip `typescript` / `@types/*`. v2.2.2+ also keeps those packages in `dependencies` for Render.)
 
 ### Option A — single Web Service (recommended for your workspace)
 

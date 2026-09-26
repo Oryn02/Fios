@@ -185,21 +185,27 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
                   <span>{taskCount} tasks</span>
                 </div>
               )}
-              {actions.map((a) => {
-                const Icon = a.icon;
-                return (
-                  <motion.button
-                    key={a.id}
-                    whileHover={{ x: -3 }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={a.onClick}
-                    className="flex items-center gap-2.5 pl-4 pr-3.5 py-2.5 rounded-xl border fios-border bg-[var(--fios-surface)] shadow-2xl text-[var(--fios-text)] text-xs font-bold cursor-pointer hover:bg-[var(--fios-surface-2)] transition-colors"
-                  >
-                    {a.label}
-                    <span className="w-6 h-6 rounded-lg accent-bg flex items-center justify-center text-slate-950"><Icon className="w-3.5 h-3.5" /></span>
-                  </motion.button>
-                );
-              })}
+              {actions.length === 0 ? (
+                <div className="px-3 py-2.5 rounded-xl border fios-border bg-[var(--fios-surface)] text-[10px] font-mono text-[var(--fios-text-muted)] shadow-xl max-w-[200px] text-right">
+                  No actions enabled. Turn some on in Settings → Smart Quick Widget.
+                </div>
+              ) : (
+                actions.map((a) => {
+                  const Icon = a.icon;
+                  return (
+                    <motion.button
+                      key={a.id}
+                      whileHover={{ x: -3 }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={a.onClick}
+                      className="flex items-center gap-2.5 pl-4 pr-3.5 py-2.5 rounded-xl border fios-border bg-[var(--fios-surface)] shadow-2xl text-[var(--fios-text)] text-xs font-bold cursor-pointer hover:bg-[var(--fios-surface-2)] transition-colors"
+                    >
+                      {a.label}
+                      <span className="w-6 h-6 rounded-lg accent-bg flex items-center justify-center text-slate-950"><Icon className="w-3.5 h-3.5" /></span>
+                    </motion.button>
+                  );
+                })
+              )}
             </motion.div>
           )}
         </AnimatePresence>

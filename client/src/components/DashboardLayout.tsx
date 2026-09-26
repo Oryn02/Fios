@@ -34,7 +34,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v2.2', icon: Sparkles },
+  { id: 'updates', label: 'Updates v2.2.3', icon: Sparkles },
 ];
 
 /** Tabs where Zen may hide chrome (study surfaces). Settings/Overview always keep nav. */
@@ -74,15 +74,22 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         setPaletteOpen((v) => !v);
         return;
       }
-      // Esc closes the palette first; only exit Zen when the palette is closed.
-      if (e.key === 'Escape' && zenMode && !paletteOpen) {
+      if (e.key !== 'Escape') return;
+      // Esc stack: drawer → palette (handled there) → exit Zen.
+      if (drawerOpen) {
+        e.preventDefault();
+        setDrawerOpen(false);
+        return;
+      }
+      if (paletteOpen) return;
+      if (zenMode) {
         e.preventDefault();
         exitZen();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [zenMode, exitZen, paletteOpen]);
+  }, [zenMode, exitZen, paletteOpen, drawerOpen]);
 
   const [draftNavOrder, setDraftNavOrder] = useState<string[] | null>(null);
   const effectiveNavOrder = draftNavOrder ?? (navOrder?.length ? navOrder : DEFAULT_NAV_ORDER);
@@ -197,12 +204,12 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               {drawerOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             <FiosLogo size="md" />
-            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.2</span>
+            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.3</span>
             {zenMode && (
               <button
                 type="button"
                 onClick={exitZen}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md border accent-border accent-solid-text text-[10px] font-black uppercase tracking-wider cursor-pointer bg-[var(--fios-surface-2)]"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border accent-border accent-solid-text text-[10px] font-black uppercase tracking-wider cursor-pointer bg-[var(--fios-surface-2)]"
                 aria-label="Exit Zen mode"
               >
                 <Focus className="w-3.5 h-3.5" /> Exit Zen
