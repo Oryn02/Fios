@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+  Balloon,
+  Cake,
   CandyCane,
   Clover,
   Coins,
@@ -9,6 +11,7 @@ import {
   Ghost,
   Gift,
   Moon,
+  PartyPopper,
   Rabbit,
   Rainbow,
   Skull,
@@ -79,9 +82,10 @@ export const FESTIVE_FAMILIES = new Set([
   'christmas',
   'easter',
   'st-patrick',
+  'birthday',
 ]);
 
-export type FestiveFamily = 'halloween' | 'christmas' | 'easter' | 'st-patrick';
+export type FestiveFamily = 'halloween' | 'christmas' | 'easter' | 'st-patrick' | 'birthday';
 
 /** Primary chrome icon per holiday — layered on top of accent gradients. */
 export const HOLIDAY_PRIMARY_ICON: Record<FestiveFamily, LucideIcon> = {
@@ -89,6 +93,7 @@ export const HOLIDAY_PRIMARY_ICON: Record<FestiveFamily, LucideIcon> = {
   christmas: TreePine,
   easter: Rabbit,
   'st-patrick': Clover,
+  birthday: PartyPopper,
 };
 
 /**
@@ -100,6 +105,7 @@ export const HOLIDAY_MOTIF_ICONS: Record<FestiveFamily, LucideIcon[]> = {
   christmas: [TreePine, Snowflake, Gift, CandyCane],
   easter: [Rabbit, Egg, Star, Flower2],
   'st-patrick': [Clover, Rainbow, LeprechaunIcon, Coins],
+  birthday: [PartyPopper, Cake, Balloon, Gift, Star],
 };
 
 interface HolidayMotifProps {

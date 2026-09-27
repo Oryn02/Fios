@@ -47,8 +47,8 @@ interface SavedDeck {
   cards?: { id: string; question?: string; answer?: string; front?: string; back?: string }[];
 }
 
-function greetingFor(date: Date): string {
-  return overviewGreeting(date);
+function greetingFor(date: Date, birthday?: string | null): string {
+  return overviewGreeting(date, birthday);
 }
 
 const WIDGET_LABELS: Record<WidgetId, string> = {
@@ -85,7 +85,10 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
   const [newTaskStart, setNewTaskStart] = useState('');
   const [newTaskDueAt, setNewTaskDueAt] = useState('');
 
-  const greeting = useMemo(() => greetingFor(new Date()), []);
+  const greeting = useMemo(
+    () => greetingFor(new Date(), profile?.birthday),
+    [profile?.birthday]
+  );
   const todayLabel = useMemo(
     () => new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase(),
     []

@@ -23,6 +23,8 @@ export interface UserProfile {
   full_name: string | null;
   preferred_name: string | null;
   address: string | null;
+  /** ISO date YYYY-MM-DD; only month/day drive birthday theme + greeting. */
+  birthday: string | null;
   avatar_url: string | null;
   accent_color: AccentKey;
   theme: ThemeMode;

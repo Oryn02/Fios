@@ -3,6 +3,7 @@ import { ACCENTS, normalizeAccent, type AccentKey, type ThemeMode } from '../typ
 import { useProfile } from './ProfileContext';
 import {
   applyHolidayPaletteVars,
+  birthdayPalette,
   clearStaleHolidayManualFlags,
   getAdminHolidayPreview,
   hasHolidayManualOverride,
@@ -65,14 +66,16 @@ function normalizeTheme(raw: string | null | undefined): ThemeMode {
 /**
  * Resolve active holiday palette:
  * 1. Admin session preview (if set) wins
- * 2. Else calendar day auto (unless user manually changed theme today)
+ * 2. Else skip when user manually changed theme today
+ * 3. Else birthday (profile month/day match)
+ * 4. Else calendar day-auto holiday
  */
-function computeHolidayActive(): HolidayPalette | null {
+function computeHolidayActive(birthday?: string | null): HolidayPalette | null {
   clearStaleHolidayManualFlags();
   const adminPreview = getAdminHolidayPreview();
   if (adminPreview) return adminPreview;
   if (hasHolidayManualOverride()) return null;
-  return holidayPalette();
+  return birthdayPalette(birthday) || holidayPalette();
 }
 
 /**
@@ -92,7 +95,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [systemPref, setSystemPref] = useState<ResolvedTheme>(() => resolveSystem());
-  const [holidayTheme, setHolidayTheme] = useState<HolidayPalette | null>(() => computeHolidayActive());
+  const [holidayTheme, setHolidayTheme] = useState<HolidayPalette | null>(() =>
+    computeHolidayActive(null)
+  );
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: light)');
@@ -102,7 +107,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   useEffect(() => {
-    const refresh = () => setHolidayTheme(computeHolidayActive());
+    const refresh = () => setHolidayTheme(computeHolidayActive(profile?.birthday));
+    refresh();
     const onVis = () => {
       if (document.visibilityState === 'visible') refresh();
     };
@@ -114,7 +120,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       document.removeEventListener('visibilitychange', onVis);
       window.clearInterval(id);
     };
-  }, []);
+  }, [profile?.birthday]);
 
   useEffect(() => {
     if (profile?.theme) {
@@ -185,13 +191,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       applyHolidayPaletteVars(palette);
     } else {
       setAdminHolidayPreview(null);
-      // Fall back to calendar day-auto (if any) or saved accent
-      const next = computeHolidayActive();
+      // Fall back to birthday / calendar day-auto (if any) or saved accent
+      const next = computeHolidayActive(profile?.birthday);
       setHolidayTheme(next);
       if (next) applyHolidayPaletteVars(next);
       else applyAccentVars(normalizeAccent(localStorage.getItem('fios_accent')));
     }
-  }, []);
+  }, [profile?.birthday]);
 
   const value = useMemo(
     () => ({

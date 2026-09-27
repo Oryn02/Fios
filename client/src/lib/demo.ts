@@ -54,6 +54,7 @@ export const demoProfile: UserProfile = {
   full_name: 'Demo Student',
   preferred_name: 'Student',
   address: 'University Campus, Ireland',
+  birthday: null,
   avatar_url: null,
   accent_color: 'emerald',
   theme: 'dark',

@@ -4,6 +4,17 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.8',
+      date: 'September 2026',
+      title: 'St Patrick ambience fix + birthday theme',
+      highlights: [
+        'St Patrick’s Day: festive shamrock / rainbow / leprechaun / pot-of-gold background motifs animate clearly again — gold-forward colors and sustained float motion instead of near-invisible sparkles on emerald chrome.',
+        'Birthday: add your birthday in Settings → Profile. On that day Overview greets you with “Happy Birthday, {name}” and applies a coral–gold–teal festive gradient with party / cake / balloon ambience.',
+        'Optional SQL: run supabase/v3.1.8-user-birthday.sql then reload the PostgREST schema cache so birthday saves persist.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.8.',
+      ],
+    },
+    {
       version: 'v3.1.7',
       date: 'September 2026',
       title: 'Smart Notes save success path',
@@ -323,7 +334,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.7</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.8</p>
       </header>
 
       <div className="space-y-4">

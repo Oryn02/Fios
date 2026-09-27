@@ -660,17 +660,29 @@ html[data-opendyslexic="true"] body samp {
   color: #64748b;
 }
 
-/* —— St Patrick’s: green/gold shimmer + shamrock/rainbow/gold motifs —— */
+/* —— St Patrick’s: green/gold wash + shamrock/rainbow/gold motifs ——
+   Motifs use sustained float (not brief sparkle) + gold-forward colors so
+   icons stay visible against the emerald Fios chrome / green wash. */
 [data-ambience="st-patrick"] .fios-holiday-wash {
   background:
-    radial-gradient(ellipse 65% 55% at 18% 72%, rgba(34, 197, 94, 0.26), transparent 55%),
-    radial-gradient(ellipse 55% 45% at 82% 18%, rgba(202, 138, 4, 0.18), transparent 50%),
-    linear-gradient(135deg, rgba(134, 239, 172, 0.10), transparent 40%, rgba(34, 197, 94, 0.12));
+    radial-gradient(ellipse 70% 55% at 16% 78%, rgba(34, 197, 94, 0.30), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 84% 16%, rgba(234, 179, 8, 0.28), transparent 52%),
+    radial-gradient(ellipse 45% 35% at 50% 40%, rgba(253, 230, 138, 0.14), transparent 50%),
+    linear-gradient(135deg, rgba(134, 239, 172, 0.12), transparent 42%, rgba(202, 138, 4, 0.14));
   animation: fios-holiday-shimmer 12s ease-in-out infinite alternate;
 }
 [data-ambience="st-patrick"] .fios-holiday-particle {
+  color: #fde68a;
+  animation: fios-holiday-float var(--dur) ease-in-out var(--delay) infinite;
+}
+[data-ambience="st-patrick"] .fios-holiday-particle:nth-child(4n + 2) {
   color: #86efac;
-  animation: fios-holiday-sparkle var(--dur) ease-in-out var(--delay) infinite;
+}
+[data-ambience="st-patrick"] .fios-holiday-particle:nth-child(4n + 3) {
+  color: #fbbf24;
+}
+[data-ambience="st-patrick"] .fios-holiday-particle:nth-child(4n) {
+  color: #a7f3d0;
 }
 
 /* —— Easter: pastel wash + bunny/egg/star floaters —— */
@@ -683,6 +695,34 @@ html[data-opendyslexic="true"] body samp {
 [data-ambience="easter"] .fios-holiday-particle {
   color: #c4b5fd;
   animation: fios-holiday-float var(--dur) ease-in-out var(--delay) infinite;
+}
+
+/* —— Birthday: coral/gold/teal wash + party popper / cake / balloon float —— */
+[data-ambience="birthday"] .fios-holiday-wash {
+  background:
+    radial-gradient(ellipse 65% 55% at 14% 20%, rgba(251, 113, 133, 0.26), transparent 55%),
+    radial-gradient(ellipse 55% 50% at 88% 75%, rgba(251, 191, 36, 0.24), transparent 55%),
+    radial-gradient(ellipse 45% 40% at 48% 90%, rgba(45, 212, 191, 0.18), transparent 50%),
+    radial-gradient(ellipse 35% 30% at 70% 25%, rgba(253, 186, 116, 0.12), transparent 50%);
+}
+[data-ambience="birthday"] .fios-holiday-particle {
+  color: #fda4af;
+  animation: fios-holiday-drift var(--dur) ease-in-out var(--delay) infinite;
+}
+[data-ambience="birthday"] .fios-holiday-particle:nth-child(3n + 2) {
+  color: #fde68a;
+}
+[data-ambience="birthday"] .fios-holiday-particle:nth-child(3n) {
+  color: #5eead4;
+}
+[data-theme="light"] [data-ambience="birthday"] .fios-holiday-particle {
+  color: #e11d48;
+}
+[data-theme="light"] [data-ambience="birthday"] .fios-holiday-particle:nth-child(3n + 2) {
+  color: #b45309;
+}
+[data-theme="light"] [data-ambience="birthday"] .fios-holiday-particle:nth-child(3n) {
+  color: #0f766e;
 }
 
 /* Light mode: slightly softer washes so cream surfaces stay readable */
@@ -718,8 +758,8 @@ html[data-opendyslexic="true"] body samp {
 }
 
 @keyframes fios-holiday-shimmer {
-  0% { filter: hue-rotate(0deg) brightness(1); }
-  100% { filter: hue-rotate(10deg) brightness(1.06); }
+  0% { opacity: 0.72; transform: scale(1); }
+  100% { opacity: 0.92; transform: scale(1.04); }
 }
 
 /* Reduced motion / low-power: keep static wash, kill particle motion */
