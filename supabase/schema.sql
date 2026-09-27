@@ -421,3 +421,49 @@ begin
       using (public.current_user_is_admin());
   end if;
 end $$;
+
+-- ============================================================================
+-- Additive migrations (idempotent) — run in Supabase SQL editor if missing
+-- ============================================================================
+
+-- documents.content: required by Smart Notes upserts. Existing projects that
+-- created `documents` without this column hit PostgREST "schema cache" errors.
+alter table public.documents
+  add column if not exists content text not null default '';
+
+comment on column public.documents.content is
+  'Full note / extracted PDF text for Smart Notes and AI Tutor grounding.';
+
+-- After applying, reload the PostgREST schema cache in the Supabase dashboard:
+-- Project Settings → API → Reload schema (or wait ~1 min for auto-refresh).
+
+-- Optional durable Web Push subscriptions (server currently uses an in-memory Map;
+-- free Render instances lose memory on spin-down). Apply if you want persistence.
+create table if not exists public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  user_agent text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists push_subscriptions_user_idx
+  on public.push_subscriptions (user_id);
+
+alter table public.push_subscriptions enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'push_subscriptions'
+      and policyname = 'push_subscriptions_owner'
+  ) then
+    create policy push_subscriptions_owner on public.push_subscriptions
+      for all to authenticated
+      using (auth.uid() = user_id)
+      with check (auth.uid() = user_id);
+  end if;
+end $$;

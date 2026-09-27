@@ -22,6 +22,7 @@ import { GradePredictorView } from './components/GradePredictorView';
 import { ATUCalendarView } from './components/ATUCalendarView';
 import { PomodoroWidget } from './components/PomodoroWidget';
 import { QuickActions } from './components/QuickActions';
+import { BrainDumpInbox } from './components/BrainDumpInbox';
 import { GeminiGate } from './components/GeminiGate';
 import { AiTutorView } from './components/AiTutorView';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -35,9 +36,10 @@ import { AiAuthProvider } from './context/AiAuthContext';
 import { startOfflineQueueListener } from './lib/offlineQueue';
 import { useAiAuth } from './context/AiAuthContext';
 import { lockLandingBrand } from './lib/landingBrand';
+import { NetworkStatusBanner } from './components/NetworkStatusBanner';
+import { bootstrapClassReminders } from './lib/pushNotifications';
 import { getUserDecksWithCards } from './lib/deckService';
 import { isCardDue } from './lib/spacedRepetition';
-import { NetworkStatusBanner } from './components/NetworkStatusBanner';
 import type { FlightNavigatePayload } from './components/RevisionFlightPlan';
 
 interface SelectedDeck {
@@ -168,6 +170,10 @@ const Dashboard: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    bootstrapClassReminders();
+  }, []);
+
   return (
     <DashboardLayout activeTab={activeTab} setActiveTab={handleTabChange}>
       <NetworkStatusBanner />
@@ -290,11 +296,18 @@ const Dashboard: React.FC = () => {
         className="fios-fab-dock fixed z-[70] bottom-24 md:bottom-6 right-3 md:right-6 flex flex-row-reverse items-end gap-3 safe-bottom pointer-events-none"
         aria-label="Floating study tools"
       >
-        <QuickActions
-          onNavigate={handleTabChange}
-          onOpenTutor={() => handleTabChange('tutor')}
-        />
-        <PomodoroWidget />
+        <div className="pointer-events-auto">
+          <QuickActions
+            onNavigate={handleTabChange}
+            onOpenTutor={() => handleTabChange('tutor')}
+          />
+        </div>
+        <div className="pointer-events-auto">
+          <PomodoroWidget />
+        </div>
+        <div className="pointer-events-auto relative">
+          <BrainDumpInbox />
+        </div>
       </div>
     </DashboardLayout>
   );

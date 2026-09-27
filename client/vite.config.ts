@@ -34,6 +34,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Class reminders use the Notification API + optional PushManager.subscribe
+        // (see client/src/lib/pushNotifications.ts). A custom SW `push` handler would
+        // need injectManifest; server push requires VAPID_* on the Render Web Service.
         // Safety net above Workbox's 2 MiB default for mid-size vendor chunks.
         // Mermaid/elk/cytoscape (~5 MB) is excluded from precache below and
         // loaded on demand via dynamic import in MermaidDiagram.

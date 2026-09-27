@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v2.2.9**
+**Current version: v3.0.0**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -10,28 +10,39 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 
 ## Highlights
 
-- **SM-2 Flashcards** — AI-generated decks with differentiated Again/Hard/Good/Easy interval previews (learning steps in minutes), local-day due dates, and touch swipe Easy/Hard on mobile.
-- **MCQ Quiz Generator** — practice exams with explanations, saved per module.
+- **SM-2 Flashcards** — AI-generated decks with differentiated Again/Hard/Good/Easy interval previews (learning steps in minutes), local-day due dates, touch swipe Easy/Hard on mobile, first-time SM-2 tip, and deck export/import (JSON + share code).
+- **MCQ Quiz Generator** — practice exams with explanations, saved per module; choose 5 / 10 / 20 / 40 questions.
 - **Monaco Code Exams** — bug-fix, output-prediction, and logic-completion challenges with optional custom prompts.
-- **Smart Notes & AI Tutor** — upload PDFs/notes for summaries, glossaries, revision history, and a dedicated full-screen tutor tab (RAG-aware).
+- **Smart Notes & AI Tutor** — upload PDFs/notes/photos/audio for summaries, glossaries, revision history, and a dedicated full-screen tutor tab (RAG-aware + multimodal).
 - **AI Active Recall ("Blurting")** — Browse vs Recall modes; quiz answer hidden until Reveal; Gemini color-coded report + Recall Accuracy %.
-- **Revision Flight Plan** — dashboard queue prioritized by exam proximity, overdue SM-2 cards, and readiness (modular / reorderable widgets).
-- **Grade Predictor** — computes the scores you need across assessments to hit a target grade.
-- **Module Readiness Heatmap** — 0–100% readiness per module; rich module accent colors (light + dark contrast) on badges/tags/heatmap.
-- **Universal schedule** — iCal sync or manual timetable for any college; finished classes muted; Next Up highlight; institution label.
+- **Revision Flight Plan** — dashboard queue prioritized by exam proximity, overdue SM-2 cards, and readiness (modular / reorderable widgets); smart Review/Run routing.
+- **Grade Predictor** — computes the scores you need across assessments; semester GPA vs honours thresholds.
+- **Module Readiness Heatmap** — 0–100% readiness per module with calculation breakdown; rich module accent colors on badges/tags/heatmap.
+- **Study streak heatmap & exam countdown** — contribution grid from focus + flashcard reviews; live countdown to exams and due tasks.
+- **Brain Dump inbox** — floating quick-capture with optional AI parse into tasks.
+- **Class Reminders** — optional browser notifications (5–30 min lead) for upcoming classes; Web Push when VAPID is configured.
+- **Universal schedule** — iCal sync or manual timetable for any college; iCal helper + clearer errors; finished classes muted; Next Up highlight.
 - **Unified agenda** — classes + timed tasks on a calendar-day timeline (memoized CompactAgenda); tasks sort by due date; start/due datetime pickers update and save.
+- **Holiday greetings & day-only themes** — Overview holiday greetings and temporary accent palettes on key dates (Christmas Eve–26 window); landing stays emerald.
 - **Contact Support** — in-app message form posts to the API and emails the support inbox (Resend/SendGrid when configured); mailto remains optional.
 - **Feedback & ratings** — optional star rating, categories, and message (anonymous submit supported).
-- **Privacy & GDPR** — in-app Privacy Policy + Terms (landing footer and Settings); essential cookie/local-storage consent; Export My Data (JSON); disclosures for Supabase, Gemini (BYO key), optional GitHub, and hosting.
+- **Privacy & GDPR** — in-app Privacy Policy + Terms (landing footer and Settings); disclosures for Web Push, multimodal uploads, Supabase, Gemini (BYO key), optional GitHub, and hosting; Export My Data (JSON).
 - **Global Pomodoro Timer** — floating dock widget with Web Audio soundscapes and Weekly Study Goal (defaults off on mobile until enabled in Settings; legacy baked-on prefs migrated).
 - **Smart Quick Widget** — expanded actions, custom order, compact FAB, metrics chip (defaults off on mobile until enabled; legacy baked-on prefs migrated).
 - **Themes** — Dark / Light / System, expanded accent gradients, Low-Power mode, Zen focus (Esc / Exit Zen / mobile escape), OpenDyslexic, cream light palette with stronger cards/tabs. Landing marketing stays locked to default emerald.
-- **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar (compact chrome control, larger Fios wordmark; logo opens Overview); reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs).
+- **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar (compact chrome control, larger Fios wordmark; logo opens Overview); reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs); sticky mobile header.
 - **Mermaid + Markdown + LaTeX** — diagrams, GFM markdown, and KaTeX math in AI content.
 - **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service; refreshed landing (tighter hero + study hubs + FAQ).
 - **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
-- **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB).
+- **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v3.0.0
+
+- Major release: multimodal AI Tutor uploads, Class Reminders (Web Push / local), study streak heatmap, exam countdown, Brain Dump inbox, semester GPA, deck export/import, audio/vision Smart Notes, SM-2 onboarding tip, MCQ length 5–40, inline renames, holiday greetings & day-only themes, sticky mobile header, network indicator, iCal helper, and privacy/FAQ updates for push + multimodal.
+- Supabase: additive `documents.content` (+ optional `push_subscriptions`) migration in `supabase/schema.sql` — reload PostgREST schema cache after applying.
+- Render: set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` for server Web Push (local reminders still work without them).
+- See the in-app **Updates** tab for the full changelog (items covering the v3.0.0 feature set).
 
 ### What’s new in v2.2.9
 

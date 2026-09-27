@@ -66,3 +66,13 @@ export async function deleteQuiz(id: string): Promise<void> {
   const { error } = await supabase.from('mcq_quizzes').delete().eq('id', id);
   if (error) throw error;
 }
+
+export async function updateQuizTitle(id: string, title: string): Promise<void> {
+  const next = title.trim() || 'Untitled Quiz';
+  if (IS_DEMO) {
+    demoQuizState = demoQuizState.map((q) => (q.id === id ? { ...q, title: next } : q));
+    return;
+  }
+  const { error } = await supabase.from('mcq_quizzes').update({ title: next }).eq('id', id);
+  if (error) throw error;
+}

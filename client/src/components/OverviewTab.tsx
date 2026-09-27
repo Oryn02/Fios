@@ -21,6 +21,8 @@ import { ModuleHeatmap } from './ModuleHeatmap';
 import { RevisionFlightPlan } from './RevisionFlightPlan';
 import { CompactAgenda } from './CompactAgenda';
 import { DatetimeLocalInput } from './DatetimeLocalInput';
+import { StudyStreakHeatmap } from './StudyStreakHeatmap';
+import { ExamCountdownWidget } from './ExamCountdownWidget';
 import { toast } from '../lib/toast';
 import { overviewGreeting } from '../lib/holidays';
 
@@ -570,6 +572,12 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         <div className="space-y-6">
           {orderedWidgets.map((id) => renderWidget(id))}
         </div>
+      </div>
+
+      {/* Study streak + exam countdown (below flight plan / widgets) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <StudyStreakHeatmap />
+        <ExamCountdownWidget />
       </div>
 
       {/* Saved Study Decks */}

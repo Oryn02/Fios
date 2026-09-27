@@ -6,12 +6,13 @@ import {
 import { FileUpload } from './FileUpload';
 import { summarizeText, askTutor } from '../services/aiApi';
 import { indexDocumentChunks } from '../lib/ragClient';
-import { getDocuments, saveDocument, deleteDocument } from '../lib/documentService';
+import { getDocuments, saveDocument, deleteDocument, updateDocumentTitle } from '../lib/documentService';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { FiosDocument } from '../types/db';
 import { GeminiGate } from './GeminiGate';
 import { FormattedContent } from './FormattedContent';
 import { MediaStudyInput } from './MediaStudyInput';
+import { InlineEditableTitle } from './InlineEditableTitle';
 import { useAiAuth } from '../context/AiAuthContext';
 import { toast } from '../lib/toast';
 
@@ -260,10 +261,19 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
       {active && active.id !== 'general-tutor' && (
         <div className="rounded-2xl border fios-border bg-[var(--fios-surface)] p-5 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-black uppercase flex items-center gap-2">
-                <BookOpen className="w-4 h-4 accent-solid-text" /> {active.title}
-              </h3>
+            <div className="flex items-center gap-2 min-w-0">
+              <BookOpen className="w-4 h-4 accent-solid-text shrink-0" />
+              <InlineEditableTitle
+                value={active.title}
+                onSave={async (next) => {
+                  await updateDocumentTitle(active.id, next);
+                  setActive({ ...active, title: next });
+                  setDocs((prev) => prev.map((d) => (d.id === active.id ? { ...d, title: next } : d)));
+                  toast('Document renamed', 'success');
+                }}
+                className="text-sm font-black uppercase text-[var(--fios-text)] truncate"
+                placeholder="Untitled Document"
+              />
               {active.module_code && (
                 <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                   {active.module_code}
@@ -359,7 +369,19 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
                     <button onClick={(e) => handleDelete(e, doc.id)} className="text-slate-500 hover:text-rose-400 p-0.5 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
-                <h4 className="text-sm font-bold line-clamp-1 group-hover:accent-solid-text transition-colors">{doc.title}</h4>
+                <div onClick={(e) => e.stopPropagation()} className="min-w-0">
+                  <InlineEditableTitle
+                    value={doc.title}
+                    onSave={async (next) => {
+                      await updateDocumentTitle(doc.id, next);
+                      setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, title: next } : d)));
+                      if (active?.id === doc.id) setActive({ ...doc, title: next });
+                      toast('Document renamed', 'success');
+                    }}
+                    className="text-sm font-bold line-clamp-1 group-hover:accent-solid-text transition-colors"
+                    placeholder="Untitled Document"
+                  />
+                </div>
                 <p className="text-[11px] text-[var(--fios-text-muted)] line-clamp-2">{doc.summary}</p>
               </motion.div>
             ))}

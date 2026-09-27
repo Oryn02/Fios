@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, RotateCcw, Flame, Clock, SkipForward, Music, Volume2 } from 'lucide-react';
 import {
@@ -12,6 +12,7 @@ import { soundscapeEngine, SOUNDSCAPES, type Soundscape } from '../lib/soundscap
 
 const MODES: PomodoroMode[] = ['work', 'shortBreak', 'longBreak'];
 
+// Isolated readout — re-renders each tick without touching the rest of the tab.
 const BigReadout: React.FC = () => {
   const { timeLeft, isActive, mode, durations } = usePomodoroState();
   const total =
@@ -39,18 +40,19 @@ export const FocusTimer: React.FC = () => {
   const { mode, completedSessions } = usePomodoroState();
   const { toggle, reset, skip, switchMode } = usePomodoroControls();
 
-  const [activeSound, setActiveSound] = useState<Soundscape>(() => soundscapeEngine.getCurrent());
-  const [volume, setVolume] = useState<number>(() => soundscapeEngine.getVolume());
+  const [activeSound, setActiveSound] = useState<Soundscape>(soundscapeEngine.getCurrent());
+  const [volume, setVolume] = useState<number>(soundscapeEngine.getVolume());
   const [showSoundPanel, setShowSoundPanel] = useState<boolean>(false);
 
-  useEffect(() => {
-    soundscapeEngine.setVolume(volume);
-  }, [volume]);
+  const pickSound = (key: Soundscape) => {
+    void soundscapeEngine.unlock();
+    soundscapeEngine.play(key);
+    setActiveSound(key);
+  };
 
-  const pickSound = async (s: Soundscape) => {
-    await soundscapeEngine.unlock();
-    soundscapeEngine.play(s);
-    setActiveSound(s);
+  const onVolume = (v: number) => {
+    setVolume(v);
+    soundscapeEngine.setVolume(v);
   };
 
   return (
@@ -59,7 +61,6 @@ export const FocusTimer: React.FC = () => {
         {MODES.map((m) => (
           <button
             key={m}
-            type="button"
             onClick={() => switchMode(m)}
             className={`px-4 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-colors cursor-pointer ${
               mode === m ? 'bg-emerald-400 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-slate-200'
@@ -77,8 +78,7 @@ export const FocusTimer: React.FC = () => {
       <div className="flex items-center justify-center gap-4">
         <motion.button
           whileTap={{ scale: 0.95 }}
-          type="button"
-          onClick={() => { void soundscapeEngine.unlock(); toggle(); }}
+          onClick={toggle}
           className="px-8 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg shadow-emerald-500/10 flex items-center gap-2 cursor-pointer"
         >
           <PlayPause />
@@ -86,7 +86,6 @@ export const FocusTimer: React.FC = () => {
 
         <motion.button
           whileTap={{ scale: 0.95 }}
-          type="button"
           onClick={reset}
           className="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors cursor-pointer"
           title="Reset Timer"
@@ -96,7 +95,6 @@ export const FocusTimer: React.FC = () => {
 
         <motion.button
           whileTap={{ scale: 0.95 }}
-          type="button"
           onClick={skip}
           className="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors cursor-pointer"
           title="Skip"
@@ -106,10 +104,12 @@ export const FocusTimer: React.FC = () => {
 
         <motion.button
           whileTap={{ scale: 0.95 }}
-          type="button"
-          onClick={() => setShowSoundPanel(!showSoundPanel)}
+          onClick={() => {
+            void soundscapeEngine.unlock();
+            setShowSoundPanel(!showSoundPanel);
+          }}
           className={`p-3 rounded-xl border transition-colors cursor-pointer ${
-            activeSound && activeSound !== 'off'
+            activeSound !== 'off'
               ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.15)]'
               : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
           }`}
@@ -120,13 +120,12 @@ export const FocusTimer: React.FC = () => {
       </div>
 
       {showSoundPanel && (
-        <div className="p-5 rounded-xl bg-[#07090e] border border-slate-800 space-y-4">
+        <div className="p-5 rounded-xl bg-[#07090e] border border-slate-800 space-y-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
               <Music className="w-3.5 h-3.5" /> Ambient Soundscape
             </div>
             <button
-              type="button"
               onClick={() => setShowSoundPanel(false)}
               className="text-slate-400 hover:text-white text-xs cursor-pointer"
             >
@@ -139,7 +138,7 @@ export const FocusTimer: React.FC = () => {
               <button
                 key={sound.key}
                 type="button"
-                onClick={() => void pickSound(sound.key)}
+                onClick={() => pickSound(sound.key)}
                 className={`py-2 px-2.5 rounded-lg text-[10px] font-mono font-bold tracking-wide transition-all border cursor-pointer ${
                   activeSound === sound.key
                     ? 'accent-bg text-slate-950 border-transparent shadow-md'
@@ -159,16 +158,13 @@ export const FocusTimer: React.FC = () => {
               max="1"
               step="0.05"
               value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              onChange={(e) => onVolume(parseFloat(e.target.value))}
               className="w-full accent-emerald-400 cursor-pointer"
             />
             <span className="text-[10px] font-mono text-slate-400 w-8 text-right">
               {Math.round(volume * 100)}%
             </span>
           </div>
-          <p className="text-[10px] font-mono text-slate-500">
-            Tap a soundscape to unlock audio on mobile (iOS/Android require a user gesture).
-          </p>
         </div>
       )}
 

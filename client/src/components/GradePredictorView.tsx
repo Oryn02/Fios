@@ -6,6 +6,7 @@ import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { Grade } from '../types/db';
 import { formatCleanNumber, parseCleanNumber } from '../lib/parseNumber';
 import { ModulePicker } from './ModulePicker';
+import { SemesterGpaPanel } from './SemesterGpaPanel';
 
 interface ModulePrediction {
   module: string;
@@ -178,6 +179,8 @@ export const GradePredictorView: React.FC = () => {
         </button>
       </div>
 
+      <SemesterGpaPanel grades={grades} modules={modules} />
+
       {adding && (
         <form onSubmit={handleAdd} className="rounded-2xl border fios-border bg-[var(--fios-surface)] p-5 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -242,6 +245,7 @@ export const GradePredictorView: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-4">
+          <SemesterGpaPanel grades={grades} modules={modules} />
           {grouped.map(([module, items]) => {
             const p = predictions.find((x) => x.module === module)!;
             const s = STATUS_STYLE[p.status];

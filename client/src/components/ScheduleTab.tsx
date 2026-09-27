@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, startTransition, useDeferredValue } from 'react';
 import {
   Calendar as CalendarIcon, MapPin, Link2, RefreshCw,
-  Upload, ChevronLeft, ChevronRight, Check, Play, Coffee,
+  Upload, ChevronLeft, ChevronRight, Check, Play, Coffee, HelpCircle,
 } from 'lucide-react';
 import { 
   saveCalendarUrl, getSavedCalendarUrl, fetchAndParseCalendar, 
@@ -21,6 +21,7 @@ import {
   findNextUpcomingIndex,
   isSameLocalDay,
 } from '../lib/scheduleTime';
+import { toast } from '../lib/toast';
 
 type ViewMode = 'day' | 'week' | 'month';
 
@@ -107,7 +108,9 @@ const ScheduleTabInner: React.FC = () => {
         text: `Last successful sync: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
       });
     } catch (err: any) {
-      setStatusMessage({ type: 'error', text: err.message || 'Error fetching calendar feed.' });
+      const msg = err?.message || 'Error fetching calendar feed. Check the URL and try again.';
+      setStatusMessage({ type: 'error', text: msg });
+      toast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -127,9 +130,12 @@ const ScheduleTabInner: React.FC = () => {
       // Save the URL to Supabase in the background without blocking the UI
       saveCalendarUrl(icalUrl.trim()).catch((err) => {
         console.error('Background save failed:', err);
+        toast('Synced locally, but saving the URL to your account failed.', 'error');
       });
     } catch (err: any) {
-      setStatusMessage({ type: 'error', text: err.message || 'Failed to fetch calendar feed.' });
+      const msg = err?.message || 'Failed to fetch calendar feed. Verify the iCal link is public HTTPS.';
+      setStatusMessage({ type: 'error', text: msg });
+      toast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -148,7 +154,9 @@ const ScheduleTabInner: React.FC = () => {
       setEvents(parsedEvents);
       setStatusMessage({ type: 'success', text: `Loaded ${parsedEvents.length} events directly from file!` });
     } catch (err: any) {
-      setStatusMessage({ type: 'error', text: 'Failed to parse .ics file.' });
+      const msg = 'Failed to parse .ics file. Export a fresh calendar file from your portal and try again.';
+      setStatusMessage({ type: 'error', text: msg });
+      toast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -350,6 +358,21 @@ const ScheduleTabInner: React.FC = () => {
             <input type="file" accept=".ics" onChange={handleFileUpload} className="hidden" />
           </label>
         </form>
+
+        {scheduleMode === 'ical' && (
+          <details className="rounded-lg border border-slate-800 bg-[#07090e]/80 p-3 text-[11px] font-mono text-slate-400">
+            <summary className="cursor-pointer list-none flex items-center gap-1.5 text-slate-300 font-bold uppercase tracking-wider text-[10px]">
+              <HelpCircle className="w-3.5 h-3.5 accent-solid-text" /> How to find your official iCal link
+            </summary>
+            <ol className="list-decimal list-inside space-y-1 pl-0.5 pt-2">
+              <li>Open your college timetable / student portal.</li>
+              <li>Look for Subscribe, Export, or iCal / ICS.</li>
+              <li>Copy the HTTPS URL (or replace <span className="text-slate-300">webcal://</span> with <span className="text-slate-300">https://</span>).</li>
+              <li>Paste above and Sync — Fios proxies the feed past campus CORS.</li>
+              <li>No web calendar? Download a .ics file and use Import instead.</li>
+            </ol>
+          </details>
+        )}
 
         {statusMessage && (
           <p className={`text-[11px] font-mono ${statusMessage.type === 'success' ? 'text-slate-400' : 'text-rose-400'}`}>

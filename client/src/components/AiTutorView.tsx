@@ -13,7 +13,7 @@ import { IS_DEMO } from '../lib/demo';
 import { toast } from '../lib/toast';
 import { getGeminiKey } from '../lib/geminiKey';
 import { apiUrl } from '../lib/apiBase';
-import { extractTextFromPdf } from '../lib/pdfExtractor';
+import { extractTextFromPDF } from '../lib/pdfExtractor';
 
 interface ChatMessage {
   id: string;
@@ -89,7 +89,7 @@ async function processAttachment(file: File): Promise<PendingAttachment> {
   if (mime === 'application/pdf' || lower.endsWith('.pdf')) {
     let text = '';
     try {
-      text = await extractTextFromPdf(file);
+      text = await extractTextFromPDF(file);
     } catch {
       /* fall through to server */
     }
