@@ -4,6 +4,15 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.0',
+      date: 'September 2026',
+      title: 'Grade Predictor save fix & follow-ups',
+      highlights: [
+        'Grade Predictor: Save assessments works again on live — maps legacy Supabase column names and shows a clear error toast if save fails.',
+        'Number formatting from v3.0.0 (no leading zeros on weight/score/target) is unchanged.',
+      ],
+    },
+    {
       version: 'v3.0.0',
       date: 'September 2026',
       title: 'Major study OS — multimodal tutor, reminders, streaks & more',
