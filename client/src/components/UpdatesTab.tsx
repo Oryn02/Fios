@@ -4,6 +4,16 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.5',
+      date: 'September 2026',
+      title: 'Smart Notes General module save',
+      highlights: [
+        'Smart Notes: Summarize & Save with General / no module no longer fails with Postgres 23502 (module_code not-null) — client sends empty string instead of null.',
+        'Optional SQL: run supabase/v3.1.5-documents-module-code.sql then reload the PostgREST schema cache so live DBs drop NOT NULL on module_code and default to \'\'.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.5.',
+      ],
+    },
+    {
       version: 'v3.1.4',
       date: 'September 2026',
       title: 'Smart Notes load fix',
@@ -293,7 +303,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.4</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.5</p>
       </header>
 
       <div className="space-y-4">

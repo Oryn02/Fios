@@ -143,7 +143,7 @@ create index if not exists tasks_due_at_idx on public.tasks (user_id, due_at);
 create table if not exists public.documents (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  module_code text,
+  module_code text default '',
   title text not null default 'Untitled Document',
   content text not null default '',
   summary text not null default '',
@@ -537,22 +537,25 @@ end $$;
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- Smart Notes: documents columns (REQUIRED) — content / summary / glossary
--- Prefer the standalone copy-paste migration:
---   supabase/v3.1.4-documents-load.sql
--- Symptom if missing / cache stale / load failed:
+-- Smart Notes: documents columns (REQUIRED) — content / summary / glossary /
+-- module_code. Prefer the standalone copy-paste migration:
+--   supabase/v3.1.5-documents-module-code.sql  (module_code 23502 hotfix)
+--   supabase/v3.1.4-documents-load.sql         (load / summary alignment)
+-- Symptom if missing / cache stale / load failed / null module_code:
 --   Could not find the 'glossary' column of 'documents' in the schema cache
 --   Could not find the 'content' column of 'documents' in the schema cache
 --   Could not find the 'summary' column of 'documents' in the schema cache
 --   Documents load failed (PostgREST select/order) after consolidated schema
+--   null value in column "module_code" … violates not-null constraint (23502)
 -- Fix (idempotent — safe to re-run):
---   1. Run this block (or v3.1.4-documents-load.sql) in the Supabase SQL editor.
+--   1. Run this block (or v3.1.5-documents-module-code.sql) in the SQL editor.
 --   2. Reload PostgREST schema cache:
 --        Dashboard → Project Settings → API → Reload schema
 --      Or run:  NOTIFY pgrst, 'reload schema';
 --      Or wait ~1 minute for auto-refresh.
 -- Canonical columns match client upserts (documentService / DocumentsView):
---   content + summary text not null default '', glossary jsonb default [].
+--   content + summary text not null default '', glossary jsonb default [],
+--   module_code text nullable default '' (General / unassigned).
 -- If an older project used body/text/notes, values are copied into content below.
 -- ----------------------------------------------------------------------------
 alter table public.documents
@@ -572,6 +575,14 @@ alter table public.documents
 
 alter table public.documents
   add column if not exists created_at timestamptz not null default now();
+
+-- v3.1.5: module_code must accept General (empty); drop NOT NULL if live DB had it
+update public.documents set module_code = '' where module_code is null;
+alter table public.documents alter column module_code drop not null;
+alter table public.documents alter column module_code set default '';
+
+comment on column public.documents.module_code is
+  'Optional module key; empty string = General / unassigned (nullable; default '''').';
 
 update public.documents set content = '' where content is null;
 alter table public.documents alter column content set default '';

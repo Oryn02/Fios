@@ -193,15 +193,33 @@ export function missingDocumentsColumn(err: unknown): string | null {
   return m?.[1]?.toLowerCase() || null;
 }
 
+/** Postgres 23502 / not-null when a live column rejects null (e.g. module_code). */
+export function isNotNullConstraintError(err: unknown): boolean {
+  const text = errorText(err).toLowerCase();
+  if (!text) return false;
+  return (
+    text.includes('23502') ||
+    (text.includes('null value in column') && text.includes('violates not-null'))
+  );
+}
+
 export function formatDocumentsSchemaError(err: unknown): string {
   const raw = errorText(err) || 'Cloud save failed.';
+  if (isNotNullConstraintError(err)) {
+    return (
+      'Smart Notes cloud save failed: a documents column rejected null ' +
+      '(often module_code when General / no module is selected). In Supabase SQL editor run ' +
+      'supabase/v3.1.5-documents-module-code.sql, then Project Settings → API → Reload schema. ' +
+      'Your note was kept locally if possible.'
+    );
+  }
   if (isSchemaCacheError(err)) {
     const col = missingDocumentsColumn(err) || 'content / summary / glossary';
     return (
       `Smart Notes cloud save failed: documents.${col} is missing ` +
       'or the Supabase PostgREST schema cache is stale. In Supabase SQL editor run ' +
-      'supabase/v3.1.4-documents-load.sql (or the documents columns block in ' +
-      'supabase/schema.sql), then Project Settings → API → Reload schema ' +
+      'supabase/v3.1.5-documents-module-code.sql (or v3.1.4-documents-load.sql / the documents ' +
+      'columns block in supabase/schema.sql), then Project Settings → API → Reload schema ' +
       "(or NOTIFY pgrst, 'reload schema'). Your note was kept locally if possible."
     );
   }
@@ -216,7 +234,7 @@ export function formatDocumentsLoadError(err: unknown): string {
     const col = missingDocumentsColumn(err) || 'content / summary / glossary / created_at';
     return (
       `Documents load failed: documents.${col} is missing or the PostgREST schema cache is stale. ` +
-      'Run supabase/v3.1.4-documents-load.sql, then Project Settings → API → Reload schema. ' +
+      'Run supabase/v3.1.5-documents-module-code.sql (or v3.1.4-documents-load.sql), then Project Settings → API → Reload schema. ' +
       `(${raw})`
     );
   }
@@ -297,6 +315,11 @@ function mergeById(cloud: FiosDocument[], local: FiosDocument[]): FiosDocument[]
   );
 }
 
+/** General / no module → empty string (never null) so NOT NULL live columns accept the row. */
+function normalizeModuleCodeForWrite(value: string | null | undefined): string {
+  return (value ?? '').trim();
+}
+
 function buildPayload(userId: string, doc: Partial<FiosDocument>) {
   return {
     user_id: userId,
@@ -305,7 +328,8 @@ function buildPayload(userId: string, doc: Partial<FiosDocument>) {
     // Match consolidated schema: summary text not null default ''
     summary: doc.summary == null || doc.summary === '' ? '' : String(doc.summary),
     glossary: parseGlossary(doc.glossary ?? []),
-    module_code: doc.module_code || null,
+    // Never upsert module_code: null — General uses '' (canonical: nullable text, default '')
+    module_code: normalizeModuleCodeForWrite(doc.module_code),
   };
 }
 
@@ -419,7 +443,7 @@ export async function saveDocument(doc: Partial<FiosDocument>): Promise<SaveDocu
       content: doc.content || '',
       summary: doc.summary ?? '',
       glossary: parseGlossary(doc.glossary ?? []),
-      module_code: doc.module_code || null,
+      module_code: normalizeModuleCodeForWrite(doc.module_code) || null,
       created_at: new Date().toISOString(),
     };
     demoDocState = [saved, ...demoDocState];

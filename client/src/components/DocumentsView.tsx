@@ -191,7 +191,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         content: text,
         summary: result.summary,
         glossary: result.glossary || [],
-        module_code: moduleCode || null,
+        module_code: moduleCode.trim() || '',
       });
       afterSave(saved, text);
     } catch (err: any) {
@@ -220,7 +220,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         content: md,
         summary: result.summary,
         glossary: result.glossary || [],
-        module_code: moduleCode || null,
+        module_code: moduleCode.trim() || '',
       });
       afterSave(saved, md, { successToast: 'Audio lecture saved as Smart Note' });
     } catch (err: any) {
