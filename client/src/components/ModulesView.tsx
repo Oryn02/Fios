@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Layers, Sparkles, ArrowRight, Trash2, Tag, Plus, Pencil,
@@ -70,6 +70,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   const [recallOpen, setRecallOpen] = useState(false);
   const [folderFilter, setFolderFilter] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const entityTabStripRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -99,6 +100,14 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Keep the active entity tab visible when the strip is narrower than all tabs (mobile).
+  useEffect(() => {
+    const strip = entityTabStripRef.current;
+    if (!strip) return;
+    const active = strip.querySelector<HTMLElement>(`[data-entity-tab="${entityTab}"]`);
+    active?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+  }, [entityTab]);
 
   const matchesModule = useCallback(
     (code?: string | null) => (selectedModule ? code === selectedModule : true),
@@ -225,7 +234,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   const activeCount = filtered[entityTab].length;
 
   return (
-    <div className="space-y-8 font-sans text-slate-100 max-w-6xl mx-auto">
+    <div className="space-y-8 font-sans text-slate-100 max-w-6xl mx-auto min-w-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -359,21 +368,33 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
         })}
       </div>
 
-      {/* Entity type tabs */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-          <div className="flex items-center gap-1 bg-[#07090e] border border-slate-800 rounded-xl p-1 w-fit overflow-x-auto">
+      {/* Entity type tabs — fios-h-scroll enables touch pan-x (global button touch-action otherwise blocks swipe) */}
+      <div className="space-y-4 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3 min-w-0">
+          <div
+            ref={entityTabStripRef}
+            role="tablist"
+            aria-label="Module content types"
+            className="fios-h-scroll flex items-center gap-1 bg-[#07090e] border border-slate-800 rounded-xl p-1 max-w-full w-full sm:w-fit overflow-x-auto overflow-y-hidden"
+          >
             {ENTITY_TABS.map((t) => {
               const Icon = t.icon;
               return (
-                <button key={t.id} onClick={() => setEntityTab(t.id)}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 ${entityTab === t.id ? 'bg-emerald-400 text-slate-950' : 'text-slate-400 hover:text-slate-200'}`}>
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={entityTab === t.id}
+                  data-entity-tab={t.id}
+                  onClick={() => setEntityTab(t.id)}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 ${entityTab === t.id ? 'bg-emerald-400 text-slate-950' : 'text-slate-400 hover:text-slate-200'}`}
+                >
                   <Icon className="w-3.5 h-3.5" /> {t.label}
                 </button>
               );
             })}
           </div>
-          <span className="text-xs font-mono text-slate-500">
+          <span className="text-xs font-mono text-slate-500 shrink-0">
             {selectedModule
               ? `${resolveModuleLabel(modules, selectedModule, selectedModule)} · `
               : 'All · '}
