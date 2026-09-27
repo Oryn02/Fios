@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import { Target, Plus, Trash2, TrendingUp, Award, Folder, Loader2 } from 'lucide-react';
 import { getGrades, saveGrade, updateGrade, deleteGrade } from '../lib/gradeService';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { Grade } from '../types/db';
 import { formatCleanNumber, parseCleanNumber } from '../lib/parseNumber';
+import { toast } from '../lib/toast';
 import { ModulePicker } from './ModulePicker';
 import { SemesterGpaPanel } from './SemesterGpaPanel';
 
@@ -81,6 +81,7 @@ export const GradePredictorView: React.FC = () => {
   const [weightStr, setWeightStr] = useState('20');
   const [scoreStr, setScoreStr] = useState('');
   const [targetStr, setTargetStr] = useState('60');
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,6 +89,9 @@ export const GradePredictorView: React.FC = () => {
       const [g, m] = await Promise.all([getGrades(), getUserModules()]);
       setGrades(g);
       setModules(m);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not load assessments';
+      toast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -99,49 +103,121 @@ export const GradePredictorView: React.FC = () => {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
-    const weight = parseCleanNumber(weightStr, 0) ?? 0;
-    const score = scoreStr.trim() === '' ? null : parseCleanNumber(scoreStr, null);
-    const target = parseCleanNumber(targetStr, 40) ?? 40;
-    const saved = await saveGrade({
-      title: title.trim(),
-      module_code: moduleCode || null,
-      weight,
-      score,
-      target_grade: target,
-    });
-    setGrades((prev) => [...prev, saved]);
-    setTitle('');
-    setScoreStr('');
-    setWeightStr('20');
-    setAdding(false);
+    if (!title.trim() || saving) return;
+
+    const weight = parseCleanNumber(weightStr, null);
+    const scoreParsed = scoreStr.trim() === '' ? null : parseCleanNumber(scoreStr, null);
+    const target = parseCleanNumber(targetStr, null);
+
+    if (weight === null || !Number.isFinite(weight)) {
+      toast('Enter a valid weight %', 'error');
+      return;
+    }
+    if (scoreStr.trim() !== '' && (scoreParsed === null || !Number.isFinite(scoreParsed))) {
+      toast('Enter a valid score % (or leave blank)', 'error');
+      return;
+    }
+    if (target === null || !Number.isFinite(target)) {
+      toast('Enter a valid target grade %', 'error');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const saved = await saveGrade({
+        title: title.trim(),
+        module_code: moduleCode || null,
+        weight,
+        score: scoreParsed,
+        target_grade: target,
+      });
+      setGrades((prev) => [...prev, saved]);
+      setTitle('');
+      setScoreStr('');
+      setWeightStr('20');
+      setTargetStr(formatCleanNumber(target));
+      setAdding(false);
+      toast('Assessment saved', 'success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not save assessment';
+      toast(msg || 'Could not save assessment', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleScore = async (g: Grade, value: string) => {
-    const newScore = value.trim() === '' ? null : parseCleanNumber(value, null);
-    setGrades((prev) => prev.map((x) => (x.id === g.id ? { ...x, score: newScore } : x)));
-    await updateGrade(g.id, { score: newScore });
+    const trimmed = value.trim();
+    const newScore = trimmed === '' ? null : parseCleanNumber(value, null);
+    if (trimmed !== '' && (newScore === null || !Number.isFinite(newScore))) {
+      toast('Enter a valid score %', 'error');
+      return;
+    }
+    const prev = g.score;
+    setGrades((prevGrades) => prevGrades.map((x) => (x.id === g.id ? { ...x, score: newScore } : x)));
+    try {
+      await updateGrade(g.id, { score: newScore });
+    } catch (err: unknown) {
+      setGrades((prevGrades) => prevGrades.map((x) => (x.id === g.id ? { ...x, score: prev } : x)));
+      const msg = err instanceof Error ? err.message : 'Could not update score';
+      toast(msg, 'error');
+    }
   };
 
   const handleWeight = async (g: Grade, value: string) => {
-    const w = parseCleanNumber(value, g.weight) ?? g.weight;
-    setGrades((prev) => prev.map((x) => (x.id === g.id ? { ...x, weight: w } : x)));
-    await updateGrade(g.id, { weight: w });
+    const w = parseCleanNumber(value, null);
+    if (w === null || !Number.isFinite(w)) {
+      toast('Enter a valid weight %', 'error');
+      return;
+    }
+    const prev = g.weight;
+    setGrades((prevGrades) => prevGrades.map((x) => (x.id === g.id ? { ...x, weight: w } : x)));
+    try {
+      await updateGrade(g.id, { weight: w });
+    } catch (err: unknown) {
+      setGrades((prevGrades) => prevGrades.map((x) => (x.id === g.id ? { ...x, weight: prev } : x)));
+      const msg = err instanceof Error ? err.message : 'Could not update weight';
+      toast(msg, 'error');
+    }
   };
 
   const handleTarget = async (g: Grade, value: string) => {
-    const t = parseCleanNumber(value, g.target_grade) ?? g.target_grade;
+    const t = parseCleanNumber(value, null);
+    if (t === null || !Number.isFinite(t)) {
+      toast('Enter a valid target grade %', 'error');
+      return;
+    }
+    const prevById = new Map(grades.map((x) => [x.id, x.target_grade]));
     setGrades((prev) =>
       prev.map((x) => (x.module_code === g.module_code ? { ...x, target_grade: t } : x))
     );
     // Persist on all assessments in the module so prediction stays consistent
     const siblings = grades.filter((x) => x.module_code === g.module_code);
-    await Promise.all(siblings.map((s) => updateGrade(s.id, { target_grade: t })));
+    try {
+      await Promise.all(siblings.map((s) => updateGrade(s.id, { target_grade: t })));
+    } catch (err: unknown) {
+      setGrades((prev) =>
+        prev.map((x) =>
+          x.module_code === g.module_code
+            ? { ...x, target_grade: prevById.get(x.id) ?? x.target_grade }
+            : x
+        )
+      );
+      const msg = err instanceof Error ? err.message : 'Could not update target';
+      toast(msg, 'error');
+    }
   };
 
   const handleDelete = async (id: string) => {
+    const removed = grades.find((g) => g.id === id);
     setGrades((prev) => prev.filter((g) => g.id !== id));
-    await deleteGrade(id);
+    try {
+      await deleteGrade(id);
+    } catch (err: unknown) {
+      if (removed) setGrades((prev) => [...prev, removed]);
+      const msg = err instanceof Error ? err.message : 'Could not delete assessment';
+      toast(msg, 'error');
+    }
   };
 
   const grouped = useMemo(() => {
@@ -228,8 +304,12 @@ export const GradePredictorView: React.FC = () => {
                 className="w-20 bg-[var(--fios-surface-2)] border fios-border rounded-lg px-2 py-1 text-[var(--fios-text)] focus:outline-none"
               />
             </label>
-            <button type="submit" className="px-5 py-2 accent-bg text-slate-950 font-black uppercase text-xs rounded-lg cursor-pointer">
-              Save
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-5 py-2 accent-bg text-slate-950 font-black uppercase text-xs rounded-lg cursor-pointer disabled:opacity-50"
+            >
+              {saving ? 'Saving…' : 'Save'}
             </button>
           </div>
         </form>

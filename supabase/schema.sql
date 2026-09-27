@@ -157,6 +157,70 @@ create table if not exists public.grades (
 );
 create index if not exists grades_user_idx on public.grades (user_id);
 
+-- v3.1.0: align legacy live columns → canonical (idempotent).
+-- Live v3.0.0 used assessment_name / weight_percentage / score_achieved and
+-- had no target_grade — Grade Predictor saves failed with PGRST204.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'assessment_name'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'title'
+  ) then
+    alter table public.grades rename column assessment_name to title;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'weight_percentage'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'weight'
+  ) then
+    alter table public.grades rename column weight_percentage to weight;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'score_achieved'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'score'
+  ) then
+    alter table public.grades rename column score_achieved to score;
+  end if;
+
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'target_grade'
+  ) then
+    alter table public.grades add column target_grade numeric not null default 40;
+  end if;
+
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'title'
+  ) then
+    alter table public.grades add column title text not null default 'Assessment';
+  end if;
+
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'weight'
+  ) then
+    alter table public.grades add column weight numeric not null default 0;
+  end if;
+
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'score'
+  ) then
+    alter table public.grades add column score numeric;
+  end if;
+end $$;
+
 -- ----------------------------------------------------------------------------
 -- focus_sessions: completed Pomodoro focus logs for the Weekly Study Goal
 -- ----------------------------------------------------------------------------
