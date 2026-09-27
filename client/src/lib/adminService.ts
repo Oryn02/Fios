@@ -275,7 +275,7 @@ export async function loadOverviewStats(feedback: FeedbackEntry[]): Promise<Over
     ...fb,
     profileCount,
     profilesError,
-    clientVersion: '3.1.5',
+    clientVersion: '3.1.6',
   };
 }
 

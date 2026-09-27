@@ -4,6 +4,16 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.6',
+      date: 'September 2026',
+      title: 'Modules tab strip scroll on mobile',
+      highlights: [
+        'Modules: on phones, swipe/scroll the Decks · MCQ Quizzes · Code Exams · Tasks · Documents tab strip horizontally so tabs past the edge (including Documents) are reachable.',
+        'Active tab scrolls into view when selected; desktop tab layout unchanged.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.6.',
+      ],
+    },
+    {
       version: 'v3.1.5',
       date: 'September 2026',
       title: 'Smart Notes General module save',
@@ -303,7 +313,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.5</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.6</p>
       </header>
 
       <div className="space-y-4">
