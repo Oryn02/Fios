@@ -8,7 +8,7 @@ const UpdatesTabInner: React.FC = () => {
       date: 'September 2026',
       title: 'Mobile schedule readability',
       highlights: [
-        'Schedule month view (mobile): larger day cells and tap targets, clearer hierarchy for today / selected / days with classes, truncated event labels with “+N more”, and short weekday headers — less clutter and overflow on narrow screens.',
+        'Schedule month view (mobile): larger day cells and tap targets, clearer hierarchy for today / selected / days with classes, event color dots (muted = finished) instead of cramped truncated titles, short weekday headers, and no horizontal overflow — tap a day for full class titles.',
         'Schedule controls: Day / Week / Month toggles and prev/next/Today hit areas sized for touch; desktop month pill stack and layout unchanged.',
         'Finished-class muting and Next Up highlight from earlier releases are preserved in day, week, and month views.',
         'Compact agenda titles slightly larger on small screens for easier scanning.',

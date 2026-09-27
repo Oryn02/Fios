@@ -439,7 +439,12 @@ summary,
 }
 @media (max-width: 639px) {
   .fios-month-cell {
-    min-height: 4.25rem;
+    min-height: 3.75rem;
+    min-width: 0;
+  }
+  .fios-month-grid {
+    width: 100%;
+    max-width: 100%;
   }
 }
 

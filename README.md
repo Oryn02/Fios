@@ -39,7 +39,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 
 ### What’s new in v3.1.0
 
-- Mobile schedule readability: month grid with larger tap targets, clearer today / selected / has-events hierarchy, truncated event labels, and touch-sized Day/Week/Month controls; desktop layout unchanged; finished muting + Next Up preserved.
+- Mobile schedule readability: month grid with larger tap targets, clearer today / selected / has-events hierarchy, event dots (no cramped truncated titles), and touch-sized Day/Week/Month controls; desktop layout unchanged; finished muting + Next Up preserved.
 - See the in-app **Updates** tab for the full changelog.
 
 ### What’s new in v3.0.0

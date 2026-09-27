@@ -276,7 +276,7 @@ const ScheduleTabInner: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto font-sans text-slate-100">
+    <div className="space-y-6 max-w-5xl mx-auto font-sans text-slate-100 overflow-x-hidden px-0.5 sm:px-0">
       
       {/* Header Banner */}
       <header className="space-y-1">
@@ -636,8 +636,8 @@ const ScheduleTabInner: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="fios-month-grid bg-[#0e131f] border border-slate-800 rounded-xl p-3 sm:p-6 space-y-3 sm:space-y-4 overflow-x-hidden">
-          <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center font-mono text-[10px] sm:text-[11px] font-black uppercase text-slate-400 sm:text-slate-500 pb-2 border-b border-slate-800">
+        <div className="fios-month-grid bg-[#0e131f] border border-slate-800 rounded-xl p-2.5 sm:p-6 space-y-2.5 sm:space-y-4 overflow-x-hidden w-full max-w-full">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-2 text-center font-mono text-[10px] sm:text-[11px] font-black uppercase text-slate-400 sm:text-slate-500 pb-2 border-b border-slate-800">
             {([
               ['M', 'Mon'],
               ['T', 'Tue'],
@@ -647,14 +647,14 @@ const ScheduleTabInner: React.FC = () => {
               ['S', 'Sat'],
               ['S', 'Sun'],
             ] as const).map(([shortLabel, longLabel], i) => (
-              <span key={`${longLabel}-${i}`} aria-label={longLabel}>
+              <span key={`${longLabel}-${i}`} aria-label={longLabel} className="min-w-0">
                 <span className="sm:hidden">{shortLabel}</span>
                 <span className="hidden sm:inline">{longLabel}</span>
               </span>
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-1 sm:gap-2">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-2 w-full min-w-0">
             {(() => {
               const year = selectedDate.getFullYear();
               const month = selectedDate.getMonth();
@@ -671,7 +671,7 @@ const ScheduleTabInner: React.FC = () => {
                 calendarCells.push(
                   <div
                     key={`pad-${i}`}
-                    className="min-h-[4.25rem] sm:min-h-0 sm:h-24 bg-[#07090e]/30 border border-slate-900 rounded-lg opacity-20"
+                    className="min-w-0 min-h-[3.75rem] sm:min-h-0 sm:h-24 bg-[#07090e]/30 border border-slate-900 rounded-md sm:rounded-lg opacity-20"
                     aria-hidden
                   />
                 );
@@ -683,11 +683,10 @@ const ScheduleTabInner: React.FC = () => {
                 const isTodayCell = isSameLocalDay(currentDate, now);
                 const isSelectedCell = isSameLocalDay(currentDate, selectedDate);
                 const hasEvents = dayEvents.length > 0;
-                const primary = dayEvents[0];
-                const primaryState = primary
-                  ? classVisualState(primary.startDate, primary.endDate, { day: currentDate, now })
-                  : null;
-                const primaryMuted = primaryState === 'finished' || primaryState === 'past-day';
+                const unfinishedCount = dayEvents.filter((ev) => {
+                  const st = classVisualState(ev.startDate, ev.endDate, { day: currentDate, now });
+                  return st !== 'finished' && st !== 'past-day';
+                }).length;
 
                 calendarCells.push(
                   <button
@@ -699,33 +698,43 @@ const ScheduleTabInner: React.FC = () => {
                     }}
                     aria-label={`${currentDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}${hasEvents ? `, ${dayEvents.length} class${dayEvents.length === 1 ? '' : 'es'}` : ''}`}
                     aria-current={isTodayCell ? 'date' : undefined}
-                    className={`fios-month-cell min-h-[4.25rem] sm:min-h-0 sm:h-24 bg-[#07090e] border rounded-lg p-1.5 sm:p-2 flex flex-col justify-between text-left cursor-pointer transition-all hover:border-emerald-400/50 active:scale-[0.98] sm:active:scale-100 overflow-hidden ${
+                    className={`fios-month-cell min-w-0 min-h-[3.75rem] sm:min-h-0 sm:h-24 bg-[#07090e] border rounded-md sm:rounded-lg p-1 sm:p-2 flex flex-col items-stretch justify-between text-left cursor-pointer transition-colors hover:border-emerald-400/50 active:bg-slate-900/80 overflow-hidden box-border ${
                       isSelectedCell
-                        ? 'border-emerald-400 ring-1 ring-emerald-400/50 bg-emerald-950/20'
+                        ? 'border-emerald-400 shadow-[inset_0_0_0_1px_rgba(52,211,153,0.45)] bg-emerald-950/25'
                         : isTodayCell
-                          ? 'border-emerald-400/60'
+                          ? 'border-emerald-400/70'
                           : hasEvents
-                            ? 'border-cyan-500/30'
+                            ? unfinishedCount > 0
+                              ? 'border-cyan-400/35'
+                              : 'border-slate-700/80'
                             : 'border-slate-800'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-0.5 min-w-0">
+                    <div className="flex items-start justify-between gap-0.5 min-w-0 w-full">
                       <span
-                        className={`shrink-0 text-sm sm:text-xs font-mono font-black tabular-nums leading-none ${
+                        className={`shrink-0 text-[13px] sm:text-xs font-mono font-black tabular-nums leading-none ${
                           isTodayCell
                             ? 'bg-emerald-400 text-slate-950 px-1.5 py-1 sm:py-0.5 rounded-md sm:rounded-full'
                             : isSelectedCell
                               ? 'text-emerald-300'
-                              : 'text-slate-100'
+                              : 'text-slate-50'
                         }`}
                       >
                         {day}
                       </span>
                       {hasEvents && (
+                        <span className="hidden sm:inline text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                          {dayEvents.length}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Mobile: event dots only — readable titles live in Day view after tap */}
+                    <div className="sm:hidden mt-auto flex flex-col items-center gap-1 pt-1 min-h-[1.25rem]">
+                      {hasEvents ? (
                         <>
-                          {/* Mobile: compact event dots (hierarchy without crowding) */}
-                          <span className="sm:hidden flex items-center gap-0.5 shrink-0" aria-hidden>
-                            {dayEvents.slice(0, 3).map((ev, idx) => {
+                          <span className="flex items-center justify-center gap-0.5 flex-wrap max-w-full" aria-hidden>
+                            {dayEvents.slice(0, 4).map((ev, idx) => {
                               const ck = subjectColor(ev.title);
                               const st = classVisualState(ev.startDate, ev.endDate, { day: currentDate, now });
                               const muted = st === 'finished' || st === 'past-day';
@@ -733,37 +742,19 @@ const ScheduleTabInner: React.FC = () => {
                                 <span
                                   key={idx}
                                   data-mod-color={ck}
-                                  className={`w-1.5 h-1.5 rounded-full mod-solid-bg ${muted ? 'opacity-40' : ''}`}
+                                  className={`w-2 h-2 rounded-full mod-solid-bg shadow-sm ${muted ? 'opacity-35' : 'opacity-95'}`}
                                 />
                               );
                             })}
-                            {dayEvents.length > 3 && (
-                              <span className="text-[8px] font-mono font-bold text-cyan-400/90 leading-none">+</span>
-                            )}
                           </span>
-                          <span className="hidden sm:inline text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
-                            {dayEvents.length}
-                          </span>
+                          {dayEvents.length > 4 && (
+                            <span className="text-[9px] font-mono font-black text-cyan-300/90 leading-none">
+                              +{dayEvents.length - 4}
+                            </span>
+                          )}
                         </>
-                      )}
-                    </div>
-
-                    {/* Mobile: one truncated label + overflow count */}
-                    <div className="sm:hidden mt-auto min-w-0 space-y-0.5 pt-1">
-                      {primary && (
-                        <div
-                          data-mod-color={subjectColor(primary.title)}
-                          className={`text-[10px] leading-tight font-mono font-bold truncate ${
-                            primaryMuted ? 'text-slate-500 line-through opacity-70' : 'text-slate-100'
-                          }`}
-                        >
-                          {primary.title}
-                        </div>
-                      )}
-                      {dayEvents.length > 1 && (
-                        <div className="text-[9px] font-mono font-bold text-slate-500 leading-none">
-                          +{dayEvents.length - 1} more
-                        </div>
+                      ) : (
+                        <span className="w-2 h-2 rounded-full opacity-0" aria-hidden />
                       )}
                     </div>
 
@@ -796,6 +787,11 @@ const ScheduleTabInner: React.FC = () => {
               return calendarCells;
             })()}
           </div>
+
+          {/* Mobile hint under month grid */}
+          <p className="sm:hidden text-[10px] font-mono text-slate-400 text-center pt-1 leading-relaxed">
+            Colored dots = classes · muted = finished · tap a day for full titles
+          </p>
         </div>
       )}
 
