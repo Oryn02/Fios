@@ -174,6 +174,49 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
     }
   };
 
+  /** Audio lecture path: media notes → summarize → save document. */
+  const handleMediaNotes = async (md: string, meta?: { kind: 'image' | 'audio'; fileName?: string }) => {
+    setText((prev) => (prev.trim() ? `${prev}\n\n${md}` : md));
+    if (!meta || meta.kind !== 'audio') return;
+    if (!requireAiAuth()) return;
+
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await summarizeText(md);
+      const docTitle =
+        title.trim() ||
+        (meta.fileName ? meta.fileName.replace(/\.[^.]+$/, '') : '') ||
+        `Audio lecture ${new Date().toLocaleDateString('en-GB')}`;
+      const saved = await saveDocument({
+        title: docTitle,
+        content: md,
+        summary: result.summary,
+        glossary: result.glossary || [],
+        module_code: moduleCode || null,
+      });
+      void indexDocumentChunks(saved.id, md).then((r) => {
+        if (r.indexed > 0) toast(`Indexed ${r.indexed} note chunk(s) for RAG`, 'info');
+      });
+      setDocs((prev) => [saved, ...prev]);
+      setActive(saved);
+      setText('');
+      setTitle('');
+      if (result.summary) {
+        localStorage.setItem(
+          `fios_doc_revisions_${saved.id}`,
+          JSON.stringify([{ at: new Date().toISOString(), summary: result.summary }])
+        );
+      }
+      toast('Audio lecture saved as Smart Note', 'success');
+    } catch (err: any) {
+      setError(err.message || 'Failed to summarize audio lecture.');
+      toast('Transcription ready — summarize manually if needed', 'info');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     await deleteDocument(id);
@@ -237,7 +280,10 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         </div>
 
         <FileUpload onTextExtracted={(t) => setText(t)} />
-        <MediaStudyInput onNotes={(md) => setText((prev) => (prev.trim() ? `${prev}\n\n${md}` : md))} />
+        <MediaStudyInput emphasizeAudio onNotes={(md, meta) => void handleMediaNotes(md, meta)} />
+        <p className="text-[10px] font-mono text-[var(--fios-text-muted)] -mt-1">
+          Audio lecture → summary uploads voice, transcribes via Gemini, and saves a Smart Note automatically.
+        </p>
 
         <textarea
           value={text}
