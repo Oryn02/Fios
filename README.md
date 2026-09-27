@@ -19,7 +19,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Grade Predictor** — computes the scores you need across assessments; semester GPA vs honours thresholds.
 - **Module Readiness Heatmap** — 0–100% readiness per module with calculation breakdown; rich module accent colors on badges/tags/heatmap.
 - **Study streak heatmap & exam countdown** — contribution grid from focus + flashcard reviews; live countdown to exams and due tasks.
-- **Brain Dump inbox** — floating quick-capture with optional AI parse into tasks.
+- **Brain Dump inbox** — floating quick-capture with optional AI parse into tasks (Settings toggle; desktop On / mobile Off by default, like Pomodoro / Quick Widget).
 - **Class Reminders** — optional browser notifications (5–30 min lead) for upcoming classes; Web Push when VAPID is configured.
 - **Universal schedule** — iCal sync or manual timetable for any college; iCal helper + clearer errors; finished classes muted; Next Up highlight; mobile month view with larger taps and clearer day hierarchy.
 - **Unified agenda** — classes + timed tasks on a calendar-day timeline (memoized CompactAgenda); tasks sort by due date; start/due datetime pickers update and save.
@@ -39,6 +39,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 
 ### What’s new in v3.1.2
 
+- Brain Dump inbox: Settings toggle beside Pomodoro / Smart Quick — desktop (≥768px) defaults **On**, mobile **Off**; per-viewport explicit flags so mobile Off does not stick on desktop. Enabled desktop dock keeps it beside Pomodoro + Quick Widget.
 - Holiday background motifs refined: Halloween skulls (ghost/ember/bat OK — no candy canes), St Patrick’s shamrocks / rainbows / leprechauns / pot of gold, Easter bunnies / eggs / stars.
 - Christmas holly / snow / candy cane motifs unchanged; holiday accent gradients and washes kept.
 - Landing marketing remains locked to default emerald; reduced-motion and Low-Power unchanged (static wash / particles off).

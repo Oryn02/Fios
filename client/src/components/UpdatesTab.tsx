@@ -6,8 +6,10 @@ const UpdatesTabInner: React.FC = () => {
     {
       version: 'v3.1.2',
       date: 'September 2026',
-      title: 'Holiday motif polish',
+      title: 'Holiday motifs + Brain Dump toggle',
       highlights: [
+        'Brain Dump inbox is toggleable in Settings alongside Pomodoro and Smart Quick — desktop (≥768px) defaults On, mobile defaults Off; desktop and mobile choices stay independent.',
+        'When enabled on desktop, Brain Dump stays in the shared floating dock beside Pomodoro and Quick Widget.',
         'Holiday background animations use clearer seasonal icons: Halloween skulls (plus ghost/ember/bat vibes — no candy canes), St Patrick’s Day shamrocks, rainbows, leprechauns & pot of gold, Easter bunnies, eggs & stars.',
         'Christmas holly / snow / candy cane motifs unchanged; accent gradients and color washes kept.',
         'Landing marketing stays default emerald; reduced-motion and Low-Power still show a static wash only.',

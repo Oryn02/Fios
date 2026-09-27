@@ -84,6 +84,8 @@ export interface PreferencesState {
   showPomodoroWidget: boolean;
   /** Floating Smart Quick Actions FAB. */
   showSmartWidget: boolean;
+  /** Floating Brain Dump inbox (shared FAB dock). */
+  showBrainDumpInbox: boolean;
   /**
    * True when the *current* viewport has an intentional Settings toggle.
    * Derived from the desktop/mobile explicit flags below.
@@ -93,6 +95,15 @@ export interface PreferencesState {
   floatingWidgetsExplicitDesktop: boolean;
   /** User toggled Pomodoro / Smart Quick while on mobile (&lt;768px). */
   floatingWidgetsExplicitMobile: boolean;
+  /**
+   * True when the *current* viewport has an intentional Brain Dump Settings toggle.
+   * Separate from Pomodoro/Smart Quick so one toggle never poisons the other.
+   */
+  brainDumpExplicit: boolean;
+  /** User toggled Brain Dump while on desktop (≥768px). */
+  brainDumpExplicitDesktop: boolean;
+  /** User toggled Brain Dump while on mobile (&lt;768px). */
+  brainDumpExplicitMobile: boolean;
   /** Which Smart Quick actions appear, in order. */
   smartWidgetActions: SmartActionId[];
   /** Which metric chips appear on the Smart Quick panel / FAB. */
@@ -196,6 +207,60 @@ export function resolveFloatingWidgets(raw: {
   };
 }
 
+/**
+ * Brain Dump inbox — same viewport defaults as Pomodoro / Smart Quick
+ * (desktop ON, mobile OFF) with independent per-viewport explicit flags
+ * so a phone OFF never sticks on desktop via profile sync.
+ */
+export function resolveBrainDumpInbox(raw: {
+  showBrainDumpInbox?: unknown;
+  brainDumpExplicit?: unknown;
+  brainDumpExplicitDesktop?: unknown;
+  brainDumpExplicitMobile?: unknown;
+} | null | undefined): {
+  showBrainDumpInbox: boolean;
+  brainDumpExplicit: boolean;
+  brainDumpExplicitDesktop: boolean;
+  brainDumpExplicitMobile: boolean;
+} {
+  const desktopViewport = defaultFloatingWidgetsOn();
+  let explicitDesktop = raw?.brainDumpExplicitDesktop === true;
+  let explicitMobile = raw?.brainDumpExplicitMobile === true;
+
+  // Legacy single-flag (if any early prefs wrote only brainDumpExplicit).
+  if (
+    raw?.brainDumpExplicit === true
+    && raw?.brainDumpExplicitDesktop !== true
+    && raw?.brainDumpExplicitMobile !== true
+  ) {
+    if (raw?.showBrainDumpInbox === true) {
+      explicitDesktop = true;
+      explicitMobile = true;
+    } else {
+      explicitMobile = true;
+      explicitDesktop = false;
+    }
+  }
+
+  const explicitHere = desktopViewport ? explicitDesktop : explicitMobile;
+  if (explicitHere) {
+    return {
+      showBrainDumpInbox: raw?.showBrainDumpInbox === true,
+      brainDumpExplicit: true,
+      brainDumpExplicitDesktop: explicitDesktop,
+      brainDumpExplicitMobile: explicitMobile,
+    };
+  }
+
+  const on = desktopViewport;
+  return {
+    showBrainDumpInbox: on,
+    brainDumpExplicit: false,
+    brainDumpExplicitDesktop: explicitDesktop,
+    brainDumpExplicitMobile: explicitMobile,
+  };
+}
+
 const DEFAULTS: PreferencesState = {
   lowPower: false,
   zenMode: false,
@@ -211,9 +276,13 @@ const DEFAULTS: PreferencesState = {
   navOrder: [...DEFAULT_NAV_ORDER],
   showPomodoroWidget: true,
   showSmartWidget: true,
+  showBrainDumpInbox: true,
   floatingWidgetsExplicit: false,
   floatingWidgetsExplicitDesktop: false,
   floatingWidgetsExplicitMobile: false,
+  brainDumpExplicit: false,
+  brainDumpExplicitDesktop: false,
+  brainDumpExplicitMobile: false,
   smartWidgetActions: [...DEFAULT_SMART_ACTIONS],
   smartWidgetMetrics: [...DEFAULT_SMART_METRICS],
   smartWidgetCompact: false,
@@ -236,6 +305,7 @@ function sanitizeMetrics(raw: unknown): SmartMetricId[] {
 
 function cloneDefaults(): PreferencesState {
   const floating = resolveFloatingWidgets(null);
+  const brainDump = resolveBrainDumpInbox(null);
   return {
     ...DEFAULTS,
     widgetVisibility: { ...DEFAULTS.widgetVisibility },
@@ -245,6 +315,7 @@ function cloneDefaults(): PreferencesState {
     smartWidgetActions: [...DEFAULTS.smartWidgetActions],
     smartWidgetMetrics: [...DEFAULTS.smartWidgetMetrics],
     ...floating,
+    ...brainDump,
   };
 }
 
@@ -254,6 +325,7 @@ function loadLocal(): PreferencesState {
     if (!raw) return cloneDefaults();
     const parsed = JSON.parse(raw);
     const floating = resolveFloatingWidgets(parsed);
+    const brainDump = resolveBrainDumpInbox(parsed);
     return {
       ...DEFAULTS,
       ...parsed,
@@ -264,6 +336,7 @@ function loadLocal(): PreferencesState {
       smartWidgetActions: sanitizeActions(parsed.smartWidgetActions),
       smartWidgetMetrics: sanitizeMetrics(parsed.smartWidgetMetrics),
       ...floating,
+      ...brainDump,
       smartWidgetCompact: !!parsed.smartWidgetCompact,
       smartWidgetShowMetrics: parsed.smartWidgetShowMetrics !== false,
     };
@@ -282,6 +355,7 @@ interface PreferencesContextValue extends PreferencesState {
   setNavOrder: (order: string[]) => void;
   setShowPomodoroWidget: (v: boolean) => void;
   setShowSmartWidget: (v: boolean) => void;
+  setShowBrainDumpInbox: (v: boolean) => void;
   setSmartWidgetActions: (actions: SmartActionId[]) => void;
   setSmartWidgetMetrics: (metrics: SmartMetricId[]) => void;
   setSmartWidgetCompact: (v: boolean) => void;
@@ -332,6 +406,33 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
         const floating = resolveFloatingWidgets(mergedRaw);
 
+        const brainMerged = {
+          showBrainDumpInbox: remote.showBrainDumpInbox ?? prev.showBrainDumpInbox,
+          brainDumpExplicit: remote.brainDumpExplicit ?? prev.brainDumpExplicit,
+          brainDumpExplicitDesktop:
+            remote.brainDumpExplicitDesktop === true
+            || prev.brainDumpExplicitDesktop === true,
+          brainDumpExplicitMobile:
+            remote.brainDumpExplicitMobile === true
+            || prev.brainDumpExplicitMobile === true,
+        };
+        if (
+          remote.brainDumpExplicit === true
+          && remote.brainDumpExplicitDesktop !== true
+          && remote.brainDumpExplicitMobile !== true
+        ) {
+          brainMerged.brainDumpExplicit = true;
+        } else if (
+          prev.brainDumpExplicitDesktop !== true
+          && prev.brainDumpExplicitMobile !== true
+          && prev.brainDumpExplicit === true
+          && remote.brainDumpExplicit !== true
+        ) {
+          brainMerged.brainDumpExplicit = true;
+          brainMerged.showBrainDumpInbox = prev.showBrainDumpInbox;
+        }
+        const brainDump = resolveBrainDumpInbox(brainMerged);
+
         const next: PreferencesState = {
           ...prev,
           ...remote,
@@ -346,6 +447,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
             ? sanitizeMetrics(remote.smartWidgetMetrics)
             : prev.smartWidgetMetrics,
           ...floating,
+          ...brainDump,
           smartWidgetCompact: typeof remote.smartWidgetCompact === 'boolean'
             ? remote.smartWidgetCompact
             : prev.smartWidgetCompact,
@@ -421,6 +523,16 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
         : { floatingWidgetsExplicitMobile: true }),
     });
   }, [patch]);
+  const setShowBrainDumpInbox = useCallback((v: boolean) => {
+    const desktop = defaultFloatingWidgetsOn();
+    patch({
+      showBrainDumpInbox: v,
+      brainDumpExplicit: true,
+      ...(desktop
+        ? { brainDumpExplicitDesktop: true }
+        : { brainDumpExplicitMobile: true }),
+    });
+  }, [patch]);
   const setSmartWidgetActions = useCallback((actions: SmartActionId[]) => patch({ smartWidgetActions: actions }), [patch]);
   const setSmartWidgetMetrics = useCallback((metrics: SmartMetricId[]) => patch({ smartWidgetMetrics: metrics }), [patch]);
   const setSmartWidgetCompact = useCallback((v: boolean) => patch({ smartWidgetCompact: v }), [patch]);
@@ -437,16 +549,21 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
         // Re-resolve from stored per-viewport explicit flags (not a blank slate),
         // so desktop can turn ON while mobile explicit OFF stays recorded.
         const floating = resolveFloatingWidgets(prev);
+        const brainDump = resolveBrainDumpInbox(prev);
         if (
           prev.showPomodoroWidget === floating.showPomodoroWidget
           && prev.showSmartWidget === floating.showSmartWidget
           && prev.floatingWidgetsExplicit === floating.floatingWidgetsExplicit
           && prev.floatingWidgetsExplicitDesktop === floating.floatingWidgetsExplicitDesktop
           && prev.floatingWidgetsExplicitMobile === floating.floatingWidgetsExplicitMobile
+          && prev.showBrainDumpInbox === brainDump.showBrainDumpInbox
+          && prev.brainDumpExplicit === brainDump.brainDumpExplicit
+          && prev.brainDumpExplicitDesktop === brainDump.brainDumpExplicitDesktop
+          && prev.brainDumpExplicitMobile === brainDump.brainDumpExplicitMobile
         ) {
           return prev;
         }
-        const next = { ...prev, ...floating };
+        const next = { ...prev, ...floating, ...brainDump };
         localStorage.setItem(LS_KEY, JSON.stringify(next));
         return next;
       });
@@ -483,6 +600,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setNavOrder,
     setShowPomodoroWidget,
     setShowSmartWidget,
+    setShowBrainDumpInbox,
     setSmartWidgetActions,
     setSmartWidgetMetrics,
     setSmartWidgetCompact,
@@ -490,7 +608,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     resetPreferences,
   }), [
     prefs, setLowPower, setZenMode, setOpenDyslexic, setWidgetOrder, setWidgetVisible,
-    setMobileNavSlots, setNavOrder, setShowPomodoroWidget, setShowSmartWidget,
+    setMobileNavSlots, setNavOrder, setShowPomodoroWidget, setShowSmartWidget, setShowBrainDumpInbox,
     setSmartWidgetActions, setSmartWidgetMetrics, setSmartWidgetCompact, setSmartWidgetShowMetrics, resetPreferences,
   ]);
 

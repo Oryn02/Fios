@@ -5,7 +5,7 @@ import {
   Sliders, Timer, Check, MapPin, IdCard, Palette, Sun, Moon,
   KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Smartphone,
   Monitor, BatteryLow, Type, Focus, GitBranch, Cookie, FileText, ShieldCheck,
-  GripVertical, LayoutGrid, ChevronUp, ChevronDown, Zap, Bell
+  GripVertical, LayoutGrid, ChevronUp, ChevronDown, Zap, Bell, Brain
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, DEMO_USER, disableDemo, demoFocusSessions } from '../lib/demo';
@@ -57,6 +57,7 @@ const SettingsTabInner: React.FC = () => {
     navOrder, setNavOrder,
     showPomodoroWidget, setShowPomodoroWidget,
     showSmartWidget, setShowSmartWidget,
+    showBrainDumpInbox, setShowBrainDumpInbox,
     smartWidgetActions, setSmartWidgetActions,
     smartWidgetMetrics, setSmartWidgetMetrics,
     smartWidgetCompact, setSmartWidgetCompact,
@@ -807,7 +808,7 @@ const SettingsTabInner: React.FC = () => {
             <LayoutGrid className="w-3.5 h-3.5" /> Floating widgets
           </span>
           <p className="text-[10px] text-[var(--fios-text-muted)] leading-snug">
-            Desktop defaults both On. Mobile defaults both Off until you toggle here —
+            Desktop defaults Pomodoro, Smart Quick, and Brain Dump On. Mobile defaults all Off until you toggle here —
             then your choice is saved for that device size (desktop and mobile are independent).
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -824,6 +825,13 @@ const SettingsTabInner: React.FC = () => {
               className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${showSmartWidget ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
             >
               <Zap className="w-3.5 h-3.5" /> Smart Quick Widget {showSmartWidget ? 'On' : 'Off'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowBrainDumpInbox(!showBrainDumpInbox)}
+              className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer sm:col-span-2 ${showBrainDumpInbox ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+            >
+              <Brain className="w-3.5 h-3.5" /> Brain Dump Inbox {showBrainDumpInbox ? 'On' : 'Off'}
             </button>
           </div>
         </div>
