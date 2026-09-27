@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Flashcard } from '../types/api';
 import { supabase } from '../lib/supabase';
-import { getUserModules, DBModule } from '../lib/moduleService';
+import { getUserModules, DBModule, moduleDisplayName } from '../lib/moduleService';
 import { ActiveRecallQuiz } from './ActiveRecallQuiz';
 import { FormattedContent } from './FormattedContent';
 import { calculateSM2, isCardDue, previewIntervalLabel } from '../lib/spacedRepetition';
@@ -361,7 +361,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
                 <option value="" className="bg-[#07090e] text-slate-400">General (No Module)</option>
                 {modules.map((m) => (
                   <option key={m.id} value={m.code} className="bg-[#07090e] text-emerald-400 font-bold">
-                    {m.code}
+                    {moduleDisplayName(m)}
                   </option>
                 ))}
               </select>

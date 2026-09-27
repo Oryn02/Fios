@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Grid3x3, Layers, HelpCircle, Code2, Info, FileText } from 'lucide-react';
-import { getUserModules, normalizeModuleColor, type DBModule } from '../lib/moduleService';
+import { getUserModules, normalizeModuleColor, moduleCourseCode, type DBModule } from '../lib/moduleService';
 import { MOD_BADGE_CLASS } from '../lib/moduleColors';
 import { getUserDecksWithCards } from '../lib/deckService';
 import { getQuizzes } from '../lib/mcqService';
@@ -140,14 +140,16 @@ export const ModuleHeatmap: React.FC = () => {
             title="Tap for breakdown"
           >
             <div className="flex items-center justify-between gap-2">
-              <span data-mod-color={normalizeModuleColor(r.module.color)} className={MOD_BADGE_CLASS}>
+              <span data-mod-color={normalizeModuleColor(r.module.color)} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide`}>
                 {r.module.name}
               </span>
               <span className="text-lg font-black text-[var(--fios-text)]">{r.score}%</span>
             </div>
-            <p className="text-[11px] font-bold text-[var(--fios-text)] truncate mt-1 opacity-80">
-              {r.module.code || 'No course code'}
-            </p>
+            {moduleCourseCode(r.module) && (
+              <p className="text-[11px] font-bold text-[var(--fios-text)] truncate mt-1 opacity-80">
+                {moduleCourseCode(r.module)}
+              </p>
+            )}
             <div className="flex items-center gap-2 text-[9px] font-mono text-[var(--fios-text)] opacity-80 mt-2 flex-wrap">
               <span className="flex items-center gap-0.5"><Layers className="w-2.5 h-2.5" />{r.decks}</span>
               <span className="flex items-center gap-0.5"><HelpCircle className="w-2.5 h-2.5" />{r.quizzes}</span>

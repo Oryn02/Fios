@@ -4,6 +4,18 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.0',
+      date: 'September 2026',
+      title: 'Edit modules + name-first badges',
+      highlights: [
+        'Modules: clear Edit (pencil) on each module card — update name, optional course code, accent color, and folder tags in the same form as create; changes persist to Supabase / demo store.',
+        'Course code stays fully optional on create and edit; blank codes stay blank in the UI (internal keys are never shown as the module identity when a name exists).',
+        'Badges & selectors: decks, MCQ quizzes, code exams, documents, tasks, Flashcards/Smart Notes/Code Lab pickers, ModulePicker, Active Recall, Quick Actions, readiness heatmap, GPA panel, and agenda labels show the module name (e.g. Java) instead of the course-code shorthand (e.g. GG).',
+        'Module cards: top pill prefers the module title; user course codes appear only as secondary text when set.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v3.1.0.',
+      ],
+    },
+    {
       version: 'v3.0.0',
       date: 'September 2026',
       title: 'Major study OS — multimodal tutor, reminders, streaks & more',
@@ -209,7 +221,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.0.0</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.0</p>
       </header>
 
       <div className="space-y-4">
