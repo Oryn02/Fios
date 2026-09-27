@@ -12,7 +12,6 @@ import { useTheme } from '../context/ThemeContext';
 import { usePreferences, DEFAULT_NAV_ORDER, DEFAULT_MOBILE_NAV } from '../context/PreferencesContext';
 import { FiosLogo } from './FiosLogo';
 import { Avatar } from './Avatar';
-import { WeeklyGoalWidget } from './WeeklyGoalWidget';
 import { CommandPalette, type CommandItem } from './CommandPalette';
 import { HolidayAmbience } from './HolidayAmbience';
 
@@ -439,7 +438,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         </AnimatePresence>
 
         {!hideChrome && sidebarOpen && (
-          <aside id="fios-desktop-sidebar" className="w-60 border-r fios-border bg-[var(--fios-surface)]/40 p-4 hidden md:flex flex-col justify-between" aria-label="Sidebar">
+          <aside id="fios-desktop-sidebar" className="w-60 border-r fios-border bg-[var(--fios-surface)]/40 p-4 hidden md:flex flex-col" aria-label="Sidebar">
             <div className="space-y-6">
               <div className="text-[10px] font-black uppercase tracking-widest text-[var(--fios-text-muted)] px-3">
                 Navigation
@@ -489,8 +488,6 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                 })}
               </nav>
             </div>
-
-            <WeeklyGoalWidget compact />
           </aside>
         )}
 
