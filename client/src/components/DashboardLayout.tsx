@@ -12,7 +12,6 @@ import { useTheme } from '../context/ThemeContext';
 import { usePreferences, DEFAULT_NAV_ORDER, DEFAULT_MOBILE_NAV } from '../context/PreferencesContext';
 import { FiosLogo } from './FiosLogo';
 import { Avatar } from './Avatar';
-import { WeeklyGoalWidget } from './WeeklyGoalWidget';
 import { CommandPalette, type CommandItem } from './CommandPalette';
 
 interface DashboardLayoutProps {
@@ -34,7 +33,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.0.0', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.1.0', icon: Sparkles },
 ];
 
 /** Tabs where Zen may hide chrome (study surfaces). Settings/Overview always keep nav. */
@@ -295,7 +294,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             >
               <FiosLogo size="lg" className="leading-none min-w-0 pointer-events-none" />
             </button>
-            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v3.0.0</span>
+            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v3.1.0</span>
             {zenMode && (
               <button
                 type="button"
@@ -437,7 +436,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         </AnimatePresence>
 
         {!hideChrome && sidebarOpen && (
-          <aside id="fios-desktop-sidebar" className="w-60 border-r fios-border bg-[var(--fios-surface)]/40 p-4 hidden md:flex flex-col justify-between" aria-label="Sidebar">
+          <aside id="fios-desktop-sidebar" className="w-60 border-r fios-border bg-[var(--fios-surface)]/40 p-4 hidden md:flex flex-col" aria-label="Sidebar">
             <div className="space-y-6">
               <div className="text-[10px] font-black uppercase tracking-widest text-[var(--fios-text-muted)] px-3">
                 Navigation
@@ -487,8 +486,6 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                 })}
               </nav>
             </div>
-
-            <WeeklyGoalWidget compact />
           </aside>
         )}
 

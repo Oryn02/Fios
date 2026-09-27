@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v3.0.0**
+**Current version: v3.1.0**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -27,7 +27,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Contact Support** — in-app message form posts to the API and emails the support inbox (Resend/SendGrid when configured); mailto remains optional.
 - **Feedback & ratings** — optional star rating, categories, and message (anonymous submit supported).
 - **Privacy & GDPR** — in-app Privacy Policy + Terms (landing footer and Settings); disclosures for Web Push, multimodal uploads, Supabase, Gemini (BYO key), optional GitHub, and hosting; Export My Data (JSON).
-- **Global Pomodoro Timer** — floating dock widget with Web Audio soundscapes and Weekly Study Goal (defaults off on mobile until enabled in Settings; legacy baked-on prefs migrated).
+- **Global Pomodoro Timer** — floating dock widget with Web Audio soundscapes; Weekly Study Goal progress strip on Overview (defaults off on mobile until enabled in Settings; legacy baked-on prefs migrated).
 - **Smart Quick Widget** — expanded actions, custom order, compact FAB, metrics chip (defaults off on mobile until enabled; legacy baked-on prefs migrated).
 - **Themes** — Dark / Light / System, expanded accent gradients, Low-Power mode, Zen focus (Esc / Exit Zen / mobile escape), OpenDyslexic, cream light palette with stronger cards/tabs. Landing marketing stays locked to default emerald.
 - **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar (compact chrome control, larger Fios wordmark; logo opens Overview); reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs); sticky mobile header.
@@ -36,6 +36,11 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v3.1.0
+
+- **Weekly Study Goal** sits on Overview as a hero-adjacent progress strip (under the greeting) — not a tiny sidebar card — with live Pomodoro hours and quick target edit.
+- See the in-app **Updates** tab for the full changelog.
 
 ### What’s new in v3.0.0
 
@@ -153,7 +158,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v3.0.0) — Render Static Site root
+├── client/                 # React + Vite frontend (v3.1.0) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/

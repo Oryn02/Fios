@@ -4,6 +4,17 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.0',
+      date: 'September 2026',
+      title: 'Weekly Study Goal on Overview',
+      highlights: [
+        'Weekly Study Goal moves from the desktop sidebar orphan card onto Overview as a full-width progress strip directly under the greeting — visible on desktop and mobile without hunting.',
+        'One job: live hours toward your weekly focus target (from Pomodoro work sessions) plus quick edit of the hour goal.',
+        'Sidebar no longer hides the goal at the bottom of the nav column; Settings still supports editing the same weekly target.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v3.1.0.',
+      ],
+    },
+    {
       version: 'v3.0.0',
       date: 'September 2026',
       title: 'Major study OS — multimodal tutor, reminders, streaks & more',
@@ -209,7 +220,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.0.0</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.0</p>
       </header>
 
       <div className="space-y-4">

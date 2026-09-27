@@ -23,6 +23,7 @@ import { CompactAgenda } from './CompactAgenda';
 import { DatetimeLocalInput } from './DatetimeLocalInput';
 import { StudyStreakHeatmap } from './StudyStreakHeatmap';
 import { ExamCountdownWidget } from './ExamCountdownWidget';
+import { WeeklyGoalWidget } from './WeeklyGoalWidget';
 import { toast } from '../lib/toast';
 import { overviewGreeting } from '../lib/holidays';
 
@@ -345,6 +346,9 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
           </div>
         </div>
       </motion.div>
+
+      {/* Weekly study goal — hero-adjacent strip (not a sidebar orphan) */}
+      <WeeklyGoalWidget variant="strip" />
 
       {/* 2. Focus Card */}
       <div className="bg-[#0e131f]/90 border border-slate-800 rounded-2xl p-4 sm:p-6 relative overflow-hidden space-y-4 shadow-xl">
