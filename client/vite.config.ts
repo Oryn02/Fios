@@ -16,6 +16,10 @@ export default defineConfig({
         'icon-512.png',
         'icon-maskable-512.png',
         'apple-touch-icon.png',
+        'fonts/OpenDyslexic-Regular.woff',
+        'fonts/OpenDyslexic-Bold.woff',
+        'fonts/OpenDyslexic-Italic.woff',
+        'fonts/OpenDyslexic-BoldItalic.woff',
       ],
       manifest: {
         name: 'Fios — Academic Command Center',
@@ -41,7 +45,7 @@ export default defineConfig({
         // Mermaid/elk/cytoscape (~5 MB) is excluded from precache below and
         // loaded on demand via dynamic import in MermaidDiagram.
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         globIgnores: ['**/vendor-diagrams-*.js'],
         navigateFallback: '/index.html',
         runtimeCaching: [

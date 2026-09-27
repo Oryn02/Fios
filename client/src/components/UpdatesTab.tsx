@@ -6,8 +6,13 @@ const UpdatesTabInner: React.FC = () => {
     {
       version: 'v3.1.0',
       date: 'September 2026',
-      title: 'Holiday theme ambience',
+      title: 'Holiday ambience, desktop widgets & accessibility',
       highlights: [
+        'Desktop: Pomodoro floating widget and Smart Quick Widget default ON again when you have not toggled them in Settings (viewport ≥768px).',
+        'Mobile: both floating widgets still default OFF until explicitly toggled (`floatingWidgetsExplicit` from v2.2.9) — intentional Settings choices stay saved.',
+        'Brain Dump inbox: re-laid out in the shared FAB dock beside Pomodoro + Quick Widget — opens upward alongside them without covering the FAB or fighting mobile bottom nav.',
+        'OpenDyslexic: self-hosted woff faces with font-display:swap; applies on iOS Safari, Android Chrome, and installed PWA (standalone) — no broken CDN stylesheet.',
+        'OpenDyslexic overrides Tailwind chrome fonts so the accessibility setting is visible across the UI; true code samples stay monospace.',
         'Holiday themes gain subtle atmospheric backgrounds when active: soft color washes plus sparse motion that stays readable for study.',
         'Halloween: soft orange/purple wash with faint floating ember motes.',
         'Christmas (Eve–St Stephen’s / Dec 24–26): soft red/green holly wash with very light snowfall.',

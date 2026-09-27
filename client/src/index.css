@@ -460,13 +460,52 @@ summary,
   transition: none !important;
 }
 
-/* OpenDyslexic accessibility font */
-[data-opendyslexic="true"] body,
-[data-opendyslexic="true"] button,
-[data-opendyslexic="true"] input,
-[data-opendyslexic="true"] textarea,
-[data-opendyslexic="true"] select {
-  font-family: "OpenDyslexic", "Open Dyslexic", Comic Sans MS, Verdana, sans-serif !important;
+/* OpenDyslexic — self-hosted woff (PWA-precacheable). CDN CSS previously 404'd. */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-BoldItalic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Apply broadly so Tailwind font-sans / font-mono UI chrome cannot override on mobile. */
+html[data-opendyslexic="true"],
+html[data-opendyslexic="true"] body {
+  --fios-font-sans: 'OpenDyslexic', Verdana, Geneva, sans-serif;
+  font-family: 'OpenDyslexic', Verdana, Geneva, sans-serif !important;
+}
+html[data-opendyslexic="true"] body,
+html[data-opendyslexic="true"] body * {
+  font-family: 'OpenDyslexic', Verdana, Geneva, sans-serif !important;
+}
+/* Keep true code samples monospace for readability */
+html[data-opendyslexic="true"] body code,
+html[data-opendyslexic="true"] body pre,
+html[data-opendyslexic="true"] body kbd,
+html[data-opendyslexic="true"] body samp {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
 }
 
 /* Formatted markdown prose helpers */

@@ -39,6 +39,9 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 
 ### What’s new in v3.1.0
 
+- Desktop: Pomodoro + Smart Quick Widget default **On** (≥768px) when unset; mobile still defaults **Off** until toggled in Settings (`floatingWidgetsExplicit`).
+- Brain Dump inbox sits in the shared FAB dock beside Pomodoro / Quick Widget — opens upward without covering the FAB or mobile bottom nav.
+- OpenDyslexic: self-hosted fonts with `font-display: swap`; works on iOS Safari, Android Chrome, and installed PWA (no broken CDN CSS).
 - Holiday theme ambience: soft atmospheric washes and sparse CSS motion for Halloween, Christmas (Dec 24–26), St Patrick’s Day, and Easter when those day-only themes are active — still study-friendly; respects reduced-motion and Low-Power.
 - Landing marketing remains locked to default emerald (no holiday chrome).
 - Privacy / Terms / cookie copy refreshed for Feedback & Ratings, Contact Support, study data, Gemini uploads, Web Push, and local/PWA storage (no ad trackers; no invented analytics).

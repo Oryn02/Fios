@@ -325,7 +325,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '3.0.0',
+      version: '3.1.0',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -806,6 +806,9 @@ const SettingsTabInner: React.FC = () => {
           <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)] flex items-center gap-1.5">
             <LayoutGrid className="w-3.5 h-3.5" /> Floating widgets
           </span>
+          <p className="text-[10px] text-[var(--fios-text-muted)] leading-snug">
+            Desktop defaults both On. Mobile defaults both Off until you toggle here — then your choice is saved.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               type="button"
