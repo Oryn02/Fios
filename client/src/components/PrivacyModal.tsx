@@ -26,6 +26,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
   const closeBtn = landing
     ? 'bg-emerald-400 text-slate-950'
     : 'accent-bg text-slate-950';
+  const strong = landing ? 'text-slate-200' : 'text-[var(--fios-text)]';
 
   return (
     <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
@@ -47,7 +48,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
               <h3 id="privacy-title" className={`text-base font-black uppercase ${landing ? 'text-white' : 'text-[var(--fios-text)]'}`}>
                 Privacy Policy & GDPR Statement
               </h3>
-              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v3.0.0 · Last updated September 2026</p>
+              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v3.1.0 · Last updated September 2026</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className={`${muted} hover:opacity-80 cursor-pointer p-1`} aria-label="Close">
@@ -68,77 +69,112 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
           <section className="space-y-1.5">
             <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>2. What data we process</h4>
             <ul className={`list-disc list-inside space-y-1 pl-1 ${muted}`}>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Account:</strong> email and auth tokens via Supabase Auth (and optional GitHub OAuth if you enable it).</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Profile & prefs:</strong> display name, theme/accent, Pomodoro settings, nav/widget preferences.</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Study content:</strong> modules, notes/PDFs, flashcards, quizzes, code exams, tasks (including due times), grades, focus logs, timetable URLs, tutor chat.</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>BYO Gemini key:</strong> stored on your profile under Row Level Security so AI features can run with your key.</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Multi-modal uploads (optional):</strong> PDFs, photos, and notes you attach in AI Tutor / Smart Notes are processed with <em>your</em> Gemini API key — content is sent to Google under your key’s terms, not retained by Fios beyond your private study rows.</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Web Push subscriptions (optional):</strong> if you enable Class Reminders, your browser may store a push endpoint so upcoming-class alerts can be delivered. You can disable reminders anytime in Settings; endpoints are not used for marketing.</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Feedback (optional):</strong> star rating, category tags, and message; you may submit anonymously (no user id stored).</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Device/local:</strong> browser localStorage/sessionStorage for consent, theme, caches, and PWA install state — not sold to advertisers.</li>
+              <li><strong className={strong}>Account:</strong> email and auth tokens via Supabase Auth (and optional GitHub OAuth if you enable it).</li>
+              <li><strong className={strong}>Profile & prefs:</strong> display name, preferred name, theme/accent, Pomodoro durations, weekly study goal, nav/widget preferences, low-power / Zen / accessibility flags.</li>
+              <li><strong className={strong}>Study content:</strong> modules (codes, names, exam dates, accent tags), Smart Notes / documents, flashcard decks, MCQ quizzes, code exams, academic tasks (titles, due/start times), grades, focus / Pomodoro logs, revision flight-plan state, study-streak activity, tutor chat history.</li>
+              <li><strong className={strong}>Schedule:</strong> timetable entries and optional iCal feed URLs you connect so classes appear on your agenda and Class Reminders can fire.</li>
+              <li><strong className={strong}>BYO Gemini key:</strong> stored on your profile under Row Level Security so AI features can run with your key.</li>
+              <li><strong className={strong}>Multi-modal uploads (optional):</strong> PDFs, photos, audio, and notes you attach in AI Tutor / Smart Notes are processed with <em>your</em> Gemini API key — content is sent to Google under your key’s terms, and retained by Fios only as your private study rows (not for advertising).</li>
+              <li><strong className={strong}>Web Push subscriptions (optional):</strong> if you enable Class Reminders, your browser may store a push endpoint (and related subscription metadata) so upcoming-class alerts can be delivered. You can disable reminders anytime in Settings; endpoints are not used for marketing.</li>
+              <li><strong className={strong}>Feedback & ratings (optional):</strong> see §3.</li>
+              <li><strong className={strong}>Support contact (optional):</strong> see §4.</li>
+              <li><strong className={strong}>Device / local:</strong> browser localStorage / sessionStorage / IndexedDB for consent, theme, offline mutation queue, PWA caches, and similar functional state — not sold to advertisers.</li>
+              <li><strong className={strong}>What we do <em>not</em> collect:</strong> Fios does not run third-party advertising pixels, cross-site trackers, or product-analytics SDKs. Hosting may still produce ordinary operational server logs (IP, user-agent) needed to run the service.</li>
             </ul>
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>3. Why we process it (purposes & legal bases)</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>3. Feedback & ratings forms</h4>
+            <p>
+              The in-app Feedback & Ratings form is optional. When you submit it we process:
+            </p>
             <ul className={`list-disc list-inside space-y-1 pl-1 ${muted}`}>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Contract / service delivery</strong> — authenticate you and sync your study tools (Art. 6(1)(b)).</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Legitimate interests</strong> — security, abuse prevention, and improving reliability of a demo study app (Art. 6(1)(f)).</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Consent</strong> — optional feedback, cookie/local preference banner acknowledgment, and optional GitHub gist export (Art. 6(1)(a)).</li>
+              <li><strong className={strong}>Collected:</strong> star rating (1–5), optional category tags (e.g. bug, feature, UX), and an optional free-text message (length-limited).</li>
+              <li><strong className={strong}>Signed-in vs anonymous:</strong> if you are signed in and do <em>not</em> choose anonymous, your account user id is stored with the submission so we can follow up or spot duplicates. If you choose <strong className={strong}>Submit anonymously</strong>, no user id is stored. We do not require an email address on this form.</li>
+              <li><strong className={strong}>Purpose:</strong> improve reliability, fix bugs, and understand product quality for this study app.</li>
+              <li><strong className={strong}>Who receives it:</strong> the app operator (site operators may review feedback). Submissions are stored in the instance database under access controls; they are not sold or used for advertising.</li>
+              <li><strong className={strong}>Lawful basis:</strong> your consent (Art. 6(1)(a)) when you voluntarily send feedback. You may withdraw consent by emailing us to erase a submission you can identify, or by requesting erasure of your account data where a user id was attached.</li>
+              <li><strong className={strong}>Retention:</strong> kept until you request erasure or the operator deletes it as part of ordinary product hygiene. Do not include passwords, API keys, or other people’s personal data in feedback messages.</li>
+            </ul>
+          </section>
+
+          <section className="space-y-1.5">
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>4. Contact Support form</h4>
+            <p>
+              The Contact Support form (landing footer and Settings) lets you message the support inbox without opening your mail client.
+            </p>
+            <ul className={`list-disc list-inside space-y-1 pl-1 ${muted}`}>
+              <li><strong className={strong}>Collected:</strong> message text (required); optional name and optional reply-to email.</li>
+              <li><strong className={strong}>Purpose:</strong> respond to help requests, bugs, and account questions.</li>
+              <li><strong className={strong}>Who receives it:</strong> delivered by email to the app operator’s support inbox (via the host’s configured email provider such as Resend or SendGrid when enabled). Mailto to the published support address remains an alternative.</li>
+              <li><strong className={strong}>Lawful basis:</strong> consent and/or steps prior to a contract / legitimate interest in answering your request (Art. 6(1)(a)/(b)/(f)), depending on context.</li>
+              <li><strong className={strong}>Retention:</strong> email correspondence is retained as ordinary support mail until you ask us to delete it or it is no longer needed.</li>
+            </ul>
+          </section>
+
+          <section className="space-y-1.5">
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>5. Why we process it (purposes & legal bases)</h4>
+            <ul className={`list-disc list-inside space-y-1 pl-1 ${muted}`}>
+              <li><strong className={strong}>Contract / service delivery</strong> — authenticate you and sync your study tools (Art. 6(1)(b)).</li>
+              <li><strong className={strong}>Legitimate interests</strong> — security, abuse prevention, and improving reliability of a demo study app (Art. 6(1)(f)).</li>
+              <li><strong className={strong}>Consent</strong> — optional feedback & ratings, Contact Support submissions, cookie/local preference banner acknowledgment, optional Class Reminders / Web Push, optional multimodal AI uploads you initiate, and optional GitHub gist export (Art. 6(1)(a)).</li>
             </ul>
             <p>We do not sell personal data or use lecture notes to train public foundation models.</p>
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>4. Third parties & processors</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>6. Third parties & processors</h4>
             <ul className={`list-disc list-inside space-y-1 pl-1 ${muted}`}>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Supabase</strong> — Postgres database, Auth, and Row Level Security for your account data.</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Google Gemini</strong> — when you use AI features, prompts/content you submit are sent to Google using <em>your</em> API key (BYO). Subject to Google’s terms/privacy.</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>GitHub</strong> — only if you sign in with GitHub or export a gist; limited to what you authorize.</li>
-              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Render (or your host)</strong> — hosts the web app and API; receives standard server logs (IP, user-agent) needed to operate the service.</li>
+              <li><strong className={strong}>Supabase</strong> — Postgres database, Auth, and Row Level Security for your account data (including optional feedback rows and push subscription records when used).</li>
+              <li><strong className={strong}>Google Gemini</strong> — when you use AI features, prompts/content you submit are sent to Google using <em>your</em> API key (BYO). Subject to Google’s terms/privacy.</li>
+              <li><strong className={strong}>GitHub</strong> — only if you sign in with GitHub or export a gist; limited to what you authorize.</li>
+              <li><strong className={strong}>Render (or your host)</strong> — hosts the web app and API; receives standard server logs (IP, user-agent) needed to operate the service.</li>
+              <li><strong className={strong}>Email delivery (optional)</strong> — Resend or SendGrid when configured, solely to deliver Contact Support messages to the operator inbox.</li>
+              <li><strong className={strong}>Browser push services</strong> — when Class Reminders / Web Push are enabled, your browser vendor’s push infrastructure may process the subscription endpoint.</li>
             </ul>
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>5. Cookies & local storage</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>7. Cookies & local storage</h4>
             <p>
-              Fios uses essential storage for sign-in session tokens and functional preferences (theme, nav, consent flag, offline queue).
+              Fios uses essential storage for sign-in session tokens and functional preferences (theme, nav, consent flag, offline queue, PWA caches).
               We do not run third-party advertising or cross-site tracking pixels. You can reset the consent banner from Settings and clear
               browser storage at any time.
             </p>
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>6. Retention</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>8. Retention</h4>
             <p>
               Account and study data are kept while your account remains active. Local caches last until you clear them or uninstall the PWA.
-              Optional feedback is retained to improve the product until you request erasure or the operator deletes it.
+              Optional feedback is retained as described in §3; support email as in §4.
+              Push subscription records are removed or become inactive when you disable reminders or clear site data.
               Server logs on the host are retained according to the host’s defaults (typically short-lived operational logs).
             </p>
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>7. International transfers</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>9. International transfers</h4>
             <p>
-              Supabase, Google, GitHub, and Render may process data in the EU and/or other regions. Where transfers occur, they rely on the
+              Supabase, Google, GitHub, Render, and optional email/push providers may process data in the EU and/or other regions. Where transfers occur, they rely on the
               providers’ appropriate safeguards (e.g. SCCs). Choose regions/providers carefully when you self-host.
             </p>
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>8. Your rights</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>10. Your rights</h4>
             <p>Under GDPR you may request:</p>
             <ul className={`list-disc list-inside space-y-1 pl-1 ${muted}`}>
-              <li>Access and portability — use <strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Export My Data (JSON)</strong> in Settings, or email us.</li>
+              <li>Access and portability — use <strong className={strong}>Export My Data (JSON)</strong> in Settings, or email us.</li>
               <li>Rectification — update your profile in Settings.</li>
-              <li>Erasure — clear local storage, delete content in-app, and/or email us to delete your account/rows.</li>
-              <li>Restriction or objection to certain processing, and withdrawal of consent where processing is consent-based.</li>
+              <li>Erasure — clear local storage, delete content in-app, and/or email us to delete your account/rows (including identifiable feedback).</li>
+              <li>Restriction or objection to certain processing, and withdrawal of consent where processing is consent-based (feedback, push, optional uploads).</li>
               <li>Complaint to your supervisory authority (in Ireland: the Data Protection Commission).</li>
             </ul>
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>9. Children</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>11. Children</h4>
             <p>
               Fios is aimed at adults in higher education. Do not create an account if you are under 16 without appropriate guardian consent
               where required by local law.
@@ -146,7 +182,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>10. Changes</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>12. Changes</h4>
             <p>
               We may update this statement as features evolve. Material changes will be reflected in the in-app Privacy Policy (Settings and
               landing footer) and the version label above. Continued use after an update constitutes acknowledgment of the revised statement.

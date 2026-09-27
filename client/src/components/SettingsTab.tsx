@@ -1137,7 +1137,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.0.0.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.1.0.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
@@ -1210,10 +1210,11 @@ const SettingsTabInner: React.FC = () => {
         </h2>
 
         <div className="text-xs text-slate-400 space-y-2 leading-relaxed bg-[#07090e]/60 p-4 rounded-xl border border-slate-800/80">
-          <p>• <strong className="text-slate-200">Controllers & processors:</strong> Your study data is stored in Supabase under RLS. AI calls use your Gemini key. Optional GitHub OAuth/gists and hosting logs are described in the Privacy Policy.</p>
+          <p>• <strong className="text-slate-200">Controllers & processors:</strong> Your study data is stored in Supabase under RLS. AI calls use your Gemini key. Optional GitHub OAuth/gists, hosting logs, email delivery for Contact Support, and Web Push are described in the Privacy Policy.</p>
           <p>• <strong className="text-slate-200">BYO Gemini key:</strong> Stored on your profile (RLS). Not used to train public models from your notes.</p>
+          <p>• <strong className="text-slate-200">Feedback & support:</strong> Optional ratings/messages and support form submissions go to the app operator — see Privacy Policy for anonymous vs signed-in, retention, and lawful basis.</p>
           <p>• <strong className="text-slate-200">Your rights:</strong> Export a JSON copy below, update your profile anytime, or email support for erasure. Full GDPR statement via Privacy Policy.</p>
-          <p>• <strong className="text-slate-200">Consent:</strong> Essential browser storage only — reset the cookie banner above anytime.</p>
+          <p>• <strong className="text-slate-200">Consent:</strong> Essential browser storage only (no ad trackers / analytics SDKs) — reset the cookie banner above anytime.</p>
         </div>
 
         <div className="pt-1 flex flex-wrap gap-3">

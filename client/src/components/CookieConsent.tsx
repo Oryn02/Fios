@@ -51,8 +51,9 @@ export const CookieConsent: React.FC = () => {
               <p className="text-xs font-bold text-[var(--fios-text)]">Cookies & local storage</p>
               <p className="text-[11px] text-[var(--fios-text-muted)] leading-relaxed">
                 Fios uses <strong className="text-[var(--fios-text)]">essential</strong> browser storage for sign-in,
-                preferences, and offline study caches. We do not sell data or run third-party ad trackers.
-                Details on processors (Supabase, Gemini, GitHub, hosting) are in our Privacy Policy.
+                preferences, offline study caches, and PWA install state. We do not sell data or run third-party ad
+                trackers or analytics SDKs. Optional feedback, support messages, AI uploads, and Class Reminders are
+                described in our Privacy Policy.
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <button
