@@ -4,6 +4,22 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.0',
+      date: 'September 2026',
+      title: 'Holiday theme ambience',
+      highlights: [
+        'Holiday themes gain subtle atmospheric backgrounds when active: soft color washes plus sparse motion that stays readable for study.',
+        'Halloween: soft orange/purple wash with faint floating ember motes.',
+        'Christmas (Eve–St Stephen’s / Dec 24–26): soft red/green holly wash with very light snowfall.',
+        'St Patrick’s Day: soft green & gold shimmer with sparse sparkles.',
+        'Easter: soft pastel lilac/blush/sky wash with gentle floating dots.',
+        'Ambience follows the active holiday theme (calendar day or when a holiday theme is selected); landing marketing stays default emerald.',
+        'Respects prefers-reduced-motion and Low-Power mode (static wash only / particles off).',
+        'Privacy & Terms refresh: clearer disclosures for Feedback & Ratings (what’s collected, anonymous vs signed-in, purpose, retention, who receives it) plus Contact Support, study data, BYO Gemini / multimodal uploads, Web Push, local/PWA storage, and an explicit no ad-tracker / no analytics-SDK statement — aligned with v3.0.0 push + upload language.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v3.1.0.',
+      ],
+    },
+    {
       version: 'v3.0.0',
       date: 'September 2026',
       title: 'Major study OS — multimodal tutor, reminders, streaks & more',
@@ -209,7 +225,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.0.0</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.0</p>
       </header>
 
       <div className="space-y-4">
