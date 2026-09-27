@@ -4,6 +4,16 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.7',
+      date: 'September 2026',
+      title: 'Smart Notes save success path',
+      highlights: [
+        'Smart Notes: Summarize & Save with General / no module no longer leaves a cloud-save-failed banner when the document was written — recovers from Postgres not-null (23502) on module_code / summary / legacy body columns and from empty INSERT RETURNING.',
+        'Client still sends module_code as an empty string (never null); cloud-failure copy names the rejected column only when cloud write truly fails after retries.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.7.',
+      ],
+    },
+    {
       version: 'v3.1.6',
       date: 'September 2026',
       title: 'Modules tab strip scroll on mobile',
@@ -313,7 +323,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.6</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.7</p>
       </header>
 
       <div className="space-y-4">

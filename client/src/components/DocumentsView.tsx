@@ -158,8 +158,10 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
     if (saved.savedLocally) {
       toast('Saved on this device — cloud sync needs documents columns / schema reload', 'info');
       if (saved.cloudWarning) setError(saved.cloudWarning);
-    } else if (opts?.successToast) {
-      toast(opts.successToast, 'success');
+    } else {
+      // Cloud write succeeded — never leave a prior cloud-save-failed banner up.
+      setError(null);
+      if (opts?.successToast) toast(opts.successToast, 'success');
     }
     // Skip RAG indexing for local-only ids (not in Supabase documents yet)
     if (!saved.savedLocally) {
