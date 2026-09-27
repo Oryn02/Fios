@@ -245,7 +245,6 @@ export const GradePredictorView: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          <SemesterGpaPanel grades={grades} modules={modules} />
           {grouped.map(([module, items]) => {
             const p = predictions.find((x) => x.module === module)!;
             const s = STATUS_STYLE[p.status];

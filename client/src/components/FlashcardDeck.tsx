@@ -422,6 +422,25 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
           </div>
         )}
 
+        {!hasSaved && (
+          <div className="flex items-center gap-2 justify-end -mt-1">
+            <button
+              type="button"
+              onClick={handleExportJson}
+              className="text-[10px] font-mono font-bold uppercase text-slate-500 hover:text-slate-300 flex items-center gap-1 cursor-pointer"
+            >
+              <Download className="w-3 h-3" /> Export JSON
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleCopyShareCode()}
+              className="text-[10px] font-mono font-bold uppercase text-slate-500 hover:text-slate-300 flex items-center gap-1 cursor-pointer"
+            >
+              <Share2 className="w-3 h-3" /> Share code
+            </button>
+          </div>
+        )}
+
         {/* Study Filter & Mode Controls */}
         <div className="flex flex-col sm:flex-row items-center justify-between pt-2 border-t border-slate-800/60 gap-3">
           <div className="flex items-center gap-1 bg-[#07090e] p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
