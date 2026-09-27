@@ -58,7 +58,8 @@ export const ActiveRecall: React.FC<Props> = ({ modules, initialModule = '', onC
     setEvaluating(true);
     setError(null);
     try {
-      const docs = await getDocuments();
+      const docsResult = await getDocuments();
+      const docs = docsResult.documents;
       const context = docs
         .filter((d) => !moduleCode || d.module_code === moduleCode)
         .map((d) => `${d.title}\n${d.summary || d.content}`)

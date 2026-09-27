@@ -51,9 +51,13 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
   const [draftSummary, setDraftSummary] = useState('');
 
   const load = useCallback(async () => {
-    const d = await getDocuments();
-    setDocs(d);
-    return d;
+    const { documents, loadError } = await getDocuments();
+    setDocs(documents);
+    if (loadError) {
+      setError(loadError);
+      toast(loadError, 'error');
+    }
+    return documents;
   }, []);
 
   const openTutor = useCallback((doc: FiosDocument) => {
@@ -67,32 +71,38 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
 
   useEffect(() => {
     getUserModules().then(setModules).catch(() => setModules([]));
-    load().then((docsList) => {
-      let targetDoc: FiosDocument | null = null;
+    load()
+      .then((docsList) => {
+        let targetDoc: FiosDocument | null = null;
 
-      if (initialDocId && docsList && docsList.length > 0) {
-        targetDoc = docsList.find((doc) => doc.id === initialDocId) || null;
-      } else if (autoOpenTutor && docsList && docsList.length > 0) {
-        targetDoc = docsList[0];
-      }
+        if (initialDocId && docsList && docsList.length > 0) {
+          targetDoc = docsList.find((doc) => doc.id === initialDocId) || null;
+        } else if (autoOpenTutor && docsList && docsList.length > 0) {
+          targetDoc = docsList[0];
+        }
 
-      if (targetDoc) {
-        setActive(targetDoc);
-        if (autoOpenTutor) openTutor(targetDoc);
-      } else if (autoOpenTutor) {
-        const fallbackDoc: FiosDocument = {
-          id: 'general-tutor',
-          user_id: 'general',
-          title: 'General Study Assistant',
-          content: 'You are a general academic tutor assisting a software development student.',
-          summary: 'General Academic AI Tutor',
-          glossary: [],
-          created_at: new Date().toISOString(),
-        };
-        setActive(fallbackDoc);
-        openTutor(fallbackDoc);
-      }
-    });
+        if (targetDoc) {
+          setActive(targetDoc);
+          if (autoOpenTutor) openTutor(targetDoc);
+        } else if (autoOpenTutor) {
+          const fallbackDoc: FiosDocument = {
+            id: 'general-tutor',
+            user_id: 'general',
+            title: 'General Study Assistant',
+            content: 'You are a general academic tutor assisting a software development student.',
+            summary: 'General Academic AI Tutor',
+            glossary: [],
+            created_at: new Date().toISOString(),
+          };
+          setActive(fallbackDoc);
+          openTutor(fallbackDoc);
+        }
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : 'Documents load failed.';
+        setError(msg);
+        toast(msg, 'error');
+      });
   }, [load, initialDocId, autoOpenTutor, openTutor]);
 
   useEffect(() => {
@@ -384,12 +394,12 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
           ) : (
             active.summary && <p className="text-sm text-[var(--fios-text-muted)] leading-relaxed">{active.summary}</p>
           )}
-          {active.glossary?.length > 0 && (
+          {Array.isArray(active.glossary) && active.glossary.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {active.glossary.map((g, i) => (
                 <div key={i} className="bg-[var(--fios-surface-2)] border fios-border rounded-lg p-3">
-                  <p className="text-xs font-black accent-solid-text">{g.term}</p>
-                  <p className="text-xs text-[var(--fios-text-muted)] mt-0.5">{g.definition}</p>
+                  <p className="text-xs font-black accent-solid-text">{g?.term || 'Term'}</p>
+                  <p className="text-xs text-[var(--fios-text-muted)] mt-0.5">{g?.definition || ''}</p>
                 </div>
               ))}
             </div>

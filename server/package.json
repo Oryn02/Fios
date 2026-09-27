@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "3.1.3",
+  "version": "3.1.4",
   "description": "Fios Express API (Render Web Service)",
   "main": "dist/index.js",
   "scripts": {

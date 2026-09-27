@@ -74,7 +74,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [m, d, q, c, t, docList] = await Promise.all([
+      const [m, d, q, c, t, docsResult] = await Promise.all([
         getUserModules(),
         getUserDecksWithCards(),
         getQuizzes(),
@@ -87,7 +87,10 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
       setQuizzes(q);
       setCodeExams(c);
       setTasks(t);
-      setDocuments(docList || []);
+      setDocuments(docsResult?.documents || []);
+      if (docsResult?.loadError) {
+        console.error('Error loading documents:', docsResult.loadError);
+      }
     } catch (err) {
       console.error('Error loading module data:', err);
     } finally {

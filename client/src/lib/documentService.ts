@@ -90,21 +90,69 @@ function pickBody(row: Record<string, unknown>): string {
   return '';
 }
 
+/**
+ * Harden glossary JSON from PostgREST / IndexedDB / AI payloads.
+ * Accepts arrays, JSON strings, a single {term,definition} object, and
+ * filters malformed entries so DocumentsView never crashes on `.map`.
+ */
+export function parseGlossary(raw: unknown): FiosDocument['glossary'] {
+  let value: unknown = raw;
+  if (value == null) return [];
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === 'null') return [];
+    try {
+      value = JSON.parse(trimmed);
+    } catch {
+      return [];
+    }
+  }
+
+  if (!Array.isArray(value)) {
+    if (value && typeof value === 'object') {
+      const o = value as Record<string, unknown>;
+      if ('term' in o || 'definition' in o || 'name' in o) {
+        value = [o];
+      } else {
+        return [];
+      }
+    } else {
+      return [];
+    }
+  }
+
+  const out: FiosDocument['glossary'] = [];
+  for (const item of value as unknown[]) {
+    if (item == null) continue;
+    if (typeof item === 'string') {
+      const term = item.trim();
+      if (term) out.push({ term, definition: '' });
+      continue;
+    }
+    if (typeof item !== 'object') continue;
+    const o = item as Record<string, unknown>;
+    const term = String(o.term ?? o.name ?? '').trim();
+    const definition = String(o.definition ?? o.def ?? o.meaning ?? '').trim();
+    if (!term && !definition) continue;
+    out.push({ term, definition });
+  }
+  return out;
+}
+
 /** Normalize a Supabase / local row into the client `FiosDocument` shape. */
 export function normalizeDocument(row: Record<string, unknown> | FiosDocument): FiosDocument {
   const r = row as Record<string, unknown>;
-  const glossaryRaw = r.glossary;
-  const glossary = Array.isArray(glossaryRaw)
-    ? (glossaryRaw as FiosDocument['glossary'])
-    : [];
+  const summaryRaw = r.summary;
   return {
     id: String(r.id || ''),
     user_id: String(r.user_id || ''),
     module_code: (r.module_code as string | null | undefined) ?? null,
     title: String(r.title || 'Untitled Document'),
     content: pickBody(r),
-    summary: (r.summary as string | null | undefined) ?? null,
-    glossary,
+    // Consolidated schema: summary text not null default ''
+    summary: summaryRaw == null ? '' : String(summaryRaw),
+    glossary: parseGlossary(r.glossary),
     created_at: String(r.created_at || new Date().toISOString()),
   };
 }
@@ -152,12 +200,90 @@ export function formatDocumentsSchemaError(err: unknown): string {
     return (
       `Smart Notes cloud save failed: documents.${col} is missing ` +
       'or the Supabase PostgREST schema cache is stale. In Supabase SQL editor run ' +
-      'supabase/v3.1.3-documents-columns.sql (or the documents columns block in ' +
+      'supabase/v3.1.4-documents-load.sql (or the documents columns block in ' +
       'supabase/schema.sql), then Project Settings → API → Reload schema ' +
       "(or NOTIFY pgrst, 'reload schema'). Your note was kept locally if possible."
     );
   }
   return raw;
+}
+
+/** Surface the real PostgREST error for Smart Notes list/load failures. */
+export function formatDocumentsLoadError(err: unknown): string {
+  const raw = errorText(err);
+  if (!raw) return 'Documents load failed.';
+  if (isSchemaCacheError(err)) {
+    const col = missingDocumentsColumn(err) || 'content / summary / glossary / created_at';
+    return (
+      `Documents load failed: documents.${col} is missing or the PostgREST schema cache is stale. ` +
+      'Run supabase/v3.1.4-documents-load.sql, then Project Settings → API → Reload schema. ' +
+      `(${raw})`
+    );
+  }
+  return `Documents load failed: ${raw}`;
+}
+
+/** Canonical columns for Smart Notes selects (matches consolidated documents schema). */
+const DOCUMENTS_SELECT =
+  'id, user_id, module_code, title, content, summary, glossary, created_at';
+
+/**
+ * Fetch documents rows with resilient select/order fallbacks.
+ * Prefer explicit columns; fall back when created_at/order or schema cache breaks.
+ */
+async function fetchDocumentsRows(): Promise<{
+  data: Record<string, unknown>[] | null;
+  error: unknown;
+}> {
+  const ordered = await supabase
+    .from('documents')
+    .select(DOCUMENTS_SELECT)
+    .order('created_at', { ascending: false });
+
+  if (!ordered.error) {
+    return { data: (ordered.data as Record<string, unknown>[]) || [], error: null };
+  }
+
+  const orderedErr = ordered.error;
+  const orderedText = errorText(orderedErr);
+
+  // Missing / uncached created_at → retry without ORDER BY
+  if (/created_at/i.test(orderedText) || isSchemaCacheError(orderedErr)) {
+    const noOrder = await supabase.from('documents').select(DOCUMENTS_SELECT);
+    if (!noOrder.error) {
+      const rows = (noOrder.data as Record<string, unknown>[]) || [];
+      rows.sort((a, b) => {
+        const ta = new Date(String(a.created_at || 0)).getTime();
+        const tb = new Date(String(b.created_at || 0)).getTime();
+        return tb - ta;
+      });
+      return { data: rows, error: null };
+    }
+
+    // Column list rejected → try select *
+    const starOrdered = await supabase
+      .from('documents')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!starOrdered.error) {
+      return { data: (starOrdered.data as Record<string, unknown>[]) || [], error: null };
+    }
+
+    const star = await supabase.from('documents').select('*');
+    if (!star.error) {
+      const rows = (star.data as Record<string, unknown>[]) || [];
+      rows.sort((a, b) => {
+        const ta = new Date(String(a.created_at || 0)).getTime();
+        const tb = new Date(String(b.created_at || 0)).getTime();
+        return tb - ta;
+      });
+      return { data: rows, error: null };
+    }
+
+    return { data: null, error: star.error || starOrdered.error || noOrder.error || orderedErr };
+  }
+
+  return { data: null, error: orderedErr };
 }
 
 function mergeById(cloud: FiosDocument[], local: FiosDocument[]): FiosDocument[] {
@@ -176,8 +302,9 @@ function buildPayload(userId: string, doc: Partial<FiosDocument>) {
     user_id: userId,
     title: doc.title || 'Untitled Document',
     content: doc.content || '',
-    summary: doc.summary || null,
-    glossary: doc.glossary || [],
+    // Match consolidated schema: summary text not null default ''
+    summary: doc.summary == null || doc.summary === '' ? '' : String(doc.summary),
+    glossary: parseGlossary(doc.glossary ?? []),
     module_code: doc.module_code || null,
   };
 }
@@ -240,26 +367,47 @@ async function insertWithColumnFallback(
   return { data: null, error: lastError || primary.error, usedColumn: DOCUMENTS_CONTENT_COLUMN };
 }
 
-export async function getDocuments(): Promise<FiosDocument[]> {
-  if (IS_DEMO) return [...demoDocState];
+export type DocumentsQueryResult = {
+  documents: FiosDocument[];
+  /** Real PostgREST / schema error when cloud load failed (local docs may still be present). */
+  loadError?: string;
+};
+
+/**
+ * Load Smart Notes. Never swallows PostgREST errors silently — callers should
+ * surface `loadError` in the UI. Local IndexedDB notes are always merged in.
+ */
+export async function getDocuments(): Promise<DocumentsQueryResult> {
+  if (IS_DEMO) return { documents: [...demoDocState] };
 
   const local = await listLocalDocuments();
+  const localDocs = local.map((d) => normalizeDocument(d));
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return local.map((d) => normalizeDocument(d));
+  if (!user) return { documents: localDocs };
 
-  const { data, error } = await supabase
-    .from('documents')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const { data, error } = await fetchDocumentsRows();
 
   if (error) {
     console.error('Error loading documents:', error);
-    return mergeById([], local.map((d) => normalizeDocument(d)));
+    return {
+      documents: mergeById([], localDocs),
+      loadError: formatDocumentsLoadError(error),
+    };
   }
 
-  const cloud = ((data as Record<string, unknown>[]) || []).map((row) => normalizeDocument(row));
-  return mergeById(cloud, local.map((d) => normalizeDocument(d)));
+  let cloud: FiosDocument[] = [];
+  try {
+    cloud = ((data as Record<string, unknown>[]) || []).map((row) => normalizeDocument(row));
+  } catch (parseErr) {
+    console.error('Error parsing documents:', parseErr);
+    return {
+      documents: mergeById([], localDocs),
+      loadError: formatDocumentsLoadError(parseErr),
+    };
+  }
+
+  return { documents: mergeById(cloud, localDocs) };
 }
 
 export async function saveDocument(doc: Partial<FiosDocument>): Promise<SaveDocumentResult> {
@@ -269,8 +417,8 @@ export async function saveDocument(doc: Partial<FiosDocument>): Promise<SaveDocu
       user_id: 'demo',
       title: doc.title || 'Untitled Document',
       content: doc.content || '',
-      summary: doc.summary || null,
-      glossary: doc.glossary || [],
+      summary: doc.summary ?? '',
+      glossary: parseGlossary(doc.glossary ?? []),
       module_code: doc.module_code || null,
       created_at: new Date().toISOString(),
     };
