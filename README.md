@@ -39,6 +39,8 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 
 ### What’s new in v3.1.2
 
+- Mobile: left-edge (or clear content) swipe-right opens the nav drawer without fighting vertical scroll.
+- Desktop flashcards: no swipe-to-rate; swipe Easy/Hard hints are touch/mobile only. Click-to-flip, Previous/Next, and SM-2 buttons stay.
 - Brain Dump inbox: Settings toggle beside Pomodoro / Smart Quick — desktop (≥768px) defaults **On**, mobile **Off**; per-viewport explicit flags so mobile Off does not stick on desktop. Enabled desktop dock keeps it beside Pomodoro + Quick Widget.
 - Holiday background motifs refined: Halloween skulls (ghost/ember/bat OK — no candy canes), St Patrick’s shamrocks / rainbows / leprechauns / pot of gold, Easter bunnies / eggs / stars.
 - Christmas holly / snow / candy cane motifs unchanged; holiday accent gradients and washes kept.
