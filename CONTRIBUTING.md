@@ -42,6 +42,11 @@ For production on **Render**, set Static Site Root Directory to `client` and Web
    - `user_profiles.prefs` (jsonb)
    - `modules.parent_code`, `modules.tags`
    - `document_revisions`, `tutor_messages`, `note_chunks` (+ RLS)
+4. **Smart Notes `documents.content`** (v3.0.0+ additive block at the end of the file):
+   - Symptom: `Could not find the 'content' column of 'documents' in the schema cache`
+   - Run the `alter table public.documents add column if not exists content …` block (safe to re-run).
+   - Reload PostgREST: Dashboard → Project Settings → API → **Reload schema**, or `NOTIFY pgrst, 'reload schema';` (also issued by the schema file), or wait ~1 minute.
+   - Canonical column is `content`. If an older table used `body` / `text` / `notes`, the migration copies non-empty values into `content`. The client also maps those aliases on read and can fall back to IndexedDB when cloud upsert still fails.
 
 If a column/table already exists, `IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS` keep the run safe.
 

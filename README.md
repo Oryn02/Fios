@@ -44,6 +44,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - OpenDyslexic: self-hosted fonts with `font-display: swap`; works on iOS Safari, Android Chrome, and installed PWA (no broken CDN CSS).
 - Holiday theme ambience: soft atmospheric washes and sparse CSS motion for Halloween, Christmas (Dec 24–26), St Patrick’s Day, and Easter when those day-only themes are active — still study-friendly; respects reduced-motion and Low-Power.
 - Landing marketing remains locked to default emerald (no holiday chrome).
+- Smart Notes reliability: client prefers `documents.content`, maps legacy body/text/notes on read, shows a clear PostgREST schema-cache reload hint, and falls back to IndexedDB so summarize still saves when cloud upsert fails. Re-run the idempotent `documents.content` block in `supabase/schema.sql` and reload schema if the live error persists.
 - Privacy / Terms / cookie copy refreshed for Feedback & Ratings, Contact Support, study data, Gemini uploads, Web Push, and local/PWA storage (no ad trackers; no invented analytics).
 - Version alignment across packages and API `/health` for deploy consistency.
 - See the in-app **Updates** tab for the full changelog.
@@ -256,6 +257,8 @@ See also [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ### 1. Database
 In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It is idempotent and creates all tables (`user_profiles` (+ `prefs`), `modules` (+ `tags`/`parent_code`), `decks`, `cards`, `mcq_quizzes`, `code_exams`, `tasks` (+ `due_at`/`start_at`), `documents`, `document_revisions`, `tutor_messages`, `note_chunks`, `grades`, `focus_sessions`, `active_recall_logs`, `feedback`), Row Level Security policies, and a trigger that auto-provisions a **clean, empty profile** for every new signup (no sample data).
+
+If Smart Notes shows `Could not find the 'content' column of 'documents' in the schema cache`, run the short idempotent script [`supabase/documents-content.sql`](supabase/documents-content.sql) (or the matching block at the end of `schema.sql`), then **Reload schema** under Project Settings → API (or wait ~1 min / `NOTIFY pgrst, 'reload schema'`).
 
 > In your Supabase Auth settings, disable "Confirm email" for the fastest local sign-in, or confirm the address you register with. Enable the GitHub provider if you want OAuth sign-in.
 
