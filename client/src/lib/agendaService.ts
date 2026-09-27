@@ -223,8 +223,24 @@ export function toDatetimeLocalValue(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/**
+ * Parse `datetime-local` values as *local* wall time.
+ * `new Date("YYYY-MM-DDTHH:mm")` is treated as UTC in some mobile browsers
+ * (Safari / Chrome Android), which shifts tasks by the timezone offset.
+ */
 export function fromDatetimeLocalValue(raw: string): Date | null {
   if (!raw) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/.exec(raw.trim());
+  if (m) {
+    const y = Number(m[1]);
+    const mo = Number(m[2]) - 1;
+    const d = Number(m[3]);
+    const h = Number(m[4]);
+    const mi = Number(m[5]);
+    const s = m[6] ? Number(m[6]) : 0;
+    const local = new Date(y, mo, d, h, mi, s, 0);
+    return Number.isNaN(local.getTime()) ? null : local;
+  }
   const d = new Date(raw);
   return Number.isNaN(d.getTime()) ? null : d;
 }

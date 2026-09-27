@@ -3,8 +3,18 @@ import { motion } from 'framer-motion';
 import { Rocket, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { computeFlightPlan, type FlightStep } from '../lib/flightPlan';
 
+export type FlightNavigatePayload = {
+  tab: string;
+  intent?: FlightStep['intent'];
+  deckCards?: any[];
+  deckTitle?: string;
+  moduleCode?: string | null;
+  quizId?: string;
+  codeExamId?: string;
+};
+
 interface Props {
-  onNavigate: (tab: string) => void;
+  onNavigate: (tab: string, payload?: FlightNavigatePayload) => void;
 }
 
 export const RevisionFlightPlan: React.FC<Props> = ({ onNavigate }) => {
@@ -14,6 +24,18 @@ export const RevisionFlightPlan: React.FC<Props> = ({ onNavigate }) => {
   useEffect(() => {
     computeFlightPlan().then(setSteps).catch(() => setSteps([])).finally(() => setLoading(false));
   }, []);
+
+  const handleStep = (s: FlightStep) => {
+    onNavigate(s.tab, {
+      tab: s.tab,
+      intent: s.intent,
+      deckCards: s.deckCards,
+      deckTitle: s.deckTitle,
+      moduleCode: s.moduleCode,
+      quizId: s.quizId,
+      codeExamId: s.codeExamId,
+    });
+  };
 
   return (
     <div className="rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 space-y-4 shadow-xl relative overflow-hidden">
@@ -40,16 +62,19 @@ export const RevisionFlightPlan: React.FC<Props> = ({ onNavigate }) => {
           {steps.map((s, i) => (
             <motion.button
               key={s.id}
+              type="button"
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.06 }}
-              onClick={() => onNavigate(s.tab)}
+              onClick={() => handleStep(s)}
               className="w-full flex items-center gap-3 p-3.5 rounded-xl border fios-border bg-[var(--fios-surface-2)] hover:accent-border transition-colors cursor-pointer text-left group"
             >
               <span className="w-7 h-7 rounded-lg accent-bg text-slate-950 flex items-center justify-center font-black text-sm shrink-0">{i + 1}</span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-[var(--fios-text)] truncate">{s.action}</p>
-                <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">{s.reason}{s.moduleCode ? ` · ${s.moduleCode}` : ''}</p>
+                <p className="text-[11px] font-mono text-[var(--fios-text-muted)]">
+                  {s.reason}{s.moduleCode ? ` · ${s.moduleCode}` : ''} · {s.intent}
+                </p>
               </div>
               <ArrowRight className="w-4 h-4 text-[var(--fios-text-muted)] group-hover:accent-solid-text transition-colors shrink-0" />
             </motion.button>

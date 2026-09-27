@@ -1,6 +1,16 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { ACCENTS, normalizeAccent, type AccentKey, type ThemeMode } from '../types/db';
 import { useProfile } from './ProfileContext';
+import {
+  applyHolidayPaletteVars,
+  clearStaleHolidayManualFlags,
+  getAdminHolidayPreview,
+  hasHolidayManualOverride,
+  holidayPalette,
+  markHolidayManualOverride,
+  setAdminHolidayPreview,
+  type HolidayPalette,
+} from '../lib/holidays';
 
 type ResolvedTheme = 'dark' | 'light';
 
@@ -8,9 +18,13 @@ interface ThemeContextValue {
   theme: ThemeMode;
   resolvedTheme: ResolvedTheme;
   accent: AccentKey;
+  /** Active holiday palette (calendar day-auto, or admin session preview). */
+  holidayTheme: HolidayPalette | null;
   setTheme: (t: ThemeMode) => void;
   toggleTheme: () => void;
   setAccent: (a: AccentKey) => void;
+  /** Admin-only: apply a holiday palette immediately (session-scoped). */
+  previewHolidayTheme: (palette: HolidayPalette | null) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
@@ -18,12 +32,14 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 export function applyAccentVars(accent: AccentKey) {
   const def = ACCENTS.find((a) => a.key === accent) || ACCENTS[0];
   const root = document.documentElement;
-  // Write as a batch so paint sees a coherent gradient (avoids mid-frame flashes).
+  if (root.getAttribute('data-landing-active') === 'true') return;
   root.style.setProperty('--fios-accent-from', def.from);
   root.style.setProperty('--fios-accent-via', def.via);
   root.style.setProperty('--fios-accent-to', def.to);
   root.style.setProperty('--fios-accent-solid', def.solid);
   root.dataset.accent = accent;
+  root.removeAttribute('data-holiday');
+  root.removeAttribute('data-holiday-mood');
 }
 
 function resolveSystem(): ResolvedTheme {
@@ -33,10 +49,10 @@ function resolveSystem(): ResolvedTheme {
 
 export function applyResolvedTheme(resolved: ResolvedTheme) {
   const root = document.documentElement;
+  if (root.getAttribute('data-landing-active') === 'true') return;
   root.setAttribute('data-theme', resolved);
   root.classList.remove('light', 'dark');
   root.classList.add(resolved);
-  // Keep browser chrome / PWA status bar in sync without a white flash.
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', resolved === 'light' ? '#e4dfd4' : '#07090e');
 }
@@ -47,9 +63,22 @@ function normalizeTheme(raw: string | null | undefined): ThemeMode {
 }
 
 /**
+ * Resolve active holiday palette:
+ * 1. Admin session preview (if set) wins
+ * 2. Else calendar day auto (unless user manually changed theme today)
+ */
+function computeHolidayActive(): HolidayPalette | null {
+  clearStaleHolidayManualFlags();
+  const adminPreview = getAdminHolidayPreview();
+  if (adminPreview) return adminPreview;
+  if (hasHolidayManualOverride()) return null;
+  return holidayPalette();
+}
+
+/**
  * ThemeProvider requires ProfileProvider only for cloud persistence.
- * Accent/theme are applied immediately from localStorage (and the HTML boot script)
- * so auth/landing/dashboard transitions do not flash default emerald/dark.
+ * Holiday palettes are date/session scoped CSS overrides — they never write to
+ * fios_theme / fios_accent or the user profile.
  */
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile, updateProfile } = useProfile();
@@ -63,12 +92,28 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [systemPref, setSystemPref] = useState<ResolvedTheme>(() => resolveSystem());
+  const [holidayTheme, setHolidayTheme] = useState<HolidayPalette | null>(() => computeHolidayActive());
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: light)');
     const onChange = () => setSystemPref(mq.matches ? 'light' : 'dark');
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    const refresh = () => setHolidayTheme(computeHolidayActive());
+    const onVis = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', onVis);
+    const id = window.setInterval(refresh, 60_000);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', onVis);
+      window.clearInterval(id);
+    };
   }, []);
 
   useEffect(() => {
@@ -87,29 +132,45 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const resolvedTheme: ResolvedTheme = theme === 'system' ? systemPref : theme;
 
   useEffect(() => { applyResolvedTheme(resolvedTheme); }, [resolvedTheme]);
-  useEffect(() => { applyAccentVars(accent); }, [accent]);
 
-  // Do NOT reset accent/theme on unmount — remounts during auth would flash defaults.
+  useEffect(() => {
+    if (holidayTheme) {
+      applyHolidayPaletteVars(holidayTheme);
+    } else {
+      applyAccentVars(accent);
+    }
+  }, [accent, holidayTheme]);
 
   const setTheme = useCallback((t: ThemeMode) => {
+    setAdminHolidayPreview(null);
+    markHolidayManualOverride();
+    setHolidayTheme(null);
     setThemeState(t);
     localStorage.setItem('fios_theme', t);
     applyResolvedTheme(t === 'system' ? resolveSystem() : t);
+    applyAccentVars(normalizeAccent(localStorage.getItem('fios_accent')));
     updateProfile({ theme: t }).catch((e: any) => console.error('Failed to persist theme:', e));
   }, [updateProfile]);
 
   const toggleTheme = useCallback(() => {
+    setAdminHolidayPreview(null);
+    markHolidayManualOverride();
+    setHolidayTheme(null);
     setThemeState((prev) => {
       const current = prev === 'system' ? systemPref : prev;
       const next: ThemeMode = current === 'dark' ? 'light' : 'dark';
       localStorage.setItem('fios_theme', next);
       applyResolvedTheme(next);
+      applyAccentVars(normalizeAccent(localStorage.getItem('fios_accent')));
       updateProfile({ theme: next }).catch((e: any) => console.error('Failed to persist theme:', e));
       return next;
     });
   }, [updateProfile, systemPref]);
 
   const setAccent = useCallback((a: AccentKey) => {
+    setAdminHolidayPreview(null);
+    markHolidayManualOverride();
+    setHolidayTheme(null);
     const next = normalizeAccent(a);
     setAccentState(next);
     localStorage.setItem('fios_accent', next);
@@ -117,9 +178,33 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     updateProfile({ accent_color: next }).catch((e: any) => console.error('Failed to persist accent:', e));
   }, [updateProfile]);
 
+  const previewHolidayTheme = useCallback((palette: HolidayPalette | null) => {
+    if (palette) {
+      setAdminHolidayPreview(palette.themeFamily);
+      setHolidayTheme(palette);
+      applyHolidayPaletteVars(palette);
+    } else {
+      setAdminHolidayPreview(null);
+      // Fall back to calendar day-auto (if any) or saved accent
+      const next = computeHolidayActive();
+      setHolidayTheme(next);
+      if (next) applyHolidayPaletteVars(next);
+      else applyAccentVars(normalizeAccent(localStorage.getItem('fios_accent')));
+    }
+  }, []);
+
   const value = useMemo(
-    () => ({ theme, resolvedTheme, accent, setTheme, toggleTheme, setAccent }),
-    [theme, resolvedTheme, accent, setTheme, toggleTheme, setAccent]
+    () => ({
+      theme,
+      resolvedTheme,
+      accent,
+      holidayTheme,
+      setTheme,
+      toggleTheme,
+      setAccent,
+      previewHolidayTheme,
+    }),
+    [theme, resolvedTheme, accent, holidayTheme, setTheme, toggleTheme, setAccent, previewHolidayTheme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

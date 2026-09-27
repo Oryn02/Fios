@@ -35,6 +35,10 @@ import { AiAuthProvider } from './context/AiAuthContext';
 import { startOfflineQueueListener } from './lib/offlineQueue';
 import { useAiAuth } from './context/AiAuthContext';
 import { lockLandingBrand } from './lib/landingBrand';
+import { getUserDecksWithCards } from './lib/deckService';
+import { isCardDue } from './lib/spacedRepetition';
+import { NetworkStatusBanner } from './components/NetworkStatusBanner';
+import type { FlightNavigatePayload } from './components/RevisionFlightPlan';
 
 interface SelectedDeck {
   cards: Flashcard[];
@@ -60,11 +64,40 @@ const Dashboard: React.FC = () => {
   const [openTutorOnLoad, setOpenTutorOnLoad] = useState(false);
 
   const handleTabChange = useCallback((tab: string, options?: { openTutor?: boolean }) => {
-    if (tab === 'flashcards') {
+    if (tab === 'flashcards' && !options) {
+      // plain nav to flashcards tab — keep generator unless opening a deck
+    }
+    setOpenTutorOnLoad(!!options?.openTutor);
+    setActiveTab(tab);
+  }, []);
+
+  const handleSmartNavigate = useCallback((tab: string, payload?: FlightNavigatePayload) => {
+    if (payload?.intent === 'review' && payload.deckCards?.length) {
+      setCards(payload.deckCards);
+      setSelectedDeck({
+        cards: payload.deckCards,
+        title: payload.deckTitle || 'Review Queue',
+        moduleCode: payload.moduleCode || undefined,
+        isSaved: true,
+      });
+      setActiveTab('flashcards');
+      return;
+    }
+    if (payload?.quizId) {
+      setActiveQuizId(payload.quizId);
+      setActiveTab('quiz');
+      return;
+    }
+    if (payload?.codeExamId) {
+      setActiveCodeExamId(payload.codeExamId);
+      setActiveTab('code');
+      return;
+    }
+    if (tab === 'flashcards' && !payload?.deckCards?.length) {
+      // "Make" / generate path — open Study Lab generator
       setCards([]);
       setSelectedDeck(null);
     }
-    setOpenTutorOnLoad(!!options?.openTutor);
     setActiveTab(tab);
   }, []);
 
@@ -90,7 +123,6 @@ const Dashboard: React.FC = () => {
       });
     } catch (err: any) {
       const msg = err?.message || String(err) || 'Failed to connect to server.';
-      // Guard against opaque runtime TypeErrors bubbling as "undefined is not a function"
       setError(msg.includes('is not a function') ? 'Flashcard generation failed. Check your Gemini key in Settings and try again.' : msg);
     } finally {
       setLoading(false);
@@ -113,8 +145,32 @@ const Dashboard: React.FC = () => {
     setActiveTab('flashcards');
   }, []);
 
+  const handleOpenReviewQueue = useCallback(async () => {
+    try {
+      const decks = await getUserDecksWithCards();
+      const due: any[] = [];
+      for (const deck of decks || []) {
+        for (const c of (deck as any).cards || []) {
+          if (isCardDue(c.next_review)) due.push(c);
+        }
+      }
+      if (due.length === 0) {
+        setActiveTab('flashcards');
+        setCards([]);
+        setSelectedDeck(null);
+        return;
+      }
+      setCards(due);
+      setSelectedDeck({ cards: due, title: 'Review Queue', isSaved: true });
+      setActiveTab('flashcards');
+    } catch {
+      setActiveTab('flashcards');
+    }
+  }, []);
+
   return (
     <DashboardLayout activeTab={activeTab} setActiveTab={handleTabChange}>
+      <NetworkStatusBanner />
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -126,7 +182,11 @@ const Dashboard: React.FC = () => {
         >
           {activeTab === 'overview' && (
             <ErrorBoundary fallbackTitle="Overview widgets crashed">
-              <OverviewTab onOpenFlashcards={handleOpenFlashcards} onNavigate={handleTabChange} />
+              <OverviewTab
+                onOpenFlashcards={handleOpenFlashcards}
+                onNavigate={handleSmartNavigate}
+                onOpenReviewQueue={handleOpenReviewQueue}
+              />
             </ErrorBoundary>
           )}
 
@@ -251,7 +311,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v2.2.9
+        Academic Suite · Study Lab · v3.0.0
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -328,7 +388,7 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v2.2.9 — Your Academic Command Center';
+    document.title = 'Fios v3.0.0 — Your Academic Command Center';
   }, []);
 
   useEffect(() => startOfflineQueueListener(), []);
@@ -388,7 +448,7 @@ export function App() {
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v2.2.9…
+          Initializing Fios v3.0.0…
         </div>
       </div>
     );

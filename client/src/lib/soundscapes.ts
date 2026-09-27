@@ -36,8 +36,35 @@ class SoundscapeEngine {
       this.master.gain.value = this.volume;
       this.master.connect(this.ctx.destination);
     }
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx.state === 'suspended') {
+      void this.ctx.resume().catch(() => { /* iOS may still need a fresh gesture */ });
+    }
     return this.ctx;
+  }
+
+  /**
+   * Unlock AudioContext on a user gesture (required on iOS/Android).
+   * Call from click/touch handlers before or when starting a soundscape.
+   */
+  async unlock(): Promise<void> {
+    const ctx = this.ensureCtx();
+    if (ctx.state === 'suspended') {
+      try {
+        await ctx.resume();
+      } catch {
+        /* ignore — next play() will retry */
+      }
+    }
+    // Tiny silent buffer kickstarts some WebKit builds after resume.
+    try {
+      const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch {
+      /* noop */
+    }
   }
 
   private makeNoiseBuffer(kind: 'white' | 'brown'): AudioBuffer {
@@ -84,6 +111,9 @@ class SoundscapeEngine {
     this.current = type;
     if (type === 'off') return;
 
+    // Fire-and-forget unlock so mobile autoplay policies are satisfied when
+    // play() is invoked from a click handler.
+    void this.unlock();
     const ctx = this.ensureCtx();
     const out = this.master!;
 
