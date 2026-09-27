@@ -6,11 +6,7 @@ const UpdatesTabInner: React.FC = () => {
     {
       version: 'v3.1.0',
       date: 'September 2026',
-<<<<<<< HEAD
-      title: 'Holiday ambience, desktop widgets & accessibility',
-=======
-      title: 'Holiday theme ambience + Smart Notes reliability',
->>>>>>> origin/cursor/fios-smart-notes-schema-3ebe
+      title: 'Holiday ambience, desktop widgets, accessibility & Smart Notes',
       highlights: [
         'Desktop: Pomodoro floating widget and Smart Quick Widget default ON again when you have not toggled them in Settings (viewport ≥768px).',
         'Mobile: both floating widgets still default OFF until explicitly toggled (`floatingWidgetsExplicit` from v2.2.9) — intentional Settings choices stay saved.',
