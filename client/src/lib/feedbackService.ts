@@ -91,9 +91,23 @@ export function filterFeedback(
   });
 }
 
+/**
+ * Admin hard-delete. PostgREST + RLS often return error=null with 0 rows when
+ * `feedback_admin_delete` is missing — verify via `.select()` so optimistic UI
+ * cannot claim success while the row still exists.
+ */
 export async function deleteFeedback(id: string): Promise<void> {
-  const { error } = await supabase.from('feedback').delete().eq('id', id);
+  const { data, error } = await supabase
+    .from('feedback')
+    .delete()
+    .eq('id', id)
+    .select('id');
   if (error) throw new Error(error.message);
+  if (!data?.length) {
+    throw new Error(
+      'Delete blocked by RLS — apply feedback_admin_delete (v3.1.2 SQL) and ensure your user is in fios_admins.'
+    );
+  }
 }
 
 /** Admin-only: mark feedback resolved / reopen (needs feedback_admin_update + resolved_at column). */
@@ -113,12 +127,20 @@ export async function setFeedbackResolved(id: string, resolved: boolean): Promis
   return data as FeedbackEntry;
 }
 
-export async function deleteAllFeedback(ids: string[]): Promise<number> {
-  if (ids.length === 0) return 0;
-  const { error, count } = await supabase
+/** Admin-only: hard-delete many rows; returns IDs actually removed. */
+export async function deleteAllFeedback(ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
     .from('feedback')
-    .delete({ count: 'exact' })
-    .in('id', ids);
+    .delete()
+    .in('id', ids)
+    .select('id');
   if (error) throw new Error(error.message);
-  return count ?? ids.length;
+  const deleted = (data || []).map((r) => r.id as string);
+  if (deleted.length === 0) {
+    throw new Error(
+      'Bulk delete blocked by RLS — apply feedback_admin_delete (v3.1.2 SQL) and ensure your user is in fios_admins.'
+    );
+  }
+  return deleted;
 }

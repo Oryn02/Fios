@@ -568,7 +568,7 @@ html[data-opendyslexic="true"] body samp {
 }
 
 /* ==========================================================================
-   Holiday ambience (v3.1.1) — app shell only via HolidayAmbience
+   Holiday ambience (v3.1.2 motifs) — app shell only via HolidayAmbience
    Stronger washes + festive motif icons (not plain dots). Never on landing.
    Layers ON TOP of holiday accent gradients. Respect reduced-motion /
    low-power (static wash only). Overview stays readable.
@@ -630,7 +630,7 @@ html[data-opendyslexic="true"] body samp {
 .fios-holiday-particle:nth-child(19) { left: 80%; top: 80%; --delay: 6.0s; --dur: 13s; }
 .fios-holiday-particle:nth-child(20) { left: 44%; top: 52%; --delay: 3.5s; --dur: 16s; }
 
-/* —— Halloween: ember wash + ghost/moon/flame motifs —— */
+/* —— Halloween: ember wash + ghost/skull/flame/bat motifs —— */
 [data-ambience="halloween"] .fios-holiday-wash {
   background:
     radial-gradient(ellipse 75% 60% at 10% 15%, rgba(249, 115, 22, 0.28), transparent 58%),
@@ -660,7 +660,7 @@ html[data-opendyslexic="true"] body samp {
   color: #64748b;
 }
 
-/* —— St Patrick’s: green/gold shimmer + shamrock sparkles —— */
+/* —— St Patrick’s: green/gold shimmer + shamrock/rainbow/gold motifs —— */
 [data-ambience="st-patrick"] .fios-holiday-wash {
   background:
     radial-gradient(ellipse 65% 55% at 18% 72%, rgba(34, 197, 94, 0.26), transparent 55%),
@@ -673,7 +673,7 @@ html[data-opendyslexic="true"] body samp {
   animation: fios-holiday-sparkle var(--dur) ease-in-out var(--delay) infinite;
 }
 
-/* —— Easter: pastel wash + egg/flower floaters —— */
+/* —— Easter: pastel wash + bunny/egg/star floaters —— */
 [data-ambience="easter"] .fios-holiday-wash {
   background:
     radial-gradient(ellipse 60% 50% at 22% 28%, rgba(196, 181, 253, 0.28), transparent 55%),

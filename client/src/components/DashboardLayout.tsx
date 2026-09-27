@@ -35,7 +35,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.1.1', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.1.2', icon: Sparkles },
 ];
 
 /** True when the event target is a text-entry control (skip ⌘K / Ctrl+K while typing). */
@@ -106,6 +106,77 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
+
+  /**
+   * Mobile: edge swipe from left (or clear rightward swipe on content) opens the
+   * nav drawer. Vertical scroll wins; flashcard / horizontal surfaces are skipped.
+   */
+  useEffect(() => {
+    if (isDesktop || typeof window === 'undefined') return;
+
+    const EDGE_PX = 28;
+    const MIN_DX = 64;
+    const start = { x: 0, y: 0, tracking: false, fromEdge: false };
+
+    const shouldIgnore = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) return false;
+      if (isTypingTarget(target)) return true;
+      return !!target.closest?.(
+        [
+          '[data-no-drawer-swipe]',
+          '.fios-swipe-card',
+          '.fios-fab-dock',
+          '.fios-agenda-scroll',
+          '.fios-month-grid',
+          '[data-mobile-drawer-scroll]',
+          'canvas',
+          '.monaco-editor',
+        ].join(',')
+      );
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (drawerOpenRef.current) return;
+      if (e.touches.length !== 1) return;
+      const t = e.touches[0];
+      if (!t || shouldIgnore(e.target)) return;
+      start.x = t.clientX;
+      start.y = t.clientY;
+      start.fromEdge = t.clientX <= EDGE_PX;
+      // Content swipe: only when the gesture begins in the left half (less accidental opens).
+      start.tracking = start.fromEdge || t.clientX < window.innerWidth * 0.55;
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!start.tracking || drawerOpenRef.current) {
+        start.tracking = false;
+        return;
+      }
+      start.tracking = false;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
+      // Vertical scroll / ambiguous diagonals win — do not open the drawer.
+      if (dx < MIN_DX) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.35) return;
+      if (!start.fromEdge && dx < 88) return;
+      setDrawerOpen(true);
+    };
+
+    const onTouchCancel = () => {
+      start.tracking = false;
+    };
+
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+    document.addEventListener('touchcancel', onTouchCancel, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
+      document.removeEventListener('touchcancel', onTouchCancel);
+    };
+  }, [isDesktop]);
 
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
@@ -340,10 +411,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             <span
               className="inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 3.1.1"
+              aria-label="Fios version 3.1.2"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v3.1.1
+              v3.1.2
             </span>
             {zenMode && (
               <button

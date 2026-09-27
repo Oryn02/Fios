@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v3.1.1**
+**Current version: v3.1.2**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -19,7 +19,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Grade Predictor** — computes the scores you need across assessments; semester GPA vs honours thresholds.
 - **Module Readiness Heatmap** — 0–100% readiness per module with calculation breakdown; rich module accent colors on badges/tags/heatmap.
 - **Study streak heatmap & exam countdown** — contribution grid from focus + flashcard reviews; live countdown to exams and due tasks.
-- **Brain Dump inbox** — floating quick-capture with optional AI parse into tasks.
+- **Brain Dump inbox** — floating quick-capture with optional AI parse into tasks (Settings toggle; desktop On / mobile Off by default, like Pomodoro / Quick Widget).
 - **Class Reminders** — optional browser notifications (5–30 min lead) for upcoming classes; Web Push when VAPID is configured.
 - **Universal schedule** — iCal sync or manual timetable for any college; iCal helper + clearer errors; finished classes muted; Next Up highlight; mobile month view with larger taps and clearer day hierarchy.
 - **Unified agenda** — classes + timed tasks on a calendar-day timeline (memoized CompactAgenda); tasks sort by due date; start/due datetime pickers update and save.
@@ -36,6 +36,15 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v3.1.2
+
+- Mobile: left-edge (or clear content) swipe-right opens the nav drawer without fighting vertical scroll.
+- Desktop flashcards: no swipe-to-rate; swipe Easy/Hard hints are touch/mobile only. Click-to-flip, Previous/Next, and SM-2 buttons stay.
+- Brain Dump inbox: Settings toggle beside Pomodoro / Smart Quick — desktop (≥768px) defaults **On**, mobile **Off**; per-viewport explicit flags so mobile Off does not stick on desktop. Enabled desktop dock keeps it beside Pomodoro + Quick Widget.
+- Holiday background motifs refined: Halloween skulls (ghost/ember/bat OK — no candy canes), St Patrick’s shamrocks / rainbows / leprechauns / pot of gold, Easter bunnies / eggs / stars.
+- Christmas holly / snow / candy cane motifs unchanged; holiday accent gradients and washes kept.
+- Landing marketing remains locked to default emerald; reduced-motion and Low-Power unchanged (static wash / particles off).
 
 ### What’s new in v3.1.1
 
@@ -178,7 +187,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v3.1.1) — Render Static Site root
+├── client/                 # React + Vite frontend (v3.1.2) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/

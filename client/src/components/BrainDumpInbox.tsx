@@ -8,6 +8,7 @@ import { Brain, Loader2, Sparkles, Trash2, X, CheckSquare } from 'lucide-react';
 import { askTutor } from '../services/aiApi';
 import { createTask } from '../lib/taskService';
 import { useAiAuth } from '../context/AiAuthContext';
+import { usePreferences } from '../context/PreferencesContext';
 import { toast } from '../lib/toast';
 
 const STORAGE_KEY = 'fios_brain_dumps';
@@ -52,6 +53,7 @@ function extractJson(answer: string): { tasks: string[]; notes: string } | null 
 
 export const BrainDumpInbox: React.FC = () => {
   const { requireAiAuth } = useAiAuth();
+  const { showBrainDumpInbox } = usePreferences();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [dumps, setDumps] = useState<Dump[]>([]);
@@ -60,6 +62,12 @@ export const BrainDumpInbox: React.FC = () => {
   useEffect(() => {
     setDumps(loadDumps());
   }, []);
+
+  useEffect(() => {
+    if (!showBrainDumpInbox) setOpen(false);
+  }, [showBrainDumpInbox]);
+
+  if (!showBrainDumpInbox) return null;
 
   const persist = (next: Dump[]) => {
     setDumps(next);

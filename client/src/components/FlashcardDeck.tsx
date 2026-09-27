@@ -247,14 +247,39 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     }
   }, [savedDeckId]);
 
+  /**
+   * Swipe-to-rate is touch/mobile only — desktop/PC (fine pointer + hover) keeps
+   * tap-to-flip + Previous/Next + SM-2 buttons, with no swipe rating or swipe copy.
+   */
+  const [touchGestures, setTouchGestures] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.matchMedia('(max-width: 767px)').matches
+      || window.matchMedia('(hover: none)').matches
+      || window.matchMedia('(pointer: coarse)').matches
+    );
+  });
+  useEffect(() => {
+    const mqs = [
+      window.matchMedia('(max-width: 767px)'),
+      window.matchMedia('(hover: none)'),
+      window.matchMedia('(pointer: coarse)'),
+    ];
+    const sync = () => setTouchGestures(mqs.some((mq) => mq.matches));
+    sync();
+    mqs.forEach((mq) => mq.addEventListener('change', sync));
+    return () => mqs.forEach((mq) => mq.removeEventListener('change', sync));
+  }, []);
+
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const onTouchStart = useCallback((e: React.TouchEvent) => {
+    if (!touchGestures) return;
     const t = e.changedTouches[0];
     if (!t) return;
     touchStart.current = { x: t.clientX, y: t.clientY };
-  }, []);
+  }, [touchGestures]);
   const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStart.current == null || !isFlipped) return;
+    if (!touchGestures || touchStart.current == null || !isFlipped) return;
     const t = e.changedTouches[0];
     if (!t) {
       touchStart.current = null;
@@ -267,7 +292,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     if (Math.abs(dx) < 72 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
     if (dx > 0) void handleRating(4);
     else void handleRating(2);
-  }, [isFlipped, handleRating]);
+  }, [touchGestures, isFlipped, handleRating]);
 
   if (!Array.isArray(cards) || cards.length === 0) return null;
 
@@ -540,12 +565,12 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             </div>
           </div>
 
-          {/* Flashcard Tile — swipe right=Easy, left=Hard when flipped */}
+          {/* Flashcard Tile — touch/mobile: swipe right=Easy, left=Hard when flipped. Desktop: tap only. */}
           <div
             onClick={handleToggleFlip}
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
-            className="fios-swipe-card w-full min-h-[280px] bg-[#0e131f] rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-slate-800 hover:border-emerald-400/50 shadow-2xl transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99]"
+            onTouchStart={touchGestures ? onTouchStart : undefined}
+            onTouchEnd={touchGestures ? onTouchEnd : undefined}
+            className={`${touchGestures ? 'fios-swipe-card' : ''} w-full min-h-[280px] bg-[#0e131f] rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-slate-800 hover:border-emerald-400/50 shadow-2xl transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99]`}
           >
             <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${isFlipped ? 'from-emerald-400/20' : 'from-cyan-400/20'} to-transparent rounded-tr-xl pointer-events-none`} />
 
@@ -566,7 +591,9 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
 
             <div className="w-full flex justify-center z-10 font-mono pt-2">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest group-hover:text-slate-400 transition-colors">
-                Tap to flip · swipe right Easy / left Hard when flipped
+                {touchGestures
+                  ? 'Tap to flip · swipe right Easy / left Hard when flipped'
+                  : 'Click or tap to flip'}
               </span>
             </div>
           </div>
