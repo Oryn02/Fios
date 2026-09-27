@@ -133,7 +133,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
 
   const handleCreateModule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCode.trim() || !newName.trim()) return;
+    if (!newName.trim()) return;
     setCreating(true);
     try {
       const tags = newTags.split(',').map((t) => t.trim()).filter(Boolean);
@@ -242,7 +242,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
               <button type="button" onClick={() => setIsCreatingModule(false)} className="text-slate-500 hover:text-slate-300 cursor-pointer"><X className="w-4 h-4" /></button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <input type="text" placeholder="Module Code (e.g. SOFT201)…" value={newCode} onChange={(e) => setNewCode(e.target.value)} required
+              <input type="text" placeholder="Course code (optional)…" value={newCode} onChange={(e) => setNewCode(e.target.value)}
                 className="bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400 uppercase font-bold" />
               <input type="text" placeholder="Module Name (e.g. Software Engineering)…" value={newName} onChange={(e) => setNewName(e.target.value)} required
                 className="sm:col-span-2 bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400" />
