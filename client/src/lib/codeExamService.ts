@@ -74,3 +74,13 @@ export async function deleteCodeExam(id: string): Promise<void> {
   const { error } = await supabase.from('code_exams').delete().eq('id', id);
   if (error) throw error;
 }
+
+export async function updateCodeExamTitle(id: string, title: string): Promise<void> {
+  const next = title.trim() || 'Untitled Code Exam';
+  if (IS_DEMO) {
+    demoExamState = demoExamState.map((e) => (e.id === id ? { ...e, title: next } : e));
+    return;
+  }
+  const { error } = await supabase.from('code_exams').update({ title: next }).eq('id', id);
+  if (error) throw error;
+}

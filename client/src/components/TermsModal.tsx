@@ -40,7 +40,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
               <h3 id="tos-title" className={`text-base font-black uppercase ${landing ? 'text-white' : 'text-[var(--fios-text)]'}`}>
                 Terms of Service
               </h3>
-              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v2.2.9 · September 2026</p>
+              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v3.0.0 · September 2026</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className={`${muted} hover:opacity-80 cursor-pointer p-1`} aria-label="Close">
@@ -75,7 +75,16 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>4. Acceptable use</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>4. Class reminders (Web Push)</h4>
+            <p>
+              Push / browser notifications for upcoming classes are an optional convenience. Enabling them does not guarantee you will attend,
+              arrive on time, or that your timetable feed is complete or accurate. Always verify official schedules with your institution.
+              You can turn reminders off in Settings at any time.
+            </p>
+          </section>
+
+          <section className="space-y-1.5">
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>5. Acceptable use</h4>
             <p>
               Do not use Fios to violate your institution’s academic integrity policy, upload malware, harass others, infringe IP rights,
               or attempt unauthorized access to systems. Optional product feedback must not include secrets or others’ personal data without a lawful basis.
@@ -83,7 +92,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>5. Your content & privacy</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>6. Your content & privacy</h4>
             <p>
               You retain ownership of notes, decks, and uploads. Content is stored in your private Supabase rows under Row Level Security.
               You may export a JSON copy of your study data from Settings or request erasure as described in the Privacy Policy.
@@ -91,15 +100,15 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>6. Limitation of liability</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>7. Limitation of liability</h4>
             <p>
-              To the fullest extent permitted by law, the authors are not liable for grades, exam outcomes, data loss, or third-party API outages.
-              Always verify AI-generated study material independently. Nothing in these terms limits rights that cannot be waived under applicable consumer or data-protection law.
+              To the fullest extent permitted by law, the authors are not liable for grades, exam outcomes, missed classes, data loss, or third-party API outages.
+              Always verify AI-generated study material and timetable data independently. Nothing in these terms limits rights that cannot be waived under applicable consumer or data-protection law.
             </p>
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>7. Changes & contact</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>8. Changes & contact</h4>
             <p>
               We may update these Terms as the product evolves; the version label above will change when we do. Questions:{' '}
               <a href="mailto:oryn02@gmail.com" className={heading}>oryn02@gmail.com</a>.

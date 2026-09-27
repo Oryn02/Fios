@@ -6,12 +6,13 @@ import {
 import { FileUpload } from './FileUpload';
 import { summarizeText, askTutor } from '../services/aiApi';
 import { indexDocumentChunks } from '../lib/ragClient';
-import { getDocuments, saveDocument, deleteDocument } from '../lib/documentService';
+import { getDocuments, saveDocument, deleteDocument, updateDocumentTitle } from '../lib/documentService';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { FiosDocument } from '../types/db';
 import { GeminiGate } from './GeminiGate';
 import { FormattedContent } from './FormattedContent';
 import { MediaStudyInput } from './MediaStudyInput';
+import { InlineEditableTitle } from './InlineEditableTitle';
 import { useAiAuth } from '../context/AiAuthContext';
 import { toast } from '../lib/toast';
 
@@ -173,6 +174,49 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
     }
   };
 
+  /** Audio lecture path: media notes → summarize → save document. */
+  const handleMediaNotes = async (md: string, meta?: { kind: 'image' | 'audio'; fileName?: string }) => {
+    setText((prev) => (prev.trim() ? `${prev}\n\n${md}` : md));
+    if (!meta || meta.kind !== 'audio') return;
+    if (!requireAiAuth()) return;
+
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await summarizeText(md);
+      const docTitle =
+        title.trim() ||
+        (meta.fileName ? meta.fileName.replace(/\.[^.]+$/, '') : '') ||
+        `Audio lecture ${new Date().toLocaleDateString('en-GB')}`;
+      const saved = await saveDocument({
+        title: docTitle,
+        content: md,
+        summary: result.summary,
+        glossary: result.glossary || [],
+        module_code: moduleCode || null,
+      });
+      void indexDocumentChunks(saved.id, md).then((r) => {
+        if (r.indexed > 0) toast(`Indexed ${r.indexed} note chunk(s) for RAG`, 'info');
+      });
+      setDocs((prev) => [saved, ...prev]);
+      setActive(saved);
+      setText('');
+      setTitle('');
+      if (result.summary) {
+        localStorage.setItem(
+          `fios_doc_revisions_${saved.id}`,
+          JSON.stringify([{ at: new Date().toISOString(), summary: result.summary }])
+        );
+      }
+      toast('Audio lecture saved as Smart Note', 'success');
+    } catch (err: any) {
+      setError(err.message || 'Failed to summarize audio lecture.');
+      toast('Transcription ready — summarize manually if needed', 'info');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     await deleteDocument(id);
@@ -236,7 +280,10 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         </div>
 
         <FileUpload onTextExtracted={(t) => setText(t)} />
-        <MediaStudyInput onNotes={(md) => setText((prev) => (prev.trim() ? `${prev}\n\n${md}` : md))} />
+        <MediaStudyInput emphasizeAudio onNotes={(md, meta) => void handleMediaNotes(md, meta)} />
+        <p className="text-[10px] font-mono text-[var(--fios-text-muted)] -mt-1">
+          Audio lecture → summary uploads voice, transcribes via Gemini, and saves a Smart Note automatically.
+        </p>
 
         <textarea
           value={text}
@@ -260,10 +307,19 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
       {active && active.id !== 'general-tutor' && (
         <div className="rounded-2xl border fios-border bg-[var(--fios-surface)] p-5 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-black uppercase flex items-center gap-2">
-                <BookOpen className="w-4 h-4 accent-solid-text" /> {active.title}
-              </h3>
+            <div className="flex items-center gap-2 min-w-0">
+              <BookOpen className="w-4 h-4 accent-solid-text shrink-0" />
+              <InlineEditableTitle
+                value={active.title}
+                onSave={async (next) => {
+                  await updateDocumentTitle(active.id, next);
+                  setActive({ ...active, title: next });
+                  setDocs((prev) => prev.map((d) => (d.id === active.id ? { ...d, title: next } : d)));
+                  toast('Document renamed', 'success');
+                }}
+                className="text-sm font-black uppercase text-[var(--fios-text)] truncate"
+                placeholder="Untitled Document"
+              />
               {active.module_code && (
                 <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                   {active.module_code}
@@ -359,7 +415,19 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
                     <button onClick={(e) => handleDelete(e, doc.id)} className="text-slate-500 hover:text-rose-400 p-0.5 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
-                <h4 className="text-sm font-bold line-clamp-1 group-hover:accent-solid-text transition-colors">{doc.title}</h4>
+                <div onClick={(e) => e.stopPropagation()} className="min-w-0">
+                  <InlineEditableTitle
+                    value={doc.title}
+                    onSave={async (next) => {
+                      await updateDocumentTitle(doc.id, next);
+                      setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, title: next } : d)));
+                      if (active?.id === doc.id) setActive({ ...doc, title: next });
+                      toast('Document renamed', 'success');
+                    }}
+                    className="text-sm font-bold line-clamp-1 group-hover:accent-solid-text transition-colors"
+                    placeholder="Untitled Document"
+                  />
+                </div>
                 <p className="text-[11px] text-[var(--fios-text-muted)] line-clamp-2">{doc.summary}</p>
               </motion.div>
             ))}

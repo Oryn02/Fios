@@ -47,7 +47,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
               <h3 id="privacy-title" className={`text-base font-black uppercase ${landing ? 'text-white' : 'text-[var(--fios-text)]'}`}>
                 Privacy Policy & GDPR Statement
               </h3>
-              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v2.2.9 · Last updated September 2026</p>
+              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v3.0.0 · Last updated September 2026</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className={`${muted} hover:opacity-80 cursor-pointer p-1`} aria-label="Close">
@@ -72,6 +72,8 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
               <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Profile & prefs:</strong> display name, theme/accent, Pomodoro settings, nav/widget preferences.</li>
               <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Study content:</strong> modules, notes/PDFs, flashcards, quizzes, code exams, tasks (including due times), grades, focus logs, timetable URLs, tutor chat.</li>
               <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>BYO Gemini key:</strong> stored on your profile under Row Level Security so AI features can run with your key.</li>
+              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Multi-modal uploads (optional):</strong> PDFs, photos, and notes you attach in AI Tutor / Smart Notes are processed with <em>your</em> Gemini API key — content is sent to Google under your key’s terms, not retained by Fios beyond your private study rows.</li>
+              <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Web Push subscriptions (optional):</strong> if you enable Class Reminders, your browser may store a push endpoint so upcoming-class alerts can be delivered. You can disable reminders anytime in Settings; endpoints are not used for marketing.</li>
               <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Feedback (optional):</strong> star rating, category tags, and message; you may submit anonymously (no user id stored).</li>
               <li><strong className={landing ? 'text-slate-200' : 'text-[var(--fios-text)]'}>Device/local:</strong> browser localStorage/sessionStorage for consent, theme, caches, and PWA install state — not sold to advertisers.</li>
             </ul>

@@ -53,12 +53,24 @@ export async function createModule(
   opts?: { tags?: string[]; parent_code?: string | null }
 ): Promise<DBModule | null> {
   const normalizedColor = normalizeModuleColor(color);
+  const trimmedName = name.trim();
+  if (!trimmedName) throw new Error('Module name is required.');
+  // Course code optional — derive a short unique code from the name when blank
+  let trimmedCode = code.trim().toUpperCase();
+  if (!trimmedCode) {
+    const slug = trimmedName
+      .replace(/[^a-zA-Z0-9]+/g, '')
+      .slice(0, 8)
+      .toUpperCase() || 'MODULE';
+    trimmedCode = `${slug}-${Date.now().toString(36).toUpperCase().slice(-4)}`;
+  }
+
   if (IS_DEMO) {
     const mod: DBModule = {
       id: `demo-${Date.now()}`,
       user_id: 'demo',
-      code: code.trim().toUpperCase(),
-      name: name.trim(),
+      code: trimmedCode,
+      name: trimmedName,
       color: normalizedColor,
       tags: opts?.tags || [],
       parent_code: opts?.parent_code || null,
@@ -75,8 +87,8 @@ export async function createModule(
     .from('modules')
     .insert({
       user_id: user.id,
-      code: code.trim().toUpperCase(),
-      name: name.trim(),
+      code: trimmedCode,
+      name: trimmedName,
       color: normalizedColor,
       tags: opts?.tags || [],
       parent_code: opts?.parent_code || null,

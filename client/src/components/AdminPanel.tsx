@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Activity, Shield, ClipboardCheck, X, Star, Trash2, Loader2, MessageSquare } from 'lucide-react';
+import { Activity, Shield, ClipboardCheck, X, Star, Trash2, Loader2, MessageSquare, Palette } from 'lucide-react';
 import { useProfile } from '../context/ProfileContext';
+import { useTheme } from '../context/ThemeContext';
+import { ADMIN_HOLIDAY_PREVIEWS } from '../lib/holidays';
 import { deleteFeedback, listAllFeedback, type FeedbackEntry } from '../lib/feedbackService';
 import { toast } from '../lib/toast';
 
@@ -10,6 +12,7 @@ interface AdminPanelProps {
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
   const { profile } = useProfile();
+  const { holidayTheme, previewHolidayTheme } = useTheme();
   const adminUid = (import.meta.env.VITE_ADMIN_UID as string | undefined)?.trim() || '';
   const isAdmin = !!adminUid && profile?.id === adminUid;
   const [logs, setLogs] = useState<string[]>([]);
@@ -144,6 +147,53 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="space-y-2">
+        <h4 className="text-[10px] font-mono font-bold uppercase text-[var(--fios-text-muted)] flex items-center gap-1.5">
+          <Palette className="w-3.5 h-3.5" /> Holiday themes (preview anytime)
+        </h4>
+        <p className="text-[10px] text-[var(--fios-text-muted)] font-mono">
+          Session-only override — does not change saved accent. Clear to return to calendar day-auto or your saved accent.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {ADMIN_HOLIDAY_PREVIEWS.map((p) => {
+            const active = holidayTheme?.themeFamily === p.themeFamily;
+            return (
+              <button
+                key={p.themeFamily}
+                type="button"
+                onClick={() => {
+                  previewHolidayTheme(p);
+                  toast(`${p.name} theme applied`, 'success');
+                }}
+                className={`text-left rounded-xl border px-3 py-2.5 cursor-pointer transition-colors ${
+                  active ? 'accent-border bg-[var(--fios-surface-2)]' : 'fios-border bg-[var(--fios-surface-2)] hover:accent-border'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span
+                    className="w-4 h-4 rounded-full shrink-0 border border-white/20"
+                    style={{ background: `linear-gradient(135deg, ${p.from}, ${p.via}, ${p.to})` }}
+                    aria-hidden
+                  />
+                  <span className="text-[11px] font-bold text-[var(--fios-text)] truncate">{p.name}</span>
+                </div>
+                <span className="text-[9px] font-mono text-[var(--fios-text-muted)]">{p.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            previewHolidayTheme(null);
+            toast('Holiday preview cleared', 'info');
+          }}
+          className="text-[10px] font-mono accent-solid-text cursor-pointer"
+        >
+          Clear holiday preview
+        </button>
       </section>
 
       <section className="space-y-2">

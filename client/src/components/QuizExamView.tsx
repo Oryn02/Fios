@@ -2,11 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { HelpCircle, CheckCircle2, XCircle, RotateCcw, ArrowRight, Sparkles, Save, Folder, Trash2, Loader2, FileText } from 'lucide-react';
 import { generateQuiz } from '../services/quizApi';
-import { getQuizzes, saveQuiz, deleteQuiz } from '../lib/mcqService';
+import { getQuizzes, saveQuiz, deleteQuiz, updateQuizTitle } from '../lib/mcqService';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import type { MCQQuestion, MCQQuiz } from '../types/db';
 import { FileUpload } from './FileUpload';
+import { InlineEditableTitle } from './InlineEditableTitle';
 import { useAiAuth } from '../context/AiAuthContext';
+import { toast } from '../lib/toast';
 
 interface QuizExamViewProps {
   initialQuizId?: string | null;
@@ -19,6 +21,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
   const [moduleCode, setModuleCode] = useState('');
   const [modules, setModules] = useState<DBModule[]>([]);
   const [questions, setQuestions] = useState<MCQQuestion[]>([]);
+  const [questionCount, setQuestionCount] = useState<5 | 10 | 20 | 40>(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
@@ -70,7 +73,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
     setQuestions([]);
     resetTaking();
     try {
-      const questionList = await generateQuiz(studyNotes);
+      const questionList = await generateQuiz(studyNotes, questionCount);
       setQuestions(questionList);
       if (!title.trim()) setTitle(studyNotes.trim().slice(0, 40));
     } catch (err: any) {
@@ -156,6 +159,28 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
             />
           </div>
 
+          <div className="space-y-2">
+            <label className="text-xs font-mono font-black uppercase text-slate-300">
+              Number of questions
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {([5, 10, 20, 40] as const).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setQuestionCount(n)}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-black uppercase border cursor-pointer transition-colors ${
+                    questionCount === n
+                      ? 'accent-bg text-slate-950 border-transparent'
+                      : 'bg-[#07090e] border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <motion.button
             whileTap={{ scale: 0.99 }}
             type="submit"
@@ -176,8 +201,17 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
                     onClick={() => openSavedQuiz(quiz)}
                     className="p-3 bg-[#07090e] border border-slate-800 rounded-lg hover:accent-border cursor-pointer flex items-center justify-between group"
                   >
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-100 truncate group-hover:accent-solid-text">{quiz.title}</p>
+                    <div className="min-w-0" onClick={(e) => e.stopPropagation()}>
+                      <InlineEditableTitle
+                        value={quiz.title}
+                        onSave={async (next) => {
+                          await updateQuizTitle(quiz.id, next);
+                          setSavedQuizzes((prev) => prev.map((q) => (q.id === quiz.id ? { ...q, title: next } : q)));
+                          toast('Quiz renamed', 'success');
+                        }}
+                        className="text-xs font-bold text-slate-100 truncate group-hover:accent-solid-text"
+                        placeholder="Untitled Quiz"
+                      />
                       <p className="text-[10px] font-mono text-slate-500">{quiz.questions.length} questions{quiz.module_code ? ` · ${quiz.module_code}` : ''}</p>
                     </div>
                     <button onClick={(e) => handleDeleteSaved(e, quiz.id)} className="text-slate-600 hover:text-rose-400 p-1 cursor-pointer shrink-0">

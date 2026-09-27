@@ -34,7 +34,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v2.2.9', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.0.0', icon: Sparkles },
 ];
 
 /** Tabs where Zen may hide chrome (study surfaces). Settings/Overview always keep nav. */
@@ -270,7 +270,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
     <div className="min-h-dvh fios-app-bg flex flex-col font-sans overflow-x-hidden">
       {/* Top HUD Bar — always visible unless Zen is hiding study chrome */}
       {!hideChrome && (
-        <header className="h-14 sm:h-16 border-b fios-border bg-[var(--fios-surface)]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-[60] safe-top">
+        <header className="h-14 sm:h-16 border-b fios-border bg-[var(--fios-surface)]/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-[60] safe-top">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 self-center">
             <button
               type="button"
@@ -295,7 +295,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             >
               <FiosLogo size="lg" className="leading-none min-w-0 pointer-events-none" />
             </button>
-            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v2.2.9</span>
+            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v3.0.0</span>
             {zenMode && (
               <button
                 type="button"
@@ -356,6 +356,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           </div>
         </header>
       )}
+      {/* Spacer for fixed header so content isn't under the bar (iOS-safe) */}
+      {!hideChrome && <div className="h-14 sm:h-16 shrink-0" aria-hidden />}
 
       {/* Persistent Zen escape — always reachable when chrome is hidden */}
       {hideChrome && (

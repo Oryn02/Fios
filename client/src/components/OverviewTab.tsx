@@ -21,11 +21,18 @@ import { ModuleHeatmap } from './ModuleHeatmap';
 import { RevisionFlightPlan } from './RevisionFlightPlan';
 import { CompactAgenda } from './CompactAgenda';
 import { DatetimeLocalInput } from './DatetimeLocalInput';
+import { StudyStreakHeatmap } from './StudyStreakHeatmap';
+import { ExamCountdownWidget } from './ExamCountdownWidget';
 import { toast } from '../lib/toast';
+import { overviewGreeting } from '../lib/holidays';
+
+import type { FlightNavigatePayload } from './RevisionFlightPlan';
 
 interface OverviewTabProps {
   onOpenFlashcards: (deckCards?: any[], title?: string, moduleCode?: string, isSaved?: boolean) => void;
-  onNavigate?: (tab: string) => void;
+  onNavigate?: (tab: string, payload?: FlightNavigatePayload) => void;
+  /** Open SM-2 review for all due cards across decks (Review Queue). */
+  onOpenReviewQueue?: () => void;
 }
 
 interface SavedDeck {
@@ -37,10 +44,7 @@ interface SavedDeck {
 }
 
 function greetingFor(date: Date): string {
-  const h = date.getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  return overviewGreeting(date);
 }
 
 const WIDGET_LABELS: Record<WidgetId, string> = {
@@ -50,7 +54,7 @@ const WIDGET_LABELS: Record<WidgetId, string> = {
   calendar: 'iCal Agenda',
 };
 
-const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavigate }) => {
+const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavigate, onOpenReviewQueue }) => {
   const rawPreferredName = usePreferredName();
   const { profile } = useProfile();
   const { widgetOrder, widgetVisibility, setWidgetOrder, setWidgetVisible } = usePreferences();
@@ -221,9 +225,36 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
     setWidgetOrder(order);
   };
 
+  const openReviewQueue = useCallback(() => {
+    if (onOpenReviewQueue) {
+      onOpenReviewQueue();
+      return;
+    }
+    // Fallback: gather due cards from loaded decks
+    const due: any[] = [];
+    for (const deck of savedDecks) {
+      for (const c of deck.cards || []) {
+        if (isCardDue((c as any).next_review)) due.push(c);
+      }
+    }
+    if (due.length) onOpenFlashcards(due, 'Review Queue', undefined, true);
+    else onOpenFlashcards();
+  }, [onOpenReviewQueue, onOpenFlashcards, savedDecks]);
+
   const renderWidget = (id: WidgetId) => {
     if (id === 'flightPlan') {
-      return <RevisionFlightPlan key={id} onNavigate={(tab) => onNavigate?.(tab)} />;
+      return (
+        <RevisionFlightPlan
+          key={id}
+          onNavigate={(tab, payload) => {
+            if (payload?.intent === 'review' && payload.deckCards?.length) {
+              onOpenFlashcards(payload.deckCards, payload.deckTitle, payload.moduleCode || undefined, true);
+              return;
+            }
+            onNavigate?.(tab, payload);
+          }}
+        />
+      );
     }
     if (id === 'heatmap') {
       return <ModuleHeatmap key={id} />;
@@ -243,10 +274,10 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
           <p className="text-xs text-slate-400">Cards due today across all decks according to your SM-2 schedule.</p>
           <button
             type="button"
-            onClick={() => onOpenFlashcards()}
+            onClick={openReviewQueue}
             className="text-xs font-mono accent-solid-text hover:underline cursor-pointer"
           >
-            Open Study Lab →
+            Start SM-2 review →
           </button>
         </div>
       );
@@ -541,6 +572,12 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         <div className="space-y-6">
           {orderedWidgets.map((id) => renderWidget(id))}
         </div>
+      </div>
+
+      {/* Study streak + exam countdown (below flight plan / widgets) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <StudyStreakHeatmap />
+        <ExamCountdownWidget />
       </div>
 
       {/* Saved Study Decks */}

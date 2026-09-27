@@ -80,15 +80,26 @@ export async function generateFlashcardsFromText(studyNotes: string, apiKey?: st
  * @param studyNotes - Raw lecture / note text
  * @param apiKey - Optional BYO Gemini API key
  */
-export async function generateQuizFromText(studyNotes: string, apiKey?: string) {
+/**
+ * Generate an MCQ quiz from lecture notes.
+ * @param studyNotes - Source material
+ * @param apiKey - Optional BYO Gemini key
+ * @param questionCount - Number of questions (default 5, max 40)
+ */
+export async function generateQuizFromText(
+  studyNotes: string,
+  apiKey?: string,
+  questionCount: number = 5
+) {
+  const count = Math.min(40, Math.max(1, Math.floor(Number(questionCount) || 5)));
   const ai = getClient(apiKey);
   const response = await ai.models.generateContent({
     model: MODEL_NAME,
-    contents: `Generate a 5-question multiple-choice quiz based on the following lecture notes:\n\n${studyNotes}`,
+    contents: `Generate a ${count}-question multiple-choice quiz based on the following lecture notes:\n\n${studyNotes}`,
     config: {
       responseMimeType: 'application/json',
       responseSchema: quizSchema,
-      systemInstruction: 'You are an expert tutor. Create clear multiple choice questions with 4 distinct options.',
+      systemInstruction: `You are an expert tutor. Create exactly ${count} clear multiple choice questions with 4 distinct options each.`,
     },
   });
 

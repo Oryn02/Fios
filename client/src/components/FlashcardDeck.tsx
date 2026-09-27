@@ -5,8 +5,18 @@ import { getUserModules, DBModule } from '../lib/moduleService';
 import { ActiveRecallQuiz } from './ActiveRecallQuiz';
 import { FormattedContent } from './FormattedContent';
 import { calculateSM2, isCardDue, previewIntervalLabel } from '../lib/spacedRepetition';
-import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle } from 'lucide-react';
+import { recordFlashcardReview } from '../lib/studyActivity';
+import {
+  buildDeckExport,
+  downloadDeckJson,
+  deckExportToShareCode,
+  renameDeck,
+} from '../lib/deckService';
+import { InlineEditableTitle } from './InlineEditableTitle';
+import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle, Download, Share2 } from 'lucide-react';
 import { toast } from '../lib/toast';
+
+const SM2_ONBOARD_KEY = 'fios_sm2_onboarded';
 
 interface FlashcardDeckProps {
   cards: Flashcard[];
@@ -34,6 +44,25 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
   const [saving, setSaving] = useState(false);
   const [hasSaved, setHasSaved] = useState(isSaved);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [savedDeckId, setSavedDeckId] = useState<string | undefined>(
+    deckId || (initialCards[0] as any)?.deck_id || undefined
+  );
+  const [showSm2Onboard, setShowSm2Onboard] = useState(() => {
+    try {
+      return localStorage.getItem(SM2_ONBOARD_KEY) !== '1';
+    } catch {
+      return true;
+    }
+  });
+
+  const dismissSm2Onboard = useCallback(() => {
+    try {
+      localStorage.setItem(SM2_ONBOARD_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+    setShowSm2Onboard(false);
+  }, []);
 
   // If it's a saved deck, fetch live cards from Supabase on mount to ensure fresh SM-2 dates
   useEffect(() => {
@@ -178,12 +207,44 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
 
       if (error) {
         console.error("Failed to update card in Supabase:", error.message);
+        toast('Could not sync SM-2 schedule', 'error');
+        return;
       }
     }
 
+    recordFlashcardReview();
     toast(`Rated ${labels[rating] || rating}`, rating >= 3 ? 'success' : 'info');
     handleNext();
   }, [cards, currentCard, handleNext]);
+
+  const handleExportJson = useCallback(() => {
+    const payload = buildDeckExport(deckTitle, cards, selectedModuleCode || null);
+    downloadDeckJson(payload);
+    toast('Deck JSON downloaded', 'success');
+  }, [deckTitle, cards, selectedModuleCode]);
+
+  const handleCopyShareCode = useCallback(async () => {
+    const payload = buildDeckExport(deckTitle, cards, selectedModuleCode || null);
+    const code = deckExportToShareCode(payload);
+    try {
+      await navigator.clipboard.writeText(code);
+      toast('Share code copied', 'success');
+    } catch {
+      toast('Could not copy — select the code manually', 'error');
+    }
+  }, [deckTitle, cards, selectedModuleCode]);
+
+  const handleRename = useCallback(async (next: string) => {
+    setDeckTitle(next);
+    if (savedDeckId) {
+      try {
+        await renameDeck(savedDeckId, next);
+        toast('Deck renamed', 'success');
+      } catch (err: any) {
+        toast(err?.message || 'Rename failed', 'error');
+      }
+    }
+  }, [savedDeckId]);
 
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const onTouchStart = useCallback((e: React.TouchEvent) => {
@@ -266,6 +327,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
       }
 
       setHasSaved(true);
+      setSavedDeckId(deck.id);
       setSaveStatus({ type: 'success', message: 'Deck saved to your module successfully!' });
     } catch (err: any) {
       setSaveStatus({ type: 'error', message: err.message || 'Error saving deck to database.' });
@@ -324,18 +386,58 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-emerald-400 bg-emerald-500/10 rounded border border-emerald-500/20">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-emerald-400 bg-emerald-500/10 rounded border border-emerald-500/20 shrink-0">
                 {selectedModuleCode || 'General'}
               </span>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wide truncate max-w-xs">
-                {deckTitle}
-              </h3>
+              <InlineEditableTitle
+                value={deckTitle}
+                onSave={handleRename}
+                className="text-sm font-bold text-white uppercase tracking-wide truncate max-w-xs"
+                placeholder="Untitled Deck"
+              />
             </div>
-            <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> SAVED
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleExportJson}
+                className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+                title="Export JSON"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleCopyShareCode()}
+                className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+                title="Copy share code"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> SAVED
+              </span>
+            </div>
+          </div>
+        )}
+
+        {!hasSaved && (
+          <div className="flex items-center gap-2 justify-end -mt-1">
+            <button
+              type="button"
+              onClick={handleExportJson}
+              className="text-[10px] font-mono font-bold uppercase text-slate-500 hover:text-slate-300 flex items-center gap-1 cursor-pointer"
+            >
+              <Download className="w-3 h-3" /> Export JSON
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleCopyShareCode()}
+              className="text-[10px] font-mono font-bold uppercase text-slate-500 hover:text-slate-300 flex items-center gap-1 cursor-pointer"
+            >
+              <Share2 className="w-3 h-3" /> Share code
+            </button>
           </div>
         )}
 
@@ -462,7 +564,31 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
 
           {/* SM-2 Spaced Repetition Rating Buttons */}
           {isFlipped ? (
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
+              {showSm2Onboard && (
+                <div
+                  className="absolute inset-x-0 -top-2 bottom-0 z-20 rounded-xl bg-[#07090e]/95 border border-emerald-500/40 p-3 flex flex-col items-center justify-center gap-2 text-center shadow-xl"
+                  role="dialog"
+                  aria-label="SM-2 rating tip"
+                >
+                  <p className="text-[11px] font-mono font-bold uppercase tracking-wider accent-solid-text">
+                    How SM-2 grading works
+                  </p>
+                  <p className="text-[11px] text-slate-300 leading-relaxed max-w-sm">
+                    After you reveal the answer, rate how well you recalled it.
+                    <strong className="text-slate-100"> Again</strong> resets the card,
+                    <strong className="text-slate-100"> Hard</strong> keeps progress with a short interval,
+                    <strong className="text-slate-100"> Good</strong> / <strong className="text-slate-100">Easy</strong> schedule further out.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={dismissSm2Onboard}
+                    className="mt-1 px-4 py-1.5 accent-bg text-slate-950 text-[10px] font-black uppercase rounded-lg cursor-pointer"
+                  >
+                    Got it
+                  </button>
+                </div>
+              )}
               <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500 text-center flex items-center justify-center gap-1">
                 Rate recall (updates SM-2 queue)
                 <span title="Grading chooses the next local-calendar due date. Again lapses; Hard keeps progress.">
@@ -472,28 +598,28 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               <div className="grid grid-cols-4 gap-2 font-mono">
                 <button
                   type="button"
-                  onClick={() => handleRating(1)}
+                  onClick={() => { dismissSm2Onboard(); handleRating(1); }}
                   className="min-h-12 py-3 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
                   AGAIN<br /><span className="text-[10px] opacity-80">{ratingPreview[1]}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleRating(2)}
+                  onClick={() => { dismissSm2Onboard(); handleRating(2); }}
                   className="min-h-12 py-3 bg-amber-500/10 hover:bg-amber-500/20 active:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
                   HARD<br /><span className="text-[10px] opacity-80">{ratingPreview[2]}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleRating(3)}
+                  onClick={() => { dismissSm2Onboard(); handleRating(3); }}
                   className="min-h-12 py-3 bg-cyan-500/10 hover:bg-cyan-500/20 active:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
                   GOOD<br /><span className="text-[10px] opacity-80">{ratingPreview[3]}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleRating(4)}
+                  onClick={() => { dismissSm2Onboard(); handleRating(4); }}
                   className="min-h-12 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 active:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                 >
                   EASY<br /><span className="text-[10px] opacity-80">{ratingPreview[4]}</span>

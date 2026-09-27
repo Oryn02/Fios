@@ -60,6 +60,16 @@ async function listMutations(): Promise<QueuedMutation[]> {
   return rows;
 }
 
+/** Count pending offline mutations (for network indicator). */
+export async function listQueuedCount(): Promise<number> {
+  try {
+    const rows = await listMutations();
+    return rows.length;
+  } catch {
+    return 0;
+  }
+}
+
 async function removeMutation(id: number): Promise<void> {
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {

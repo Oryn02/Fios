@@ -3,18 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Folder, Layers, Sparkles, ArrowRight, Trash2, Tag, Plus, Palette, X,
   HelpCircle, Code2, CheckSquare, Square, Bug, Terminal, PencilRuler, Brain, FileText,
+  Upload, Download, Share2,
 } from 'lucide-react';
-import { getUserDecksWithCards } from '../lib/deckService';
+import { getUserDecksWithCards, renameDeck, buildDeckExport, downloadDeckJson, deckExportToShareCode } from '../lib/deckService';
 import { getUserModules, createModule, deleteModule, DBModule, COLOR_OPTIONS, normalizeModuleColor } from '../lib/moduleService';
 import { MOD_BADGE_CLASS } from '../lib/moduleColors';
-import { getQuizzes } from '../lib/mcqService';
-import { getCodeExams } from '../lib/codeExamService';
+import { getQuizzes, updateQuizTitle } from '../lib/mcqService';
+import { getCodeExams, updateCodeExamTitle } from '../lib/codeExamService';
 import { getTasks, toggleTask } from '../lib/taskService';
-import { getDocuments, deleteDocument } from '../lib/documentService';
+import { getDocuments, deleteDocument, updateDocumentTitle } from '../lib/documentService';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO } from '../lib/demo';
+import { toast } from '../lib/toast';
 import type { MCQQuiz, CodeExam, Task, CodeExamType, FiosDocument } from '../types/db';
 import { ActiveRecall } from './ActiveRecall';
+import { InlineEditableTitle } from './InlineEditableTitle';
+import { ImportDeckModal } from './ImportDeckModal';
 
 interface ModulesViewProps {
   onOpenFlashcards: (deckCards?: any[], title?: string, moduleCode?: string, isSaved?: boolean) => void;
@@ -65,6 +69,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   const [creating, setCreating] = useState(false);
   const [recallOpen, setRecallOpen] = useState(false);
   const [folderFilter, setFolderFilter] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -133,7 +138,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
 
   const handleCreateModule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCode.trim() || !newName.trim()) return;
+    if (!newName.trim()) return;
     setCreating(true);
     try {
       const tags = newTags.split(',').map((t) => t.trim()).filter(Boolean);
@@ -242,7 +247,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
               <button type="button" onClick={() => setIsCreatingModule(false)} className="text-slate-500 hover:text-slate-300 cursor-pointer"><X className="w-4 h-4" /></button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <input type="text" placeholder="Module Code (e.g. SOFT201)…" value={newCode} onChange={(e) => setNewCode(e.target.value)} required
+              <input type="text" placeholder="Course code (optional)…" value={newCode} onChange={(e) => setNewCode(e.target.value)}
                 className="bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400 uppercase font-bold" />
               <input type="text" placeholder="Module Name (e.g. Software Engineering)…" value={newName} onChange={(e) => setNewName(e.target.value)} required
                 className="sm:col-span-2 bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400" />
@@ -377,6 +382,18 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
           </span>
         </div>
 
+        {entityTab === 'decks' && (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setImportOpen(true)}
+              className="px-3 py-1.5 rounded-lg border fios-border bg-[var(--fios-surface-2)] text-[10px] font-mono font-bold uppercase text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <Upload className="w-3.5 h-3.5 accent-solid-text" /> Import deck
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <div className="p-8 text-center font-mono text-xs text-slate-500 animate-pulse">Loading module content…</div>
         ) : (
@@ -398,14 +415,56 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                               {modules.map((m) => <option key={m.id} value={m.code}>{m.code}</option>)}
                             </select>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const payload = buildDeckExport(deck.title, deck.cards || [], deck.module_code);
+                                downloadDeckJson(payload);
+                                toast('Deck JSON downloaded', 'success');
+                              }}
+                              className="text-slate-600 hover:text-slate-200 p-1 cursor-pointer"
+                              title="Export JSON"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const payload = buildDeckExport(deck.title, deck.cards || [], deck.module_code);
+                                const code = deckExportToShareCode(payload);
+                                try {
+                                  await navigator.clipboard.writeText(code);
+                                  toast('Share code copied', 'success');
+                                } catch {
+                                  toast('Could not copy share code', 'error');
+                                }
+                              }}
+                              className="text-slate-600 hover:text-slate-200 p-1 cursor-pointer"
+                              title="Copy share code"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                            </button>
                             <span className="text-[10px] font-mono text-slate-500">{new Date(deck.created_at).toLocaleDateString('en-GB')}</span>
                             <button onClick={(e) => handleDeleteDeck(e, deck.id)} className="text-slate-600 hover:text-rose-400 p-1 transition-colors cursor-pointer" title="Delete deck">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
-                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors line-clamp-2">{deck.title}</h4>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <InlineEditableTitle
+                            value={deck.title}
+                            onSave={async (next) => {
+                              await renameDeck(deck.id, next);
+                              setDecks((prev) => prev.map((d) => (d.id === deck.id ? { ...d, title: next } : d)));
+                              toast('Deck renamed', 'success');
+                            }}
+                            className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors line-clamp-2"
+                            placeholder="Untitled Deck"
+                          />
+                        </div>
                         <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs font-mono text-slate-400">
                           <span>{deck.cards?.length || 0} Flashcards</span>
                           <span className="text-emerald-400 group-hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Study <ArrowRight className="w-3 h-3" /></span>
@@ -441,9 +500,18 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                             );
                           })()}
                         </div>
-                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors line-clamp-2 flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors line-clamp-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                          {quiz.title}
+                          <InlineEditableTitle
+                            value={quiz.title}
+                            onSave={async (next) => {
+                              await updateQuizTitle(quiz.id, next);
+                              setQuizzes((prev) => prev.map((q) => (q.id === quiz.id ? { ...q, title: next } : q)));
+                              toast('Quiz renamed', 'success');
+                            }}
+                            className="truncate"
+                            placeholder="Untitled Quiz"
+                          />
                         </h4>
                         <div className="flex items-center justify-end pt-2 border-t border-slate-800/60 text-xs font-mono text-slate-400">
                           <span className="text-emerald-400 group-hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Take Exam <ArrowRight className="w-3 h-3" /></span>
@@ -479,9 +547,18 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                             );
                           })()}
                         </div>
-                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-indigo-300 transition-colors line-clamp-2 flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-indigo-300 transition-colors line-clamp-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <Code2 className="w-4 h-4 text-indigo-400 shrink-0" />
-                          {exam.title}
+                          <InlineEditableTitle
+                            value={exam.title}
+                            onSave={async (next) => {
+                              await updateCodeExamTitle(exam.id, next);
+                              setCodeExams((prev) => prev.map((x) => (x.id === exam.id ? { ...x, title: next } : x)));
+                              toast('Code exam renamed', 'success');
+                            }}
+                            className="truncate"
+                            placeholder="Untitled Code Exam"
+                          />
                         </h4>
                         <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[10px] font-mono text-slate-500">
                           <span className="flex items-center gap-1.5 capitalize">
@@ -564,9 +641,18 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                             </button>
                           </div>
                         </div>
-                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-rose-300 transition-colors line-clamp-2 flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-rose-300 transition-colors line-clamp-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <FileText className="w-4 h-4 text-rose-400 shrink-0" />
-                          {doc.title}
+                          <InlineEditableTitle
+                            value={doc.title}
+                            onSave={async (next) => {
+                              await updateDocumentTitle(doc.id, next);
+                              setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, title: next } : d)));
+                              toast('Document renamed', 'success');
+                            }}
+                            className="truncate"
+                            placeholder="Untitled Document"
+                          />
                         </h4>
                         <p className="text-[11px] text-slate-400 font-mono line-clamp-2">{doc.summary}</p>
                         <div className="flex items-center justify-end pt-2 border-t border-slate-800/60 text-xs font-mono text-slate-400">
@@ -587,6 +673,12 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
       <AnimatePresence>
         {recallOpen && <ActiveRecall modules={modules} initialModule={selectedModule || ''} onClose={() => setRecallOpen(false)} />}
       </AnimatePresence>
+
+      <ImportDeckModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => { void loadData(); }}
+      />
     </div>
   );
 };

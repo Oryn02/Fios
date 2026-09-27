@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { generateCodeExam, gradeCodeExam, type CodeGradeResult } from '../services/codeApi';
 import { useAiAuth } from '../context/AiAuthContext';
-import { getCodeExams, saveCodeExam, deleteCodeExam } from '../lib/codeExamService';
+import { getCodeExams, saveCodeExam, deleteCodeExam, updateCodeExamTitle } from '../lib/codeExamService';
 import { getUserModules, type DBModule } from '../lib/moduleService';
 import {
   CODE_LANGUAGES, CODE_EXAM_TYPES,
@@ -15,6 +15,8 @@ import {
 } from '../types/db';
 import { useTheme } from '../context/ThemeContext';
 import { FormattedContent } from './FormattedContent';
+import { InlineEditableTitle } from './InlineEditableTitle';
+import { toast } from '../lib/toast';
 
 const EXAM_ICON: Record<CodeExamType, React.ReactNode> = {
   bug_fix: <Bug className="w-3.5 h-3.5" />,
@@ -459,7 +461,18 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                     </button>
                   </div>
                 </div>
-                <h4 className="text-sm font-bold text-slate-100 line-clamp-1 group-hover:text-emerald-300 transition-colors">{exam.title}</h4>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <InlineEditableTitle
+                    value={exam.title}
+                    onSave={async (next) => {
+                      await updateCodeExamTitle(exam.id, next);
+                      setSavedExams((prev) => prev.map((x) => (x.id === exam.id ? { ...x, title: next } : x)));
+                      toast('Code exam renamed', 'success');
+                    }}
+                    className="text-sm font-bold text-slate-100 line-clamp-1 group-hover:text-emerald-300 transition-colors"
+                    placeholder="Untitled Code Exam"
+                  />
+                </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500">
                   {EXAM_ICON[exam.exam_type]} {exam.exam_type.replace('_', ' ')}
                   {exam.module_code && <span className="ml-auto text-emerald-400">{exam.module_code}</span>}

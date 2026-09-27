@@ -5,9 +5,13 @@ import { apiUrl } from '../lib/apiBase';
 import { useAiAuth } from '../context/AiAuthContext';
 import { toast } from '../lib/toast';
 
+export type MediaKind = 'image' | 'audio';
+
 interface MediaStudyInputProps {
   /** Called with structured markdown/notes returned by the study engine. */
-  onNotes: (markdown: string) => void;
+  onNotes: (markdown: string, meta?: { kind: MediaKind; fileName?: string }) => void;
+  /** Highlight audio as primary CTA (lecture → notes). */
+  emphasizeAudio?: boolean;
 }
 
 /**
@@ -15,13 +19,13 @@ interface MediaStudyInputProps {
  * `POST /api/media/process`. Guarded by AiAuth before any upload runs.
  * No `capture` attribute so iPhone Photos / Android gallery remain available.
  */
-export const MediaStudyInput: React.FC<MediaStudyInputProps> = ({ onNotes }) => {
+export const MediaStudyInput: React.FC<MediaStudyInputProps> = ({ onNotes, emphasizeAudio }) => {
   const { requireAiAuth } = useAiAuth();
   const imageRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
 
-  const processFile = async (file: File, mimeHint?: string) => {
+  const processFile = async (file: File, kind: MediaKind, mimeHint?: string) => {
     if (!requireAiAuth()) return;
     setBusy(true);
     try {
@@ -53,8 +57,8 @@ export const MediaStudyInput: React.FC<MediaStudyInputProps> = ({ onNotes }) => 
         (typeof data.text === 'string' && data.text) ||
         '';
       if (!markdown.trim()) throw new Error('No notes returned from vision/audio processing.');
-      onNotes(markdown.trim());
-      toast('Multimodal notes ready', 'success');
+      onNotes(markdown.trim(), { kind, fileName: file.name });
+      toast(kind === 'audio' ? 'Audio lecture transcribed' : 'Multimodal notes ready', 'success');
     } catch (err: any) {
       toast(err?.message || 'Could not process media', 'error');
     } finally {
@@ -73,17 +77,17 @@ export const MediaStudyInput: React.FC<MediaStudyInputProps> = ({ onNotes }) => 
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) void processFile(f);
+          if (f) void processFile(f, 'image');
         }}
       />
       <input
         ref={audioRef}
         type="file"
-        accept="audio/*,.webm,.mp3,.wav,.m4a"
+        accept="audio/*,.webm,.mp3,.wav,.m4a,.ogg,.aac"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) void processFile(f);
+          if (f) void processFile(f, 'audio', f.type || 'audio/mpeg');
         }}
       />
       <button
@@ -105,12 +109,18 @@ export const MediaStudyInput: React.FC<MediaStudyInputProps> = ({ onNotes }) => 
           if (!requireAiAuth()) return;
           audioRef.current?.click();
         }}
-        className="px-3 py-2 rounded-lg border fios-border bg-[var(--fios-surface-2)] text-xs font-bold text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+        className={
+          emphasizeAudio
+            ? 'px-3 py-2 rounded-lg accent-bg text-slate-950 text-xs font-black uppercase inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50'
+            : 'px-3 py-2 rounded-lg border fios-border bg-[var(--fios-surface-2)] text-xs font-bold text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50'
+        }
       >
-        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mic className="w-3.5 h-3.5 accent-solid-text" />}
-        Voice
+        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mic className="w-3.5 h-3.5" />}
+        {emphasizeAudio ? 'Audio lecture → summary' : 'Voice'}
       </button>
-      <span className="text-[10px] font-mono text-[var(--fios-text-muted)]">Gemini Vision / audio → notes · Photos & Files OK</span>
+      <span className="text-[10px] font-mono text-[var(--fios-text-muted)]">
+        Gemini Vision / audio → notes · Photos & Files OK
+      </span>
     </div>
   );
 };

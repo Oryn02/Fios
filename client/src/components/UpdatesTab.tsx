@@ -4,6 +4,43 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.0.0',
+      date: 'September 2026',
+      title: 'Major study OS — multimodal tutor, reminders, streaks & more',
+      highlights: [
+        'AI Tutor multimodal uploads: PDFs, TXT, and photos (PC + mobile camera/gallery) so you can ask about slides and diagrams with your Gemini key.',
+        'Exam readiness heatmap: clearer breakdown of how readiness % is calculated (reviews, quizzes, saved materials) with explanatory tooltips.',
+        'Grade Predictor: fixed leading-zero display (“039”) and cleaner weight/score/target parsing so predictions update correctly.',
+        'Smart Flight Plan routing: Review opens the right deck/doc/MCQ/code review; Run/Make routes to creation and studio flows.',
+        'Mobile task saving: correct ISO timestamps and timezone handling for academic tasks in browsers and PWA.',
+        'Review Queue: Overview due cards open an active SM-2 flashcard session (not Studio dump).',
+        'Version bump to v3.0.0 across packages, chrome, Updates, and README.',
+        'Privacy & Terms: disclosures for optional Web Push class reminders and multimodal uploads via your API key; push is optional and does not guarantee attendance accuracy.',
+        'Landing FAQ & highlights: Web Push / Class Reminders, AI multimodal PDF/photo upload, sticky mobile header, custom module tags.',
+        'Class Reminders: browser notifications with 5/10/15/30 minute lead times (Settings); optional server Web Push when VAPID is configured on the host.',
+        'Smart Notes schema: additive `documents.content` migration + PostgREST reload guidance; optional `push_subscriptions` table in supabase/schema.sql.',
+        'Focus Timer ambient soundscapes: AudioContext unlock fixes for iOS/Android autoplay.',
+        'Schedule iCal: helper for finding your official feed + clearer error toasts on sync/import failures.',
+        'Optional course codes on create/edit; deck/module badges prefer full module names where available.',
+        'Inline rename: click-to-edit titles for decks, Smart Notes, MCQ quizzes, and Code Lab exams.',
+        'Save flows: module selector with create-new-module on the fly when assigning content.',
+        'MCQ Exam Mode: choose 5 / 10 / 20 / 40 questions; count passed through to Gemini.',
+        'SM-2 onboarding tooltip on first flashcard rating (localStorage `fios_sm2_onboarded`).',
+        'Offline/online network indicator when the mutation queue / cache is active.',
+        'Sticky mobile top header during vertical scroll.',
+        'Holiday Overview greetings (Halloween, Christmas window Dec 24–26, St Patrick’s Day, Easter, and more) instead of plain Good morning/afternoon/evening.',
+        'Holiday themes: day-only accent palettes for key holidays that revert after the day; landing stays emerald; your saved theme is not permanently overwritten.',
+        'Christmas window: theme Dec 24–26 with Eve / Christmas / St Stephen’s Day greetings.',
+        'Study streak contribution heatmap on Overview from Pomodoro minutes + flashcard reviews (current + longest streak).',
+        'Brain Dump inbox: floating quick-capture scratchpad near the FAB dock with optional AI parse into tasks.',
+        'Semester GPA panel in Grade Predictor: cumulative weighted average vs Irish/ATU-style honours thresholds.',
+        'Flashcard deck export/import: JSON download, shareable code, and Import Deck modal in Modules.',
+        'Smart Notes audio / vision path: lecture audio or photos → Gemini multimodal notes then summarize.',
+        'Exam & submission countdown widget on Overview from module exam dates and task due times.',
+        'Flashcard reviews feed the streak heatmap via `recordFlashcardReview` on successful SM-2 ratings.',
+      ],
+    },
+    {
       version: 'v2.2.9',
       date: 'September 2026',
       title: 'Mobile widgets OFF + drawer scroll lock',
@@ -172,7 +209,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v2.2.9</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.0.0</p>
       </header>
 
       <div className="space-y-4">

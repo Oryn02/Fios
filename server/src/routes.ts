@@ -15,6 +15,15 @@ import {
   ragRetrieve,
 } from './geminiService.js';
 import { extractPdfTextFromBuffer } from './pdfText.js';
+import {
+  configureVapid,
+  getVapidPublicKey,
+  isVapidReady,
+  saveSubscription,
+  removeSubscription,
+  sendTestPush,
+  type PushSubscriptionJSON,
+} from './pushService.js';
 
 const router = Router();
 
@@ -99,7 +108,8 @@ router.post('/generate-flashcards', handleFlashcards);
 
 /**
  * POST /generate/quiz | /generate-quiz
- * Body: `{ text | notes, apiKey? }` → MCQ question array.
+ * Body: `{ text | notes, questionCount?, apiKey? }` → MCQ question array.
+ * `questionCount` defaults to 5, max 40.
  */
 const handleQuiz = async (req: Request, res: Response) => {
   try {
@@ -108,7 +118,10 @@ const handleQuiz = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Text content is required' });
     }
 
-    const result = await generateQuizFromText(text, apiKeyOf(req));
+    const rawCount = req.body.questionCount ?? req.body.count ?? 5;
+    const questionCount = Math.min(40, Math.max(1, Math.floor(Number(rawCount) || 5)));
+
+    const result = await generateQuizFromText(text, apiKeyOf(req), questionCount);
     const questions = result?.questions || (Array.isArray(result) ? result : []);
     return res.status(200).json(questions);
   } catch (error: any) {
@@ -725,6 +738,79 @@ router.get('/admin/feedback', async (req: Request, res: Response) => {
     return res.status(200).json({ feedback: rows });
   } catch (error: any) {
     return res.status(500).json({ error: error?.message || 'Admin feedback failed' });
+  }
+});
+
+/* ==========================================================================
+   WEB PUSH (class reminders)
+   ========================================================================== */
+
+/**
+ * GET /api/push/vapid-public-key
+ * Returns the public VAPID key for PushManager.subscribe, or 503 if unset.
+ */
+router.get('/push/vapid-public-key', (_req: Request, res: Response) => {
+  const publicKey = getVapidPublicKey();
+  if (!publicKey) {
+    return res.status(503).json({
+      error: 'Web Push is not configured',
+      hint: 'Set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_SUBJECT on the Render Web Service.',
+    });
+  }
+  return res.status(200).json({ publicKey });
+});
+
+/**
+ * POST /api/push/subscribe
+ * Body: PushSubscription JSON `{ endpoint, keys: { p256dh, auth } }`
+ * Stored in-memory (ephemeral). See supabase/schema.sql for optional persistence.
+ */
+router.post('/push/subscribe', (req: Request, res: Response) => {
+  try {
+    const sub = req.body as PushSubscriptionJSON;
+    saveSubscription(sub);
+    return res.status(200).json({ ok: true });
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || 'Invalid subscription' });
+  }
+});
+
+/**
+ * POST /api/push/unsubscribe
+ * Body: `{ endpoint }`
+ */
+router.post('/push/unsubscribe', (req: Request, res: Response) => {
+  const endpoint = String(req.body?.endpoint || '').trim();
+  if (!endpoint) {
+    return res.status(400).json({ error: 'endpoint is required' });
+  }
+  removeSubscription(endpoint);
+  return res.status(200).json({ ok: true });
+});
+
+/**
+ * POST /api/push/test
+ * Body: PushSubscription JSON — sends a one-shot test notification via VAPID.
+ */
+router.post('/push/test', async (req: Request, res: Response) => {
+  configureVapid();
+  if (!isVapidReady()) {
+    return res.status(503).json({
+      error: 'VAPID keys not configured',
+      hint: 'Generate keys with `npx web-push generate-vapid-keys` and set them on Render.',
+    });
+  }
+  try {
+    const sub = req.body as PushSubscriptionJSON;
+    if (!sub?.endpoint || !sub?.keys) {
+      return res.status(400).json({ error: 'Push subscription body is required' });
+    }
+    saveSubscription(sub);
+    await sendTestPush(sub);
+    return res.status(200).json({ ok: true });
+  } catch (error: any) {
+    console.error('Push test error:', error);
+    return res.status(500).json({ error: error?.message || 'Failed to send test push' });
   }
 });
 

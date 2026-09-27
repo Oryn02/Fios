@@ -9,12 +9,16 @@ export interface QuizQuestion {
   explanation: string;
 }
 
-export async function generateQuizFromNotes(notes: string): Promise<QuizQuestion[]> {
+export async function generateQuizFromNotes(
+  notes: string,
+  questionCount: number = 5
+): Promise<QuizQuestion[]> {
   const path = '/api/generate/quiz';
+  const count = Math.min(40, Math.max(1, Math.floor(Number(questionCount) || 5)));
   const response = await fetch(apiUrl(path), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: notes, apiKey: getGeminiKey() }),
+    body: JSON.stringify({ text: notes, questionCount: count, apiKey: getGeminiKey() }),
   });
 
   const responseText = await response.text();

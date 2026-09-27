@@ -5,7 +5,7 @@ import {
   Sliders, Timer, Check, MapPin, IdCard, Palette, Sun, Moon,
   KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Smartphone,
   Monitor, BatteryLow, Type, Focus, GitBranch, Cookie, FileText, ShieldCheck,
-  GripVertical, LayoutGrid, ChevronUp, ChevronDown, Zap
+  GripVertical, LayoutGrid, ChevronUp, ChevronDown, Zap, Bell
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, DEMO_USER, disableDemo, demoFocusSessions } from '../lib/demo';
@@ -36,6 +36,15 @@ import { SupportModal } from './SupportModal';
 import { resetCookieConsent } from './CookieConsent';
 import { toast } from '../lib/toast';
 import { NAV_ITEMS } from './DashboardLayout';
+import {
+  loadReminderPrefs,
+  saveReminderPrefs,
+  enableClassReminders,
+  disableClassReminders,
+  sendTestPush,
+  getLeadOptions,
+  type ReminderLeadMinutes,
+} from '../lib/pushNotifications';
 
 const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
 
@@ -76,6 +85,11 @@ const SettingsTabInner: React.FC = () => {
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+
+  // Class Reminders (Web Push / local notifications)
+  const [reminderEnabled, setReminderEnabled] = useState(() => loadReminderPrefs().enabled);
+  const [reminderLead, setReminderLead] = useState<ReminderLeadMinutes>(() => loadReminderPrefs().leadMinutes);
+  const [reminderBusy, setReminderBusy] = useState(false);
 
   // Weekly Study Goal State
   const [goalHours, setGoalHours] = useState(profile?.weekly_study_goal_hours ?? 10);
@@ -311,7 +325,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '2.2.9',
+      version: '3.0.0',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -465,6 +479,94 @@ const SettingsTabInner: React.FC = () => {
           <p className="text-slate-400">2. Tap the <strong className="text-slate-200">Share</strong> button in the bottom menu bar.</p>
           <p className="text-slate-400">3. Scroll down and select <strong className="text-slate-200">"Add to Home Screen"</strong>.</p>
         </div>
+      </section>
+
+      {/* CLASS REMINDERS */}
+      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+            <Bell className="w-4 h-4 accent-solid-text" /> Class Reminders
+          </h2>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <span className="text-[10px] font-mono text-slate-500 uppercase">{reminderEnabled ? 'On' : 'Off'}</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={reminderEnabled}
+              disabled={reminderBusy}
+              onClick={async () => {
+                setReminderBusy(true);
+                try {
+                  if (reminderEnabled) {
+                    await disableClassReminders();
+                    setReminderEnabled(false);
+                    toast('Class reminders disabled', 'info');
+                  } else {
+                    const result = await enableClassReminders(reminderLead);
+                    setReminderEnabled(result.ok);
+                    toast(result.message, result.ok ? 'success' : 'error');
+                  }
+                } finally {
+                  setReminderBusy(false);
+                }
+              }}
+              className={`relative w-11 h-6 rounded-full border transition-colors cursor-pointer disabled:opacity-50 ${
+                reminderEnabled ? 'accent-bg border-transparent' : 'bg-slate-800 border-slate-700'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                  reminderEnabled ? 'translate-x-5' : ''
+                }`}
+              />
+            </button>
+          </label>
+        </div>
+        <p className="text-xs text-slate-400 leading-relaxed">
+          Get a browser notification before your next class from the synced timetable or manual schedule.
+          Choose how many minutes ahead to be notified.
+        </p>
+        <div className="space-y-2">
+          <span className="text-[10px] font-mono font-bold uppercase text-slate-500">Lead time</span>
+          <div className="flex flex-wrap gap-2">
+            {getLeadOptions().map((mins) => (
+              <button
+                key={mins}
+                type="button"
+                onClick={() => {
+                  setReminderLead(mins);
+                  saveReminderPrefs({ enabled: reminderEnabled, leadMinutes: mins });
+                  if (reminderEnabled) {
+                    void enableClassReminders(mins);
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-black uppercase border cursor-pointer ${
+                  reminderLead === mins
+                    ? 'accent-bg text-slate-950 border-transparent'
+                    : 'bg-[#07090e] border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {mins} min
+              </button>
+            ))}
+          </div>
+        </div>
+        <button
+          type="button"
+          disabled={reminderBusy || !reminderEnabled}
+          onClick={async () => {
+            setReminderBusy(true);
+            try {
+              const result = await sendTestPush();
+              toast(result.message, result.ok ? 'success' : 'info');
+            } finally {
+              setReminderBusy(false);
+            }
+          }}
+          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold uppercase rounded-lg cursor-pointer disabled:opacity-40"
+        >
+          Send test notification
+        </button>
       </section>
 
       {/* 1. PROFILE */}
@@ -1035,7 +1137,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v2.2.9.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.0.0.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button

@@ -68,3 +68,13 @@ export async function deleteDocument(id: string): Promise<void> {
   const { error } = await supabase.from('documents').delete().eq('id', id);
   if (error) throw error;
 }
+
+export async function updateDocumentTitle(id: string, title: string): Promise<void> {
+  const next = title.trim() || 'Untitled Document';
+  if (IS_DEMO) {
+    demoDocState = demoDocState.map((d) => (d.id === id ? { ...d, title: next } : d));
+    return;
+  }
+  const { error } = await supabase.from('documents').update({ title: next }).eq('id', id);
+  if (error) throw error;
+}

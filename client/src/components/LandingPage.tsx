@@ -139,6 +139,14 @@ const faqs = [
     a: 'Yes. Use Install in Settings or your browser’s “Add to Home Screen”. Offline mutation queue covers common writes when you reconnect.',
   },
   {
+    q: 'Can I get reminders before class starts?',
+    a: 'Yes. In Settings → Class Reminders, enable browser notifications and choose a lead time (5, 10, 15, or 30 minutes). Fios checks your synced timetable / manual schedule and alerts you before the next class. Optional server Web Push needs VAPID keys on the host; local reminders still work while the app is open.',
+  },
+  {
+    q: 'Can the AI Tutor read PDFs and photos?',
+    a: 'Yes. In AI Tutor you can upload PDFs, TXT, and images/photos (including mobile camera/gallery). Text is extracted or sent via Gemini Vision using your own API key so you can ask about slides and diagrams.',
+  },
+  {
     q: 'Can I use Fios on multiple devices?',
     a: 'Yes. Account data syncs via Supabase. Theme, accent, nav slots, and widget toggles persist locally and to your profile prefs when available.',
   },
@@ -269,10 +277,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5 text-left">
                   {[
-                    { t: 'Unified agenda', s: 'Classes + timed tasks' },
-                    { t: 'SM-2 Flashcards', s: 'Due today · swipe review' },
-                    { t: 'AI Tutor', s: 'Ask your notes' },
-                    { t: 'Code Lab', s: 'Bug-fix · Monaco' },
+                    { t: 'AI multi-modal', s: 'PDF · photo · tutor' },
+                    { t: 'Class Reminders', s: '5–30 min lead time' },
+                    { t: 'Sticky mobile HUD', s: 'Header stays put' },
+                    { t: 'Custom module tags', s: 'Color · label · filter' },
                   ].map((c) => (
                     <div key={c.t} className="bg-black/70 px-3 py-2.5 sm:px-3.5 sm:py-3">
                       <p className="text-[11px] sm:text-xs font-bold text-white truncate">{c.t}</p>
@@ -295,6 +303,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
                 Schedule, notes, recall, exams, and focus — one dashboard with privacy-first BYO Gemini. Build modules, track readiness, and keep deadlines on the same agenda as your classes.
               </p>
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                {['AI multi-modal', 'Class Reminders', 'Mobile Sticky Header', 'Custom Module Tags'].map((chip) => (
+                  <span
+                    key={chip}
+                    className="text-[10px] font-mono font-bold uppercase tracking-wide px-2.5 py-1 rounded-md border border-emerald-500/30 text-emerald-300/90 bg-emerald-500/5"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {features.map((f, i) => {
@@ -457,7 +475,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <span key={b} className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono text-slate-400">{b}</span>
             ))}
           </div>
-          <p className="text-[11px] text-slate-600">Fios v2.2.9 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
+          <p className="text-[11px] text-slate-600">Fios v3.0.0 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
         </div>
       </footer>
 

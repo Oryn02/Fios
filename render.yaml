@@ -33,6 +33,13 @@ services:
         sync: false
       - key: VITE_DEMO_MODE
         value: "false"
+      # Web Push (class reminders) — generate: npx web-push generate-vapid-keys
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
 
   # --- Option B: keep API-only at server/ + optional Static Site ---
   # Use if Root Directory must stay `server/`.
@@ -53,6 +60,12 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: CLIENT_ORIGIN
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
         sync: false
 
   - type: web
