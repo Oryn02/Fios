@@ -146,7 +146,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
     opts?: { successToast?: string }
   ) => {
     if (saved.savedLocally) {
-      toast('Saved on this device — cloud sync needs documents.content / schema reload', 'info');
+      toast('Saved on this device — cloud sync needs documents columns / schema reload', 'info');
       if (saved.cloudWarning) setError(saved.cloudWarning);
     } else if (opts?.successToast) {
       toast(opts.successToast, 'success');

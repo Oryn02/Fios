@@ -537,23 +537,43 @@ end $$;
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- Smart Notes: documents.content (REQUIRED)
+-- Smart Notes: documents columns (REQUIRED) — content / summary / glossary
+-- Prefer the standalone copy-paste migration:
+--   supabase/v3.1.3-documents-columns.sql
 -- Symptom if missing / cache stale:
+--   Could not find the 'glossary' column of 'documents' in the schema cache
 --   Could not find the 'content' column of 'documents' in the schema cache
+--   Could not find the 'summary' column of 'documents' in the schema cache
 -- Fix (idempotent — safe to re-run):
---   1. Run this block in the Supabase SQL editor.
+--   1. Run this block (or v3.1.3-documents-columns.sql) in the Supabase SQL editor.
 --   2. Reload PostgREST schema cache:
 --        Dashboard → Project Settings → API → Reload schema
 --      Or run:  NOTIFY pgrst, 'reload schema';
 --      Or wait ~1 minute for auto-refresh.
--- Canonical column name is `content` (client writes/reads that). If an older
--- project used body/text/notes instead, values are copied into content below.
+-- Canonical columns match client upserts (documentService / DocumentsView).
+-- If an older project used body/text/notes, values are copied into content below.
 -- ----------------------------------------------------------------------------
+alter table public.documents
+  add column if not exists module_code text;
+
+alter table public.documents
+  add column if not exists title text not null default 'Untitled Document';
+
 alter table public.documents
   add column if not exists content text not null default '';
 
+alter table public.documents
+  add column if not exists summary text;
+
+alter table public.documents
+  add column if not exists glossary jsonb not null default '[]'::jsonb;
+
 comment on column public.documents.content is
   'Full note / extracted PDF text for Smart Notes and AI Tutor grounding.';
+comment on column public.documents.summary is
+  'AI-generated summary from Summarize & Save.';
+comment on column public.documents.glossary is
+  'AI glossary terms [{term, definition}, ...] from Summarize & Save.';
 
 -- Copy from legacy aliases when content is still empty (no-op if aliases absent).
 do $$
@@ -591,6 +611,8 @@ begin
     $q$;
   end if;
 end $$;
+
+notify pgrst, 'reload schema';
 
 -- ============================================================================
 -- Content flags — user-reported moderation queue (v3.1.1)
