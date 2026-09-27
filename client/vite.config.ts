@@ -8,7 +8,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // `prompt` so the in-app PwaUpdatePrompt can offer Reload (installed PWA + tabs).
+      registerType: 'prompt',
       includeAssets: [
         'favicon.svg',
         'icon.png',

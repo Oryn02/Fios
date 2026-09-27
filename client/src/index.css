@@ -429,6 +429,20 @@ summary,
   touch-action: pan-y;
 }
 
+/* Contribution heatmap (and similar): horizontal pan on touch without trapping page scroll */
+.fios-h-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  /* Avoid nested scroll fighting the page on iOS when content fits */
+  scrollbar-width: thin;
+}
+/* Global `button { touch-action: manipulation }` blocks horizontal pan when the
+   gesture starts on a cell — allow pan-x so the week strip scrolls on phones. */
+.fios-h-scroll button {
+  touch-action: pan-x;
+}
+
 /* Mermaid diagrams render on a neutral surface in both themes */
 .fios-mermaid svg { max-width: 100%; height: auto; }
 

@@ -4,6 +4,19 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.0',
+      date: 'September 2026',
+      title: 'Heatmap mobile fix, PWA reload prompt & chrome polish',
+      highlights: [
+        'Contribution heatmap: fixed mobile layout — grid no longer expands past the viewport and gets clipped; horizontal touch scroll works; larger cells on phones.',
+        'Heatmap UX: month labels along the top, day-of-week labels on all breakpoints, tap a cell for date + activity (focus minutes / reviews); info tooltip explains intensity and streaks.',
+        'Shorter default window (last 16 weeks) so the strip is readable without endless empty scroll; current / longest / active streak stats unchanged.',
+        'PWA & web: when a new deploy/service worker is ready, show an in-app “Update available” prompt with Reload (respects reduced motion); works for installed PWA and browser tabs.',
+        'Mobile top bar: version badge (v3.1.0) visible beside the logo, matching desktop styling at a compact size.',
+        'Version bump to v3.1.0 across packages, chrome, Updates, and README.',
+      ],
+    },
+    {
       version: 'v3.0.0',
       date: 'September 2026',
       title: 'Major study OS — multimodal tutor, reminders, streaks & more',
@@ -209,7 +222,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.0.0</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.0</p>
       </header>
 
       <div className="space-y-4">
