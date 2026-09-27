@@ -37,6 +37,7 @@ import { startOfflineQueueListener } from './lib/offlineQueue';
 import { useAiAuth } from './context/AiAuthContext';
 import { lockLandingBrand } from './lib/landingBrand';
 import { NetworkStatusBanner } from './components/NetworkStatusBanner';
+import { PwaUpdatePrompt } from './components/PwaUpdatePrompt';
 import { bootstrapClassReminders } from './lib/pushNotifications';
 import { getUserDecksWithCards } from './lib/deckService';
 import { isCardDue } from './lib/spacedRepetition';
@@ -477,6 +478,7 @@ export function App() {
             )}
           </AnimatePresence>
           <CookieConsent />
+          <PwaUpdatePrompt />
         </div>
       </ToastProvider>
     );
@@ -491,6 +493,7 @@ export function App() {
               <ToastProvider>
                 <Dashboard />
                 <CookieConsent />
+                <PwaUpdatePrompt />
               </ToastProvider>
             </AiAuthProvider>
           </PomodoroProvider>
