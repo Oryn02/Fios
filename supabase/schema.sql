@@ -490,6 +490,7 @@ begin
   end if;
 
   if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'feedback' and policyname = 'feedback_admin_delete') then
+    -- Also shipped standalone as supabase/v3.1.2-feedback-admin-delete.sql
     create policy feedback_admin_delete on public.feedback
       for delete to authenticated
       using (public.current_user_is_admin());

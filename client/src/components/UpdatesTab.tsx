@@ -4,6 +4,17 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.2',
+      date: 'September 2026',
+      title: 'Holiday motif polish',
+      highlights: [
+        'Holiday background animations use clearer seasonal icons: Halloween skulls (plus ghost/ember/bat vibes — no candy canes), St Patrick’s Day shamrocks, rainbows, leprechauns & pot of gold, Easter bunnies, eggs & stars.',
+        'Christmas holly / snow / candy cane motifs unchanged; accent gradients and color washes kept.',
+        'Landing marketing stays default emerald; reduced-motion and Low-Power still show a static wash only.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.2.',
+      ],
+    },
+    {
       version: 'v3.1.1',
       date: 'September 2026',
       title: 'Desktop widgets hotfix + festive holiday visuals',
@@ -257,7 +268,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.1</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.2</p>
       </header>
 
       <div className="space-y-4">

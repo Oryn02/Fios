@@ -297,13 +297,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
   const handleDelete = async (id: string) => {
     try {
+      // Waits for verified server delete (select-after-delete); only then drop from UI.
       await deleteFeedback(id);
       setFeedback((prev) => prev.filter((f) => f.id !== id));
       logAdminAction('feedback_delete', id.slice(0, 8));
       refreshAudit();
       toast('Feedback deleted', 'info');
     } catch (err: any) {
-      toast(err.message || 'Delete failed', 'error');
+      toast(
+        err.message ||
+          'Delete failed — apply feedback_admin_delete from v3.1.2 SQL (fios_admins required)',
+        'error'
+      );
     }
   };
 
@@ -343,14 +348,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     }
     try {
       const ids = feedback.map((f) => f.id);
-      const n = await deleteAllFeedback(ids);
-      setFeedback([]);
+      const deletedIds = await deleteAllFeedback(ids);
+      const removed = new Set(deletedIds);
+      setFeedback((prev) => prev.filter((f) => !removed.has(f.id)));
       setDangerConfirm('');
-      logAdminAction('feedback_delete_all', String(n));
+      logAdminAction('feedback_delete_all', String(deletedIds.length));
       refreshAudit();
-      toast(`Deleted ${n} feedback row(s)`, 'info');
+      toast(`Deleted ${deletedIds.length} feedback row(s)`, 'info');
     } catch (err: any) {
-      toast(err.message || 'Bulk delete failed', 'error');
+      toast(
+        err.message ||
+          'Bulk delete failed — apply feedback_admin_delete from v3.1.2 SQL',
+        'error'
+      );
     }
   };
 
