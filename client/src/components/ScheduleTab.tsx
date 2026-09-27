@@ -382,47 +382,62 @@ const ScheduleTabInner: React.FC = () => {
       </div>
 
       {/* Date Header & View Selector */}
-      <div className="flex flex-col items-center justify-center space-y-4 py-2">
-        <h2 className="text-2xl font-black italic uppercase text-white tracking-wide">
+      <div className="flex flex-col items-center justify-center space-y-3 sm:space-y-4 py-2 px-1">
+        <h2 className="text-lg sm:text-2xl font-black italic uppercase text-white tracking-wide text-center leading-snug px-1">
           {viewMode === 'day' && selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           {viewMode === 'week' && `Week of ${weekDays[0].toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – ${weekDays[6].toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
           {viewMode === 'month' && selectedDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
         </h2>
 
         {/* Navigation & Controls */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full max-w-xl">
           
           {/* Day Arrows & Today */}
-          <div className="flex items-center bg-[#07090e] border border-slate-800 rounded-lg p-1 gap-1">
-            <button onClick={() => changeDate(-1)} className="p-1.5 hover:bg-slate-800 text-slate-300 rounded-md transition-colors">
-              <ChevronLeft className="w-4 h-4" />
+          <div className="flex items-center bg-[#07090e] border border-slate-800 rounded-lg p-0.5 sm:p-1 gap-0.5">
+            <button
+              type="button"
+              onClick={() => changeDate(-1)}
+              aria-label="Previous"
+              className="touch-target p-2 sm:p-1.5 hover:bg-slate-800 active:bg-slate-800 text-slate-200 rounded-md transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-4 sm:h-4" />
             </button>
-            <button onClick={resetToToday} className="px-3 py-1 text-xs font-mono font-bold uppercase text-slate-200 hover:bg-slate-800 rounded-md transition-colors">
+            <button
+              type="button"
+              onClick={resetToToday}
+              className="touch-target-row px-3 py-2 sm:py-1 text-xs font-mono font-bold uppercase text-slate-100 hover:bg-slate-800 active:bg-slate-800 rounded-md transition-colors cursor-pointer"
+            >
               Today
             </button>
-            <button onClick={() => changeDate(1)} className="p-1.5 hover:bg-slate-800 text-slate-300 rounded-md transition-colors">
-              <ChevronRight className="w-4 h-4" />
+            <button
+              type="button"
+              onClick={() => changeDate(1)}
+              aria-label="Next"
+              className="touch-target p-2 sm:p-1.5 hover:bg-slate-800 active:bg-slate-800 text-slate-200 rounded-md transition-colors cursor-pointer"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-4 sm:h-4" />
             </button>
           </div>
 
           {/* Date Picker Input */}
-          <div className="relative flex items-center bg-[#07090e] border border-slate-800 rounded-lg px-3 py-1.5 hover:border-slate-700 transition-colors">
+          <div className="relative flex items-center touch-target-row bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 sm:py-1.5 hover:border-slate-700 transition-colors">
             <CalendarIcon className="w-3.5 h-3.5 text-cyan-400 mr-2 shrink-0 pointer-events-none" />
             <input
               type="date"
               value={formattedInputDate}
               onChange={handleDateChange}
-              className="bg-transparent text-xs font-mono font-bold text-slate-200 focus:outline-none cursor-pointer scheme-dark"
+              className="bg-transparent text-xs font-mono font-bold text-slate-100 focus:outline-none cursor-pointer scheme-dark min-w-0"
             />
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-[#07090e] border border-slate-800 rounded-lg p-1">
+          <div className="flex items-center bg-[#07090e] border border-slate-800 rounded-lg p-0.5 sm:p-1 w-full sm:w-auto justify-stretch sm:justify-center">
             {(['day', 'week', 'month'] as ViewMode[]).map((mode) => (
               <button
+                type="button"
                 key={mode}
                 onClick={() => startTransition(() => setViewMode(mode))}
-                className={`px-4 py-1.5 rounded-md text-xs font-mono font-bold uppercase transition-all ${
+                className={`flex-1 sm:flex-none touch-target-row px-3 sm:px-4 py-2.5 sm:py-1.5 rounded-md text-xs font-mono font-bold uppercase transition-all cursor-pointer active:opacity-90 ${
                   viewMode === mode
                     ? 'bg-emerald-400 text-slate-950 font-black shadow-md'
                     : 'text-slate-400 hover:text-slate-200'
@@ -621,12 +636,25 @@ const ScheduleTabInner: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 space-y-4">
-          <div className="grid grid-cols-7 gap-2 text-center font-mono text-[11px] font-black uppercase text-slate-500 pb-2 border-b border-slate-800">
-            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+        <div className="fios-month-grid bg-[#0e131f] border border-slate-800 rounded-xl p-3 sm:p-6 space-y-3 sm:space-y-4 overflow-x-hidden">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center font-mono text-[10px] sm:text-[11px] font-black uppercase text-slate-400 sm:text-slate-500 pb-2 border-b border-slate-800">
+            {([
+              ['M', 'Mon'],
+              ['T', 'Tue'],
+              ['W', 'Wed'],
+              ['T', 'Thu'],
+              ['F', 'Fri'],
+              ['S', 'Sat'],
+              ['S', 'Sun'],
+            ] as const).map(([shortLabel, longLabel], i) => (
+              <span key={`${longLabel}-${i}`} aria-label={longLabel}>
+                <span className="sm:hidden">{shortLabel}</span>
+                <span className="hidden sm:inline">{longLabel}</span>
+              </span>
+            ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {(() => {
               const year = selectedDate.getFullYear();
               const month = selectedDate.getMonth();
@@ -640,7 +668,13 @@ const ScheduleTabInner: React.FC = () => {
               const calendarCells = [];
 
               for (let i = 0; i < startDayIndex; i++) {
-                calendarCells.push(<div key={`pad-${i}`} className="h-24 bg-[#07090e]/30 border border-slate-900 rounded-lg opacity-20" />);
+                calendarCells.push(
+                  <div
+                    key={`pad-${i}`}
+                    className="min-h-[4.25rem] sm:min-h-0 sm:h-24 bg-[#07090e]/30 border border-slate-900 rounded-lg opacity-20"
+                    aria-hidden
+                  />
+                );
               }
 
               for (let day = 1; day <= daysInMonth; day++) {
@@ -648,30 +682,93 @@ const ScheduleTabInner: React.FC = () => {
                 const dayEvents = eventsForViews.filter(e => isSameLocalDay(e.startDate, currentDate));
                 const isTodayCell = isSameLocalDay(currentDate, now);
                 const isSelectedCell = isSameLocalDay(currentDate, selectedDate);
+                const hasEvents = dayEvents.length > 0;
+                const primary = dayEvents[0];
+                const primaryState = primary
+                  ? classVisualState(primary.startDate, primary.endDate, { day: currentDate, now })
+                  : null;
+                const primaryMuted = primaryState === 'finished' || primaryState === 'past-day';
 
                 calendarCells.push(
-                  <div
+                  <button
+                    type="button"
                     key={`day-${day}`}
                     onClick={() => {
                       setSelectedDate(currentDate);
                       setViewMode('day');
                     }}
-                    className={`h-24 bg-[#07090e] border rounded-lg p-2 flex flex-col justify-between cursor-pointer transition-all hover:border-emerald-400/50 ${
-                      isSelectedCell ? 'border-emerald-400 ring-1 ring-emerald-400/50' : 'border-slate-800'
+                    aria-label={`${currentDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}${hasEvents ? `, ${dayEvents.length} class${dayEvents.length === 1 ? '' : 'es'}` : ''}`}
+                    aria-current={isTodayCell ? 'date' : undefined}
+                    className={`fios-month-cell min-h-[4.25rem] sm:min-h-0 sm:h-24 bg-[#07090e] border rounded-lg p-1.5 sm:p-2 flex flex-col justify-between text-left cursor-pointer transition-all hover:border-emerald-400/50 active:scale-[0.98] sm:active:scale-100 overflow-hidden ${
+                      isSelectedCell
+                        ? 'border-emerald-400 ring-1 ring-emerald-400/50 bg-emerald-950/20'
+                        : isTodayCell
+                          ? 'border-emerald-400/60'
+                          : hasEvents
+                            ? 'border-cyan-500/30'
+                            : 'border-slate-800'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs font-mono font-bold ${isTodayCell ? 'bg-emerald-400 text-slate-950 px-1.5 py-0.5 rounded-full' : 'text-slate-300'}`}>
+                    <div className="flex items-center justify-between gap-0.5 min-w-0">
+                      <span
+                        className={`shrink-0 text-sm sm:text-xs font-mono font-black tabular-nums leading-none ${
+                          isTodayCell
+                            ? 'bg-emerald-400 text-slate-950 px-1.5 py-1 sm:py-0.5 rounded-md sm:rounded-full'
+                            : isSelectedCell
+                              ? 'text-emerald-300'
+                              : 'text-slate-100'
+                        }`}
+                      >
                         {day}
                       </span>
-                      {dayEvents.length > 0 && (
-                        <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.2 rounded border border-cyan-500/20">
-                          {dayEvents.length}
-                        </span>
+                      {hasEvents && (
+                        <>
+                          {/* Mobile: compact event dots (hierarchy without crowding) */}
+                          <span className="sm:hidden flex items-center gap-0.5 shrink-0" aria-hidden>
+                            {dayEvents.slice(0, 3).map((ev, idx) => {
+                              const ck = subjectColor(ev.title);
+                              const st = classVisualState(ev.startDate, ev.endDate, { day: currentDate, now });
+                              const muted = st === 'finished' || st === 'past-day';
+                              return (
+                                <span
+                                  key={idx}
+                                  data-mod-color={ck}
+                                  className={`w-1.5 h-1.5 rounded-full mod-solid-bg ${muted ? 'opacity-40' : ''}`}
+                                />
+                              );
+                            })}
+                            {dayEvents.length > 3 && (
+                              <span className="text-[8px] font-mono font-bold text-cyan-400/90 leading-none">+</span>
+                            )}
+                          </span>
+                          <span className="hidden sm:inline text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                            {dayEvents.length}
+                          </span>
+                        </>
                       )}
                     </div>
 
-                    <div className="space-y-1 overflow-hidden">
+                    {/* Mobile: one truncated label + overflow count */}
+                    <div className="sm:hidden mt-auto min-w-0 space-y-0.5 pt-1">
+                      {primary && (
+                        <div
+                          data-mod-color={subjectColor(primary.title)}
+                          className={`text-[10px] leading-tight font-mono font-bold truncate ${
+                            primaryMuted ? 'text-slate-500 line-through opacity-70' : 'text-slate-100'
+                          }`}
+                        >
+                          {primary.title}
+                        </div>
+                      )}
+                      {dayEvents.length > 1 && (
+                        <div className="text-[9px] font-mono font-bold text-slate-500 leading-none">
+                          +{dayEvents.length - 1} more
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Desktop / tablet: pill stack (unchanged density) */}
+                    <div className="hidden sm:block space-y-1 overflow-hidden">
                       {dayEvents.slice(0, 2).map((ev, idx) => {
                         const ck = subjectColor(ev.title);
                         const st = classVisualState(ev.startDate, ev.endDate, { day: currentDate, now });
@@ -692,7 +789,7 @@ const ScheduleTabInner: React.FC = () => {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </button>
                 );
               }
 

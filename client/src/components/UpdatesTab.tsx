@@ -4,6 +4,18 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.0',
+      date: 'September 2026',
+      title: 'Mobile schedule readability',
+      highlights: [
+        'Schedule month view (mobile): larger day cells and tap targets, clearer hierarchy for today / selected / days with classes, truncated event labels with “+N more”, and short weekday headers — less clutter and overflow on narrow screens.',
+        'Schedule controls: Day / Week / Month toggles and prev/next/Today hit areas sized for touch; desktop month pill stack and layout unchanged.',
+        'Finished-class muting and Next Up highlight from earlier releases are preserved in day, week, and month views.',
+        'Compact agenda titles slightly larger on small screens for easier scanning.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v3.1.0.',
+      ],
+    },
+    {
       version: 'v3.0.0',
       date: 'September 2026',
       title: 'Major study OS — multimodal tutor, reminders, streaks & more',
@@ -209,7 +221,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.0.0</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.0</p>
       </header>
 
       <div className="space-y-4">

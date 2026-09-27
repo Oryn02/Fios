@@ -47,7 +47,7 @@ const AgendaRow = memo(function AgendaRow({
           {formatAgendaWhen(item)}
         </div>
         <div className="flex items-center gap-2 min-w-0 flex-wrap">
-          <div className={`text-xs font-black truncate ${muted ? 'text-slate-500 line-through' : 'text-white'}`}>
+          <div className={`text-sm sm:text-xs font-black truncate ${muted ? 'text-slate-500 line-through' : 'text-white'}`}>
             {item.title}
           </div>
           <span data-mod-color={item.colorKey} className={MOD_PILL_CLASS}>
