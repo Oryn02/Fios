@@ -4,7 +4,7 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
-      version: 'v3.0.1',
+      version: 'v3.1.0',
       date: 'September 2026',
       title: 'Holiday theme ambience',
       highlights: [
@@ -15,7 +15,7 @@ const UpdatesTabInner: React.FC = () => {
         'Easter: soft pastel lilac/blush/sky wash with gentle floating dots.',
         'Ambience follows the active holiday theme (calendar day or when a holiday theme is selected); landing marketing stays default emerald.',
         'Respects prefers-reduced-motion and Low-Power mode (static wash only / particles off).',
-        'Version alignment: packages, HTML title, Updates tab, and README report v3.0.1.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v3.1.0.',
       ],
     },
     {
@@ -224,7 +224,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.0.1</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.0</p>
       </header>
 
       <div className="space-y-4">
