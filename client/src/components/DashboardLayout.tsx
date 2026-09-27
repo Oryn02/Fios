@@ -14,6 +14,7 @@ import { FiosLogo } from './FiosLogo';
 import { Avatar } from './Avatar';
 import { CommandPalette, type CommandItem } from './CommandPalette';
 import { HolidayAmbience } from './HolidayAmbience';
+import { HolidayMotif } from './HolidayMotif';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -34,7 +35,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.1.0', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.1.1', icon: Sparkles },
 ];
 
 /** True when the event target is a text-entry control (skip ⌘K / Ctrl+K while typing). */
@@ -72,7 +73,7 @@ const ZEN_STUDY_TABS = new Set([
 const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, activeTab, setActiveTab }) => {
   const { profile } = useProfile();
   const preferredName = usePreferredName();
-  const { theme, resolvedTheme, toggleTheme } = useTheme();
+  const { theme, resolvedTheme, toggleTheme, holidayTheme } = useTheme();
   const { zenMode, setZenMode, mobileNavSlots, navOrder, setNavOrder } = usePreferences();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -337,11 +338,12 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               <FiosLogo size="lg" className="leading-none min-w-0 pointer-events-none" />
             </button>
             <span
-              className="inline-flex items-center shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
+              className="inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 3.1.0"
+              aria-label="Fios version 3.1.1"
             >
-              v3.1.0
+              <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
+              v3.1.1
             </span>
             {zenMode && (
               <button

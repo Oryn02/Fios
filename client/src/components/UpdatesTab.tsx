@@ -4,6 +4,20 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.1',
+      date: 'September 2026',
+      title: 'Desktop widgets hotfix + festive holiday visuals',
+      highlights: [
+        'Desktop: Pomodoro floating widget and Smart Quick Widget default ON when you have not toggled them on desktop (viewport ≥768px).',
+        'Mobile: both still default OFF until toggled in Settings — desktop and mobile choices are now independent, so a phone session no longer leaves desktop stuck Off.',
+        'Holiday themes keep their accent gradients and add festive icons in app chrome (ghost / tree / shamrock / egg motifs) when a holiday theme is active.',
+        'Clearer holiday backgrounds and animations layered on those gradients: Halloween embers, Christmas snowfall, St Patrick’s sparkles, Easter pastel floaters.',
+        'Ambience follows calendar day-auto themes; landing marketing stays default emerald.',
+        'Respects prefers-reduced-motion and Low-Power mode (static wash only / particles off).',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.1.',
+      ],
+    },
+    {
       version: 'v3.1.0',
       date: 'September 2026',
       title: 'Study polish — ambience, widgets, schedule, modules & PWA',
@@ -243,7 +257,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.0</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.1</p>
       </header>
 
       <div className="space-y-4">

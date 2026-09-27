@@ -13,6 +13,7 @@ import { GeminiGate } from './GeminiGate';
 import { FormattedContent } from './FormattedContent';
 import { MediaStudyInput } from './MediaStudyInput';
 import { InlineEditableTitle } from './InlineEditableTitle';
+import { ReportContentButton } from './ReportContentButton';
 import { useAiAuth } from '../context/AiAuthContext';
 import { toast } from '../lib/toast';
 
@@ -415,6 +416,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
                   <div className="flex items-center gap-2">
                     {doc.module_code && <span className="text-[10px] font-mono text-cyan-400 font-bold">{resolveModuleLabel(modules, doc.module_code)}</span>}
                     <button onClick={(e) => { e.stopPropagation(); openTutor(doc); }} className="text-slate-500 hover:accent-solid-text p-0.5 cursor-pointer" title="Ask AI Tutor"><MessageSquare className="w-3.5 h-3.5" /></button>
+                    <ReportContentButton targetType="document" targetId={doc.id} targetLabel={doc.title} />
                     <button onClick={(e) => handleDelete(e, doc.id)} className="text-slate-500 hover:text-rose-400 p-0.5 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>

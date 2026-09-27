@@ -26,6 +26,9 @@ import { ExamCountdownWidget } from './ExamCountdownWidget';
 import { WeeklyGoalWidget } from './WeeklyGoalWidget';
 import { toast } from '../lib/toast';
 import { overviewGreeting } from '../lib/holidays';
+import { useTheme } from '../context/ThemeContext';
+import { HolidayMotif } from './HolidayMotif';
+import { ReportContentButton } from './ReportContentButton';
 
 import type { FlightNavigatePayload } from './RevisionFlightPlan';
 
@@ -59,6 +62,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
   const rawPreferredName = usePreferredName();
   const { profile } = useProfile();
   const { widgetOrder, widgetVisibility, setWidgetOrder, setWidgetVisible } = usePreferences();
+  const { holidayTheme } = useTheme();
   
   // Guard demo mode to fallback to "Student" instead of personal name strings
   const preferredName = IS_DEMO 
@@ -324,7 +328,8 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
           <Avatar url={profile?.avatar_url} name={preferredName} size={56} className="shrink-0 accent-ring" />
           <div className="min-w-0">
             <div className="text-[11px] font-black uppercase tracking-widest accent-solid-text mb-1 flex items-center gap-2 font-mono">
-              <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse shrink-0" />
+              <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={14} className="shrink-0" />
+              {!holidayTheme && <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse shrink-0" />}
               <span className="truncate">Today · {todayLabel}</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-black italic tracking-tight text-[var(--fios-text)] break-words">
@@ -533,6 +538,11 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
                       <button onClick={() => handleDeleteTask(task.id)} className="text-slate-600 hover:text-rose-400 transition-colors p-1 cursor-pointer">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
+                      <ReportContentButton
+                        targetType="task"
+                        targetId={task.id}
+                        targetLabel={task.title}
+                      />
                     </div>
                   </div>
                 ))}

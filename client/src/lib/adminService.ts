@@ -84,14 +84,52 @@ export function clearAdminAudit(): void {
   }
 }
 
+const PROFILE_SELECT_MINIMAL =
+  'id, preferred_name, full_name, accent_color, theme, weekly_study_goal_hours';
+
 export async function listAdminProfiles(limit = 100): Promise<AdminProfileRow[]> {
-  const { data, error } = await supabase
+  // Prefer full select (created_at / updated_at). Fall back if live DB is missing
+  // those columns — apply v3.1.1 migration to add them.
+  const primary = await supabase
     .from('user_profiles')
     .select(PROFILE_SELECT)
     .order('created_at', { ascending: false })
     .limit(limit);
-  if (error) throw new Error(error.message);
-  return (data || []) as AdminProfileRow[];
+
+  if (!primary.error) {
+    return (primary.data || []) as AdminProfileRow[];
+  }
+
+  const msg = primary.error.message || '';
+  const missingCreated =
+    /created_at/i.test(msg) || /column .* does not exist/i.test(msg);
+
+  if (!missingCreated) {
+    throw new Error(
+      msg ||
+        'Profile directory unavailable. Apply user_profiles_admin_read + created_at from schema.'
+    );
+  }
+
+  const fallback = await supabase
+    .from('user_profiles')
+    .select(PROFILE_SELECT_MINIMAL)
+    .limit(limit);
+
+  if (fallback.error) {
+    throw new Error(
+      fallback.error.message ||
+        'Profile directory unavailable. Apply user_profiles.created_at + user_profiles_admin_read (v3.1.1 SQL).'
+    );
+  }
+
+  return ((fallback.data || []) as Omit<AdminProfileRow, 'created_at' | 'updated_at'>[]).map(
+    (row) => ({
+      ...row,
+      created_at: null,
+      updated_at: null,
+    })
+  );
 }
 
 export async function fetchApiHealth(): Promise<HealthSnapshot> {
@@ -237,7 +275,7 @@ export async function loadOverviewStats(feedback: FeedbackEntry[]): Promise<Over
     ...fb,
     profileCount,
     profilesError,
-    clientVersion: '3.1.0',
+    clientVersion: '3.1.1',
   };
 }
 

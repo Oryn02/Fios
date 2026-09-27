@@ -85,10 +85,14 @@ export interface PreferencesState {
   /** Floating Smart Quick Actions FAB. */
   showSmartWidget: boolean;
   /**
-   * True only after the user toggles Pomodoro / Smart Quick in Settings.
-   * Absent/false means values may be baked system defaults — re-resolve from viewport.
+   * True when the *current* viewport has an intentional Settings toggle.
+   * Derived from the desktop/mobile explicit flags below.
    */
   floatingWidgetsExplicit: boolean;
+  /** User toggled Pomodoro / Smart Quick while on desktop (≥768px). */
+  floatingWidgetsExplicitDesktop: boolean;
+  /** User toggled Pomodoro / Smart Quick while on mobile (&lt;768px). */
+  floatingWidgetsExplicitMobile: boolean;
   /** Which Smart Quick actions appear, in order. */
   smartWidgetActions: SmartActionId[];
   /** Which metric chips appear on the Smart Quick panel / FAB. */
@@ -124,33 +128,71 @@ export function defaultFloatingWidgetsOn(): boolean {
 
 /**
  * Resolve floating-widget visibility.
- * v2.2.7 only defaulted when keys were missing — but older builds always
- * persisted `true` into localStorage / profile prefs, so the “unset” path
- * never ran for returning users. Use `floatingWidgetsExplicit` to tell
- * intentional Settings toggles apart from baked defaults.
+ *
+ * Root cause (v3.1.0 still broken for some users): a single global
+ * `floatingWidgetsExplicit` flag. Mobile OFF (viewport default written into
+ * profile, or a Settings tap on phone) synced to desktop and stuck OFF.
+ *
+ * v3.1.1 scopes explicitness per viewport:
+ * - Desktop (≥768px): default ON unless `floatingWidgetsExplicitDesktop`
+ * - Mobile: default OFF unless `floatingWidgetsExplicitMobile`
+ * - Legacy global `floatingWidgetsExplicit` + both widgets OFF → treat as
+ *   mobile-only explicit (desktop re-applies ON). Any ON under legacy
+ *   explicit applies to both viewports.
  */
 export function resolveFloatingWidgets(raw: {
   showPomodoroWidget?: unknown;
   showSmartWidget?: unknown;
   floatingWidgetsExplicit?: unknown;
+  floatingWidgetsExplicitDesktop?: unknown;
+  floatingWidgetsExplicitMobile?: unknown;
 } | null | undefined): {
   showPomodoroWidget: boolean;
   showSmartWidget: boolean;
   floatingWidgetsExplicit: boolean;
+  floatingWidgetsExplicitDesktop: boolean;
+  floatingWidgetsExplicitMobile: boolean;
 } {
-  const explicit = raw?.floatingWidgetsExplicit === true;
-  if (explicit) {
+  const desktopViewport = defaultFloatingWidgetsOn();
+  let explicitDesktop = raw?.floatingWidgetsExplicitDesktop === true;
+  let explicitMobile = raw?.floatingWidgetsExplicitMobile === true;
+
+  // Migrate legacy single-flag prefs (pre-3.1.1).
+  if (
+    raw?.floatingWidgetsExplicit === true
+    && raw?.floatingWidgetsExplicitDesktop !== true
+    && raw?.floatingWidgetsExplicitMobile !== true
+  ) {
+    const pomoOn = raw?.showPomodoroWidget === true;
+    const smartOn = raw?.showSmartWidget === true;
+    if (!pomoOn && !smartOn) {
+      // Sticky mobile OFF — do not poison desktop defaults.
+      explicitMobile = true;
+      explicitDesktop = false;
+    } else {
+      explicitDesktop = true;
+      explicitMobile = true;
+    }
+  }
+
+  const explicitHere = desktopViewport ? explicitDesktop : explicitMobile;
+  if (explicitHere) {
     return {
       showPomodoroWidget: raw?.showPomodoroWidget === true,
       showSmartWidget: raw?.showSmartWidget === true,
       floatingWidgetsExplicit: true,
+      floatingWidgetsExplicitDesktop: explicitDesktop,
+      floatingWidgetsExplicitMobile: explicitMobile,
     };
   }
-  const on = defaultFloatingWidgetsOn();
+
+  const on = desktopViewport;
   return {
     showPomodoroWidget: on,
     showSmartWidget: on,
     floatingWidgetsExplicit: false,
+    floatingWidgetsExplicitDesktop: explicitDesktop,
+    floatingWidgetsExplicitMobile: explicitMobile,
   };
 }
 
@@ -170,6 +212,8 @@ const DEFAULTS: PreferencesState = {
   showPomodoroWidget: true,
   showSmartWidget: true,
   floatingWidgetsExplicit: false,
+  floatingWidgetsExplicitDesktop: false,
+  floatingWidgetsExplicitMobile: false,
   smartWidgetActions: [...DEFAULT_SMART_ACTIONS],
   smartWidgetMetrics: [...DEFAULT_SMART_METRICS],
   smartWidgetCompact: false,
@@ -255,24 +299,38 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const remote = (profile as any)?.prefs;
     if (remote && typeof remote === 'object') {
       setPrefs((prev) => {
-        // Prefer an explicit user choice from either side; otherwise keep
-        // viewport defaults (do not re-bake remote `true` from old defaults).
-        let floating: ReturnType<typeof resolveFloatingWidgets>;
-        if (remote.floatingWidgetsExplicit === true) {
-          floating = resolveFloatingWidgets({
-            floatingWidgetsExplicit: true,
-            showPomodoroWidget: remote.showPomodoroWidget,
-            showSmartWidget: remote.showSmartWidget,
-          });
-        } else if (prev.floatingWidgetsExplicit === true) {
-          floating = {
-            showPomodoroWidget: prev.showPomodoroWidget,
-            showSmartWidget: prev.showSmartWidget,
-            floatingWidgetsExplicit: true,
-          };
-        } else {
-          floating = resolveFloatingWidgets(null);
+        // Merge remote + local explicit-by-viewport flags, then re-resolve
+        // visibility for *this* viewport (never bake the other viewport’s OFF).
+        const mergedRaw = {
+          showPomodoroWidget: remote.showPomodoroWidget ?? prev.showPomodoroWidget,
+          showSmartWidget: remote.showSmartWidget ?? prev.showSmartWidget,
+          floatingWidgetsExplicit: remote.floatingWidgetsExplicit ?? prev.floatingWidgetsExplicit,
+          floatingWidgetsExplicitDesktop:
+            remote.floatingWidgetsExplicitDesktop === true
+            || prev.floatingWidgetsExplicitDesktop === true,
+          floatingWidgetsExplicitMobile:
+            remote.floatingWidgetsExplicitMobile === true
+            || prev.floatingWidgetsExplicitMobile === true,
+        };
+        // If only legacy global explicit exists on one side, keep it for migration.
+        if (
+          remote.floatingWidgetsExplicit === true
+          && remote.floatingWidgetsExplicitDesktop !== true
+          && remote.floatingWidgetsExplicitMobile !== true
+        ) {
+          mergedRaw.floatingWidgetsExplicit = true;
+        } else if (
+          prev.floatingWidgetsExplicitDesktop !== true
+          && prev.floatingWidgetsExplicitMobile !== true
+          && prev.floatingWidgetsExplicit === true
+          && remote.floatingWidgetsExplicit !== true
+        ) {
+          mergedRaw.floatingWidgetsExplicit = true;
+          mergedRaw.showPomodoroWidget = prev.showPomodoroWidget;
+          mergedRaw.showSmartWidget = prev.showSmartWidget;
         }
+
+        const floating = resolveFloatingWidgets(mergedRaw);
 
         const next: PreferencesState = {
           ...prev,
@@ -344,10 +402,24 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [patch]);
   const setNavOrder = useCallback((order: string[]) => patch({ navOrder: order }), [patch]);
   const setShowPomodoroWidget = useCallback((v: boolean) => {
-    patch({ showPomodoroWidget: v, floatingWidgetsExplicit: true });
+    const desktop = defaultFloatingWidgetsOn();
+    patch({
+      showPomodoroWidget: v,
+      floatingWidgetsExplicit: true,
+      ...(desktop
+        ? { floatingWidgetsExplicitDesktop: true }
+        : { floatingWidgetsExplicitMobile: true }),
+    });
   }, [patch]);
   const setShowSmartWidget = useCallback((v: boolean) => {
-    patch({ showSmartWidget: v, floatingWidgetsExplicit: true });
+    const desktop = defaultFloatingWidgetsOn();
+    patch({
+      showSmartWidget: v,
+      floatingWidgetsExplicit: true,
+      ...(desktop
+        ? { floatingWidgetsExplicitDesktop: true }
+        : { floatingWidgetsExplicitMobile: true }),
+    });
   }, [patch]);
   const setSmartWidgetActions = useCallback((actions: SmartActionId[]) => patch({ smartWidgetActions: actions }), [patch]);
   const setSmartWidgetMetrics = useCallback((metrics: SmartMetricId[]) => patch({ smartWidgetMetrics: metrics }), [patch]);
@@ -362,11 +434,15 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const mq = window.matchMedia(DESKTOP_WIDGET_MQ);
     const syncViewportDefaults = () => {
       setPrefs((prev) => {
-        if (prev.floatingWidgetsExplicit) return prev;
-        const floating = resolveFloatingWidgets(null);
+        // Re-resolve from stored per-viewport explicit flags (not a blank slate),
+        // so desktop can turn ON while mobile explicit OFF stays recorded.
+        const floating = resolveFloatingWidgets(prev);
         if (
           prev.showPomodoroWidget === floating.showPomodoroWidget
           && prev.showSmartWidget === floating.showSmartWidget
+          && prev.floatingWidgetsExplicit === floating.floatingWidgetsExplicit
+          && prev.floatingWidgetsExplicitDesktop === floating.floatingWidgetsExplicitDesktop
+          && prev.floatingWidgetsExplicitMobile === floating.floatingWidgetsExplicitMobile
         ) {
           return prev;
         }

@@ -13,6 +13,7 @@ import {
   renameDeck,
 } from '../lib/deckService';
 import { InlineEditableTitle } from './InlineEditableTitle';
+import { ReportContentButton } from './ReportContentButton';
 import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle, Download, Share2 } from 'lucide-react';
 import { toast } from '../lib/toast';
 
@@ -415,6 +416,14 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               >
                 <Share2 className="w-3.5 h-3.5" />
               </button>
+              {savedDeckId && (
+                <ReportContentButton
+                  targetType="deck"
+                  targetId={savedDeckId}
+                  targetLabel={deckTitle}
+                  className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-amber-400 cursor-pointer"
+                />
+              )}
               <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" /> SAVED
               </span>
