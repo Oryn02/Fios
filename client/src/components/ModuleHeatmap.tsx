@@ -48,9 +48,10 @@ export const ModuleHeatmap: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const [modules, decks, quizzes, code, docs] = await Promise.all([
+        const [modules, decks, quizzes, code, docsResult] = await Promise.all([
           getUserModules(), getUserDecksWithCards(), getQuizzes(), getCodeExams(), getDocuments(),
         ]);
+        const docs = docsResult.documents || [];
         const readiness = modules.map((m) => {
           const mDecks = (decks || []).filter((x: any) => x.module_code === m.code);
           const d = mDecks.length;

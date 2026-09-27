@@ -146,7 +146,7 @@ create table if not exists public.documents (
   module_code text,
   title text not null default 'Untitled Document',
   content text not null default '',
-  summary text,
+  summary text not null default '',
   glossary jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
@@ -539,18 +539,20 @@ end $$;
 -- ----------------------------------------------------------------------------
 -- Smart Notes: documents columns (REQUIRED) — content / summary / glossary
 -- Prefer the standalone copy-paste migration:
---   supabase/v3.1.3-documents-columns.sql
--- Symptom if missing / cache stale:
+--   supabase/v3.1.4-documents-load.sql
+-- Symptom if missing / cache stale / load failed:
 --   Could not find the 'glossary' column of 'documents' in the schema cache
 --   Could not find the 'content' column of 'documents' in the schema cache
 --   Could not find the 'summary' column of 'documents' in the schema cache
+--   Documents load failed (PostgREST select/order) after consolidated schema
 -- Fix (idempotent — safe to re-run):
---   1. Run this block (or v3.1.3-documents-columns.sql) in the Supabase SQL editor.
+--   1. Run this block (or v3.1.4-documents-load.sql) in the Supabase SQL editor.
 --   2. Reload PostgREST schema cache:
 --        Dashboard → Project Settings → API → Reload schema
 --      Or run:  NOTIFY pgrst, 'reload schema';
 --      Or wait ~1 minute for auto-refresh.
--- Canonical columns match client upserts (documentService / DocumentsView).
+-- Canonical columns match client upserts (documentService / DocumentsView):
+--   content + summary text not null default '', glossary jsonb default [].
 -- If an older project used body/text/notes, values are copied into content below.
 -- ----------------------------------------------------------------------------
 alter table public.documents
@@ -568,10 +570,25 @@ alter table public.documents
 alter table public.documents
   add column if not exists glossary jsonb not null default '[]'::jsonb;
 
+alter table public.documents
+  add column if not exists created_at timestamptz not null default now();
+
+update public.documents set content = '' where content is null;
+alter table public.documents alter column content set default '';
+alter table public.documents alter column content set not null;
+
+update public.documents set summary = '' where summary is null;
+alter table public.documents alter column summary set default '';
+alter table public.documents alter column summary set not null;
+
+update public.documents set glossary = '[]'::jsonb where glossary is null;
+alter table public.documents alter column glossary set default '[]'::jsonb;
+alter table public.documents alter column glossary set not null;
+
 comment on column public.documents.content is
   'Full note / extracted PDF text for Smart Notes and AI Tutor grounding.';
 comment on column public.documents.summary is
-  'AI-generated summary from Summarize & Save.';
+  'AI-generated summary from Summarize & Save (not null; default empty string).';
 comment on column public.documents.glossary is
   'AI glossary terms [{term, definition}, ...] from Summarize & Save.';
 
