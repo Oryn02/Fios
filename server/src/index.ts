@@ -48,10 +48,10 @@ app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 app.get('/health', (_req, res) => {
-  res.status(200).json({ ok: true, service: 'fios-api', version: '3.1.4' });
+  res.status(200).json({ ok: true, service: 'fios-api', version: '3.1.5' });
 });
 app.get('/api/health', (_req, res) => {
-  res.status(200).json({ ok: true, service: 'fios-api', version: '3.1.4' });
+  res.status(200).json({ ok: true, service: 'fios-api', version: '3.1.5' });
 });
 
 // API routes first — never fall through to the SPA for /api/*
@@ -117,7 +117,7 @@ if (clientDist) {
 
     return res.status(200).json({
       service: 'fios-api',
-      version: '3.1.4',
+      version: '3.1.5',
       health: '/health',
       app: primaryAppOrigin,
       hint: 'This host is the Express API only. Open the Fios Static Site (fios-web) for the app UI.',
