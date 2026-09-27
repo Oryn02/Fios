@@ -13,7 +13,7 @@ import {
   renameDeck,
 } from '../lib/deckService';
 import { InlineEditableTitle } from './InlineEditableTitle';
-import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle, Download, Share2, X } from 'lucide-react';
+import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle, Download, Share2 } from 'lucide-react';
 import { toast } from '../lib/toast';
 
 const SM2_ONBOARD_KEY = 'fios_sm2_onboarded';
@@ -409,7 +409,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => void handleExportShare()}
+                onClick={() => void handleCopyShareCode()}
                 className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
                 title="Copy share code"
               >
