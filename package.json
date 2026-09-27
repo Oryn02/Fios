@@ -1,7 +1,7 @@
 {
   "name": "fios",
   "private": true,
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Fios monorepo — Render single-service build helpers",
   "scripts": {
     "build:server": "npm install --prefix server --include=dev && npm run build --prefix server",
