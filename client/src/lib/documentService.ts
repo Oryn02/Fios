@@ -203,13 +203,48 @@ export function isNotNullConstraintError(err: unknown): boolean {
   );
 }
 
+/** Column name from `null value in column "X" … violates not-null` (23502). */
+export function notNullRejectedColumn(err: unknown): string | null {
+  const text = errorText(err);
+  const m = text.match(/null value in column ["'`]?(\w+)["'`]?/i);
+  return m?.[1]?.toLowerCase() || null;
+}
+
+/**
+ * Empty write defaults for documents.* so NOT NULL live columns accept the row.
+ * Body aliases (body/text/notes) mirror `content`.
+ */
+export function emptyDefaultForDocumentsColumn(
+  column: string,
+  payload: { content?: string; title?: string; summary?: string; glossary?: unknown }
+): unknown {
+  const col = column.toLowerCase();
+  if (col === 'glossary') return parseGlossary(payload.glossary ?? []);
+  if (col === 'module_code' || col === 'summary') return '';
+  if (col === 'title') return payload.title || 'Untitled Document';
+  if (
+    col === 'content' ||
+    col === 'body' ||
+    col === 'text' ||
+    col === 'notes' ||
+    col === 'note'
+  ) {
+    return payload.content || '';
+  }
+  // Unknown text-ish columns: prefer '' over omitting (omitting still inserts NULL).
+  return '';
+}
+
 export function formatDocumentsSchemaError(err: unknown): string {
   const raw = errorText(err) || 'Cloud save failed.';
   if (isNotNullConstraintError(err)) {
+    const col = notNullRejectedColumn(err);
+    const colHint = col
+      ? `documents.${col} rejected null`
+      : 'a documents column rejected null (often module_code / summary / legacy body when General is selected)';
     return (
-      'Smart Notes cloud save failed: a documents column rejected null ' +
-      '(often module_code when General / no module is selected). In Supabase SQL editor run ' +
-      'supabase/v3.1.5-documents-module-code.sql, then Project Settings → API → Reload schema. ' +
+      `Smart Notes cloud save failed: ${colHint}. ` +
+      'In Supabase SQL editor run supabase/v3.1.5-documents-module-code.sql, then Project Settings → API → Reload schema. ' +
       'Your note was kept locally if possible.'
     );
   }
@@ -333,62 +368,199 @@ function buildPayload(userId: string, doc: Partial<FiosDocument>) {
   };
 }
 
+type DocumentsInsertPayload = ReturnType<typeof buildPayload> & Record<string, unknown>;
+
+function isReturningEmptyError(err: unknown): boolean {
+  const text = errorText(err);
+  return /pgrst116|contains 0 rows|multiple \(or no\) rows returned/i.test(text);
+}
+
+async function tryDocumentsInsert(
+  row: Record<string, unknown>
+): Promise<{ data: Record<string, unknown> | null; error: unknown }> {
+  const withId: Record<string, unknown> = {
+    ...row,
+    id: typeof row.id === 'string' && row.id ? row.id : crypto.randomUUID(),
+  };
+  const result = await supabase.from('documents').insert(withId).select().single();
+  if (!result.error && result.data) {
+    return { data: result.data as Record<string, unknown>, error: null };
+  }
+  // Insert committed but RETURNING returned no row (RLS) — do not local-fallback /
+  // cloudWarning; the note is already in documents under withId.id.
+  if ((!result.error && !result.data) || isReturningEmptyError(result.error)) {
+    const existingCreated = withId['created_at'];
+    return {
+      data: {
+        ...withId,
+        created_at:
+          typeof existingCreated === 'string' ? existingCreated : new Date().toISOString(),
+      },
+      error: null,
+    };
+  }
+  return { data: null, error: result.error };
+}
+
 /**
- * Insert preferring the canonical `content` column. If PostgREST rejects a
- * column (stale cache / missing glossary|summary|content), strip the reported
- * column and/or try legacy body aliases so Summarize still lands somewhere —
- * local IndexedDB remains the final fallback.
+ * When Postgres 23502 names a column, fill an empty default and retry.
+ * Also fills empty defaults for known optional columns still missing/null
+ * so a second NOT NULL does not bounce us to IndexedDB + cloudWarning.
+ */
+function applyNotNullFix(
+  working: Record<string, unknown>,
+  err: unknown,
+  payload: DocumentsInsertPayload
+): { next: Record<string, unknown>; changed: boolean } {
+  const rejected = notNullRejectedColumn(err);
+  const next = { ...working };
+  let changed = false;
+
+  const setIfDifferent = (col: string, value: unknown) => {
+    if (!(col in next) || next[col] === null || next[col] === undefined) {
+      next[col] = value;
+      changed = true;
+      return;
+    }
+    // Only overwrite when the rejected column still does not match the safe default.
+    if (rejected === col) {
+      const same =
+        Array.isArray(value) && Array.isArray(next[col])
+          ? JSON.stringify(next[col]) === JSON.stringify(value)
+          : next[col] === value;
+      if (!same) {
+        next[col] = value;
+        changed = true;
+      }
+    }
+  };
+
+  setIfDifferent(
+    'module_code',
+    normalizeModuleCodeForWrite(payload.module_code as string | null | undefined)
+  );
+  setIfDifferent('summary', payload.summary == null ? '' : String(payload.summary));
+  setIfDifferent('content', payload.content || '');
+  setIfDifferent('title', payload.title || 'Untitled Document');
+  setIfDifferent('glossary', parseGlossary(payload.glossary ?? []));
+
+  if (rejected) {
+    const value = emptyDefaultForDocumentsColumn(rejected, payload);
+    if (!(rejected in next) || next[rejected] == null || next[rejected] === undefined) {
+      next[rejected] = value;
+      changed = true;
+      console.warn(`[documents] retrying insert after 23502 on missing "${rejected}"`);
+    } else {
+      const same =
+        Array.isArray(value) && Array.isArray(next[rejected])
+          ? JSON.stringify(next[rejected]) === JSON.stringify(value)
+          : next[rejected] === value;
+      if (!same) {
+        next[rejected] = value;
+        changed = true;
+        console.warn(`[documents] retrying insert after 23502 on "${rejected}"`);
+      } else if (rejected === 'module_code' && 'module_code' in next) {
+        // Already sending '' and still 23502 — omit column so DB DEFAULT '' applies
+        // (covers odd coercions / triggers that nullify empty strings before check).
+        delete next.module_code;
+        changed = true;
+        console.warn('[documents] retrying insert omitting module_code (use DB default)');
+      }
+    }
+  }
+
+  return { next, changed };
+}
+
+/**
+ * Insert preferring the canonical `content` column.
+ * Recovers from:
+ *  - PostgREST PGRST204 / schema cache (strip missing cols, try legacy body aliases)
+ *  - Postgres 23502 not-null (fill '' / [] for the rejected column — often module_code
+ *    or a legacy body column) so General / no-module saves do not false-alarm
+ *    with cloudWarning after IndexedDB fallback when the note is actually writable.
  */
 async function insertWithColumnFallback(
   payload: ReturnType<typeof buildPayload>
 ): Promise<{ data: Record<string, unknown> | null; error: unknown; usedColumn: string }> {
-  const primary = await supabase.from('documents').insert(payload).select().single();
-  if (!primary.error) {
-    return { data: primary.data as Record<string, unknown>, error: null, usedColumn: DOCUMENTS_CONTENT_COLUMN };
-  }
-
-  if (!isSchemaCacheError(primary.error)) {
-    return { data: null, error: primary.error, usedColumn: DOCUMENTS_CONTENT_COLUMN };
-  }
-
-  // If glossary / summary / module_code is missing, retry without those fields
-  // so a DB that only has title+content still accepts the note body.
   let working: Record<string, unknown> = { ...payload };
-  let lastError: unknown = primary.error;
-  for (let i = 0; i < 4; i++) {
-    const missing = missingDocumentsColumn(lastError);
-    if (!missing || !(missing in working) || missing === 'content') break;
-    const { [missing]: _dropped, ...rest } = working;
-    void _dropped;
-    working = rest;
-    console.warn(`[documents] retrying insert without missing column "${missing}"`);
-    const attempt = await supabase.from('documents').insert(working).select().single();
-    if (!attempt.error) {
-      return { data: attempt.data as Record<string, unknown>, error: null, usedColumn: DOCUMENTS_CONTENT_COLUMN };
+  // Never ship explicit nulls for optional module / summary.
+  working.module_code = normalizeModuleCodeForWrite(
+    working.module_code as string | null | undefined
+  );
+  working.summary =
+    working.summary == null || working.summary === '' ? '' : String(working.summary);
+  working.glossary = parseGlossary(working.glossary ?? []);
+  working.content = working.content || '';
+  working.title = working.title || 'Untitled Document';
+
+  let lastError: unknown = null;
+  let usedColumn: string = DOCUMENTS_CONTENT_COLUMN;
+
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const result = await tryDocumentsInsert(working);
+    if (!result.error && result.data) {
+      return { data: result.data, error: null, usedColumn };
     }
-    lastError = attempt.error;
-    if (!isSchemaCacheError(attempt.error)) {
-      return { data: null, error: attempt.error, usedColumn: DOCUMENTS_CONTENT_COLUMN };
+    lastError = result.error;
+
+    if (isNotNullConstraintError(lastError)) {
+      const { next, changed } = applyNotNullFix(working, lastError, payload);
+      if (changed) {
+        working = next;
+        continue;
+      }
+      // Named column already set to empty default and still failing — stop.
+      return { data: null, error: lastError, usedColumn };
     }
+
+    if (isSchemaCacheError(lastError)) {
+      const missing = missingDocumentsColumn(lastError);
+      if (missing && missing in working && missing !== 'content') {
+        const { [missing]: _dropped, ...rest } = working;
+        void _dropped;
+        working = rest;
+        console.warn(`[documents] retrying insert without missing column "${missing}"`);
+        continue;
+      }
+
+      // Prefer legacy body aliases when `content` is uncached / missing.
+      const body = String(working.content ?? payload.content ?? '');
+      let aliasProgress = false;
+      for (const alias of LEGACY_BODY_KEYS) {
+        if (alias in working && working[alias] === body) continue;
+        const { content: _ignoredContent, ...rest } = working;
+        void _ignoredContent;
+        const altPayload = { ...rest, [alias]: body };
+        const aliasAttempt = await tryDocumentsInsert(altPayload);
+        if (!aliasAttempt.error && aliasAttempt.data) {
+          console.warn(
+            `[documents] inserted using legacy column "${alias}" — align DB to documents.content`
+          );
+          return { data: aliasAttempt.data, error: null, usedColumn: alias };
+        }
+        lastError = aliasAttempt.error;
+        if (isNotNullConstraintError(lastError)) {
+          const { next, changed } = applyNotNullFix(altPayload, lastError, payload);
+          if (changed) {
+            working = next;
+            usedColumn = alias;
+            aliasProgress = true;
+            break;
+          }
+        }
+        if (!isSchemaCacheError(lastError)) {
+          return { data: null, error: lastError, usedColumn: alias };
+        }
+      }
+      if (aliasProgress) continue;
+    }
+
+    // Non-recoverable error (RLS, FK, network, etc.)
+    return { data: null, error: lastError, usedColumn };
   }
 
-  const body = String(working.content ?? payload.content ?? '');
-  for (const alias of LEGACY_BODY_KEYS) {
-    const { content: _ignoredContent, ...rest } = working;
-    void _ignoredContent;
-    const altPayload = { ...rest, [alias]: body };
-    const attempt = await supabase.from('documents').insert(altPayload).select().single();
-    if (!attempt.error) {
-      console.warn(`[documents] inserted using legacy column "${alias}" — align DB to documents.content`);
-      return { data: attempt.data as Record<string, unknown>, error: null, usedColumn: alias };
-    }
-    if (!isSchemaCacheError(attempt.error)) {
-      return { data: null, error: attempt.error, usedColumn: alias };
-    }
-    lastError = attempt.error;
-  }
-
-  return { data: null, error: lastError || primary.error, usedColumn: DOCUMENTS_CONTENT_COLUMN };
+  return { data: null, error: lastError, usedColumn };
 }
 
 export type DocumentsQueryResult = {
@@ -462,9 +634,14 @@ export async function saveDocument(doc: Partial<FiosDocument>): Promise<SaveDocu
     if (usedColumn !== DOCUMENTS_CONTENT_COLUMN && !normalized.content) {
       normalized.content = payload.content;
     }
+    // Prefer write-payload module_code ('') over a DB null echo for General.
+    if (!normalized.module_code) {
+      normalized.module_code = payload.module_code || null;
+    }
     return normalized;
   }
 
+  // Only reach here when cloud insert truly failed after not-null / schema retries.
   // Cloud upsert failed — keep summarize usable via IndexedDB fallback.
   const localDoc: FiosDocument = {
     id: crypto.randomUUID(),
@@ -473,7 +650,7 @@ export async function saveDocument(doc: Partial<FiosDocument>): Promise<SaveDocu
     content: payload.content,
     summary: payload.summary,
     glossary: payload.glossary as FiosDocument['glossary'],
-    module_code: payload.module_code,
+    module_code: payload.module_code || null,
     created_at: new Date().toISOString(),
   };
 
