@@ -291,23 +291,19 @@ const Dashboard: React.FC = () => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Shared bottom-right dock — avoids FAB/Pomodoro overlap; clears mobile bottom nav */}
+      {/* Shared bottom-right dock: Quick FAB (right) · Pomodoro · Brain Dump (left of duo).
+          Row-reverse keeps FAB nearest the corner; Brain Dump panel opens upward/left so it
+          sits alongside without covering the FAB or fighting mobile bottom nav. */}
       <div
-        className="fios-fab-dock fixed z-[70] bottom-24 md:bottom-6 right-3 md:right-6 flex flex-row-reverse items-end gap-3 safe-bottom pointer-events-none"
+        className="fios-fab-dock fixed z-[70] bottom-24 md:bottom-6 right-3 md:right-6 flex flex-row-reverse items-end gap-2.5 md:gap-3 safe-bottom pointer-events-none"
         aria-label="Floating study tools"
       >
-        <div className="pointer-events-auto">
-          <QuickActions
-            onNavigate={handleTabChange}
-            onOpenTutor={() => handleTabChange('tutor')}
-          />
-        </div>
-        <div className="pointer-events-auto">
-          <PomodoroWidget />
-        </div>
-        <div className="pointer-events-auto relative">
-          <BrainDumpInbox />
-        </div>
+        <QuickActions
+          onNavigate={handleTabChange}
+          onOpenTutor={() => handleTabChange('tutor')}
+        />
+        <PomodoroWidget />
+        <BrainDumpInbox />
       </div>
     </DashboardLayout>
   );

@@ -1,5 +1,6 @@
 /**
  * Floating quick-capture inbox — raw brain dumps → optional AI parse into tasks/notes.
+ * Lives in the shared FAB dock beside Pomodoro + Smart Quick (does not steal their space).
  */
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -133,36 +134,33 @@ ${dump.text}`,
   };
 
   return (
-    <>
-      <div className="pointer-events-auto">
-        <motion.button
-          type="button"
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setOpen((v) => !v)}
-          className="w-12 h-12 rounded-full border fios-border bg-[var(--fios-surface)] text-[var(--fios-text)] shadow-xl flex items-center justify-center cursor-pointer hover:accent-border"
-          aria-label="Brain dump inbox"
-          title="Brain dump"
-        >
-          {open ? <X className="w-5 h-5" /> : <Brain className="w-5 h-5 accent-solid-text" />}
-        </motion.button>
-      </div>
-
+    <div className="relative z-[60] pointer-events-auto flex flex-col items-start font-sans">
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 12, scale: 0.96 }}
+            initial={{ opacity: 0, y: 10, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.96 }}
-            className="pointer-events-auto absolute bottom-16 right-0 w-[min(22rem,calc(100vw-1.5rem))] rounded-2xl border fios-border bg-[var(--fios-surface)] shadow-2xl p-4 space-y-3"
+            exit={{ opacity: 0, y: 10, scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+            className="absolute bottom-full mb-3 left-0 z-[72] w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border fios-border-strong bg-[var(--fios-surface)]/95 backdrop-blur-xl shadow-2xl p-4 space-y-3"
+            role="dialog"
+            aria-label="Brain dump inbox"
           >
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
                 <p className="text-[10px] font-mono font-black uppercase tracking-widest accent-solid-text">
                   Quick capture
                 </p>
-                <h3 className="text-sm font-black uppercase text-[var(--fios-text)]">Brain dump inbox</h3>
+                <h3 className="text-sm font-black uppercase text-[var(--fios-text)] truncate">
+                  Brain dump inbox
+                </h3>
               </div>
-              <button type="button" onClick={() => setOpen(false)} className="text-[var(--fios-text-muted)] cursor-pointer p-1">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer p-1.5 rounded-lg border fios-border bg-[var(--fios-surface-2)]"
+                aria-label="Close brain dump"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -177,12 +175,12 @@ ${dump.text}`,
               type="button"
               onClick={handleSave}
               disabled={!text.trim()}
-              className="w-full py-2 accent-bg text-slate-950 text-xs font-black uppercase rounded-xl cursor-pointer disabled:opacity-40"
+              className="w-full py-2.5 accent-bg text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer disabled:opacity-40 active:scale-[0.99]"
             >
               Save dump
             </button>
 
-            <div className="max-h-48 overflow-y-auto space-y-2">
+            <div className="max-h-44 overflow-y-auto space-y-2 fios-agenda-scroll">
               {dumps.length === 0 ? (
                 <p className="text-[10px] font-mono text-[var(--fios-text-muted)] text-center py-3">
                   No dumps yet — capture freely, parse later.
@@ -221,12 +219,26 @@ ${dump.text}`,
               )}
             </div>
             <p className="text-[9px] font-mono text-[var(--fios-text-muted)] flex items-center gap-1">
-              <CheckSquare className="w-3 h-3" /> AI parse creates tasks via Gemini tutor
+              <CheckSquare className="w-3 h-3 shrink-0" /> AI parse creates tasks via Gemini tutor
             </p>
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+
+      <motion.button
+        type="button"
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setOpen((v) => !v)}
+        className={`w-12 h-12 min-w-12 rounded-2xl border fios-border-strong bg-[var(--fios-surface)]/95 backdrop-blur-xl text-[var(--fios-text)] shadow-xl flex items-center justify-center cursor-pointer hover:accent-border active:bg-[var(--fios-surface-2)] ${
+          open ? 'accent-border accent-glow' : ''
+        }`}
+        aria-label="Brain dump inbox"
+        aria-expanded={open}
+        title="Brain dump"
+      >
+        {open ? <X className="w-5 h-5" /> : <Brain className="w-5 h-5 accent-solid-text" />}
+      </motion.button>
+    </div>
   );
 };
 

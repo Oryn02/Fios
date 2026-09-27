@@ -99,20 +99,27 @@ export interface PreferencesState {
   smartWidgetShowMetrics: boolean;
 }
 
-/** Match DashboardLayout / Tailwind `md` — below this, floating widgets default off. */
+/**
+ * Match Tailwind `md` (768px).
+ * Use min-width for the desktop-ON check so a missing/failed matchMedia
+ * never accidentally treats desktop as mobile (inverted max-width pitfall).
+ */
+export const DESKTOP_WIDGET_MQ = '(min-width: 768px)';
 export const MOBILE_WIDGET_MQ = '(max-width: 767px)';
 
 export function isMobileViewport(): boolean {
   if (typeof window === 'undefined') return false;
-  return window.matchMedia(MOBILE_WIDGET_MQ).matches;
+  return !window.matchMedia(DESKTOP_WIDGET_MQ).matches;
 }
 
 /**
- * Desktop keeps floating Pomodoro + Smart Quick on by default.
- * Mobile defaults both off until the user saves an explicit preference.
+ * Desktop (≥768px) keeps floating Pomodoro + Smart Quick ON by default.
+ * Mobile defaults both OFF until the user saves an explicit Settings toggle
+ * (`floatingWidgetsExplicit`).
  */
 export function defaultFloatingWidgetsOn(): boolean {
-  return !isMobileViewport();
+  if (typeof window === 'undefined') return true; // desktop-first when no viewport
+  return window.matchMedia(DESKTOP_WIDGET_MQ).matches;
 }
 
 /**
@@ -352,7 +359,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // the current viewport (mobile OFF / desktop ON) across resize / rotate.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mq = window.matchMedia(MOBILE_WIDGET_MQ);
+    const mq = window.matchMedia(DESKTOP_WIDGET_MQ);
     const syncViewportDefaults = () => {
       setPrefs((prev) => {
         if (prev.floatingWidgetsExplicit) return prev;
@@ -379,20 +386,14 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     else root.removeAttribute('data-low-power');
   }, [prefs.lowPower]);
 
+  // OpenDyslexic: attribute only — faces are self-hosted in index.css /public/fonts
+  // (CDN open-dyslexic.min.css 404'd and never loaded on mobile/PWA).
   useEffect(() => {
     const root = document.documentElement;
-    if (prefs.openDyslexic) {
-      root.setAttribute('data-opendyslexic', 'true');
-      if (!document.getElementById('fios-opendyslexic')) {
-        const link = document.createElement('link');
-        link.id = 'fios-opendyslexic';
-        link.rel = 'stylesheet';
-        link.href = 'https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic.min.css';
-        document.head.appendChild(link);
-      }
-    } else {
-      root.removeAttribute('data-opendyslexic');
-    }
+    if (prefs.openDyslexic) root.setAttribute('data-opendyslexic', 'true');
+    else root.removeAttribute('data-opendyslexic');
+    // Drop legacy CDN stylesheet if a prior session injected it.
+    document.getElementById('fios-opendyslexic')?.remove();
   }, [prefs.openDyslexic]);
 
   const value = useMemo<PreferencesContextValue>(() => ({
