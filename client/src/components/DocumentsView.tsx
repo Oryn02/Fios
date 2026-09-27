@@ -139,6 +139,35 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
     toast('Summary updated', 'success');
   };
 
+  const afterSave = (
+    saved: Awaited<ReturnType<typeof saveDocument>>,
+    sourceText: string,
+    opts?: { successToast?: string }
+  ) => {
+    if (saved.savedLocally) {
+      toast('Saved on this device — cloud sync needs documents.content / schema reload', 'info');
+      if (saved.cloudWarning) setError(saved.cloudWarning);
+    } else if (opts?.successToast) {
+      toast(opts.successToast, 'success');
+    }
+    // Skip RAG indexing for local-only ids (not in Supabase documents yet)
+    if (!saved.savedLocally) {
+      void indexDocumentChunks(saved.id, sourceText).then((r) => {
+        if (r.indexed > 0) toast(`Indexed ${r.indexed} note chunk(s) for RAG`, 'info');
+      });
+    }
+    setDocs((prev) => [saved, ...prev]);
+    setActive(saved);
+    setText('');
+    setTitle('');
+    if (saved.summary) {
+      localStorage.setItem(
+        `fios_doc_revisions_${saved.id}`,
+        JSON.stringify([{ at: new Date().toISOString(), summary: saved.summary }])
+      );
+    }
+  };
+
   const handleSummarize = async () => {
     if (!text.trim()) return;
     if (!requireAiAuth()) return;
@@ -153,20 +182,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         glossary: result.glossary || [],
         module_code: moduleCode || null,
       });
-      // Index ~500-word passages into Supabase note_chunks for AI Tutor RAG
-      void indexDocumentChunks(saved.id, text).then((r) => {
-        if (r.indexed > 0) toast(`Indexed ${r.indexed} note chunk(s) for RAG`, 'info');
-      });
-      setDocs((prev) => [saved, ...prev]);
-      setActive(saved);
-      setText('');
-      setTitle('');
-      if (result.summary) {
-        localStorage.setItem(
-          `fios_doc_revisions_${saved.id}`,
-          JSON.stringify([{ at: new Date().toISOString(), summary: result.summary }])
-        );
-      }
+      afterSave(saved, text);
     } catch (err: any) {
       setError(err.message || 'Failed to summarize.');
     } finally {
@@ -195,20 +211,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         glossary: result.glossary || [],
         module_code: moduleCode || null,
       });
-      void indexDocumentChunks(saved.id, md).then((r) => {
-        if (r.indexed > 0) toast(`Indexed ${r.indexed} note chunk(s) for RAG`, 'info');
-      });
-      setDocs((prev) => [saved, ...prev]);
-      setActive(saved);
-      setText('');
-      setTitle('');
-      if (result.summary) {
-        localStorage.setItem(
-          `fios_doc_revisions_${saved.id}`,
-          JSON.stringify([{ at: new Date().toISOString(), summary: result.summary }])
-        );
-      }
-      toast('Audio lecture saved as Smart Note', 'success');
+      afterSave(saved, md, { successToast: 'Audio lecture saved as Smart Note' });
     } catch (err: any) {
       setError(err.message || 'Failed to summarize audio lecture.');
       toast('Transcription ready — summarize manually if needed', 'info');

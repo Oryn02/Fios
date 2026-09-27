@@ -426,16 +426,64 @@ end $$;
 -- Additive migrations (idempotent) — run in Supabase SQL editor if missing
 -- ============================================================================
 
--- documents.content: required by Smart Notes upserts. Existing projects that
--- created `documents` without this column hit PostgREST "schema cache" errors.
+-- ----------------------------------------------------------------------------
+-- Smart Notes: documents.content (REQUIRED)
+-- Symptom if missing / cache stale:
+--   Could not find the 'content' column of 'documents' in the schema cache
+-- Fix (idempotent — safe to re-run):
+--   1. Run this block in the Supabase SQL editor.
+--   2. Reload PostgREST schema cache:
+--        Dashboard → Project Settings → API → Reload schema
+--      Or run:  NOTIFY pgrst, 'reload schema';
+--      Or wait ~1 minute for auto-refresh.
+-- Canonical column name is `content` (client writes/reads that). If an older
+-- project used body/text/notes instead, values are copied into content below.
+-- ----------------------------------------------------------------------------
 alter table public.documents
   add column if not exists content text not null default '';
 
 comment on column public.documents.content is
   'Full note / extracted PDF text for Smart Notes and AI Tutor grounding.';
 
--- After applying, reload the PostgREST schema cache in the Supabase dashboard:
--- Project Settings → API → Reload schema (or wait ~1 min for auto-refresh).
+-- Copy from legacy aliases when content is still empty (no-op if aliases absent).
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'documents' and column_name = 'body'
+  ) then
+    execute $q$
+      update public.documents
+      set content = body
+      where (content is null or content = '') and body is not null and body <> ''
+    $q$;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'documents' and column_name = 'text'
+  ) then
+    execute $q$
+      update public.documents
+      set content = text
+      where (content is null or content = '') and text is not null and text <> ''
+    $q$;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'documents' and column_name = 'notes'
+  ) then
+    execute $q$
+      update public.documents
+      set content = notes
+      where (content is null or content = '') and notes is not null and notes <> ''
+    $q$;
+  end if;
+end $$;
+
+-- Ask PostgREST to refresh its schema cache (Supabase / PostgREST).
+notify pgrst, 'reload schema';
 
 -- Optional durable Web Push subscriptions (server currently uses an in-memory Map;
 -- free Render instances lose memory on spin-down). Apply if you want persistence.
