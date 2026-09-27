@@ -46,6 +46,11 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Landing marketing remains locked to default emerald (no holiday chrome).
 - Smart Notes reliability: client prefers `documents.content`, maps legacy body/text/notes on read, shows a clear PostgREST schema-cache reload hint, and falls back to IndexedDB so summarize still saves when cloud upsert fails. Re-run the idempotent `documents.content` block in `supabase/schema.sql` and reload schema if the live error persists.
 - Mobile schedule readability: month grid with larger tap targets, clearer today / selected / has-events hierarchy, event dots (no cramped truncated titles), and touch-sized Day/Week/Month controls; desktop layout unchanged; finished muting + Next Up preserved.
+- Weekly Study Goal on Overview as a full-width progress strip under the greeting (desktop + mobile).
+- Grade Predictor: Save assessments works again on live (legacy Supabase column mapping + clear error toast).
+- Modules: Edit (pencil) on each card; badges and selectors prefer module **name** over course-code shorthand.
+- Contribution heatmap: mobile scroll/layout fix, month/day labels, tap-cell detail; PWA “Update available” reload prompt; mobile version badge.
+- Quick Nav: ⌘K / Ctrl+K reliably opens the command palette again.
 - Privacy / Terms / cookie copy refreshed for Feedback & Ratings, Contact Support, study data, Gemini uploads, Web Push, and local/PWA storage (no ad trackers; no invented analytics).
 - Version alignment across packages and API `/health` for deploy consistency.
 - See the in-app **Updates** tab for the full changelog.

@@ -6,7 +6,7 @@ const UpdatesTabInner: React.FC = () => {
     {
       version: 'v3.1.0',
       date: 'September 2026',
-      title: 'Holiday ambience, widgets, accessibility, Smart Notes & schedule',
+      title: 'Study polish — ambience, widgets, schedule, modules & PWA',
       highlights: [
         'Desktop: Pomodoro floating widget and Smart Quick Widget default ON again when you have not toggled them in Settings (viewport ≥768px).',
         'Mobile: both floating widgets still default OFF until explicitly toggled (`floatingWidgetsExplicit` from v2.2.9) — intentional Settings choices stay saved.',
@@ -25,6 +25,14 @@ const UpdatesTabInner: React.FC = () => {
         'Schedule controls: Day / Week / Month toggles and prev/next/Today hit areas sized for touch; desktop month pill stack and layout unchanged.',
         'Finished-class muting and Next Up highlight from earlier releases are preserved in day, week, and month views.',
         'Compact agenda titles slightly larger on small screens for easier scanning.',
+        'Weekly Study Goal: full-width progress strip on Overview under the greeting (desktop + mobile) — live hours toward your focus target with quick edit; Settings still edits the same weekly target.',
+        'Grade Predictor: Save assessments works again on live — maps legacy Supabase column names and shows a clear error toast if save fails (number formatting from v3.0.0 unchanged).',
+        'Modules: clear Edit (pencil) on each module card — update name, optional course code, accent color, and folder tags; blank codes stay blank in the UI.',
+        'Badges & selectors: decks, quizzes, exams, documents, tasks, pickers, heatmaps, GPA, and agenda labels prefer the module name over course-code shorthand.',
+        'Contribution heatmap: mobile-friendly grid with horizontal touch scroll, month/day labels, tap-a-cell activity detail, and a shorter default window (last 16 weeks).',
+        'PWA & web: in-app “Update available” prompt with Reload when a new service worker is ready (respects reduced motion).',
+        'Mobile top bar: version badge (v3.1.0) visible beside the logo.',
+        'Quick Nav: ⌘K / Ctrl+K reliably opens the same command palette as the header chip (capture-phase + preventDefault); ignored while typing in inputs.',
         'Privacy & Terms refresh: clearer disclosures for Feedback & Ratings (what’s collected, anonymous vs signed-in, purpose, retention, who receives it) plus Contact Support, study data, BYO Gemini / multimodal uploads, Web Push, local/PWA storage, and an explicit no ad-tracker / no analytics-SDK statement — aligned with v3.0.0 push + upload language.',
         'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.0.',
       ],
