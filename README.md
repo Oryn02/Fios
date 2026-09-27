@@ -42,6 +42,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Holiday theme ambience: soft atmospheric washes and sparse CSS motion for Halloween, Christmas (Dec 24–26), St Patrick’s Day, and Easter when those day-only themes are active — still study-friendly; respects reduced-motion and Low-Power.
 - Landing marketing remains locked to default emerald (no holiday chrome).
 - Privacy / Terms / cookie copy refreshed for Feedback & Ratings, Contact Support, study data, Gemini uploads, Web Push, and local/PWA storage (no ad trackers; no invented analytics).
+- Version alignment across packages and API `/health` for deploy consistency.
 - See the in-app **Updates** tab for the full changelog.
 
 ### What’s new in v3.0.0

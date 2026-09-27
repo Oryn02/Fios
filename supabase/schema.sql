@@ -423,6 +423,41 @@ begin
 end $$;
 
 -- ============================================================================
+-- Admin console: feedback resolve + profile directory (admin RLS only)
+-- ============================================================================
+
+alter table public.feedback
+  add column if not exists resolved_at timestamptz;
+
+alter table public.feedback
+  add column if not exists resolved_by uuid references auth.users (id) on delete set null;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'feedback'
+      and policyname = 'feedback_admin_update'
+  ) then
+    create policy feedback_admin_update on public.feedback
+      for update to authenticated
+      using (public.current_user_is_admin())
+      with check (public.current_user_is_admin());
+  end if;
+
+  -- Admins may list basic profile rows (client must not select gemini_api_key).
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'user_profiles'
+      and policyname = 'user_profiles_admin_read'
+  ) then
+    create policy user_profiles_admin_read on public.user_profiles
+      for select to authenticated
+      using (public.current_user_is_admin());
+  end if;
+end $$;
+
+-- ============================================================================
 -- Additive migrations (idempotent) — run in Supabase SQL editor if missing
 -- ============================================================================
 
