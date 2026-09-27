@@ -14,6 +14,7 @@ import { FiosLogo } from './FiosLogo';
 import { Avatar } from './Avatar';
 import { WeeklyGoalWidget } from './WeeklyGoalWidget';
 import { CommandPalette, type CommandItem } from './CommandPalette';
+import { HolidayAmbience } from './HolidayAmbience';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -34,7 +35,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.0.0', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.0.1', icon: Sparkles },
 ];
 
 /** Tabs where Zen may hide chrome (study surfaces). Settings/Overview always keep nav. */
@@ -268,6 +269,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
   return (
     <div className="min-h-dvh fios-app-bg flex flex-col font-sans overflow-x-hidden">
+      <HolidayAmbience />
       {/* Top HUD Bar — always visible unless Zen is hiding study chrome */}
       {!hideChrome && (
         <header className="h-14 sm:h-16 border-b fios-border bg-[var(--fios-surface)]/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-[60] safe-top">
@@ -295,7 +297,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             >
               <FiosLogo size="lg" className="leading-none min-w-0 pointer-events-none" />
             </button>
-            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v3.0.0</span>
+            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v3.0.1</span>
             {zenMode && (
               <button
                 type="button"
