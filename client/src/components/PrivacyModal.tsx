@@ -48,7 +48,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
               <h3 id="privacy-title" className={`text-base font-black uppercase ${landing ? 'text-white' : 'text-[var(--fios-text)]'}`}>
                 Privacy Policy & GDPR Statement
               </h3>
-              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v3.1.7 · Last updated September 2026</p>
+              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v3.1.8 · Last updated September 2026</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className={`${muted} hover:opacity-80 cursor-pointer p-1`} aria-label="Close">
@@ -70,7 +70,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
             <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>2. What data we process</h4>
             <ul className={`list-disc list-inside space-y-1 pl-1 ${muted}`}>
               <li><strong className={strong}>Account:</strong> email and auth tokens via Supabase Auth (and optional GitHub OAuth if you enable it).</li>
-              <li><strong className={strong}>Profile & prefs:</strong> display name, preferred name, theme/accent, Pomodoro durations, weekly study goal, nav/widget preferences, low-power / Zen / accessibility flags.</li>
+              <li><strong className={strong}>Profile & prefs:</strong> display name, preferred name, optional birthday, theme/accent, Pomodoro durations, weekly study goal, nav/widget preferences, low-power / Zen / accessibility flags.</li>
               <li><strong className={strong}>Study content:</strong> modules (codes, names, exam dates, accent tags), Smart Notes / documents, flashcard decks, MCQ quizzes, code exams, academic tasks (titles, due/start times), grades, focus / Pomodoro logs, revision flight-plan state, study-streak activity, tutor chat history.</li>
               <li><strong className={strong}>Schedule:</strong> timetable entries and optional iCal feed URLs you connect so classes appear on your agenda and Class Reminders can fire.</li>
               <li><strong className={strong}>BYO Gemini key:</strong> stored on your profile under Row Level Security so AI features can run with your key.</li>

@@ -36,6 +36,7 @@ import { SupportModal } from './SupportModal';
 import { resetCookieConsent } from './CookieConsent';
 import { toast } from '../lib/toast';
 import { NAV_ITEMS } from './DashboardLayout';
+import { normalizeBirthday } from '../lib/holidays';
 import {
   loadReminderPrefs,
   saveReminderPrefs,
@@ -113,6 +114,7 @@ const SettingsTabInner: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [preferredName, setPreferredName] = useState('');
   const [address, setAddress] = useState('');
+  const [birthday, setBirthday] = useState('');
   const [profileSaved, setProfileSaved] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -149,6 +151,7 @@ const SettingsTabInner: React.FC = () => {
       setFullName(profile.full_name || '');
       setPreferredName(profile.preferred_name || '');
       setAddress(profile.address || '');
+      setBirthday(normalizeBirthday(profile.birthday) || '');
       setWork(profile.pomodoro_work_duration);
       setShortBreak(profile.pomodoro_short_break);
       setLongBreak(profile.pomodoro_long_break);
@@ -206,11 +209,22 @@ const SettingsTabInner: React.FC = () => {
     e.preventDefault();
     setSavingProfile(true);
     try {
-      await updateProfile({ full_name: fullName, preferred_name: preferredName, address });
+      await updateProfile({
+        full_name: fullName,
+        preferred_name: preferredName,
+        address,
+        birthday: normalizeBirthday(birthday),
+      });
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 2500);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save profile:', err);
+      const msg = String(err?.message || err || '');
+      if (/birthday/i.test(msg) || /column/i.test(msg)) {
+        toast('Birthday save needs the latest profile schema — try again after the DB update.', 'error');
+      } else {
+        toast('Failed to save profile', 'error');
+      }
     } finally {
       setSavingProfile(false);
     }
@@ -326,7 +340,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '3.1.7',
+      version: '3.1.8',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -593,6 +607,21 @@ const SettingsTabInner: React.FC = () => {
             <label className="text-[11px] font-mono font-bold uppercase text-slate-400">Preferred Name (used in greetings)</label>
             <input value={preferredName} onChange={(e) => setPreferredName(e.target.value)} placeholder="Ada"
               className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border" />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[11px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1">
+              <Calendar className="w-3 h-3 accent-solid-text" /> Birthday
+            </label>
+            <input
+              type="date"
+              value={birthday}
+              onChange={(e) => setBirthday(e.target.value)}
+              className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border"
+              aria-describedby="birthday-hint"
+            />
+            <p id="birthday-hint" className="text-[10px] font-mono text-slate-500">
+              Optional — unlocks a birthday greeting and festive theme on your day.
+            </p>
           </div>
           <div className="space-y-2 md:col-span-2">
             <label className="text-[11px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3 accent-solid-text" /> Address</label>
@@ -1149,7 +1178,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.1.7.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.1.8.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button

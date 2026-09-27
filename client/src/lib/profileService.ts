@@ -5,12 +5,20 @@ import { IS_DEMO, demoProfile, DEMO_USER } from './demo';
 
 let demoProfileState: UserProfile = { ...demoProfile };
 
+function normalizeProfile(row: UserProfile): UserProfile {
+  return {
+    ...row,
+    birthday: row.birthday ?? null,
+  };
+}
+
 export function makeDefaultProfile(id: string, email?: string): UserProfile {
   return {
     id,
     full_name: '',
     preferred_name: email ? email.split('@')[0] : '',
     address: '',
+    birthday: null,
     avatar_url: null,
     accent_color: 'emerald',
     theme: 'dark',
@@ -51,10 +59,10 @@ export async function getMyProfile(): Promise<UserProfile | null> {
       console.error('Error creating profile:', insertError);
       return fresh;
     }
-    return (inserted as UserProfile) || fresh;
+    return inserted ? normalizeProfile(inserted as UserProfile) : fresh;
   }
 
-  return data as UserProfile;
+  return normalizeProfile(data as UserProfile);
 }
 
 export async function updateMyProfile(patch: Partial<UserProfile>): Promise<UserProfile> {
@@ -74,7 +82,7 @@ export async function updateMyProfile(patch: Partial<UserProfile>): Promise<User
     .single();
 
   if (error) throw error;
-  return data as UserProfile;
+  return normalizeProfile(data as UserProfile);
 }
 
 export { DEMO_USER };

@@ -2,6 +2,7 @@
  * Overview holiday greetings + day-only app accent palettes.
  * Landing stays locked to emerald via `lockLandingBrand` — these apply to the app shell only.
  * Admin can preview curated holiday palettes any day via AdminPanel (not public docs).
+ * Birthday is user-profile scoped (month/day) — not a fixed calendar holiday.
  */
 
 export type HolidayId =
@@ -12,7 +13,8 @@ export type HolidayId =
   | 'halloween'
   | 'christmas-eve'
   | 'christmas'
-  | 'st-stephens';
+  | 'st-stephens'
+  | 'birthday';
 
 export interface HolidayPalette {
   id: HolidayId;
@@ -29,6 +31,55 @@ export interface HolidayPalette {
   mood: 'warm' | 'cool' | 'festive' | 'pastel';
   /** Shared theme family — Christmas Eve/Day/St Stephen’s share one palette */
   themeFamily: string;
+}
+
+/**
+ * Birthday celebration palette — coral → gold → teal (festive, not purple-default).
+ * Applied when the signed-in user's profile birthday month/day matches today,
+ * or via admin session preview.
+ */
+export const BIRTHDAY_PALETTE: HolidayPalette = {
+  id: 'birthday',
+  name: 'Birthday',
+  greetingName: 'Birthday',
+  label: 'Birthday Coral & Gold',
+  from: '#fb7185',
+  via: '#fbbf24',
+  to: '#2dd4bf',
+  solid: '#f59e0b',
+  mood: 'festive',
+  themeFamily: 'birthday',
+};
+
+/** Normalize profile birthday to YYYY-MM-DD, or null. */
+export function normalizeBirthday(raw: string | null | undefined): string | null {
+  if (!raw || typeof raw !== 'string') return null;
+  const m = raw.trim().slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (y < 1900 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  return `${m[1]}-${m[2]}-${m[3]}`;
+}
+
+/** True when profile birthday month/day matches the local calendar day. */
+export function isBirthdayToday(
+  birthday: string | null | undefined,
+  date: Date = new Date()
+): boolean {
+  const norm = normalizeBirthday(birthday);
+  if (!norm) return false;
+  const [, mo, d] = norm.split('-').map(Number);
+  return date.getMonth() + 1 === mo && date.getDate() === d;
+}
+
+/** Birthday accent palette when today is the user's birthday; otherwise null. */
+export function birthdayPalette(
+  birthday: string | null | undefined,
+  date: Date = new Date()
+): HolidayPalette | null {
+  return isBirthdayToday(birthday, date) ? BIRTHDAY_PALETTE : null;
 }
 
 export function timeOfDayGreeting(date: Date = new Date()): string {
@@ -185,7 +236,7 @@ const HOLIDAYS: HolidayDef[] = [
 
 /** Curated admin preview list — one entry per theme family (Christmas shared for Eve–26). */
 export const ADMIN_HOLIDAY_PREVIEWS: HolidayPalette[] = (() => {
-  const wanted = new Set(['halloween', 'christmas', 'easter', 'st-patrick']);
+  const wanted = new Set(['halloween', 'christmas', 'easter', 'st-patrick', 'birthday']);
   const out: HolidayPalette[] = [];
   const seen = new Set<string>();
   for (const h of HOLIDAYS) {
@@ -199,6 +250,7 @@ export const ADMIN_HOLIDAY_PREVIEWS: HolidayPalette[] = (() => {
       ...h.palette,
     });
   }
+  if (!seen.has('birthday')) out.push(BIRTHDAY_PALETTE);
   return out;
 })();
 
@@ -224,8 +276,16 @@ export function holidayGreeting(date: Date = new Date()): string | null {
   return h ? `Happy ${h.greetingName}` : null;
 }
 
-/** Holiday if today is one; otherwise Good morning/afternoon/evening. */
-export function overviewGreeting(date: Date = new Date()): string {
+/**
+ * Overview header greeting.
+ * Priority: birthday (personal) → calendar holiday → time-of-day.
+ * Overview always appends ", {preferredName}." after this string.
+ */
+export function overviewGreeting(
+  date: Date = new Date(),
+  birthday?: string | null
+): string {
+  if (isBirthdayToday(birthday, date)) return 'Happy Birthday';
   return holidayGreeting(date) || timeOfDayGreeting(date);
 }
 

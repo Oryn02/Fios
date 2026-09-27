@@ -17,6 +17,7 @@ create table if not exists public.user_profiles (
   full_name text,
   preferred_name text,
   address text,
+  birthday date,
   avatar_url text,
   accent_color text not null default 'emerald',
   theme text not null default 'dark',
@@ -45,6 +46,7 @@ alter table public.user_profiles add column if not exists updated_at timestamptz
 alter table public.user_profiles add column if not exists full_name text;
 alter table public.user_profiles add column if not exists preferred_name text;
 alter table public.user_profiles add column if not exists address text;
+alter table public.user_profiles add column if not exists birthday date;
 
 -- ----------------------------------------------------------------------------
 -- modules: subject folders (e.g. SOFT06001 — Software Engineering)
