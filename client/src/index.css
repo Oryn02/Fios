@@ -434,6 +434,25 @@ summary,
   touch-action: pan-y;
 }
 
+/* Schedule month grid — mobile tap targets + no horizontal bleed (v3.1.0) */
+.fios-month-grid {
+  -webkit-overflow-scrolling: touch;
+}
+.fios-month-cell {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--fios-accent-solid) 18%, transparent);
+}
+@media (max-width: 639px) {
+  .fios-month-cell {
+    min-height: 3.75rem;
+    min-width: 0;
+  }
+  .fios-month-grid {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
 /* Mermaid diagrams render on a neutral surface in both themes */
 .fios-mermaid svg { max-width: 100%; height: auto; }
 

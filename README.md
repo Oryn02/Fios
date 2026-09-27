@@ -21,7 +21,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Study streak heatmap & exam countdown** — contribution grid from focus + flashcard reviews; live countdown to exams and due tasks.
 - **Brain Dump inbox** — floating quick-capture with optional AI parse into tasks.
 - **Class Reminders** — optional browser notifications (5–30 min lead) for upcoming classes; Web Push when VAPID is configured.
-- **Universal schedule** — iCal sync or manual timetable for any college; iCal helper + clearer errors; finished classes muted; Next Up highlight.
+- **Universal schedule** — iCal sync or manual timetable for any college; iCal helper + clearer errors; finished classes muted; Next Up highlight; mobile month view with larger taps and clearer day hierarchy.
 - **Unified agenda** — classes + timed tasks on a calendar-day timeline (memoized CompactAgenda); tasks sort by due date; start/due datetime pickers update and save.
 - **Holiday greetings & day-only themes** — Overview holiday greetings and temporary accent palettes on key dates (Christmas Eve–26 window), plus subtle festive ambience (washes / sparse motion) when those themes are active; landing stays emerald.
 - **Contact Support** — in-app message form posts to the API and emails the support inbox (Resend/SendGrid when configured); mailto remains optional.
@@ -45,6 +45,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Holiday theme ambience: soft atmospheric washes and sparse CSS motion for Halloween, Christmas (Dec 24–26), St Patrick’s Day, and Easter when those day-only themes are active — still study-friendly; respects reduced-motion and Low-Power.
 - Landing marketing remains locked to default emerald (no holiday chrome).
 - Smart Notes reliability: client prefers `documents.content`, maps legacy body/text/notes on read, shows a clear PostgREST schema-cache reload hint, and falls back to IndexedDB so summarize still saves when cloud upsert fails. Re-run the idempotent `documents.content` block in `supabase/schema.sql` and reload schema if the live error persists.
+- Mobile schedule readability: month grid with larger tap targets, clearer today / selected / has-events hierarchy, event dots (no cramped truncated titles), and touch-sized Day/Week/Month controls; desktop layout unchanged; finished muting + Next Up preserved.
 - Privacy / Terms / cookie copy refreshed for Feedback & Ratings, Contact Support, study data, Gemini uploads, Web Push, and local/PWA storage (no ad trackers; no invented analytics).
 - Version alignment across packages and API `/health` for deploy consistency.
 - See the in-app **Updates** tab for the full changelog.

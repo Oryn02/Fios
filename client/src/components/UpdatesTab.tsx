@@ -6,7 +6,7 @@ const UpdatesTabInner: React.FC = () => {
     {
       version: 'v3.1.0',
       date: 'September 2026',
-      title: 'Holiday ambience, desktop widgets, accessibility & Smart Notes',
+      title: 'Holiday ambience, widgets, accessibility, Smart Notes & schedule',
       highlights: [
         'Desktop: Pomodoro floating widget and Smart Quick Widget default ON again when you have not toggled them in Settings (viewport ≥768px).',
         'Mobile: both floating widgets still default OFF until explicitly toggled (`floatingWidgetsExplicit` from v2.2.9) — intentional Settings choices stay saved.',
@@ -21,6 +21,10 @@ const UpdatesTabInner: React.FC = () => {
         'Ambience follows the active holiday theme (calendar day or when a holiday theme is selected); landing marketing stays default emerald.',
         'Respects prefers-reduced-motion and Low-Power mode (static wash only / particles off).',
         'Smart Notes: resilient save when `documents.content` is missing or PostgREST schema cache is stale — clearer reload hint, legacy body/text/notes read alignment, and IndexedDB local fallback so Summarize isn’t a dead end.',
+        'Schedule month view (mobile): larger day cells and tap targets, clearer hierarchy for today / selected / days with classes, event color dots (muted = finished) instead of cramped truncated titles, short weekday headers, and no horizontal overflow — tap a day for full class titles.',
+        'Schedule controls: Day / Week / Month toggles and prev/next/Today hit areas sized for touch; desktop month pill stack and layout unchanged.',
+        'Finished-class muting and Next Up highlight from earlier releases are preserved in day, week, and month views.',
+        'Compact agenda titles slightly larger on small screens for easier scanning.',
         'Privacy & Terms refresh: clearer disclosures for Feedback & Ratings (what’s collected, anonymous vs signed-in, purpose, retention, who receives it) plus Contact Support, study data, BYO Gemini / multimodal uploads, Web Push, local/PWA storage, and an explicit no ad-tracker / no analytics-SDK statement — aligned with v3.0.0 push + upload language.',
         'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.0.',
       ],
