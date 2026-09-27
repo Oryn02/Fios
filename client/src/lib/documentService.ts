@@ -116,26 +116,45 @@ function errorText(err: unknown): string {
   return [e.message, e.code, e.details, e.hint].filter(Boolean).join(' ');
 }
 
+/** Columns the Smart Notes upsert may reference (PostgREST PGRST204 / schema cache). */
+const DOCUMENTS_UPSERT_COLUMNS = [
+  'content',
+  'summary',
+  'glossary',
+  'module_code',
+  'title',
+  'body',
+  'text',
+  'notes',
+] as const;
+
 /** PostgREST PGRST204 / “schema cache” when a column is missing or cache is stale. */
 export function isSchemaCacheError(err: unknown): boolean {
   const text = errorText(err).toLowerCase();
   if (!text) return false;
-  return (
-    text.includes('schema cache') ||
-    text.includes('pgrst204') ||
-    /could not find the ['"]?content['"]? column/.test(text) ||
-    /could not find the ['"]?(body|text|notes)['"]? column/.test(text)
+  if (text.includes('schema cache') || text.includes('pgrst204')) return true;
+  return DOCUMENTS_UPSERT_COLUMNS.some((col) =>
+    new RegExp(`could not find the ['"]?${col}['"]? column`).test(text)
   );
+}
+
+/** Which documents.* column PostgREST complained about (if any). */
+export function missingDocumentsColumn(err: unknown): string | null {
+  const text = errorText(err);
+  const m = text.match(/could not find the ['"]?(\w+)['"]? column of ['"]?documents['"]?/i);
+  return m?.[1]?.toLowerCase() || null;
 }
 
 export function formatDocumentsSchemaError(err: unknown): string {
   const raw = errorText(err) || 'Cloud save failed.';
   if (isSchemaCacheError(err)) {
+    const col = missingDocumentsColumn(err) || 'content / summary / glossary';
     return (
-      'Smart Notes cloud save failed: the documents.content column is missing ' +
-      'or Supabase PostgREST schema cache is stale. In Supabase: run the ' +
-      'documents.content migration in supabase/schema.sql (ADD COLUMN IF NOT EXISTS), ' +
-      'then Project Settings → API → Reload schema. Your note was kept locally if possible.'
+      `Smart Notes cloud save failed: documents.${col} is missing ` +
+      'or the Supabase PostgREST schema cache is stale. In Supabase SQL editor run ' +
+      'supabase/v3.1.3-documents-columns.sql (or the documents columns block in ' +
+      'supabase/schema.sql), then Project Settings → API → Reload schema ' +
+      "(or NOTIFY pgrst, 'reload schema'). Your note was kept locally if possible."
     );
   }
   return raw;
@@ -164,9 +183,10 @@ function buildPayload(userId: string, doc: Partial<FiosDocument>) {
 }
 
 /**
- * Insert preferring the canonical `content` column. If PostgREST rejects
- * `content` (stale cache / missing column), try legacy aliases one at a time
- * so a DB that only has `body`/`text`/`notes` still accepts the write.
+ * Insert preferring the canonical `content` column. If PostgREST rejects a
+ * column (stale cache / missing glossary|summary|content), strip the reported
+ * column and/or try legacy body aliases so Summarize still lands somewhere —
+ * local IndexedDB remains the final fallback.
  */
 async function insertWithColumnFallback(
   payload: ReturnType<typeof buildPayload>
@@ -180,9 +200,30 @@ async function insertWithColumnFallback(
     return { data: null, error: primary.error, usedColumn: DOCUMENTS_CONTENT_COLUMN };
   }
 
-  const body = payload.content;
+  // If glossary / summary / module_code is missing, retry without those fields
+  // so a DB that only has title+content still accepts the note body.
+  let working: Record<string, unknown> = { ...payload };
+  let lastError: unknown = primary.error;
+  for (let i = 0; i < 4; i++) {
+    const missing = missingDocumentsColumn(lastError);
+    if (!missing || !(missing in working) || missing === 'content') break;
+    const { [missing]: _dropped, ...rest } = working;
+    void _dropped;
+    working = rest;
+    console.warn(`[documents] retrying insert without missing column "${missing}"`);
+    const attempt = await supabase.from('documents').insert(working).select().single();
+    if (!attempt.error) {
+      return { data: attempt.data as Record<string, unknown>, error: null, usedColumn: DOCUMENTS_CONTENT_COLUMN };
+    }
+    lastError = attempt.error;
+    if (!isSchemaCacheError(attempt.error)) {
+      return { data: null, error: attempt.error, usedColumn: DOCUMENTS_CONTENT_COLUMN };
+    }
+  }
+
+  const body = String(working.content ?? payload.content ?? '');
   for (const alias of LEGACY_BODY_KEYS) {
-    const { content: _ignoredContent, ...rest } = payload;
+    const { content: _ignoredContent, ...rest } = working;
     void _ignoredContent;
     const altPayload = { ...rest, [alias]: body };
     const attempt = await supabase.from('documents').insert(altPayload).select().single();
@@ -193,9 +234,10 @@ async function insertWithColumnFallback(
     if (!isSchemaCacheError(attempt.error)) {
       return { data: null, error: attempt.error, usedColumn: alias };
     }
+    lastError = attempt.error;
   }
 
-  return { data: null, error: primary.error, usedColumn: DOCUMENTS_CONTENT_COLUMN };
+  return { data: null, error: lastError || primary.error, usedColumn: DOCUMENTS_CONTENT_COLUMN };
 }
 
 export async function getDocuments(): Promise<FiosDocument[]> {

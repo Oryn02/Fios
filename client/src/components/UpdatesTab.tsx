@@ -4,6 +4,16 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.3',
+      date: 'September 2026',
+      title: 'Mobile version badge + Smart Notes schema',
+      highlights: [
+        'Mobile top bar: version badge (v3.1.x) stays visible beside the Fios logo on narrow phones — compact logo sizing so it no longer disappears under header controls.',
+        'Smart Notes: Summarize & Save aligns with documents.glossary, summary, and content columns; clearer message when the Supabase schema cache is stale, with local save fallback.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.3.',
+      ],
+    },
+    {
       version: 'v3.1.2',
       date: 'September 2026',
       title: 'Holiday motifs, Brain Dump toggle & mobile nav swipe',
@@ -272,7 +282,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.2</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.3</p>
       </header>
 
       <div className="space-y-4">

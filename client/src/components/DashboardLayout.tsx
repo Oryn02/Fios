@@ -35,7 +35,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.1.2', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.1.3', icon: Sparkles },
 ];
 
 /** True when the event target is a text-entry control (skip ⌘K / Ctrl+K while typing). */
@@ -383,8 +383,9 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       <HolidayAmbience />
       {/* Top HUD Bar — always visible unless Zen is hiding study chrome */}
       {!hideChrome && (
-        <header className="h-14 sm:h-16 border-b fios-border bg-[var(--fios-surface)]/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-[60] safe-top">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 self-center">
+        <header className="h-14 sm:h-16 border-b fios-border bg-[var(--fios-surface)]/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 fixed top-0 left-0 right-0 z-[60] safe-top">
+          {/* Brand cluster: logo may shrink; version badge never hides / never shrinks away */}
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 overflow-visible self-center">
             <button
               type="button"
               onClick={toggleNavChrome}
@@ -402,25 +403,32 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             <button
               type="button"
               onClick={() => navigate('overview')}
-              className="min-w-0 cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fios-accent-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fios-surface)]"
+              className="min-w-0 max-w-full overflow-hidden cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fios-accent-solid)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fios-surface)]"
               aria-label="Go to Overview"
               title="Overview"
             >
-              <FiosLogo size="lg" className="leading-none min-w-0 pointer-events-none" />
+              {/* Compact logo on narrow phones so the version badge always fits beside it */}
+              <span className="sm:hidden">
+                <FiosLogo size="md" className="leading-none min-w-0 pointer-events-none" />
+              </span>
+              <span className="hidden sm:inline">
+                <FiosLogo size="lg" className="leading-none min-w-0 pointer-events-none" />
+              </span>
             </button>
             <span
-              className="inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
+              data-fios-version-badge
+              className="relative z-[65] inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 3.1.2"
+              aria-label="Fios version 3.1.3"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v3.1.2
+              v3.1.3
             </span>
             {zenMode && (
               <button
                 type="button"
                 onClick={exitZen}
-                className="touch-target-row flex items-center gap-1.5 px-3 py-2 rounded-md border accent-border accent-solid-text text-[10px] font-black uppercase tracking-wider cursor-pointer bg-[var(--fios-surface-2)] active:opacity-80"
+                className="touch-target-row flex items-center gap-1.5 px-3 py-2 rounded-md border accent-border accent-solid-text text-[10px] font-black uppercase tracking-wider cursor-pointer bg-[var(--fios-surface-2)] active:opacity-80 shrink-0"
                 aria-label="Exit Zen mode"
               >
                 <Focus className="w-3.5 h-3.5" /> Exit Zen
@@ -428,7 +436,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             )}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
               type="button"
               onClick={openPalette}
