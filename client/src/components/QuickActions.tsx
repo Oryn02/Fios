@@ -14,7 +14,7 @@ import {
 } from '../context/PreferencesContext';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO } from '../lib/demo';
-import { getUserModules, type DBModule } from '../lib/moduleService';
+import { getUserModules, type DBModule, moduleDisplayName } from '../lib/moduleService';
 import { getUserDecksWithCards } from '../lib/deckService';
 import { getTasks } from '../lib/taskService';
 import { getFocusSessions } from '../lib/focusService';
@@ -98,7 +98,7 @@ const QuickAddFlashcardModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
                 <Folder className="w-3.5 h-3.5 accent-solid-text shrink-0" />
                 <select value={moduleCode} onChange={(e) => setModuleCode(e.target.value)} className="bg-transparent text-sm text-[var(--fios-text)] focus:outline-none cursor-pointer w-full">
                   <option value="">General</option>
-                  {modules.map((m) => <option key={m.id} value={m.code}>{m.code}</option>)}
+                  {modules.map((m) => <option key={m.id} value={m.code}>{moduleDisplayName(m)}</option>)}
                 </select>
               </div>
             </div>

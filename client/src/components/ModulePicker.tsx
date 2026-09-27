@@ -3,7 +3,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { Folder, Plus } from 'lucide-react';
-import { createModule, getUserModules, type DBModule } from '../lib/moduleService';
+import { createModule, getUserModules, moduleDisplayName, type DBModule } from '../lib/moduleService';
 import { toast } from '../lib/toast';
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
   onChange: (moduleCode: string) => void;
   className?: string;
   allowCreate?: boolean;
-  /** Show module name in options (not just code). */
+  /** @deprecated Labels always prefer module name; kept for call-site compatibility. */
   showNames?: boolean;
 }
 
@@ -20,7 +20,6 @@ export const ModulePicker: React.FC<Props> = ({
   onChange,
   className = '',
   allowCreate = true,
-  showNames = true,
 }) => {
   const [modules, setModules] = useState<DBModule[]>([]);
   const [creating, setCreating] = useState(false);
@@ -39,8 +38,7 @@ export const ModulePicker: React.FC<Props> = ({
     if (!newName.trim()) return;
     setBusy(true);
     try {
-      const code = newCode.trim() || `MOD-${Date.now().toString(36).toUpperCase()}`;
-      const created = await createModule(code, newName.trim(), 'emerald');
+      const created = await createModule(newCode, newName.trim(), 'emerald');
       if (created) {
         reload();
         onChange(created.code);
@@ -75,7 +73,7 @@ export const ModulePicker: React.FC<Props> = ({
           <option value="" className="bg-[#07090e] text-slate-400">No module</option>
           {modules.map((m) => (
             <option key={m.id} value={m.code} className="bg-[#07090e] text-slate-100">
-              {showNames ? `${m.name}${m.code ? ` (${m.code})` : ''}` : m.code || m.name}
+              {moduleDisplayName(m)}
             </option>
           ))}
           {allowCreate && (

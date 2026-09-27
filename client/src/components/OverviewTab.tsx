@@ -180,7 +180,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
   }, [newTaskTitle, newTaskStart, newTaskDueAt]);
 
   const moduleColorList = useMemo(
-    () => modules.map((m) => ({ code: m.code, color: m.color })),
+    () => modules.map((m) => ({ code: m.code, color: m.color, name: m.name })),
     [modules]
   );
 

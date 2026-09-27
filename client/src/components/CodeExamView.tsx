@@ -8,7 +8,7 @@ import {
 import { generateCodeExam, gradeCodeExam, type CodeGradeResult } from '../services/codeApi';
 import { useAiAuth } from '../context/AiAuthContext';
 import { getCodeExams, saveCodeExam, deleteCodeExam, updateCodeExamTitle } from '../lib/codeExamService';
-import { getUserModules, type DBModule } from '../lib/moduleService';
+import { getUserModules, type DBModule, moduleDisplayName, resolveModuleLabel } from '../lib/moduleService';
 import {
   CODE_LANGUAGES, CODE_EXAM_TYPES,
   type CodeLanguage, type CodeExamType, type CodeExam,
@@ -245,7 +245,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
             >
               <option value="">General</option>
               {modules.map((m) => (
-                <option key={m.id} value={m.code}>{m.code}</option>
+                <option key={m.id} value={m.code}>{moduleDisplayName(m)}</option>
               ))}
             </select>
           </div>
@@ -475,7 +475,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500">
                   {EXAM_ICON[exam.exam_type]} {exam.exam_type.replace('_', ' ')}
-                  {exam.module_code && <span className="ml-auto text-emerald-400">{exam.module_code}</span>}
+                  {exam.module_code && <span className="ml-auto text-emerald-400">{resolveModuleLabel(modules, exam.module_code)}</span>}
                 </div>
               </motion.div>
             ))}

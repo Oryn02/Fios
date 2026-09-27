@@ -5,6 +5,7 @@ import { evaluateRecall, type RecallResult } from '../services/aiApi';
 import { getDocuments } from '../lib/documentService';
 import { saveRecallLog } from '../lib/activeRecallService';
 import type { DBModule, RecallConcept } from '../types/db';
+import { moduleDisplayName } from '../lib/moduleService';
 import { useHasGeminiKey, GeminiKeyModal } from './GeminiGate';
 import { useAiAuth } from '../context/AiAuthContext';
 
@@ -110,7 +111,7 @@ export const ActiveRecall: React.FC<Props> = ({ modules, initialModule = '', onC
                   <Folder className="w-3.5 h-3.5 accent-solid-text shrink-0" />
                   <select value={moduleCode} onChange={(e) => setModuleCode(e.target.value)} className="bg-transparent text-sm text-[var(--fios-text)] focus:outline-none cursor-pointer w-full">
                     <option value="">No module</option>
-                    {modules.map((m) => <option key={m.id} value={m.code}>{m.code}</option>)}
+                    {modules.map((m) => <option key={m.id} value={m.code}>{moduleDisplayName(m)}</option>)}
                   </select>
                 </div>
               </div>

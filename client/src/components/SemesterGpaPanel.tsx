@@ -119,7 +119,7 @@ export const SemesterGpaPanel: React.FC<Props> = ({ grades, modules }) => {
           <div key={m.code} className="space-y-1">
             <div className="flex items-center justify-between text-[11px] font-mono">
               <span className="text-[var(--fios-text)] truncate font-bold">
-                {m.code !== 'General' ? m.code : m.name}
+                {m.name || (m.code === 'General' ? 'General' : m.code)}
               </span>
               <span className="text-[var(--fios-text-muted)]">{formatCleanNumber(m.mark)}%</span>
             </div>

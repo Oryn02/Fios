@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { HelpCircle, CheckCircle2, XCircle, RotateCcw, ArrowRight, Sparkles, Save, Folder, Trash2, Loader2, FileText } from 'lucide-react';
 import { generateQuiz } from '../services/quizApi';
 import { getQuizzes, saveQuiz, deleteQuiz, updateQuizTitle } from '../lib/mcqService';
-import { getUserModules, type DBModule } from '../lib/moduleService';
+import { getUserModules, type DBModule, moduleDisplayName, resolveModuleLabel } from '../lib/moduleService';
 import type { MCQQuestion, MCQQuiz } from '../types/db';
 import { FileUpload } from './FileUpload';
 import { InlineEditableTitle } from './InlineEditableTitle';
@@ -212,7 +212,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
                         className="text-xs font-bold text-slate-100 truncate group-hover:accent-solid-text"
                         placeholder="Untitled Quiz"
                       />
-                      <p className="text-[10px] font-mono text-slate-500">{quiz.questions.length} questions{quiz.module_code ? ` · ${quiz.module_code}` : ''}</p>
+                      <p className="text-[10px] font-mono text-slate-500">{quiz.questions.length} questions{quiz.module_code ? ` · ${resolveModuleLabel(modules, quiz.module_code)}` : ''}</p>
                     </div>
                     <button onClick={(e) => handleDeleteSaved(e, quiz.id)} className="text-slate-600 hover:text-rose-400 p-1 cursor-pointer shrink-0">
                       <Trash2 className="w-3.5 h-3.5" />
@@ -251,7 +251,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
               <Folder className="w-3.5 h-3.5 accent-solid-text shrink-0" />
               <select value={moduleCode} onChange={(e) => setModuleCode(e.target.value)} className="bg-transparent text-xs font-mono font-bold text-slate-200 focus:outline-none cursor-pointer w-full">
                 <option value="" className="bg-[#07090e]">General</option>
-                {modules.map((m) => <option key={m.id} value={m.code} className="bg-[#07090e]">{m.code}</option>)}
+                {modules.map((m) => <option key={m.id} value={m.code} className="bg-[#07090e]">{moduleDisplayName(m)}</option>)}
               </select>
             </div>
             <button onClick={handleSaveQuiz} className="w-full sm:w-auto px-4 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
