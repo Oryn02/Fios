@@ -4,6 +4,16 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.0',
+      date: 'September 2026',
+      title: 'Quick Nav shortcut + polish',
+      highlights: [
+        'Quick Nav (command palette): ⌘K / Ctrl+K reliably opens the same “Jump to a tab or action…” palette as the header ⌘K chip — capture-phase handler with preventDefault so browser find/omnibox bindings do not steal Ctrl+K.',
+        'Shortcut is ignored while typing in inputs, textareas, or contenteditable fields (Esc still closes an open palette); bare K never opens Quick Nav.',
+        'Version bump to v3.1.0 across packages, chrome, Updates, and README.',
+      ],
+    },
+    {
       version: 'v3.0.0',
       date: 'September 2026',
       title: 'Major study OS — multimodal tutor, reminders, streaks & more',
@@ -209,7 +219,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.0.0</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.0</p>
       </header>
 
       <div className="space-y-4">
