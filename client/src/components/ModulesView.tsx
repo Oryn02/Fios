@@ -314,7 +314,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                     <button
                       type="button"
                       onClick={(e) => openEditModule(e, mod)}
-                      className="text-slate-600 hover:text-cyan-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-1 cursor-pointer"
+                      className="text-slate-500 hover:text-cyan-400 p-1 cursor-pointer"
                       title="Edit module"
                       aria-label={`Edit ${title}`}
                     >
@@ -323,7 +323,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                     <button
                       type="button"
                       onClick={(e) => handleDeleteModule(e, mod)}
-                      className="text-slate-600 hover:text-rose-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-1 cursor-pointer"
+                      className="text-slate-500 hover:text-rose-400 p-1 cursor-pointer"
                       title="Delete Module Folder"
                       aria-label={`Delete ${title}`}
                     >
