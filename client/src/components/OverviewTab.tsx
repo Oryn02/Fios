@@ -23,6 +23,7 @@ import { CompactAgenda } from './CompactAgenda';
 import { DatetimeLocalInput } from './DatetimeLocalInput';
 import { StudyStreakHeatmap } from './StudyStreakHeatmap';
 import { ExamCountdownWidget } from './ExamCountdownWidget';
+import { WeeklyGoalWidget } from './WeeklyGoalWidget';
 import { toast } from '../lib/toast';
 import { overviewGreeting } from '../lib/holidays';
 
@@ -179,7 +180,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
   }, [newTaskTitle, newTaskStart, newTaskDueAt]);
 
   const moduleColorList = useMemo(
-    () => modules.map((m) => ({ code: m.code, color: m.color })),
+    () => modules.map((m) => ({ code: m.code, color: m.color, name: m.name })),
     [modules]
   );
 
@@ -345,6 +346,9 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
           </div>
         </div>
       </motion.div>
+
+      {/* Weekly study goal — hero-adjacent strip (not a sidebar orphan) */}
+      <WeeklyGoalWidget variant="strip" />
 
       {/* 2. Focus Card */}
       <div className="bg-[#0e131f]/90 border border-slate-800 rounded-2xl p-4 sm:p-6 relative overflow-hidden space-y-4 shadow-xl">
@@ -574,10 +578,16 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         </div>
       </div>
 
-      {/* Study streak + exam countdown (below flight plan / widgets) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <StudyStreakHeatmap />
-        <ExamCountdownWidget />
+      {/* Study streak + exam countdown (below flight plan / widgets).
+          min-w-0 on items: prevent CSS grid min-width:auto from expanding past the viewport
+          and getting clipped by DashboardLayout overflow-x-hidden (broken mobile heatmap). */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
+        <div className="min-w-0 max-w-full">
+          <StudyStreakHeatmap />
+        </div>
+        <div className="min-w-0 max-w-full">
+          <ExamCountdownWidget />
+        </div>
       </div>
 
       {/* Saved Study Decks */}

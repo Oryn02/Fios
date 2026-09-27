@@ -40,7 +40,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
               <h3 id="tos-title" className={`text-base font-black uppercase ${landing ? 'text-white' : 'text-[var(--fios-text)]'}`}>
                 Terms of Service
               </h3>
-              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v3.0.0 · September 2026</p>
+              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v3.1.0 · September 2026</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className={`${muted} hover:opacity-80 cursor-pointer p-1`} aria-label="Close">
@@ -62,7 +62,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
             <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>2. Bring-your-own key (Gemini)</h4>
             <p>
               AI features require your own Google Gemini API key. You are responsible for usage quotas, billing, key security, and compliance
-              with Google’s terms. Content you send to AI endpoints is processed by Google under those terms. Fios does not resell AI access.
+              with Google’s terms. Content you send to AI endpoints — including optional PDF, photo, and audio uploads — is processed by Google under those terms. Fios does not resell AI access.
             </p>
           </section>
 
@@ -70,7 +70,8 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
             <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>3. Accounts & third-party services</h4>
             <p>
               Authentication and data storage use Supabase. Optional GitHub sign-in or gist export uses GitHub APIs you authorize.
-              Hosting (e.g. Render) may process connection logs. Your use of those services is also subject to their terms and privacy notices.
+              Hosting (e.g. Render) may process connection logs. Optional support email delivery may use Resend or SendGrid when configured.
+              Your use of those services is also subject to their terms and privacy notices.
             </p>
           </section>
 
@@ -84,23 +85,34 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>5. Acceptable use</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>5. Feedback, ratings & support</h4>
             <p>
-              Do not use Fios to violate your institution’s academic integrity policy, upload malware, harass others, infringe IP rights,
-              or attempt unauthorized access to systems. Optional product feedback must not include secrets or others’ personal data without a lawful basis.
+              Optional Feedback & Ratings submissions (star rating, categories, message; anonymous or signed-in) and Contact Support messages
+              (message plus optional name / reply-to email) are reviewed by the app operator to improve the product and respond to requests.
+              Do not include secrets, API keys, passwords, or other people’s personal data without a lawful basis. Abuse, spam, or unlawful content
+              may be refused or removed.
             </p>
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>6. Your content & privacy</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>6. Acceptable use</h4>
+            <p>
+              Do not use Fios to violate your institution’s academic integrity policy, upload malware, harass others, infringe IP rights,
+              or attempt unauthorized access to systems.
+            </p>
+          </section>
+
+          <section className="space-y-1.5">
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>7. Your content & privacy</h4>
             <p>
               You retain ownership of notes, decks, and uploads. Content is stored in your private Supabase rows under Row Level Security.
               You may export a JSON copy of your study data from Settings or request erasure as described in the Privacy Policy.
+              Processing of feedback, support messages, push subscriptions, and local/PWA storage is described there in full.
             </p>
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>7. Limitation of liability</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>8. Limitation of liability</h4>
             <p>
               To the fullest extent permitted by law, the authors are not liable for grades, exam outcomes, missed classes, data loss, or third-party API outages.
               Always verify AI-generated study material and timetable data independently. Nothing in these terms limits rights that cannot be waived under applicable consumer or data-protection law.
@@ -108,7 +120,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
           </section>
 
           <section className="space-y-1.5">
-            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>8. Changes & contact</h4>
+            <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>9. Changes & contact</h4>
             <p>
               We may update these Terms as the product evolves; the version label above will change when we do. Questions:{' '}
               <a href="mailto:oryn02@gmail.com" className={heading}>oryn02@gmail.com</a>.

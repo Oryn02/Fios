@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlarmClock, Loader2 } from 'lucide-react';
-import { getUserModules, type DBModule } from '../lib/moduleService';
+import { getUserModules, type DBModule, moduleDisplayName } from '../lib/moduleService';
 import { getTasks } from '../lib/taskService';
 import type { Task } from '../types/db';
 
@@ -22,7 +22,7 @@ function buildItems(modules: DBModule[], tasks: Task[]): CountdownItem[] {
     if (Number.isNaN(at.getTime()) || at.getTime() < now - 3600000) continue;
     items.push({
       id: `exam-${m.id}`,
-      label: `${m.code || m.name} exam`,
+      label: `${moduleDisplayName(m)} exam`,
       kind: 'exam',
       at,
       moduleCode: m.code,

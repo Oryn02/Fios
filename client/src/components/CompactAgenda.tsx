@@ -14,7 +14,7 @@ import { MOD_BADGE_CLASS, MOD_PILL_CLASS } from '../lib/moduleColors';
 export interface CompactAgendaProps {
   classes: CalendarEvent[];
   tasks: Task[];
-  modules?: { code: string; color: string }[];
+  modules?: { code: string; color: string; name?: string }[];
   loading?: boolean;
   /** Cap rendered rows (virtualization substitute for short lists). */
   limit?: number;
@@ -47,7 +47,7 @@ const AgendaRow = memo(function AgendaRow({
           {formatAgendaWhen(item)}
         </div>
         <div className="flex items-center gap-2 min-w-0 flex-wrap">
-          <div className={`text-xs font-black truncate ${muted ? 'text-slate-500 line-through' : 'text-white'}`}>
+          <div className={`text-sm sm:text-xs font-black truncate ${muted ? 'text-slate-500 line-through' : 'text-white'}`}>
             {item.title}
           </div>
           <span data-mod-color={item.colorKey} className={MOD_PILL_CLASS}>
@@ -70,7 +70,7 @@ const AgendaRow = memo(function AgendaRow({
           </div>
         )}
         {item.moduleCode && (
-          <span data-mod-color={item.colorKey} className={MOD_BADGE_CLASS}>{item.moduleCode}</span>
+          <span data-mod-color={item.colorKey} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide`}>{item.moduleCode}</span>
         )}
       </div>
 

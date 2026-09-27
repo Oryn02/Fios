@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BookOpen, Folder, Layers, Sparkles, ArrowRight, Trash2, Tag, Plus, Palette, X,
+  BookOpen, Layers, Sparkles, ArrowRight, Trash2, Tag, Plus, Pencil,
   HelpCircle, Code2, CheckSquare, Square, Bug, Terminal, PencilRuler, Brain, FileText,
   Upload, Download, Share2,
 } from 'lucide-react';
 import { getUserDecksWithCards, renameDeck, buildDeckExport, downloadDeckJson, deckExportToShareCode } from '../lib/deckService';
-import { getUserModules, createModule, deleteModule, DBModule, COLOR_OPTIONS, normalizeModuleColor } from '../lib/moduleService';
+import {
+  getUserModules, deleteModule, DBModule, normalizeModuleColor,
+  moduleDisplayName, moduleCourseCode, resolveModuleLabel,
+} from '../lib/moduleService';
 import { MOD_BADGE_CLASS } from '../lib/moduleColors';
 import { getQuizzes, updateQuizTitle } from '../lib/mcqService';
 import { getCodeExams, updateCodeExamTitle } from '../lib/codeExamService';
@@ -19,6 +22,7 @@ import type { MCQQuiz, CodeExam, Task, CodeExamType, FiosDocument } from '../typ
 import { ActiveRecall } from './ActiveRecall';
 import { InlineEditableTitle } from './InlineEditableTitle';
 import { ImportDeckModal } from './ImportDeckModal';
+import { ModuleFormPanel } from './ModuleFormPanel';
 
 interface ModulesViewProps {
   onOpenFlashcards: (deckCards?: any[], title?: string, moduleCode?: string, isSaved?: boolean) => void;
@@ -61,12 +65,8 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [entityTab, setEntityTab] = useState<EntityTab>('decks');
 
-  const [isCreatingModule, setIsCreatingModule] = useState(false);
-  const [newCode, setNewCode] = useState('');
-  const [newName, setNewName] = useState('');
-  const [newColor, setNewColor] = useState('deep-emerald');
-  const [newTags, setNewTags] = useState('');
-  const [creating, setCreating] = useState(false);
+  const [moduleFormMode, setModuleFormMode] = useState<'create' | 'edit' | null>(null);
+  const [editingModule, setEditingModule] = useState<DBModule | null>(null);
   const [recallOpen, setRecallOpen] = useState(false);
   const [folderFilter, setFolderFilter] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -136,31 +136,41 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
     return modules.filter((m) => (m.tags || []).includes(folderFilter) || (folderFilter === 'Untagged' && (!m.tags || m.tags.length === 0)));
   }, [modules, folderFilter]);
 
-  const handleCreateModule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newName.trim()) return;
-    setCreating(true);
-    try {
-      const tags = newTags.split(',').map((t) => t.trim()).filter(Boolean);
-      const created = await createModule(newCode, newName, newColor, { tags });
-      if (created) {
-        setModules((prev) => [...prev, created]);
-        setNewCode(''); setNewName(''); setNewTags(''); setIsCreatingModule(false);
-      }
-    } catch (err: any) {
-      alert(`Failed to create module: ${err.message}`);
-    } finally {
-      setCreating(false);
-    }
+  const closeModuleForm = () => {
+    setModuleFormMode(null);
+    setEditingModule(null);
   };
 
-  const handleDeleteModule = async (e: React.MouseEvent, modId: string, modCode: string) => {
+  const handleModuleSaved = (mod: DBModule) => {
+    if (moduleFormMode === 'edit') {
+      const prev = editingModule;
+      setModules((list) => list.map((m) => (m.id === mod.id ? mod : m)));
+      if (prev && selectedModule === prev.code && prev.code !== mod.code) {
+        setSelectedModule(mod.code);
+      }
+      // Refresh linked content if internal code changed
+      if (prev && prev.code !== mod.code) loadData();
+    } else {
+      setModules((list) => [...list, mod]);
+    }
+    closeModuleForm();
+  };
+
+  const openEditModule = (e: React.MouseEvent, mod: DBModule) => {
     e.stopPropagation();
-    if (!confirm(`Delete module folder "${modCode}"? Associated content reverts to General.`)) return;
+    setEditingModule(mod);
+    setModuleFormMode('edit');
+  };
+
+  const handleDeleteModule = async (e: React.MouseEvent, mod: DBModule) => {
+    e.stopPropagation();
+    const label = moduleDisplayName(mod);
+    if (!confirm(`Delete module folder "${label}"? Associated content reverts to General.`)) return;
     try {
-      await deleteModule(modId);
-      setModules((prev) => prev.filter((m) => m.id !== modId));
-      if (selectedModule === modCode) setSelectedModule(null);
+      await deleteModule(mod.id);
+      setModules((prev) => prev.filter((m) => m.id !== mod.id));
+      if (selectedModule === mod.code) setSelectedModule(null);
+      if (editingModule?.id === mod.id) closeModuleForm();
     } catch (err: any) {
       alert(`Failed to delete module: ${err.message}`);
     }
@@ -225,7 +235,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => setRecallOpen(true)} className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
             <Brain className="w-3.5 h-3.5 accent-solid-text" /> Active Recall
           </motion.button>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setIsCreatingModule(true)} className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setEditingModule(null); setModuleFormMode('create'); }} className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
             <Plus className="w-3.5 h-3.5 accent-solid-text" /> New Module
           </motion.button>
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => onOpenFlashcards()} className="px-4 py-2 accent-bg text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
@@ -234,57 +244,15 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
         </div>
       </div>
 
-      {/* Create module */}
+      {/* Create / edit module */}
       <AnimatePresence>
-        {isCreatingModule && (
-          <motion.form
-            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            onSubmit={handleCreateModule}
-            className="bg-[#0e131f] border border-cyan-500/50 rounded-2xl p-6 shadow-2xl space-y-4 overflow-hidden"
-          >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-mono font-black uppercase text-cyan-400 flex items-center gap-2"><Folder className="w-4 h-4" /> Create Custom Academic Module</span>
-              <button type="button" onClick={() => setIsCreatingModule(false)} className="text-slate-500 hover:text-slate-300 cursor-pointer"><X className="w-4 h-4" /></button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <input type="text" placeholder="Course code (optional)…" value={newCode} onChange={(e) => setNewCode(e.target.value)}
-                className="bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400 uppercase font-bold" />
-              <input type="text" placeholder="Module Name (e.g. Software Engineering)…" value={newName} onChange={(e) => setNewName(e.target.value)} required
-                className="sm:col-span-2 bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Folder tags (comma-separated, e.g. Year1, Core)…"
-              value={newTags}
-              onChange={(e) => setNewTags(e.target.value)}
-              className="w-full bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400"
-            />
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1.5"><Palette className="w-3.5 h-3.5 text-cyan-400" /> Module Accent Color</label>
-              <div className="flex flex-wrap gap-2">
-                {Object.keys(COLOR_OPTIONS)
-                  .filter((k) => !['emerald', 'cyan', 'indigo', 'amber', 'rose', 'purple', 'teal', 'violet'].includes(k))
-                  .map((cKey) => (
-                  <button
-                    type="button"
-                    key={cKey}
-                    data-mod-color={cKey}
-                    onClick={() => setNewColor(cKey)}
-                    className={`${MOD_BADGE_CLASS} !text-[10px] !px-3 !py-1.5 cursor-pointer transition-transform ${
-                      newColor === cKey ? 'ring-2 ring-[var(--mod-solid)] scale-105' : 'opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    {COLOR_OPTIONS[cKey].label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-end pt-2">
-              <button type="submit" disabled={creating} className="px-5 py-2.5 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors cursor-pointer shadow-lg disabled:opacity-40">
-                {creating ? 'Creating…' : 'Save Module Folder'}
-              </button>
-            </div>
-          </motion.form>
+        {moduleFormMode && (
+          <ModuleFormPanel
+            mode={moduleFormMode}
+            module={editingModule}
+            onClose={closeModuleForm}
+            onSaved={handleModuleSaved}
+          />
         )}
       </AnimatePresence>
 
@@ -327,6 +295,8 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
           const counts = countsFor(mod.code);
           const isSelected = selectedModule === mod.code;
           const colorKey = normalizeModuleColor(mod.color);
+          const title = moduleDisplayName(mod);
+          const courseCode = moduleCourseCode(mod);
           return (
             <motion.div
               key={mod.id}
@@ -336,13 +306,36 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
               className={`p-4 rounded-xl border text-left transition-colors cursor-pointer relative group flex flex-col justify-between ${isSelected ? 'mod-border bg-[#0e131f] shadow-xl' : 'border-slate-800 bg-[#0e131f]/60 hover:border-slate-700'}`}
             >
               <div>
-                <div className="flex items-center justify-between">
-                  <span data-mod-color={colorKey} className={MOD_BADGE_CLASS}>{mod.code}</span>
-                  <button onClick={(e) => handleDeleteModule(e, mod.id, mod.code)} className="text-slate-600 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 cursor-pointer" title="Delete Module Folder">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                <div className="flex items-center justify-between gap-2">
+                  <span data-mod-color={colorKey} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide max-w-[70%] truncate`} title={title}>
+                    {title}
+                  </span>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => openEditModule(e, mod)}
+                      className="text-slate-500 hover:text-cyan-400 p-1 cursor-pointer"
+                      title="Edit module"
+                      aria-label={`Edit ${title}`}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteModule(e, mod)}
+                      className="text-slate-500 hover:text-rose-400 p-1 cursor-pointer"
+                      title="Delete Module Folder"
+                      aria-label={`Delete ${title}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <p className="text-sm font-bold text-slate-100 truncate mt-2">{mod.name}</p>
+                {courseCode && (
+                  <p className="text-[10px] font-mono text-slate-500 mt-1.5 truncate" title={courseCode}>
+                    {courseCode}
+                  </p>
+                )}
                 {mod.tags && mod.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
                     {mod.tags.map((t) => (
@@ -378,7 +371,10 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
             })}
           </div>
           <span className="text-xs font-mono text-slate-500">
-            {selectedModule ? `${selectedModule} · ` : 'All · '}{activeCount} items
+            {selectedModule
+              ? `${resolveModuleLabel(modules, selectedModule, selectedModule)} · `
+              : 'All · '}
+            {activeCount} items
           </span>
         </div>
 
@@ -410,9 +406,9 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <Tag className="w-3 h-3 text-slate-500" />
                             <select value={deck.module_code || ''} onChange={(e) => handleUpdateDeckModule(e, deck.id)}
-                              className="bg-[#07090e] border border-slate-800 text-[10px] font-mono font-bold text-emerald-400 rounded px-1.5 py-0.5 focus:outline-none focus:border-emerald-400 cursor-pointer">
+                              className="bg-[#07090e] border border-slate-800 text-[10px] font-mono font-bold text-emerald-400 rounded px-1.5 py-0.5 focus:outline-none focus:border-emerald-400 cursor-pointer max-w-[10rem]">
                               <option value="">General</option>
-                              {modules.map((m) => <option key={m.id} value={m.code}>{m.code}</option>)}
+                              {modules.map((m) => <option key={m.id} value={m.code}>{moduleDisplayName(m)}</option>)}
                             </select>
                           </div>
                           <div className="flex items-center gap-1">
@@ -494,8 +490,8 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                           {quiz.module_code && (() => {
                             const m = modules.find((x) => x.code === quiz.module_code);
                             return (
-                              <span data-mod-color={normalizeModuleColor(m?.color)} className={MOD_BADGE_CLASS}>
-                                {quiz.module_code}
+                              <span data-mod-color={normalizeModuleColor(m?.color)} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide`}>
+                                {moduleDisplayName(m, quiz.module_code)}
                               </span>
                             );
                           })()}
@@ -541,8 +537,8 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                           {exam.module_code && (() => {
                             const m = modules.find((x) => x.code === exam.module_code);
                             return (
-                              <span data-mod-color={normalizeModuleColor(m?.color)} className={MOD_BADGE_CLASS}>
-                                {exam.module_code}
+                              <span data-mod-color={normalizeModuleColor(m?.color)} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide`}>
+                                {moduleDisplayName(m, exam.module_code)}
                               </span>
                             );
                           })()}
@@ -586,8 +582,8 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                           {task.module_code && (() => {
                             const m = modules.find((x) => x.code === task.module_code);
                             return (
-                              <span data-mod-color={normalizeModuleColor(m?.color)} className={MOD_BADGE_CLASS}>
-                                {task.module_code}
+                              <span data-mod-color={normalizeModuleColor(m?.color)} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide`}>
+                                {moduleDisplayName(m, task.module_code)}
                               </span>
                             );
                           })()}
@@ -627,8 +623,8 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                             {doc.module_code && (() => {
                               const m = modules.find((x) => x.code === doc.module_code);
                               return (
-                                <span data-mod-color={normalizeModuleColor(m?.color)} className={MOD_BADGE_CLASS}>
-                                  {doc.module_code}
+                                <span data-mod-color={normalizeModuleColor(m?.color)} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide`}>
+                                  {moduleDisplayName(m, doc.module_code)}
                                 </span>
                               );
                             })()}

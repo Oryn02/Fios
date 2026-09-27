@@ -38,7 +38,12 @@
 }
 
 /* Semantic helpers used by theme-aware surfaces */
-.fios-app-bg { background-color: var(--fios-bg); color: var(--fios-text); }
+.fios-app-bg {
+  background-color: var(--fios-bg);
+  color: var(--fios-text);
+  position: relative;
+  isolation: isolate;
+}
 .fios-surface { background-color: var(--fios-surface); }
 .fios-surface-2 { background-color: var(--fios-surface-2); }
 .fios-border { border-color: var(--fios-border); }
@@ -429,6 +434,39 @@ summary,
   touch-action: pan-y;
 }
 
+/* Schedule month grid — mobile tap targets + no horizontal bleed (v3.1.0) */
+.fios-month-grid {
+  -webkit-overflow-scrolling: touch;
+}
+.fios-month-cell {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--fios-accent-solid) 18%, transparent);
+}
+@media (max-width: 639px) {
+  .fios-month-cell {
+    min-height: 3.75rem;
+    min-width: 0;
+  }
+  .fios-month-grid {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Contribution heatmap (and similar): horizontal pan on touch without trapping page scroll */
+.fios-h-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  /* Avoid nested scroll fighting the page on iOS when content fits */
+  scrollbar-width: thin;
+}
+/* Global `button { touch-action: manipulation }` blocks horizontal pan when the
+   gesture starts on a cell — allow pan-x so the week strip scrolls on phones. */
+.fios-h-scroll button {
+  touch-action: pan-x;
+}
+
 /* Mermaid diagrams render on a neutral surface in both themes */
 .fios-mermaid svg { max-width: 100%; height: auto; }
 
@@ -455,13 +493,52 @@ summary,
   transition: none !important;
 }
 
-/* OpenDyslexic accessibility font */
-[data-opendyslexic="true"] body,
-[data-opendyslexic="true"] button,
-[data-opendyslexic="true"] input,
-[data-opendyslexic="true"] textarea,
-[data-opendyslexic="true"] select {
-  font-family: "OpenDyslexic", "Open Dyslexic", Comic Sans MS, Verdana, sans-serif !important;
+/* OpenDyslexic — self-hosted woff (PWA-precacheable). CDN CSS previously 404'd. */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-BoldItalic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Apply broadly so Tailwind font-sans / font-mono UI chrome cannot override on mobile. */
+html[data-opendyslexic="true"],
+html[data-opendyslexic="true"] body {
+  --fios-font-sans: 'OpenDyslexic', Verdana, Geneva, sans-serif;
+  font-family: 'OpenDyslexic', Verdana, Geneva, sans-serif !important;
+}
+html[data-opendyslexic="true"] body,
+html[data-opendyslexic="true"] body * {
+  font-family: 'OpenDyslexic', Verdana, Geneva, sans-serif !important;
+}
+/* Keep true code samples monospace for readability */
+html[data-opendyslexic="true"] body code,
+html[data-opendyslexic="true"] body pre,
+html[data-opendyslexic="true"] body kbd,
+html[data-opendyslexic="true"] body samp {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
 }
 
 /* Formatted markdown prose helpers */
@@ -488,4 +565,178 @@ summary,
   padding-left: 0.75em;
   margin: 0.5em 0;
   color: var(--fios-text-muted);
+}
+
+/* ==========================================================================
+   Holiday ambience (v3.1.0) — app shell only via HolidayAmbience
+   Soft washes + sparse particles; never on landing. Respect reduced-motion
+   and low-power (static wash only). Keep opacity low for readable Overview.
+   ========================================================================== */
+.fios-holiday-ambience {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  contain: strict;
+}
+.fios-holiday-wash {
+  position: absolute;
+  inset: -8%;
+  opacity: 0.55;
+}
+.fios-holiday-particles {
+  position: absolute;
+  inset: 0;
+}
+.fios-holiday-particle {
+  position: absolute;
+  display: block;
+  border-radius: 9999px;
+  will-change: transform, opacity;
+  opacity: 0;
+}
+
+/* Shared particle placement (sparse, staggered) */
+.fios-holiday-particle:nth-child(1)  { left: 8%;  top: 12%; --delay: 0s;   --dur: 18s; --size: 3px; }
+.fios-holiday-particle:nth-child(2)  { left: 22%; top: 68%; --delay: 2.4s; --dur: 22s; --size: 2px; }
+.fios-holiday-particle:nth-child(3)  { left: 38%; top: 28%; --delay: 5.1s; --dur: 16s; --size: 4px; }
+.fios-holiday-particle:nth-child(4)  { left: 54%; top: 78%; --delay: 1.2s; --dur: 20s; --size: 2px; }
+.fios-holiday-particle:nth-child(5)  { left: 66%; top: 18%; --delay: 7.8s; --dur: 19s; --size: 3px; }
+.fios-holiday-particle:nth-child(6)  { left: 78%; top: 52%; --delay: 3.6s; --dur: 21s; --size: 2px; }
+.fios-holiday-particle:nth-child(7)  { left: 14%; top: 88%; --delay: 9.2s; --dur: 17s; --size: 3px; }
+.fios-holiday-particle:nth-child(8)  { left: 88%; top: 34%; --delay: 4.5s; --dur: 23s; --size: 2px; }
+.fios-holiday-particle:nth-child(9)  { left: 46%; top: 6%;  --delay: 6.3s; --dur: 15s; --size: 3px; }
+.fios-holiday-particle:nth-child(10) { left: 72%; top: 90%; --delay: 8.7s; --dur: 18s; --size: 2px; }
+.fios-holiday-particle:nth-child(11) { left: 30%; top: 44%; --delay: 11s;  --dur: 24s; --size: 3px; }
+.fios-holiday-particle:nth-child(12) { left: 92%; top: 72%; --delay: 1.8s; --dur: 16s; --size: 2px; }
+
+/* —— Halloween: orange/purple wash + faint ember motes —— */
+[data-ambience="halloween"] .fios-holiday-wash {
+  background:
+    radial-gradient(ellipse 70% 55% at 12% 18%, rgba(249, 115, 22, 0.14), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 88% 78%, rgba(124, 58, 237, 0.12), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(154, 52, 18, 0.08), transparent 50%);
+}
+[data-ambience="halloween"] .fios-holiday-particle {
+  width: var(--size);
+  height: var(--size);
+  background: color-mix(in srgb, #fdba74 70%, #a78bfa);
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.35);
+  animation: fios-holiday-drift var(--dur) ease-in-out var(--delay) infinite;
+}
+
+/* —— Christmas: soft holly wash + sparse snowfall —— */
+[data-ambience="christmas"] .fios-holiday-wash {
+  background:
+    radial-gradient(ellipse 65% 45% at 18% 8%, rgba(239, 68, 68, 0.10), transparent 58%),
+    radial-gradient(ellipse 55% 50% at 86% 92%, rgba(22, 101, 52, 0.12), transparent 55%),
+    radial-gradient(ellipse 40% 30% at 50% 0%, rgba(252, 165, 165, 0.06), transparent 50%);
+}
+[data-ambience="christmas"] .fios-holiday-particle {
+  width: var(--size);
+  height: var(--size);
+  background: rgba(248, 250, 252, 0.55);
+  box-shadow: 0 0 4px rgba(248, 250, 252, 0.25);
+  border-radius: 50%;
+  top: -4%;
+  animation: fios-holiday-snowfall var(--dur) linear var(--delay) infinite;
+}
+[data-theme="light"] [data-ambience="christmas"] .fios-holiday-particle {
+  background: rgba(100, 116, 139, 0.35);
+  box-shadow: none;
+}
+
+/* —— St Patrick’s: green shimmer + soft sparkle —— */
+[data-ambience="st-patrick"] .fios-holiday-wash {
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 70%, rgba(34, 197, 94, 0.12), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 80% 20%, rgba(202, 138, 4, 0.08), transparent 50%),
+    linear-gradient(135deg, rgba(134, 239, 172, 0.04), transparent 40%, rgba(34, 197, 94, 0.05));
+  animation: fios-holiday-shimmer 14s ease-in-out infinite alternate;
+}
+[data-ambience="st-patrick"] .fios-holiday-particle {
+  width: calc(var(--size) + 1px);
+  height: calc(var(--size) + 1px);
+  background: color-mix(in srgb, #86efac 60%, #fde68a);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+  animation: fios-holiday-sparkle var(--dur) ease-in-out var(--delay) infinite;
+}
+
+/* —— Easter: pastel wash + gentle floating dots —— */
+[data-ambience="easter"] .fios-holiday-wash {
+  background:
+    radial-gradient(ellipse 55% 45% at 25% 30%, rgba(196, 181, 253, 0.14), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 75% 70%, rgba(251, 207, 232, 0.12), transparent 55%),
+    radial-gradient(ellipse 40% 35% at 55% 15%, rgba(165, 243, 252, 0.10), transparent 50%);
+}
+[data-ambience="easter"] .fios-holiday-particle {
+  width: calc(var(--size) + 2px);
+  height: calc(var(--size) + 2px);
+  background: color-mix(in srgb, #c4b5fd 50%, #fbcfe8);
+  opacity: 0;
+  animation: fios-holiday-float var(--dur) ease-in-out var(--delay) infinite;
+}
+
+/* Light mode: slightly softer washes so cream surfaces stay readable */
+[data-theme="light"] .fios-holiday-wash {
+  opacity: 0.42;
+}
+
+@keyframes fios-holiday-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); opacity: 0; }
+  15% { opacity: 0.45; }
+  50% { transform: translate3d(12px, -28px, 0); opacity: 0.35; }
+  85% { opacity: 0.4; }
+}
+
+@keyframes fios-holiday-snowfall {
+  0% { transform: translate3d(0, -5vh, 0); opacity: 0; }
+  8% { opacity: 0.55; }
+  90% { opacity: 0.35; }
+  100% { transform: translate3d(18px, 105vh, 0); opacity: 0; }
+}
+
+@keyframes fios-holiday-sparkle {
+  0%, 100% { transform: scale(0.6); opacity: 0; }
+  40% { transform: scale(1.15); opacity: 0.5; }
+  70% { transform: scale(0.9); opacity: 0.25; }
+}
+
+@keyframes fios-holiday-float {
+  0%, 100% { transform: translate3d(0, 8px, 0); opacity: 0; }
+  20% { opacity: 0.4; }
+  50% { transform: translate3d(-10px, -18px, 0); opacity: 0.35; }
+  80% { opacity: 0.3; }
+}
+
+@keyframes fios-holiday-shimmer {
+  0% { filter: hue-rotate(0deg) brightness(1); }
+  100% { filter: hue-rotate(8deg) brightness(1.04); }
+}
+
+/* Reduced motion / low-power: keep static wash, kill particle motion */
+@media (prefers-reduced-motion: reduce) {
+  .fios-holiday-particle,
+  [data-ambience="st-patrick"] .fios-holiday-wash {
+    animation: none !important;
+  }
+  .fios-holiday-particle {
+    opacity: 0.2;
+    transform: none;
+  }
+  [data-ambience="christmas"] .fios-holiday-particle {
+    top: auto;
+  }
+}
+[data-low-power="true"] .fios-holiday-particle,
+[data-low-power="true"] [data-ambience="st-patrick"] .fios-holiday-wash {
+  animation: none !important;
+}
+[data-low-power="true"] .fios-holiday-particle {
+  display: none;
+}
+[data-low-power="true"] .fios-holiday-wash {
+  opacity: 0.35;
+  filter: none !important;
 }

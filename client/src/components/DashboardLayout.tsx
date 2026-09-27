@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutDashboard, Layers, Calendar, Settings, BookOpen,
@@ -12,8 +12,8 @@ import { useTheme } from '../context/ThemeContext';
 import { usePreferences, DEFAULT_NAV_ORDER, DEFAULT_MOBILE_NAV } from '../context/PreferencesContext';
 import { FiosLogo } from './FiosLogo';
 import { Avatar } from './Avatar';
-import { WeeklyGoalWidget } from './WeeklyGoalWidget';
 import { CommandPalette, type CommandItem } from './CommandPalette';
+import { HolidayAmbience } from './HolidayAmbience';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -34,8 +34,35 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.0.0', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.1.0', icon: Sparkles },
 ];
+
+/** True when the event target is a text-entry control (skip ⌘K / Ctrl+K while typing). */
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  if (target.closest?.('[contenteditable="true"]')) return true;
+  const el = target as HTMLElement;
+  const tag = el.tagName;
+  if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+  if (tag === 'INPUT') {
+    const type = ((el as HTMLInputElement).type || 'text').toLowerCase();
+    // Non-textual inputs should still allow the palette chord.
+    if (['button', 'checkbox', 'radio', 'submit', 'reset', 'file', 'color', 'range', 'hidden'].includes(type)) {
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+/** ⌘K (Mac) / Ctrl+K (Win/Linux) — never bare K. */
+function isQuickNavChord(e: KeyboardEvent): boolean {
+  if (!(e.metaKey || e.ctrlKey) || e.altKey) return false;
+  if (e.code === 'KeyK') return true;
+  const key = typeof e.key === 'string' ? e.key : '';
+  return key.length === 1 && key.toLowerCase() === 'k';
+}
 
 /** Tabs where Zen may hide chrome (study surfaces). Settings/Overview always keep nav. */
 const ZEN_STUDY_TABS = new Set([
@@ -56,6 +83,18 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true
   );
+
+  // Refs so the global shortcut listener stays mounted (no rebind gap on open/close).
+  const paletteOpenRef = useRef(paletteOpen);
+  const drawerOpenRef = useRef(drawerOpen);
+  const zenModeRef = useRef(zenMode);
+  paletteOpenRef.current = paletteOpen;
+  drawerOpenRef.current = drawerOpen;
+  zenModeRef.current = zenMode;
+
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  const closePalette = useCallback(() => setPaletteOpen(false), []);
+  const togglePalette = useCallback(() => setPaletteOpen((v) => !v), []);
 
   const hideChrome = zenMode && ZEN_STUDY_TABS.has(activeTab);
 
@@ -140,34 +179,35 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // ⌘K / Ctrl+K — command palette (match header chip). Capture phase so
-      // browser search-bar bindings (e.g. Firefox Ctrl+K) and editors don't win.
-      const isPaletteChord =
-        (e.metaKey || e.ctrlKey) &&
-        !e.altKey &&
-        (e.code === 'KeyK' || e.key.toLowerCase() === 'k');
-      if (isPaletteChord) {
+      // ⌘K / Ctrl+K — same Quick Nav state as the header chip.
+      // Capture phase + preventDefault so Chrome/Firefox find/omnibox bindings don't win.
+      if (isQuickNavChord(e)) {
+        // Don't steal the chord while typing, unless the palette is already open (toggle/close).
+        if (isTypingTarget(e.target) && !paletteOpenRef.current) return;
         e.preventDefault();
         e.stopPropagation();
-        setPaletteOpen((v) => !v);
+        // Beat any other capture listeners on this target (e.g. editors).
+        e.stopImmediatePropagation();
+        togglePalette();
         return;
       }
       if (e.key !== 'Escape') return;
       // Esc stack: drawer → palette (handled there) → exit Zen.
-      if (drawerOpen) {
+      if (drawerOpenRef.current) {
         e.preventDefault();
         setDrawerOpen(false);
         return;
       }
-      if (paletteOpen) return;
-      if (zenMode) {
+      if (paletteOpenRef.current) return;
+      if (zenModeRef.current) {
         e.preventDefault();
         exitZen();
       }
     };
-    window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [zenMode, exitZen, paletteOpen, drawerOpen]);
+    // document capture is the reliable target for beating browser search chords.
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, [exitZen, togglePalette]);
 
   const [draftNavOrder, setDraftNavOrder] = useState<string[] | null>(null);
   const effectiveNavOrder = draftNavOrder ?? (navOrder?.length ? navOrder : DEFAULT_NAV_ORDER);
@@ -268,6 +308,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
   return (
     <div className="min-h-dvh fios-app-bg flex flex-col font-sans overflow-x-hidden">
+      <HolidayAmbience />
       {/* Top HUD Bar — always visible unless Zen is hiding study chrome */}
       {!hideChrome && (
         <header className="h-14 sm:h-16 border-b fios-border bg-[var(--fios-surface)]/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between fixed top-0 left-0 right-0 z-[60] safe-top">
@@ -295,7 +336,13 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             >
               <FiosLogo size="lg" className="leading-none min-w-0 pointer-events-none" />
             </button>
-            <span className="hidden sm:inline text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-3 py-1 rounded-md border accent-border tracking-wider">v3.0.0</span>
+            <span
+              className="inline-flex items-center shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
+              title="Fios version"
+              aria-label="Fios version 3.1.0"
+            >
+              v3.1.0
+            </span>
             {zenMode && (
               <button
                 type="button"
@@ -311,7 +358,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               type="button"
-              onClick={() => setPaletteOpen(true)}
+              onClick={openPalette}
               title="Command palette (⌘K / Ctrl+K)"
               aria-label="Open command palette (Control or Command K)"
               aria-keyshortcuts="Meta+K Control+K"
@@ -364,10 +411,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         <div className="fixed top-3 right-3 z-[80] flex items-center gap-2 safe-top">
           <button
             type="button"
-            onClick={() => setPaletteOpen(true)}
+            onClick={openPalette}
             className="touch-target p-2.5 rounded-xl border fios-border bg-[var(--fios-surface)]/95 text-[var(--fios-text-muted)] shadow-xl cursor-pointer active:opacity-80"
             aria-label="Open navigation (command palette)"
-            title="Navigate (Ctrl/Cmd+K)"
+            title="Navigate (⌘K / Ctrl+K)"
           >
             <Menu className="w-4 h-4" />
           </button>
@@ -437,7 +484,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         </AnimatePresence>
 
         {!hideChrome && sidebarOpen && (
-          <aside id="fios-desktop-sidebar" className="w-60 border-r fios-border bg-[var(--fios-surface)]/40 p-4 hidden md:flex flex-col justify-between" aria-label="Sidebar">
+          <aside id="fios-desktop-sidebar" className="w-60 border-r fios-border bg-[var(--fios-surface)]/40 p-4 hidden md:flex flex-col" aria-label="Sidebar">
             <div className="space-y-6">
               <div className="text-[10px] font-black uppercase tracking-widest text-[var(--fios-text-muted)] px-3">
                 Navigation
@@ -487,16 +534,14 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                 })}
               </nav>
             </div>
-
-            <WeeklyGoalWidget compact />
           </aside>
         )}
 
-        <main className={`flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full relative ${hideChrome ? 'pb-24 md:pb-8' : 'pb-24 md:pb-8'}`} id="main-content">
+        <main className={`flex-1 min-w-0 p-4 sm:p-8 max-w-7xl mx-auto w-full relative ${hideChrome ? 'pb-24 md:pb-8' : 'pb-24 md:pb-8'}`} id="main-content">
           {!hideChrome && (
             <div className="absolute top-10 left-10 w-96 h-96 rounded-full blur-[100px] pointer-events-none opacity-40" style={{ backgroundColor: 'color-mix(in srgb, var(--fios-accent-solid) 8%, transparent)' }} />
           )}
-          <div className="relative z-10">{children}</div>
+          <div className="relative z-10 min-w-0">{children}</div>
         </main>
       </div>
 
@@ -612,7 +657,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         )}
       </AnimatePresence>
 
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} items={commandItems} />
+      <CommandPalette open={paletteOpen} onClose={closePalette} items={commandItems} />
     </div>
   );
 };

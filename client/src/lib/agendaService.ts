@@ -101,7 +101,7 @@ export function buildUnifiedAgenda(opts: {
   classes: CalendarEvent[];
   tasks: Task[];
   now?: Date;
-  modules?: { code: string; color: string }[];
+  modules?: { code: string; color: string; name?: string }[];
   /** Max items after sort (compact widgets). */
   limit?: number;
   /** Only include items whose calendar anchor is on this local day. */
@@ -136,6 +136,7 @@ export function buildUnifiedAgenda(opts: {
     // Tasks appear on their due date (not start date)
     if (opts.day && !sameLocalDay(win.end, opts.day)) continue;
     const colorKey = resolveSubjectColorKey(task.module_code || task.title, opts.modules);
+    const mod = opts.modules?.find((m) => m.code === task.module_code);
     items.push({
       id: `task-${task.id}`,
       kind: 'task',
@@ -144,7 +145,7 @@ export function buildUnifiedAgenda(opts: {
       end: win.end,
       anchor: win.end,
       completed: task.completed,
-      moduleCode: task.module_code,
+      moduleCode: (mod?.name || '').trim() || task.module_code,
       colorKey,
       state: classVisualState(win.start, win.end, {
         day: opts.day ?? win.end,

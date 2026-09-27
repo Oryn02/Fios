@@ -4,6 +4,40 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.0',
+      date: 'September 2026',
+      title: 'Study polish — ambience, widgets, schedule, modules & PWA',
+      highlights: [
+        'Desktop: Pomodoro floating widget and Smart Quick Widget default ON again when you have not toggled them in Settings (viewport ≥768px).',
+        'Mobile: both floating widgets still default OFF until explicitly toggled (`floatingWidgetsExplicit` from v2.2.9) — intentional Settings choices stay saved.',
+        'Brain Dump inbox: re-laid out in the shared FAB dock beside Pomodoro + Quick Widget — opens upward alongside them without covering the FAB or fighting mobile bottom nav.',
+        'OpenDyslexic: self-hosted woff faces with font-display:swap; applies on iOS Safari, Android Chrome, and installed PWA (standalone) — no broken CDN stylesheet.',
+        'OpenDyslexic overrides Tailwind chrome fonts so the accessibility setting is visible across the UI; true code samples stay monospace.',
+        'Holiday themes gain subtle atmospheric backgrounds when active: soft color washes plus sparse motion that stays readable for study.',
+        'Halloween: soft orange/purple wash with faint floating ember motes.',
+        'Christmas (Eve–St Stephen’s / Dec 24–26): soft red/green holly wash with very light snowfall.',
+        'St Patrick’s Day: soft green & gold shimmer with sparse sparkles.',
+        'Easter: soft pastel lilac/blush/sky wash with gentle floating dots.',
+        'Ambience follows the active holiday theme (calendar day or when a holiday theme is selected); landing marketing stays default emerald.',
+        'Respects prefers-reduced-motion and Low-Power mode (static wash only / particles off).',
+        'Smart Notes: resilient save when `documents.content` is missing or PostgREST schema cache is stale — clearer reload hint, legacy body/text/notes read alignment, and IndexedDB local fallback so Summarize isn’t a dead end.',
+        'Schedule month view (mobile): larger day cells and tap targets, clearer hierarchy for today / selected / days with classes, event color dots (muted = finished) instead of cramped truncated titles, short weekday headers, and no horizontal overflow — tap a day for full class titles.',
+        'Schedule controls: Day / Week / Month toggles and prev/next/Today hit areas sized for touch; desktop month pill stack and layout unchanged.',
+        'Finished-class muting and Next Up highlight from earlier releases are preserved in day, week, and month views.',
+        'Compact agenda titles slightly larger on small screens for easier scanning.',
+        'Weekly Study Goal: full-width progress strip on Overview under the greeting (desktop + mobile) — live hours toward your focus target with quick edit; Settings still edits the same weekly target.',
+        'Grade Predictor: Save assessments works again on live — maps legacy Supabase column names and shows a clear error toast if save fails (number formatting from v3.0.0 unchanged).',
+        'Modules: clear Edit (pencil) on each module card — update name, optional course code, accent color, and folder tags; blank codes stay blank in the UI.',
+        'Badges & selectors: decks, quizzes, exams, documents, tasks, pickers, heatmaps, GPA, and agenda labels prefer the module name over course-code shorthand.',
+        'Contribution heatmap: mobile-friendly grid with horizontal touch scroll, month/day labels, tap-a-cell activity detail, and a shorter default window (last 16 weeks).',
+        'PWA & web: in-app “Update available” prompt with Reload when a new service worker is ready (respects reduced motion).',
+        'Mobile top bar: version badge (v3.1.0) visible beside the logo.',
+        'Quick Nav: ⌘K / Ctrl+K reliably opens the same command palette as the header chip (capture-phase + preventDefault); ignored while typing in inputs.',
+        'Privacy & Terms refresh: clearer disclosures for Feedback & Ratings (what’s collected, anonymous vs signed-in, purpose, retention, who receives it) plus Contact Support, study data, BYO Gemini / multimodal uploads, Web Push, local/PWA storage, and an explicit no ad-tracker / no analytics-SDK statement — aligned with v3.0.0 push + upload language.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.0.',
+      ],
+    },
+    {
       version: 'v3.0.0',
       date: 'September 2026',
       title: 'Major study OS — multimodal tutor, reminders, streaks & more',
@@ -209,7 +243,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.0.0</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.0</p>
       </header>
 
       <div className="space-y-4">

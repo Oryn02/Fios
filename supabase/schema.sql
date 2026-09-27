@@ -157,6 +157,70 @@ create table if not exists public.grades (
 );
 create index if not exists grades_user_idx on public.grades (user_id);
 
+-- v3.1.0: align legacy live columns → canonical (idempotent).
+-- Live v3.0.0 used assessment_name / weight_percentage / score_achieved and
+-- had no target_grade — Grade Predictor saves failed with PGRST204.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'assessment_name'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'title'
+  ) then
+    alter table public.grades rename column assessment_name to title;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'weight_percentage'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'weight'
+  ) then
+    alter table public.grades rename column weight_percentage to weight;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'score_achieved'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'score'
+  ) then
+    alter table public.grades rename column score_achieved to score;
+  end if;
+
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'target_grade'
+  ) then
+    alter table public.grades add column target_grade numeric not null default 40;
+  end if;
+
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'title'
+  ) then
+    alter table public.grades add column title text not null default 'Assessment';
+  end if;
+
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'weight'
+  ) then
+    alter table public.grades add column weight numeric not null default 0;
+  end if;
+
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'grades' and column_name = 'score'
+  ) then
+    alter table public.grades add column score numeric;
+  end if;
+end $$;
+
 -- ----------------------------------------------------------------------------
 -- focus_sessions: completed Pomodoro focus logs for the Weekly Study Goal
 -- ----------------------------------------------------------------------------
@@ -423,19 +487,102 @@ begin
 end $$;
 
 -- ============================================================================
+-- Admin console: feedback resolve + profile directory (admin RLS only)
+-- ============================================================================
+
+alter table public.feedback
+  add column if not exists resolved_at timestamptz;
+
+alter table public.feedback
+  add column if not exists resolved_by uuid references auth.users (id) on delete set null;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'feedback'
+      and policyname = 'feedback_admin_update'
+  ) then
+    create policy feedback_admin_update on public.feedback
+      for update to authenticated
+      using (public.current_user_is_admin())
+      with check (public.current_user_is_admin());
+  end if;
+
+  -- Admins may list basic profile rows (client must not select gemini_api_key).
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'user_profiles'
+      and policyname = 'user_profiles_admin_read'
+  ) then
+    create policy user_profiles_admin_read on public.user_profiles
+      for select to authenticated
+      using (public.current_user_is_admin());
+  end if;
+end $$;
+
+-- ============================================================================
 -- Additive migrations (idempotent) — run in Supabase SQL editor if missing
 -- ============================================================================
 
--- documents.content: required by Smart Notes upserts. Existing projects that
--- created `documents` without this column hit PostgREST "schema cache" errors.
+-- ----------------------------------------------------------------------------
+-- Smart Notes: documents.content (REQUIRED)
+-- Symptom if missing / cache stale:
+--   Could not find the 'content' column of 'documents' in the schema cache
+-- Fix (idempotent — safe to re-run):
+--   1. Run this block in the Supabase SQL editor.
+--   2. Reload PostgREST schema cache:
+--        Dashboard → Project Settings → API → Reload schema
+--      Or run:  NOTIFY pgrst, 'reload schema';
+--      Or wait ~1 minute for auto-refresh.
+-- Canonical column name is `content` (client writes/reads that). If an older
+-- project used body/text/notes instead, values are copied into content below.
+-- ----------------------------------------------------------------------------
 alter table public.documents
   add column if not exists content text not null default '';
 
 comment on column public.documents.content is
   'Full note / extracted PDF text for Smart Notes and AI Tutor grounding.';
 
--- After applying, reload the PostgREST schema cache in the Supabase dashboard:
--- Project Settings → API → Reload schema (or wait ~1 min for auto-refresh).
+-- Copy from legacy aliases when content is still empty (no-op if aliases absent).
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'documents' and column_name = 'body'
+  ) then
+    execute $q$
+      update public.documents
+      set content = body
+      where (content is null or content = '') and body is not null and body <> ''
+    $q$;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'documents' and column_name = 'text'
+  ) then
+    execute $q$
+      update public.documents
+      set content = text
+      where (content is null or content = '') and text is not null and text <> ''
+    $q$;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'documents' and column_name = 'notes'
+  ) then
+    execute $q$
+      update public.documents
+      set content = notes
+      where (content is null or content = '') and notes is not null and notes <> ''
+    $q$;
+  end if;
+end $$;
+
+-- Ask PostgREST to refresh its schema cache (Supabase / PostgREST).
+notify pgrst, 'reload schema';
 
 -- Optional durable Web Push subscriptions (server currently uses an in-memory Map;
 -- free Render instances lose memory on spin-down). Apply if you want persistence.

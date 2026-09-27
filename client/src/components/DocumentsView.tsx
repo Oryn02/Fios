@@ -7,7 +7,7 @@ import { FileUpload } from './FileUpload';
 import { summarizeText, askTutor } from '../services/aiApi';
 import { indexDocumentChunks } from '../lib/ragClient';
 import { getDocuments, saveDocument, deleteDocument, updateDocumentTitle } from '../lib/documentService';
-import { getUserModules, type DBModule } from '../lib/moduleService';
+import { getUserModules, type DBModule, moduleDisplayName, resolveModuleLabel } from '../lib/moduleService';
 import type { FiosDocument } from '../types/db';
 import { GeminiGate } from './GeminiGate';
 import { FormattedContent } from './FormattedContent';
@@ -139,6 +139,35 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
     toast('Summary updated', 'success');
   };
 
+  const afterSave = (
+    saved: Awaited<ReturnType<typeof saveDocument>>,
+    sourceText: string,
+    opts?: { successToast?: string }
+  ) => {
+    if (saved.savedLocally) {
+      toast('Saved on this device — cloud sync needs documents.content / schema reload', 'info');
+      if (saved.cloudWarning) setError(saved.cloudWarning);
+    } else if (opts?.successToast) {
+      toast(opts.successToast, 'success');
+    }
+    // Skip RAG indexing for local-only ids (not in Supabase documents yet)
+    if (!saved.savedLocally) {
+      void indexDocumentChunks(saved.id, sourceText).then((r) => {
+        if (r.indexed > 0) toast(`Indexed ${r.indexed} note chunk(s) for RAG`, 'info');
+      });
+    }
+    setDocs((prev) => [saved, ...prev]);
+    setActive(saved);
+    setText('');
+    setTitle('');
+    if (saved.summary) {
+      localStorage.setItem(
+        `fios_doc_revisions_${saved.id}`,
+        JSON.stringify([{ at: new Date().toISOString(), summary: saved.summary }])
+      );
+    }
+  };
+
   const handleSummarize = async () => {
     if (!text.trim()) return;
     if (!requireAiAuth()) return;
@@ -153,20 +182,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         glossary: result.glossary || [],
         module_code: moduleCode || null,
       });
-      // Index ~500-word passages into Supabase note_chunks for AI Tutor RAG
-      void indexDocumentChunks(saved.id, text).then((r) => {
-        if (r.indexed > 0) toast(`Indexed ${r.indexed} note chunk(s) for RAG`, 'info');
-      });
-      setDocs((prev) => [saved, ...prev]);
-      setActive(saved);
-      setText('');
-      setTitle('');
-      if (result.summary) {
-        localStorage.setItem(
-          `fios_doc_revisions_${saved.id}`,
-          JSON.stringify([{ at: new Date().toISOString(), summary: result.summary }])
-        );
-      }
+      afterSave(saved, text);
     } catch (err: any) {
       setError(err.message || 'Failed to summarize.');
     } finally {
@@ -195,20 +211,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         glossary: result.glossary || [],
         module_code: moduleCode || null,
       });
-      void indexDocumentChunks(saved.id, md).then((r) => {
-        if (r.indexed > 0) toast(`Indexed ${r.indexed} note chunk(s) for RAG`, 'info');
-      });
-      setDocs((prev) => [saved, ...prev]);
-      setActive(saved);
-      setText('');
-      setTitle('');
-      if (result.summary) {
-        localStorage.setItem(
-          `fios_doc_revisions_${saved.id}`,
-          JSON.stringify([{ at: new Date().toISOString(), summary: result.summary }])
-        );
-      }
-      toast('Audio lecture saved as Smart Note', 'success');
+      afterSave(saved, md, { successToast: 'Audio lecture saved as Smart Note' });
     } catch (err: any) {
       setError(err.message || 'Failed to summarize audio lecture.');
       toast('Transcription ready — summarize manually if needed', 'info');
@@ -272,7 +275,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
               <option value="" className="bg-[var(--fios-surface)] text-[var(--fios-text)]">General</option>
               {modules.map((m) => (
                 <option key={m.id} value={m.code} className="bg-[var(--fios-surface)] text-[var(--fios-text)]">
-                  {m.code}
+                  {moduleDisplayName(m)}
                 </option>
               ))}
             </select>
@@ -321,8 +324,8 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
                 placeholder="Untitled Document"
               />
               {active.module_code && (
-                <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                  {active.module_code}
+                <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 !normal-case tracking-wide">
+                  {resolveModuleLabel(modules, active.module_code)}
                 </span>
               )}
             </div>
@@ -410,7 +413,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded accent-bg text-slate-950">{doc.glossary?.length || 0} terms</span>
                   <div className="flex items-center gap-2">
-                    {doc.module_code && <span className="text-[10px] font-mono text-cyan-400 font-bold">{doc.module_code}</span>}
+                    {doc.module_code && <span className="text-[10px] font-mono text-cyan-400 font-bold">{resolveModuleLabel(modules, doc.module_code)}</span>}
                     <button onClick={(e) => { e.stopPropagation(); openTutor(doc); }} className="text-slate-500 hover:accent-solid-text p-0.5 cursor-pointer" title="Ask AI Tutor"><MessageSquare className="w-3.5 h-3.5" /></button>
                     <button onClick={(e) => handleDelete(e, doc.id)} className="text-slate-500 hover:text-rose-400 p-0.5 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>

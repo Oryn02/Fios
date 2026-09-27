@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v3.0.0**
+**Current version: v3.1.0**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -21,9 +21,9 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Study streak heatmap & exam countdown** — contribution grid from focus + flashcard reviews; live countdown to exams and due tasks.
 - **Brain Dump inbox** — floating quick-capture with optional AI parse into tasks.
 - **Class Reminders** — optional browser notifications (5–30 min lead) for upcoming classes; Web Push when VAPID is configured.
-- **Universal schedule** — iCal sync or manual timetable for any college; iCal helper + clearer errors; finished classes muted; Next Up highlight.
+- **Universal schedule** — iCal sync or manual timetable for any college; iCal helper + clearer errors; finished classes muted; Next Up highlight; mobile month view with larger taps and clearer day hierarchy.
 - **Unified agenda** — classes + timed tasks on a calendar-day timeline (memoized CompactAgenda); tasks sort by due date; start/due datetime pickers update and save.
-- **Holiday greetings & day-only themes** — Overview holiday greetings and temporary accent palettes on key dates (Christmas Eve–26 window); landing stays emerald.
+- **Holiday greetings & day-only themes** — Overview holiday greetings and temporary accent palettes on key dates (Christmas Eve–26 window), plus subtle festive ambience (washes / sparse motion) when those themes are active; landing stays emerald.
 - **Contact Support** — in-app message form posts to the API and emails the support inbox (Resend/SendGrid when configured); mailto remains optional.
 - **Feedback & ratings** — optional star rating, categories, and message (anonymous submit supported).
 - **Privacy & GDPR** — in-app Privacy Policy + Terms (landing footer and Settings); disclosures for Web Push, multimodal uploads, Supabase, Gemini (BYO key), optional GitHub, and hosting; Export My Data (JSON).
@@ -36,6 +36,24 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v3.1.0
+
+- Desktop: Pomodoro + Smart Quick Widget default **On** (≥768px) when unset; mobile still defaults **Off** until toggled in Settings (`floatingWidgetsExplicit`).
+- Brain Dump inbox sits in the shared FAB dock beside Pomodoro / Quick Widget — opens upward without covering the FAB or mobile bottom nav.
+- OpenDyslexic: self-hosted fonts with `font-display: swap`; works on iOS Safari, Android Chrome, and installed PWA (no broken CDN CSS).
+- Holiday theme ambience: soft atmospheric washes and sparse CSS motion for Halloween, Christmas (Dec 24–26), St Patrick’s Day, and Easter when those day-only themes are active — still study-friendly; respects reduced-motion and Low-Power.
+- Landing marketing remains locked to default emerald (no holiday chrome).
+- Smart Notes reliability: client prefers `documents.content`, maps legacy body/text/notes on read, shows a clear PostgREST schema-cache reload hint, and falls back to IndexedDB so summarize still saves when cloud upsert fails. Re-run the idempotent `documents.content` block in `supabase/schema.sql` and reload schema if the live error persists.
+- Mobile schedule readability: month grid with larger tap targets, clearer today / selected / has-events hierarchy, event dots (no cramped truncated titles), and touch-sized Day/Week/Month controls; desktop layout unchanged; finished muting + Next Up preserved.
+- Weekly Study Goal on Overview as a full-width progress strip under the greeting (desktop + mobile).
+- Grade Predictor: Save assessments works again on live (legacy Supabase column mapping + clear error toast).
+- Modules: Edit (pencil) on each card; badges and selectors prefer module **name** over course-code shorthand.
+- Contribution heatmap: mobile scroll/layout fix, month/day labels, tap-cell detail; PWA “Update available” reload prompt; mobile version badge.
+- Quick Nav: ⌘K / Ctrl+K reliably opens the command palette again.
+- Privacy / Terms / cookie copy refreshed for Feedback & Ratings, Contact Support, study data, Gemini uploads, Web Push, and local/PWA storage (no ad trackers; no invented analytics).
+- Version alignment across packages and API `/health` for deploy consistency.
+- See the in-app **Updates** tab for the full changelog.
 
 ### What’s new in v3.0.0
 
@@ -153,7 +171,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v3.0.0) — Render Static Site root
+├── client/                 # React + Vite frontend (v3.1.0) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/
@@ -245,6 +263,8 @@ See also [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ### 1. Database
 In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It is idempotent and creates all tables (`user_profiles` (+ `prefs`), `modules` (+ `tags`/`parent_code`), `decks`, `cards`, `mcq_quizzes`, `code_exams`, `tasks` (+ `due_at`/`start_at`), `documents`, `document_revisions`, `tutor_messages`, `note_chunks`, `grades`, `focus_sessions`, `active_recall_logs`, `feedback`), Row Level Security policies, and a trigger that auto-provisions a **clean, empty profile** for every new signup (no sample data).
+
+If Smart Notes shows `Could not find the 'content' column of 'documents' in the schema cache`, run the short idempotent script [`supabase/documents-content.sql`](supabase/documents-content.sql) (or the matching block at the end of `schema.sql`), then **Reload schema** under Project Settings → API (or wait ~1 min / `NOTIFY pgrst, 'reload schema'`).
 
 > In your Supabase Auth settings, disable "Confirm email" for the fastest local sign-in, or confirm the address you register with. Enable the GitHub provider if you want OAuth sign-in.
 
