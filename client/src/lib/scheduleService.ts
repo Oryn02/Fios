@@ -167,7 +167,7 @@ export function expandManualEvents(
 }
 
 /**
- * Unified schedule loader for Overview / Schedule / widgets.
+ * Unified schedule loader for Overview / Timetable / widgets.
  * Manual mode never requires iCal; iCal mode still works when a feed URL exists.
  * Offline-first: reconciles cloud state when online; falls back to cached events when the feed cannot be fetched.
  */

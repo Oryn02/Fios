@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v3.1.9**
+**Current version: v3.1.10**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -21,7 +21,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Study streak heatmap & exam countdown** — contribution grid from focus + flashcard reviews; live countdown to exams and due tasks.
 - **Brain Dump inbox** — floating quick-capture with optional AI parse into tasks (Settings toggle; desktop On / mobile Off by default, like Pomodoro / Quick Widget).
 - **Class Reminders** — optional browser notifications (5–30 min lead) for upcoming classes; Web Push when VAPID is configured (service worker shows notifications + opens Fios on tap).
-- **Universal schedule** — iCal sync or manual timetable for any college; offline-first feed URL / sync status / event cache with cloud reconcile when online; iCal helper + clearer errors; finished classes muted; Next Up highlight; mobile month view with larger taps and clearer day hierarchy.
+- **Universal timetable** — iCal sync or manual timetable for any college; offline-first feed URL / sync status / event cache with cloud reconcile when online; iCal helper + clearer errors; finished classes muted; Next Up highlight; mobile month view with larger taps and clearer day hierarchy.
 - **Unified agenda** — classes + timed tasks on a calendar-day timeline (memoized CompactAgenda); tasks sort by due date; start/due datetime pickers update and save.
 - **Holiday greetings & day-only themes** — Overview holiday greetings and temporary accent palettes on key dates (Christmas Eve–26 window), birthday greeting + theme when you set your birthday, plus subtle festive ambience (washes / sparse motion) when those themes are active; landing stays emerald.
 - **Contact Support** — in-app message form posts to the API and emails the support inbox (Resend/SendGrid when configured); mailto remains optional.
@@ -30,12 +30,19 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Global Pomodoro Timer** — floating dock widget with Web Audio soundscapes and Weekly Study Goal (defaults off on mobile until enabled in Settings; legacy baked-on prefs migrated).
 - **Smart Quick Widget** — expanded actions, custom order, compact FAB, metrics chip (defaults off on mobile until enabled; legacy baked-on prefs migrated).
 - **Themes** — Dark / Light / System, expanded accent gradients, Low-Power mode, Zen focus (Esc / Exit Zen / mobile escape), OpenDyslexic, cream light palette with stronger cards/tabs. Landing marketing stays locked to default emerald.
-- **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar (compact chrome control, larger Fios wordmark; logo opens Overview); reorder desktop sidebar (drag or Settings); add/hide/reorder mobile bottom-nav slots (persisted prefs); sticky mobile header.
+- **Nav customization** — header hamburger toggles mobile drawer and desktop sidebar (compact chrome control, larger Fios wordmark; logo opens Overview); reorder desktop sidebar (drag or Settings); long-press mobile bottom tabs (and drawer items) to drag-reorder; add/hide slots in Settings (persisted prefs); sticky mobile header.
 - **Mermaid + Markdown + LaTeX** — diagrams, GFM markdown, and KaTeX math in AI content.
 - **Command palette** — Ctrl/Cmd+K fuzzy navigation; cookie consent + Terms of Service; refreshed landing (tighter hero + study hubs + FAQ).
 - **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v3.1.10
+
+- Mobile bottom nav: long-press a tab, then drag to reposition — order persists via localStorage / profile prefs (same Settings mobile slots). Lift + haptic feedback when the device supports it; normal taps still navigate.
+- Mobile drawer: long-press and drag up/down to reorder the full nav list (shared with desktop sidebar order).
+- User-facing rename: **Schedule → Timetable** (nav label, Smart Quick action, landing/privacy copy, timetable view). Route id stays `schedule` so bookmarks and deep links keep working.
+- Version alignment across packages and API `/health`.
 
 ### What’s new in v3.1.9
 
@@ -43,7 +50,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Gemini locked screens: step-by-step how to get a key in [Google AI Studio](https://aistudio.google.com/app/apikey), paste it in Settings (or the unlock modal), and why AI features stay blocked without a BYO key.
 - Free-tier latency tips: when Gemini is “taking a long time” / timing out, a clear prompt explains rate limits, shared quota, cold starts, and lower priority — and how a paid Gemini API key usually speeds the app up (higher quotas, fewer 429s/timeouts), with links to AI Studio, [billing](https://ai.google.dev/gemini-api/docs/billing), and [rate limits](https://ai.google.dev/gemini-api/docs/rate-limits).
 - Class Reminders / Web Push: the service worker now handles push events and notification clicks, so server VAPID deliveries show a notification on supported browsers and installed PWAs. Clearer Settings messaging when notifications are blocked, unsupported, or require Add to Home Screen on iPhone/iPad. Re-subscribes if the VAPID public key changes.
-- iCal / schedule: feed URL, sync status, and last-imported events persist locally first, then sync to your account when Wi‑Fi / network is available. Offline changes queue and flush on reconnect; Overview and Schedule can show your last cached timetable while offline.
+- iCal / timetable: feed URL, sync status, and last-imported events persist locally first, then sync to your account when Wi‑Fi / network is available. Offline changes queue and flush on reconnect; Overview and Timetable can show your last cached timetable while offline.
 - Optional SQL: `supabase/v3.1.9-calendar-state.sql` adds `calendar_state` (then reload the PostgREST schema cache).
 - Version alignment across packages and API `/health`.
 
@@ -166,7 +173,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Compact agenda: tasks sort and appear by **due date** (not start); calendar day headers (Today / Tomorrow / weekday) group classes + tasks.
 - Overview Focus card waits for tasks to load before showing pending count or “You’re all caught up” (no false empty flash on tab switch).
 - ATU Academic Calendar key-date descriptions no longer show leftover `[cite: N]` markers.
-- Mobile polish for Focus/agenda/header wrap, scrollable bottom nav, and Schedule institution field.
+- Mobile polish for Focus/agenda/header wrap, scrollable bottom nav, and Timetable institution field.
 - See the in-app **Updates** tab for the full changelog.
 
 ### What’s new in v2.2.4
@@ -235,7 +242,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v3.1.9) — Render Static Site root
+├── client/                 # React + Vite frontend (v3.1.10) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/
