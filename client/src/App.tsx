@@ -33,7 +33,8 @@ import { PomodoroProvider } from './context/PomodoroContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PreferencesProvider } from './context/PreferencesContext';
 import { AiAuthProvider } from './context/AiAuthContext';
-import { startOfflineQueueListener } from './lib/offlineQueue';
+import { startOfflineQueueListener, onOfflineQueueOnline } from './lib/offlineQueue';
+import { reconcileCalendarState } from './lib/calendarService';
 import { useAiAuth } from './context/AiAuthContext';
 import { lockLandingBrand } from './lib/landingBrand';
 import { NetworkStatusBanner } from './components/NetworkStatusBanner';
@@ -321,7 +322,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v3.1.9
+        Academic Suite · Study Lab · v3.1.11
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -398,10 +399,19 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v3.1.9 — Your Academic Command Center';
+    document.title = 'Fios v3.1.11 — Your Academic Command Center';
   }, []);
 
-  useEffect(() => startOfflineQueueListener(), []);
+  useEffect(() => {
+    const stopQueue = startOfflineQueueListener();
+    const stopCal = onOfflineQueueOnline(() => {
+      void reconcileCalendarState();
+    });
+    return () => {
+      stopQueue();
+      stopCal();
+    };
+  }, []);
 
   // Logged-out marketing surface: force default emerald + dark (ignore Settings prefs)
   useEffect(() => {
@@ -458,7 +468,7 @@ export function App() {
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v3.1.9…
+          Initializing Fios v3.1.11…
         </div>
       </div>
     );

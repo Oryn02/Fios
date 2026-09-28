@@ -4,6 +4,17 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.11',
+      date: 'September 2026',
+      title: 'iCal offline persistence + sync when online',
+      highlights: [
+        'Schedule / iCal: feed URL, sync status, and last-imported events persist locally first, then sync to your account when the network is available.',
+        'While offline, timetable changes queue and flush automatically when connectivity returns; Overview and Schedule can still show your last cached classes.',
+        'Optional SQL: run supabase/v3.1.11-calendar-state.sql then reload the PostgREST schema cache so calendar state persists in the database.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.11.',
+      ],
+    },
+    {
       version: 'v3.1.9',
       date: 'September 2026',
       title: 'Maintenance & version alignment',
@@ -343,7 +354,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.9</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.11</p>
       </header>
 
       <div className="space-y-4">
