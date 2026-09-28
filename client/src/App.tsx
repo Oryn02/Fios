@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from './lib/supabase';
 import { IS_DEMO, DEMO_SESSION } from './lib/demo';
@@ -329,7 +329,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v3.6.3
+        Academic Suite · Study Lab · v3.6.4
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -409,10 +409,32 @@ function isResetPasswordPath(): boolean {
   }
 }
 
+/** Supabase recovery links put `type=recovery` (and sometimes `error`) in the hash or query. */
+function readAuthRedirectParams(): { type: string | null; error: string | null } {
+  try {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const query = new URLSearchParams(window.location.search.replace(/^\?/, ''));
+    const type = hash.get('type') || query.get('type');
+    const error =
+      hash.get('error_description') ||
+      hash.get('error') ||
+      query.get('error_description') ||
+      query.get('error');
+    return { type, error };
+  } catch {
+    return { type: null, error: null };
+  }
+}
+
 export function App() {
   const [session, setSession] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  /** Show `/reset-password` shell (path or recovery event) — not proof of a recovery session. */
   const [passwordRecovery, setPasswordRecovery] = useState(() => isResetPasswordPath());
+  /** True only after Supabase emits `PASSWORD_RECOVERY` (genuine reset link). */
+  const [recoveryReady, setRecoveryReady] = useState(false);
+  const [recoveryInvalid, setRecoveryInvalid] = useState(() => !!readAuthRedirectParams().error);
+  const recoveryReadyRef = useRef(false);
   const [authModal, setAuthModal] = useState<{
     isOpen: boolean;
     mode: 'signin' | 'signup';
@@ -423,7 +445,7 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v3.6.3 — Your Academic Command Center';
+    document.title = 'Fios v3.6.4 — Your Academic Command Center';
   }, []);
 
   useEffect(() => {
@@ -461,6 +483,14 @@ export function App() {
       }
     }, 60_000);
 
+    const redirect = readAuthRedirectParams();
+    if (redirect.error) {
+      setRecoveryInvalid(true);
+      setPasswordRecovery(true);
+    } else if (redirect.type === 'recovery') {
+      setPasswordRecovery(true);
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setCheckingAuth(false);
@@ -471,11 +501,19 @@ export function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (event === 'PASSWORD_RECOVERY') {
+        recoveryReadyRef.current = true;
         setPasswordRecovery(true);
+        setRecoveryReady(true);
+        setRecoveryInvalid(false);
       }
       if (event === 'SIGNED_OUT') {
         setSession(null);
-        if (!isResetPasswordPath()) setPasswordRecovery(false);
+        if (!isResetPasswordPath()) {
+          setPasswordRecovery(false);
+          setRecoveryReady(false);
+          recoveryReadyRef.current = false;
+          setRecoveryInvalid(false);
+        }
       } else if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         setSession(nextSession);
       } else {
@@ -491,8 +529,22 @@ export function App() {
     };
   }, []);
 
-  const finishPasswordRecovery = useCallback(() => {
+  // After auth settles: path alone or a normal session must not unlock the form.
+  // Brief grace so PASSWORD_RECOVERY can fire after getSession resolves.
+  useEffect(() => {
+    if (checkingAuth || !passwordRecovery || recoveryReady || recoveryInvalid) return;
+    const graceMs = readAuthRedirectParams().type === 'recovery' ? 2500 : 800;
+    const id = window.setTimeout(() => {
+      if (!recoveryReadyRef.current) setRecoveryInvalid(true);
+    }, graceMs);
+    return () => window.clearTimeout(id);
+  }, [checkingAuth, passwordRecovery, recoveryReady, recoveryInvalid]);
+
+  const clearRecoveryUi = useCallback(() => {
     setPasswordRecovery(false);
+    setRecoveryReady(false);
+    recoveryReadyRef.current = false;
+    setRecoveryInvalid(false);
     try {
       window.history.replaceState({}, '', '/');
     } catch {
@@ -500,12 +552,22 @@ export function App() {
     }
   }, []);
 
-  if (checkingAuth) {
+  const finishPasswordRecovery = useCallback(() => {
+    clearRecoveryUi();
+  }, [clearRecoveryUi]);
+
+  const recoveryStatus: 'waiting' | 'ready' | 'invalid' = recoveryReady
+    ? 'ready'
+    : recoveryInvalid
+      ? 'invalid'
+      : 'waiting';
+
+  if (checkingAuth && !passwordRecovery) {
     return (
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v3.6.3…
+          Initializing Fios v3.6.4…
         </div>
       </div>
     );
@@ -516,15 +578,11 @@ export function App() {
       <ToastProvider>
         <div data-landing data-theme="dark">
           <ResetPasswordPage
-            ready={!!session}
+            status={recoveryStatus}
             onDone={finishPasswordRecovery}
+            onBackToApp={clearRecoveryUi}
             onRequestNewLink={() => {
-              setPasswordRecovery(false);
-              try {
-                window.history.replaceState({}, '', '/');
-              } catch {
-                /* ignore */
-              }
+              clearRecoveryUi();
               setAuthModal({ isOpen: true, mode: 'signin', panel: 'forgot-password' });
             }}
           />
