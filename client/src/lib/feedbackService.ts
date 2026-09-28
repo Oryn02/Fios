@@ -33,6 +33,9 @@ export interface SubmitFeedbackInput {
 
 export type FeedbackResolveFilter = 'all' | 'open' | 'resolved';
 
+const DELETE_RLS_HINT =
+  'Delete blocked — run supabase/v3.1.9-feedback-admin-delete.sql, reload PostgREST schema, and ensure your user is in fios_admins.';
+
 export async function submitFeedback(input: SubmitFeedbackInput): Promise<FeedbackEntry> {
   const rating = Math.max(1, Math.min(5, Math.round(input.rating)));
   const anonymous = !!input.anonymous;
@@ -91,23 +94,61 @@ export function filterFeedback(
   });
 }
 
+/** Confirm the row is gone (RLS select); used after delete / RPC. */
+async function assertFeedbackGone(id: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('feedback')
+    .select('id')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return !data;
+}
+
 /**
- * Admin hard-delete. PostgREST + RLS often return error=null with 0 rows when
- * `feedback_admin_delete` is missing — verify via `.select()` so optimistic UI
- * cannot claim success while the row still exists.
+ * Admin hard-delete.
+ * Prefer SECURITY DEFINER RPC (v3.1.9); fall back to DELETE + RETURNING +
+ * existence check so optimistic UI cannot claim success while the row remains.
  */
 export async function deleteFeedback(id: string): Promise<void> {
+  const { data: rpcId, error: rpcError } = await supabase.rpc('admin_delete_feedback', {
+    p_id: id,
+  });
+
+  if (!rpcError) {
+    if (rpcId === id || rpcId == null) {
+      // rpcId null → already gone; otherwise must match.
+      if (rpcId === id || (await assertFeedbackGone(id))) return;
+    }
+    if (await assertFeedbackGone(id)) return;
+    throw new Error(DELETE_RLS_HINT);
+  }
+
+  // RPC missing (PGRST202 / 42883) → direct delete path until SQL is applied.
+  const rpcMissing =
+    /could not find the function|function .* does not exist|PGRST202/i.test(
+      rpcError.message || ''
+    );
+
+  if (!rpcMissing) {
+    throw new Error(rpcError.message || DELETE_RLS_HINT);
+  }
+
   const { data, error } = await supabase
     .from('feedback')
     .delete()
     .eq('id', id)
     .select('id');
   if (error) throw new Error(error.message);
-  if (!data?.length) {
-    throw new Error(
-      'Delete blocked by RLS — apply feedback_admin_delete (v3.1.2 SQL) and ensure your user is in fios_admins.'
-    );
+
+  if (data?.length) {
+    if (await assertFeedbackGone(id)) return;
+    throw new Error(DELETE_RLS_HINT);
   }
+
+  // Empty RETURNING: either RLS blocked or Prefer/representation quirk — verify.
+  if (await assertFeedbackGone(id)) return;
+  throw new Error(DELETE_RLS_HINT);
 }
 
 /** Admin-only: mark feedback resolved / reopen (needs feedback_admin_update + resolved_at column). */
@@ -130,6 +171,33 @@ export async function setFeedbackResolved(id: string, resolved: boolean): Promis
 /** Admin-only: hard-delete many rows; returns IDs actually removed. */
 export async function deleteAllFeedback(ids: string[]): Promise<string[]> {
   if (ids.length === 0) return [];
+
+  const { data: rpcIds, error: rpcError } = await supabase.rpc('admin_delete_feedback_ids', {
+    p_ids: ids,
+  });
+
+  if (!rpcError) {
+    const deleted = Array.isArray(rpcIds)
+      ? (rpcIds as string[]).filter(Boolean)
+      : [];
+    if (deleted.length > 0) return deleted;
+    // All already gone
+    const still: string[] = [];
+    for (const id of ids) {
+      if (!(await assertFeedbackGone(id))) still.push(id);
+    }
+    if (still.length === 0) return ids;
+    throw new Error(DELETE_RLS_HINT);
+  }
+
+  const rpcMissing =
+    /could not find the function|function .* does not exist|PGRST202/i.test(
+      rpcError.message || ''
+    );
+  if (!rpcMissing) {
+    throw new Error(rpcError.message || DELETE_RLS_HINT);
+  }
+
   const { data, error } = await supabase
     .from('feedback')
     .delete()
@@ -137,10 +205,13 @@ export async function deleteAllFeedback(ids: string[]): Promise<string[]> {
     .select('id');
   if (error) throw new Error(error.message);
   const deleted = (data || []).map((r) => r.id as string);
-  if (deleted.length === 0) {
-    throw new Error(
-      'Bulk delete blocked by RLS — apply feedback_admin_delete (v3.1.2 SQL) and ensure your user is in fios_admins.'
-    );
+
+  const confirmed: string[] = [];
+  for (const id of ids) {
+    if (deleted.includes(id) || (await assertFeedbackGone(id))) confirmed.push(id);
   }
-  return deleted;
+  if (confirmed.length === 0) {
+    throw new Error(DELETE_RLS_HINT);
+  }
+  return confirmed;
 }

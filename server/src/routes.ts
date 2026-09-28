@@ -741,6 +741,160 @@ router.get('/admin/feedback', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * DELETE /api/admin/feedback/:id
+ * Hard-delete one feedback row under the caller's JWT (RLS / admin RPC).
+ */
+router.delete('/admin/feedback/:id', async (req: Request, res: Response) => {
+  const token = await requireAdminUid(req, res);
+  if (!token) return;
+
+  const id = String(req.params.id || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(id)) {
+    return res.status(400).json({ error: 'Invalid feedback id' });
+  }
+
+  const supabaseUrl = String(process.env.SUPABASE_URL || '').replace(/\/$/, '');
+  const anon = String(process.env.SUPABASE_ANON_KEY || '').trim();
+
+  try {
+    // Prefer SECURITY DEFINER RPC when present (v3.1.9+).
+    const rpc = await fetch(`${supabaseUrl}/rest/v1/rpc/admin_delete_feedback`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: anon,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({ p_id: id }),
+    });
+
+    if (rpc.ok) {
+      const body = await rpc.json();
+      if (body === id || body === null) {
+        return res.status(200).json({ ok: true, id, via: 'rpc' });
+      }
+      return res.status(200).json({ ok: true, id: body, via: 'rpc' });
+    }
+
+    // Fall back to direct DELETE + RETURNING when RPC is not installed yet.
+    if (rpc.status !== 404 && rpc.status !== 400) {
+      const detail = (await rpc.text()).slice(0, 300);
+      // 400 from PostgREST often means missing RPC — try table delete below.
+      if (!/Could not find the function|PGRST202/i.test(detail)) {
+        return res.status(502).json({ error: 'Delete failed', detail });
+      }
+    }
+
+    const del = await fetch(
+      `${supabaseUrl}/rest/v1/feedback?id=eq.${encodeURIComponent(id)}&select=id`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: anon,
+          Prefer: 'return=representation',
+        },
+      }
+    );
+    if (del.status === 401 || del.status === 403) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    if (!del.ok) {
+      const body = await del.text();
+      return res.status(502).json({ error: 'Delete failed', detail: body.slice(0, 200) });
+    }
+    const rows = (await del.json()) as Array<{ id?: string }>;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(409).json({
+        error:
+          'Delete blocked by RLS — run supabase/v3.1.9-feedback-admin-delete.sql and ensure fios_admins membership.',
+      });
+    }
+    return res.status(200).json({ ok: true, id: rows[0]?.id || id, via: 'delete' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || 'Admin feedback delete failed' });
+  }
+});
+
+/**
+ * POST /api/admin/feedback/delete
+ * Body: `{ ids: string[] }` — bulk hard-delete under caller JWT.
+ */
+router.post('/admin/feedback/delete', async (req: Request, res: Response) => {
+  const token = await requireAdminUid(req, res);
+  if (!token) return;
+
+  const ids = Array.isArray(req.body?.ids)
+    ? (req.body.ids as unknown[]).map((x) => String(x || '').trim()).filter(Boolean)
+    : [];
+  if (ids.length === 0) {
+    return res.status(400).json({ error: 'ids required' });
+  }
+  if (ids.some((id) => !/^[0-9a-f-]{36}$/i.test(id))) {
+    return res.status(400).json({ error: 'Invalid feedback id in ids' });
+  }
+
+  const supabaseUrl = String(process.env.SUPABASE_URL || '').replace(/\/$/, '');
+  const anon = String(process.env.SUPABASE_ANON_KEY || '').trim();
+
+  try {
+    const rpc = await fetch(`${supabaseUrl}/rest/v1/rpc/admin_delete_feedback_ids`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: anon,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({ p_ids: ids }),
+    });
+
+    if (rpc.ok) {
+      const body = await rpc.json();
+      const deleted = Array.isArray(body) ? body : [];
+      return res.status(200).json({ ok: true, deleted, via: 'rpc' });
+    }
+
+    const detail = (await rpc.text()).slice(0, 300);
+    if (rpc.status !== 404 && rpc.status !== 400 && !/Could not find the function|PGRST202/i.test(detail)) {
+      return res.status(502).json({ error: 'Bulk delete failed', detail });
+    }
+
+    const inList = `(${ids.map((id) => `"${id}"`).join(',')})`;
+    const del = await fetch(
+      `${supabaseUrl}/rest/v1/feedback?id=in.${inList}&select=id`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: anon,
+          Prefer: 'return=representation',
+        },
+      }
+    );
+    if (del.status === 401 || del.status === 403) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    if (!del.ok) {
+      const body = await del.text();
+      return res.status(502).json({ error: 'Bulk delete failed', detail: body.slice(0, 200) });
+    }
+    const rows = (await del.json()) as Array<{ id: string }>;
+    const deleted = (rows || []).map((r) => r.id).filter(Boolean);
+    if (deleted.length === 0) {
+      return res.status(409).json({
+        error:
+          'Bulk delete blocked by RLS — run supabase/v3.1.9-feedback-admin-delete.sql and ensure fios_admins membership.',
+      });
+    }
+    return res.status(200).json({ ok: true, deleted, via: 'delete' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || 'Admin feedback bulk delete failed' });
+  }
+});
+
 /* ==========================================================================
    WEB PUSH (class reminders)
    ========================================================================== */

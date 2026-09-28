@@ -297,7 +297,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
   const handleDelete = async (id: string) => {
     try {
-      // Waits for verified server delete (select-after-delete); only then drop from UI.
+      // Verified delete (RPC or DELETE + existence check); only then drop from UI.
       await deleteFeedback(id);
       setFeedback((prev) => prev.filter((f) => f.id !== id));
       logAdminAction('feedback_delete', id.slice(0, 8));
@@ -306,7 +306,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     } catch (err: any) {
       toast(
         err.message ||
-          'Delete failed — apply feedback_admin_delete from v3.1.2 SQL (fios_admins required)',
+          'Delete failed — run supabase/v3.1.9-feedback-admin-delete.sql (fios_admins required)',
         'error'
       );
     }
@@ -358,7 +358,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     } catch (err: any) {
       toast(
         err.message ||
-          'Bulk delete failed — apply feedback_admin_delete from v3.1.2 SQL',
+          'Bulk delete failed — run supabase/v3.1.9-feedback-admin-delete.sql',
         'error'
       );
     }
