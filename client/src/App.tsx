@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from './lib/supabase';
 import { IS_DEMO, DEMO_SESSION } from './lib/demo';
 import { AuthModal } from './components/AuthModal';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { LandingPage } from './components/LandingPage';
 import { generateFlashcards } from './services/api';
 import { Flashcard } from './types/api';
@@ -328,7 +329,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v3.6.2
+        Academic Suite · Study Lab · v3.6.3
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -400,16 +401,29 @@ const FlashcardGenerator: React.FC<{
   </>
 );
 
+function isResetPasswordPath(): boolean {
+  try {
+    return window.location.pathname.replace(/\/+$/, '') === '/reset-password';
+  } catch {
+    return false;
+  }
+}
+
 export function App() {
   const [session, setSession] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [authModal, setAuthModal] = useState<{ isOpen: boolean; mode: 'signin' | 'signup' }>({
+  const [passwordRecovery, setPasswordRecovery] = useState(() => isResetPasswordPath());
+  const [authModal, setAuthModal] = useState<{
+    isOpen: boolean;
+    mode: 'signin' | 'signup';
+    panel?: 'auth' | 'forgot-password' | 'forgot-email';
+  }>({
     isOpen: false,
     mode: 'signin',
   });
 
   useEffect(() => {
-    document.title = 'Fios v3.6.2 — Your Academic Command Center';
+    document.title = 'Fios v3.6.3 — Your Academic Command Center';
   }, []);
 
   useEffect(() => {
@@ -425,9 +439,9 @@ export function App() {
 
   // Logged-out marketing surface: force default emerald + dark (ignore Settings prefs)
   useEffect(() => {
-    if (checkingAuth || session) return;
+    if (checkingAuth || session || passwordRecovery) return;
     return lockLandingBrand();
-  }, [checkingAuth, session]);
+  }, [checkingAuth, session, passwordRecovery]);
 
   useEffect(() => {
     if (IS_DEMO) {
@@ -455,13 +469,17 @@ export function App() {
       setCheckingAuth(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecovery(true);
+      }
       if (event === 'SIGNED_OUT') {
         setSession(null);
+        if (!isResetPasswordPath()) setPasswordRecovery(false);
       } else if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-        setSession(session);
+        setSession(nextSession);
       } else {
-        setSession(session);
+        setSession(nextSession);
       }
       setCheckingAuth(false);
     });
@@ -473,14 +491,56 @@ export function App() {
     };
   }, []);
 
+  const finishPasswordRecovery = useCallback(() => {
+    setPasswordRecovery(false);
+    try {
+      window.history.replaceState({}, '', '/');
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   if (checkingAuth) {
     return (
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v3.6.2…
+          Initializing Fios v3.6.3…
         </div>
       </div>
+    );
+  }
+
+  if (passwordRecovery) {
+    return (
+      <ToastProvider>
+        <div data-landing data-theme="dark">
+          <ResetPasswordPage
+            ready={!!session}
+            onDone={finishPasswordRecovery}
+            onRequestNewLink={() => {
+              setPasswordRecovery(false);
+              try {
+                window.history.replaceState({}, '', '/');
+              } catch {
+                /* ignore */
+              }
+              setAuthModal({ isOpen: true, mode: 'signin', panel: 'forgot-password' });
+            }}
+          />
+          <AnimatePresence>
+            {authModal.isOpen && (
+              <AuthModal
+                mode={authModal.mode}
+                initialPanel={authModal.panel || 'auth'}
+                onClose={() => setAuthModal({ isOpen: false, mode: 'signin' })}
+              />
+            )}
+          </AnimatePresence>
+          <CookieConsent />
+          <PwaUpdatePrompt />
+        </div>
+      </ToastProvider>
     );
   }
 
@@ -493,6 +553,7 @@ export function App() {
             {authModal.isOpen && (
               <AuthModal
                 mode={authModal.mode}
+                initialPanel={authModal.panel || 'auth'}
                 onClose={() => setAuthModal({ isOpen: false, mode: 'signin' })}
               />
             )}

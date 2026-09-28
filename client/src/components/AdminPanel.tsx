@@ -464,7 +464,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                   value={health?.version || '—'}
                   hint={health?.ok ? `${health.latencyMs ?? '—'}ms` : health?.error || undefined}
                 />
-                <StatCard label="Client" value={stats?.clientVersion || '3.6.2'} />
+                <StatCard label="Client" value={stats?.clientVersion || '3.6.3'} />
                 <StatCard
                   label="VAPID"
                   value={vapid == null ? '…' : vapid.configured ? 'OK' : 'Off'}
