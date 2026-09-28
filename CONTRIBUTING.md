@@ -1,6 +1,6 @@
 # Contributing to Fios
 
-Thanks for helping improve Fios. This guide covers local setup, schema migrations, and architecture notes for the current release (**v3.6.3**); older v2.2.0+ migration notes remain for existing databases.
+Thanks for helping improve Fios. This guide covers local setup, schema migrations, and architecture notes for the current release (**v3.6.4**); older v2.2.0+ migration notes remain for existing databases.
 
 ## Prerequisites
 

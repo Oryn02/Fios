@@ -1,24 +1,33 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, KeyRound, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, ShieldAlert, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { FiosLogo } from './FiosLogo';
 
+export type ResetPasswordStatus = 'waiting' | 'ready' | 'invalid';
+
 interface ResetPasswordPageProps {
-  /** True once Supabase has established a recovery session from the email link. */
-  ready: boolean;
+  /**
+   * `ready` — Supabase emitted PASSWORD_RECOVERY (genuine reset link).
+   * `waiting` — still resolving the redirect / recovery event.
+   * `invalid` — path or link without a recovery session (expired, already used, or normal login).
+   */
+  status: ResetPasswordStatus;
   onDone: () => void;
   onRequestNewLink?: () => void;
+  /** Leave `/reset-password` and return to landing or the signed-in app. */
+  onBackToApp?: () => void;
 }
 
 /**
  * Completes Supabase password recovery after redirect to `/reset-password`.
- * Caller should set `ready` when a recovery/signed-in session exists.
+ * The set-password form is shown only when `status === 'ready'` (PASSWORD_RECOVERY).
  */
 export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
-  ready,
+  status,
   onDone,
   onRequestNewLink,
+  onBackToApp,
 }) => {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -54,6 +63,14 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
     }
   };
 
+  const subtitle = done
+    ? 'Password updated — opening your dashboard…'
+    : status === 'ready'
+      ? 'Choose a new password for your account'
+      : status === 'invalid'
+        ? 'This reset link is invalid or expired'
+        : 'Confirming your reset link…';
+
   return (
     <div className="min-h-dvh bg-[#07090e] flex items-center justify-center p-4 font-sans relative overflow-hidden">
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
@@ -71,15 +88,26 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
           <div className="flex justify-center">
             <FiosLogo size="lg" withWordmark fixedEmerald />
           </div>
-          <p className="text-slate-400 text-xs font-medium">
-            {done ? 'Password updated — opening your dashboard…' : 'Choose a new password for your account'}
-          </p>
+          <p className="text-slate-400 text-xs font-medium">{subtitle}</p>
         </div>
 
-        {!ready && !done && (
+        {status === 'waiting' && !done && (
           <div className="space-y-4">
-            <div className="p-3 bg-amber-500/10 border-l-4 border-amber-500 rounded-r-lg text-amber-200 text-[11px] font-bold leading-relaxed">
-              Waiting for a valid reset link. Open the link from your email, or request a new one if it expired.
+            <div className="p-3 bg-amber-500/10 border-l-4 border-amber-500 rounded-r-lg text-amber-200 text-[11px] font-bold leading-relaxed flex items-center gap-2">
+              <span className="w-3.5 h-3.5 border-2 border-amber-300 border-t-transparent rounded-full animate-spin shrink-0" />
+              Waiting for a valid reset link from your email…
+            </div>
+          </div>
+        )}
+
+        {status === 'invalid' && !done && (
+          <div className="space-y-4">
+            <div className="p-3 bg-rose-500/10 border-l-4 border-rose-500 rounded-r-lg text-rose-200 text-[11px] font-bold leading-relaxed flex items-start gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                This password-reset link is missing, expired, or already used. Request a new link, or go back
+                to Fios without changing your password.
+              </span>
             </div>
             {onRequestNewLink && (
               <button
@@ -90,10 +118,19 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
                 Request a new reset link
               </button>
             )}
+            {onBackToApp && (
+              <button
+                type="button"
+                onClick={onBackToApp}
+                className="w-full py-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black italic uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back to Fios
+              </button>
+            )}
           </div>
         )}
 
-        {ready && !done && (
+        {status === 'ready' && !done && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-300">New password</label>
