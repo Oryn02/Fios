@@ -14,7 +14,7 @@ interface ResetPasswordPageProps {
    */
   status: ResetPasswordStatus;
   onDone: () => void;
-  onRequestNewLink?: () => void;
+  onRequestNewLink?: () => void | Promise<void>;
   /** Leave `/reset-password` and return to landing or the signed-in app. */
   onBackToApp?: () => void;
 }

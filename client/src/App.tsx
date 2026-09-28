@@ -329,7 +329,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v3.6.5
+        Academic Suite · Study Lab · v3.6.6
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -474,7 +474,7 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v3.6.5 — Your Academic Command Center';
+    document.title = 'Fios v3.6.6 — Your Academic Command Center';
   }, []);
 
   useEffect(() => {
@@ -590,14 +590,22 @@ export function App() {
     clearRecoveryUi();
   }, [clearRecoveryUi]);
 
-  /** From invalid reset UI: open forgot-password; sign out first if a normal session would swallow AuthModal. */
-  const requestNewResetLink = useCallback(() => {
+  /**
+   * From invalid reset UI: clear leftover session before leaving recovery shell.
+   * Opening AuthModal first (while session is still set) mounts Dashboard, which never
+   * renders AuthModal — await signOut / local clear first, then show forgot-password.
+   */
+  const requestNewResetLink = useCallback(async () => {
+    // Stay on recovery UI until session is gone so Dashboard never flashes.
+    setSession(null);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* local session already cleared */
+    }
     clearRecoveryUi();
     setAuthModal({ isOpen: true, mode: 'signin', panel: 'forgot-password', initialError: null });
-    if (session) {
-      void supabase.auth.signOut();
-    }
-  }, [clearRecoveryUi, session]);
+  }, [clearRecoveryUi]);
 
   const closeAuthModal = useCallback(() => {
     setAuthModal({ isOpen: false, mode: 'signin', initialError: null });
@@ -614,7 +622,7 @@ export function App() {
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v3.6.5…
+          Initializing Fios v3.6.6…
         </div>
       </div>
     );
