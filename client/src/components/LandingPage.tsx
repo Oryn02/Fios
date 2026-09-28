@@ -112,7 +112,7 @@ const faqs = [
   },
   {
     q: 'How does Bring Your Own Key (BYO-Key) work?',
-    a: 'Paste your free Google Gemini API key in Settings. It is stored on your profile under RLS and sent only with your own requests. Test, replace, or remove it anytime.',
+    a: 'Open Google AI Studio (aistudio.google.com/app/apikey), sign in, create an API key, then paste it in Settings → Gemini API Key (or the unlock modal on a locked AI screen). Fios stores it on your profile under RLS and sends it only with your requests. AI features stay blocked without a key because Fios does not ship a shared Gemini key — your quota and privacy stay yours. Free-tier keys can be slower under rate limits; a paid Gemini key usually helps if you hit timeouts.',
   },
   {
     q: 'How do I sync my college timetable (iCal)?',
@@ -475,7 +475,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <span key={b} className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono text-slate-400">{b}</span>
             ))}
           </div>
-          <p className="text-[11px] text-slate-600">Fios v3.1.9 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
+          <p className="text-[11px] text-slate-600">Fios v3.1.10 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
         </div>
       </footer>
 

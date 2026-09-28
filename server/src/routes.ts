@@ -42,6 +42,36 @@ function apiKeyOf(req: Request): string | undefined {
   return (req.body && req.body.apiKey) || headerKey || undefined;
 }
 
+/** Map Gemini SDK / network failures into clearer client-facing copy. */
+function mapGeminiRouteError(error: unknown, fallback: string): string {
+  const raw =
+    error && typeof error === 'object' && 'message' in error
+      ? String((error as { message?: unknown }).message || '')
+      : String(error || '');
+  const status =
+    error && typeof error === 'object' && 'status' in error
+      ? Number((error as { status?: unknown }).status)
+      : NaN;
+  const text = `${raw} ${status || ''}`.toLowerCase();
+  if (
+    text.includes('429') ||
+    text.includes('resource_exhausted') ||
+    text.includes('rate') ||
+    text.includes('quota') ||
+    text.includes('timeout') ||
+    text.includes('timed out') ||
+    text.includes('deadline') ||
+    text.includes('unavailable') ||
+    text.includes('503') ||
+    text.includes('504') ||
+    text.includes('overloaded')
+  ) {
+    return 'Gemini is taking a long time (or timed out). Free-tier keys often hit rate limits, shared quota, cold starts, and lower priority — try again shortly, or use a paid Gemini API key for higher quotas and lower latency.';
+  }
+  if (raw && !raw.includes('is not a function')) return raw;
+  return fallback;
+}
+
 /**
  * Heuristic: does a buffer look like mostly printable UTF-8 text
  * (as opposed to a binary PDF starting with %PDF-)?
@@ -91,11 +121,12 @@ const handleFlashcards = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Flashcard Generation Error:', error);
-    const message =
-      error?.message && !String(error.message).includes('is not a function')
-        ? error.message
-        : 'Failed to generate flashcards. Check the Gemini model/key and try again.';
-    return res.status(500).json({ error: message });
+    return res.status(500).json({
+      error: mapGeminiRouteError(
+        error,
+        'Failed to generate flashcards. Check the Gemini model/key and try again.'
+      ),
+    });
   }
 };
 
@@ -126,7 +157,9 @@ const handleQuiz = async (req: Request, res: Response) => {
     return res.status(200).json(questions);
   } catch (error: any) {
     console.error('Quiz Generation Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to generate quiz questions' });
+    return res.status(500).json({
+      error: mapGeminiRouteError(error, 'Failed to generate quiz questions'),
+    });
   }
 };
 
@@ -160,7 +193,7 @@ const handleGenerateCodeExam = async (req: Request, res: Response) => {
     return res.status(200).json(result);
   } catch (error: any) {
     console.error('Code Exam Generation Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to generate code exam' });
+    return res.status(500).json({ error: mapGeminiRouteError(error, 'Failed to generate code exam') });
   }
 };
 
@@ -186,7 +219,7 @@ const handleGradeCodeExam = async (req: Request, res: Response) => {
     return res.status(200).json(result);
   } catch (error: any) {
     console.error('Code Exam Grading Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to grade submission' });
+    return res.status(500).json({ error: mapGeminiRouteError(error, 'Failed to grade submission') });
   }
 };
 
@@ -215,7 +248,7 @@ const handleSummarize = async (req: Request, res: Response) => {
     return res.status(200).json(result);
   } catch (error: any) {
     console.error('Summarize Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to summarize document' });
+    return res.status(500).json({ error: mapGeminiRouteError(error, 'Failed to summarize document') });
   }
 };
 
@@ -243,7 +276,7 @@ const handleTutor = async (req: Request, res: Response) => {
     return res.status(200).json(result);
   } catch (error: any) {
     console.error('Tutor Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to get tutor response' });
+    return res.status(500).json({ error: mapGeminiRouteError(error, 'Failed to get tutor response') });
   }
 };
 
@@ -267,7 +300,7 @@ router.post('/active-recall', async (req: Request, res: Response) => {
     return res.status(200).json(result);
   } catch (error: any) {
     console.error('Active Recall Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to evaluate recall' });
+    return res.status(500).json({ error: mapGeminiRouteError(error, 'Failed to evaluate recall') });
   }
 });
 
@@ -475,7 +508,7 @@ const handleUploadPdf = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('PDF Upload Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to process PDF upload' });
+    return res.status(500).json({ error: mapGeminiRouteError(error, 'Failed to process PDF upload') });
   }
 };
 
@@ -496,7 +529,7 @@ const handleUploadNotes = async (req: Request, res: Response) => {
     return res.status(200).json({ ok: true, title, text, source: 'notes-json' });
   } catch (error: any) {
     console.error('Notes Upload Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to process notes upload' });
+    return res.status(500).json({ error: mapGeminiRouteError(error, 'Failed to process notes upload') });
   }
 };
 
@@ -522,7 +555,7 @@ const handleVision = async (req: Request, res: Response) => {
     return res.status(200).json(result);
   } catch (error: any) {
     console.error('Vision Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to process image' });
+    return res.status(500).json({ error: mapGeminiRouteError(error, 'Failed to process image') });
   }
 };
 
@@ -544,7 +577,7 @@ const handleAudioTranscribe = async (req: Request, res: Response) => {
     return res.status(200).json(result);
   } catch (error: any) {
     console.error('Audio Transcribe Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to process audio' });
+    return res.status(500).json({ error: mapGeminiRouteError(error, 'Failed to process audio') });
   }
 };
 
@@ -568,7 +601,7 @@ const handleMediaProcess = async (req: Request, res: Response) => {
     return res.status(200).json(result);
   } catch (error: any) {
     console.error('Media Process Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to process media' });
+    return res.status(500).json({ error: mapGeminiRouteError(error, 'Failed to process media') });
   }
 };
 
@@ -613,7 +646,7 @@ const handleRagQuery = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('RAG Query Error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to run RAG query' });
+    return res.status(500).json({ error: mapGeminiRouteError(error, 'Failed to run RAG query') });
   }
 };
 

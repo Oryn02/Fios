@@ -16,6 +16,8 @@ import { InlineEditableTitle } from './InlineEditableTitle';
 import { ReportContentButton } from './ReportContentButton';
 import { useAiAuth } from '../context/AiAuthContext';
 import { toast } from '../lib/toast';
+import { GeminiLatencyHint } from './GeminiLatencyHint';
+import { friendlyGeminiError } from '../lib/geminiUx';
 
 interface ChatMessage { role: 'user' | 'assistant'; text: string; }
 
@@ -197,7 +199,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
       });
       afterSave(saved, text);
     } catch (err: any) {
-      setError(err.message || 'Failed to summarize.');
+      setError(friendlyGeminiError(err.message || 'Failed to summarize.'));
     } finally {
       setBusy(false);
     }
@@ -226,7 +228,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
       });
       afterSave(saved, md, { successToast: 'Audio lecture saved as Smart Note' });
     } catch (err: any) {
-      setError(err.message || 'Failed to summarize audio lecture.');
+      setError(friendlyGeminiError(err.message || 'Failed to summarize audio lecture.'));
       toast('Transcription ready — summarize manually if needed', 'info');
     } finally {
       setBusy(false);
@@ -317,7 +319,13 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           {busy ? 'Summarizing…' : 'Summarize & Save'}
         </motion.button>
-        {error && <div className="p-3 bg-rose-500/10 border-l-4 border-rose-500 text-rose-300 text-xs font-mono rounded-r-lg">{error}</div>}
+        {error && (
+          <div className="space-y-2">
+            <div className="p-3 bg-rose-500/10 border-l-4 border-rose-500 text-rose-300 text-xs font-mono rounded-r-lg">{error}</div>
+            <GeminiLatencyHint error={error} />
+          </div>
+        )}
+        <GeminiLatencyHint busy={busy} />
       </div>
 
       {active && active.id !== 'general-tutor' && (

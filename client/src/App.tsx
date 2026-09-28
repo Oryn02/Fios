@@ -28,6 +28,8 @@ import { AiTutorView } from './components/AiTutorView';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
 import { CookieConsent } from './components/CookieConsent';
+import { GeminiLatencyHint } from './components/GeminiLatencyHint';
+import { friendlyGeminiError } from './lib/geminiUx';
 import { ProfileProvider } from './context/ProfileContext';
 import { PomodoroProvider } from './context/PomodoroContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -126,7 +128,11 @@ const Dashboard: React.FC = () => {
       });
     } catch (err: any) {
       const msg = err?.message || String(err) || 'Failed to connect to server.';
-      setError(msg.includes('is not a function') ? 'Flashcard generation failed. Check your Gemini key in Settings and try again.' : msg);
+      setError(
+        msg.includes('is not a function')
+          ? 'Flashcard generation failed. Check your Gemini key in Settings and try again.'
+          : friendlyGeminiError(msg)
+      );
     } finally {
       setLoading(false);
     }
@@ -321,7 +327,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v3.1.9
+        Academic Suite · Study Lab · v3.1.10
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -382,10 +388,14 @@ const FlashcardGenerator: React.FC<{
     </form>
 
     {error && (
-      <div className="p-4 bg-rose-500/10 border-l-4 border-rose-500 rounded-r-lg text-rose-300 text-xs font-bold tracking-wide uppercase font-mono">
-        Notice: {error}
+      <div className="space-y-2">
+        <div className="p-4 bg-rose-500/10 border-l-4 border-rose-500 rounded-r-lg text-rose-300 text-xs font-bold tracking-wide uppercase font-mono">
+          Notice: {error}
+        </div>
+        <GeminiLatencyHint error={error} />
       </div>
     )}
+    <GeminiLatencyHint busy={loading} />
   </>
 );
 
@@ -398,7 +408,7 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v3.1.9 — Your Academic Command Center';
+    document.title = 'Fios v3.1.10 — Your Academic Command Center';
   }, []);
 
   useEffect(() => startOfflineQueueListener(), []);
@@ -458,7 +468,7 @@ export function App() {
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v3.1.9…
+          Initializing Fios v3.1.10…
         </div>
       </div>
     );

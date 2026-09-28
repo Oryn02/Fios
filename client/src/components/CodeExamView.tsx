@@ -17,6 +17,8 @@ import { useTheme } from '../context/ThemeContext';
 import { FormattedContent } from './FormattedContent';
 import { InlineEditableTitle } from './InlineEditableTitle';
 import { toast } from '../lib/toast';
+import { GeminiLatencyHint } from './GeminiLatencyHint';
+import { friendlyGeminiError } from '../lib/geminiUx';
 
 const EXAM_ICON: Record<CodeExamType, React.ReactNode> = {
   bug_fix: <Bug className="w-3.5 h-3.5" />,
@@ -128,7 +130,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
       setChallenge(active);
       setUserCode(result.starterCode || '');
     } catch (err: any) {
-      setError(err.message || 'Failed to generate challenge.');
+      setError(friendlyGeminiError(err.message || 'Failed to generate challenge.'));
     } finally {
       setGenerating(false);
     }
@@ -148,7 +150,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
       });
       setGrade(result);
     } catch (err: any) {
-      setError(err.message || 'Failed to grade submission.');
+      setError(friendlyGeminiError(err.message || 'Failed to grade submission.'));
     } finally {
       setGrading(false);
     }
@@ -281,10 +283,14 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
         </motion.button>
 
         {error && (
-          <div className="p-3 bg-rose-500/10 border-l-4 border-rose-500 text-rose-300 text-xs font-mono rounded-r-lg">
-            {error}
+          <div className="space-y-2">
+            <div className="p-3 bg-rose-500/10 border-l-4 border-rose-500 text-rose-300 text-xs font-mono rounded-r-lg">
+              {error}
+            </div>
+            <GeminiLatencyHint error={error} />
           </div>
         )}
+        <GeminiLatencyHint busy={generating || grading} />
       </div>
 
       {/* Active challenge */}

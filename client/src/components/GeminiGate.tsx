@@ -1,16 +1,47 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { KeyRound, Lock, ExternalLink, Check, Loader2, X, HelpCircle, GitBranch } from 'lucide-react';
+import { KeyRound, Lock, ExternalLink, Check, Loader2, X, HelpCircle, GitBranch, Shield } from 'lucide-react';
 import { useProfile } from '../context/ProfileContext';
 import { useAiAuth } from '../context/AiAuthContext';
 import { validateGeminiKey } from '../services/aiApi';
-
-const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
+import { AI_STUDIO_KEY_URL } from '../lib/geminiUx';
 
 export function useHasGeminiKey(): boolean {
   const { profile } = useProfile();
   return !!(profile?.gemini_api_key && profile.gemini_api_key.trim());
 }
+
+/** Shared step-by-step: get a key in AI Studio → paste in Fios Settings / this modal. */
+export const GeminiKeySetupGuide: React.FC<{ compact?: boolean }> = ({ compact = false }) => (
+  <div className={`rounded-xl bg-[var(--fios-surface-2)] border fios-border space-y-2.5 text-xs ${compact ? 'p-3' : 'p-3.5'}`}>
+    <p className="font-bold text-[var(--fios-text)]">How to get a Gemini API key</p>
+    <div className="space-y-2">
+      <div className="flex items-start gap-2 text-[var(--fios-text-muted)]">
+        <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
+        <div>
+          <p>Open <strong className="text-[var(--fios-text)]">Google AI Studio</strong> and sign in with your Google account:</p>
+          <a href={AI_STUDIO_KEY_URL} target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline inline-flex items-center gap-1 font-mono mt-0.5">
+            aistudio.google.com/app/apikey <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+      </div>
+      <div className="flex items-start gap-2 text-[var(--fios-text-muted)]">
+        <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
+        <p>
+          Click <strong className="text-[var(--fios-text)]">Create API key</strong> (create a new Google Cloud project if prompted), then copy the key — it usually starts with{' '}
+          <code className="text-cyan-400 font-mono">AIzaSy…</code>.
+        </p>
+      </div>
+      <div className="flex items-start gap-2 text-[var(--fios-text-muted)]">
+        <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
+        <p>
+          Paste it here (or later in <strong className="text-[var(--fios-text)]">Settings → Gemini API Key</strong>), tap <strong className="text-[var(--fios-text)]">Test</strong> if you like, then{' '}
+          <strong className="text-[var(--fios-text)]">Save</strong>. The key stays on your profile and is only sent with your own AI requests.
+        </p>
+      </div>
+    </div>
+  </div>
+);
 
 /** Modal to enter + validate a Gemini key, saved to the profile. */
 export const GeminiKeyModal: React.FC<{ onClose: () => void; onSaved?: () => void }> = ({ onClose, onSaved }) => {
@@ -18,7 +49,7 @@ export const GeminiKeyModal: React.FC<{ onClose: () => void; onSaved?: () => voi
   const [key, setKey] = useState('');
   const [status, setStatus] = useState<'idle' | 'testing' | 'valid' | 'invalid'>('idle');
   const [saving, setSaving] = useState(false);
-  const [showGuide, setShowGuide] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
 
   const test = async () => {
     if (!key.trim()) return;
@@ -48,7 +79,7 @@ export const GeminiKeyModal: React.FC<{ onClose: () => void; onSaved?: () => voi
         initial={{ opacity: 0, scale: 0.94, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94 }}
-        className="relative z-10 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 shadow-2xl space-y-4"
+        className="relative z-10 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 cursor-pointer">
           <X className="w-5 h-5" />
@@ -64,7 +95,10 @@ export const GeminiKeyModal: React.FC<{ onClose: () => void; onSaved?: () => voi
           </div>
         </div>
 
-        {/* Walkthrough Toggle */}
+        <p className="text-xs text-[var(--fios-text-muted)] leading-relaxed">
+          Fios does not ship a shared Gemini key. AI features call Google with <em>your</em> key so usage stays on your quota and your study content is not mixed with other users&apos; traffic.
+        </p>
+
         <div className="flex justify-end">
           <button
             type="button"
@@ -75,33 +109,12 @@ export const GeminiKeyModal: React.FC<{ onClose: () => void; onSaved?: () => voi
           </button>
         </div>
 
-        {/* Step-by-Step Guide Box */}
-        {showGuide && (
-          <div className="p-3.5 rounded-xl bg-[var(--fios-surface-2)] border fios-border space-y-2.5 text-xs">
-            <p className="font-bold text-[var(--fios-text)]">Quick Setup Guide:</p>
-            <div className="space-y-2">
-              <div className="flex items-start gap-2 text-[var(--fios-text-muted)]">
-                <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-                <div>
-                  <p>Open Google AI Studio:</p>
-                  <a href={AI_STUDIO_URL} target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline inline-flex items-center gap-1 font-mono mt-0.5">
-                    Open AI Studio <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-              <div className="flex items-start gap-2 text-[var(--fios-text-muted)]">
-                <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-                <p>Sign in and click <strong className="text-[var(--fios-text)]">"Create API Key"</strong>.</p>
-              </div>
-              <div className="flex items-start gap-2 text-[var(--fios-text-muted)]">
-                <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-                <p>Copy string starting with <code className="text-cyan-400 font-mono">AIzaSy...</code> and paste below.</p>
-              </div>
-            </div>
-          </div>
-        )}
+        {showGuide && <GeminiKeySetupGuide />}
 
         <div className="space-y-2">
+          <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--fios-text-muted)]">
+            Paste key (same field as Settings → Gemini API Key)
+          </label>
           <input
             type="password"
             value={key}
@@ -131,7 +144,7 @@ export const GeminiKeyModal: React.FC<{ onClose: () => void; onSaved?: () => voi
         </div>
 
         <a
-          href={AI_STUDIO_URL}
+          href={AI_STUDIO_KEY_URL}
           target="_blank"
           rel="noreferrer"
           className="flex items-center justify-center gap-1.5 text-xs font-mono text-[var(--fios-text-muted)] hover:accent-solid-text transition-colors"
@@ -158,7 +171,7 @@ export const GeminiGate: React.FC<{ feature: string; children: React.ReactNode }
         <div className="space-y-1">
           <h3 className="text-lg font-black text-[var(--fios-text)]">{feature} is locked in the live demo</h3>
           <p className="text-sm text-[var(--fios-text-muted)]">
-            AI features and cloud generation need a signed-in account. Sign in with GitHub to unlock Fios v3.1.9.
+            AI features and cloud generation need a signed-in account. Sign in with GitHub to unlock Fios v3.1.10.
           </p>
         </div>
         <button
@@ -176,22 +189,45 @@ export const GeminiGate: React.FC<{ feature: string; children: React.ReactNode }
 
   return (
     <>
-      <div className="max-w-lg mx-auto my-10 text-center rounded-2xl border fios-border bg-[var(--fios-surface)] p-8 space-y-4 accent-glow">
-        <div className="w-14 h-14 rounded-2xl accent-bg flex items-center justify-center text-slate-950 mx-auto">
-          <Lock className="w-6 h-6" />
+      <div className="max-w-lg mx-auto my-10 text-left rounded-2xl border fios-border bg-[var(--fios-surface)] p-8 space-y-5 accent-glow">
+        <div className="text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl accent-bg flex items-center justify-center text-slate-950 mx-auto">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-black text-[var(--fios-text)]">{feature} needs your Gemini key</h3>
+            <p className="text-sm text-[var(--fios-text-muted)] leading-relaxed">
+              This screen is blocked until you add a Google Gemini API key. Fios is privacy-first and{' '}
+              <strong className="text-[var(--fios-text)]">bring-your-own-key</strong>: we do not bundle a shared Gemini key,
+              so generation cannot run without one.
+            </p>
+          </div>
         </div>
-        <div className="space-y-1">
-          <h3 className="text-lg font-black text-[var(--fios-text)]">{feature} needs your Gemini key</h3>
-          <p className="text-sm text-[var(--fios-text-muted)]">
-            Fios is privacy-first: plug in your own free Gemini API key to unlock AI features. It's stored on your profile and never shared.
+
+        <div className="rounded-xl border fios-border bg-[var(--fios-surface-2)]/80 px-3.5 py-3 space-y-2">
+          <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--fios-text-muted)] inline-flex items-center gap-1.5">
+            <Shield className="w-3.5 h-3.5 accent-solid-text" /> Why it&apos;s blocked without a key
+          </p>
+          <ul className="text-xs text-[var(--fios-text-muted)] leading-relaxed space-y-1.5 list-disc pl-4">
+            <li>AI calls go to Google Gemini under <em>your</em> project and quota — not a Fios-hosted key.</li>
+            <li>Your notes and prompts stay tied to your account; Fios never shares one API key across users.</li>
+            <li>You control usage, billing, and can remove the key anytime in Settings.</li>
+          </ul>
+        </div>
+
+        <GeminiKeySetupGuide />
+
+        <div className="text-center">
+          <button
+            onClick={() => setOpen(true)}
+            className="px-5 py-2.5 accent-bg text-slate-950 font-black uppercase text-xs rounded-xl transition-transform active:scale-[0.98] cursor-pointer inline-flex items-center gap-2"
+          >
+            <KeyRound className="w-4 h-4" /> Add Gemini Key
+          </button>
+          <p className="text-[11px] font-mono text-[var(--fios-text-muted)] mt-3">
+            Same paste field lives in Settings → Gemini API Key if you prefer to save it there first.
           </p>
         </div>
-        <button
-          onClick={() => setOpen(true)}
-          className="px-5 py-2.5 accent-bg text-slate-950 font-black uppercase text-xs rounded-xl transition-transform active:scale-[0.98] cursor-pointer inline-flex items-center gap-2"
-        >
-          <KeyRound className="w-4 h-4" /> Add Gemini Key
-        </button>
       </div>
       <AnimatePresence>{open && <GeminiKeyModal onClose={() => setOpen(false)} />}</AnimatePresence>
     </>

@@ -4,6 +4,17 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.10',
+      date: 'September 2026',
+      title: 'Gemini key guidance + free-tier latency tips',
+      highlights: [
+        'Gemini locked screens: clearer step-by-step how to get a key in Google AI Studio, paste it in Settings (or the unlock modal), and why AI features stay blocked without a BYO key (privacy + your quota).',
+        'When free-tier Gemini feels slow or times out (“taking a long time”, 429s, quotas), Fios shows a helpful prompt explaining rate limits, shared quota, cold starts, and lower priority — plus how a paid Gemini API key usually speeds things up (higher quotas, fewer timeouts) with links to AI Studio, billing, and rate-limit docs.',
+        'Settings Gemini section uses the same setup guide and free-vs-paid tip; no salesy pressure.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.10.',
+      ],
+    },
+    {
       version: 'v3.1.9',
       date: 'September 2026',
       title: 'Maintenance & version alignment',
@@ -343,7 +354,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.9</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.10</p>
       </header>
 
       <div className="space-y-4">
