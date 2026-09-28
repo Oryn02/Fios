@@ -4,6 +4,15 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.9',
+      date: 'September 2026',
+      title: 'Maintenance & version alignment',
+      highlights: [
+        'Reliability maintenance release: clearer cloud error handling for durable data writes and version chrome alignment across the app.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.9.',
+      ],
+    },
+    {
       version: 'v3.1.8',
       date: 'September 2026',
       title: 'St Patrick ambience fix + birthday theme',
@@ -334,7 +343,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.8</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.9</p>
       </header>
 
       <div className="space-y-4">
