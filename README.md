@@ -1,5 +1,7 @@
 # Fios — Your Academic Command Center
 
+[![Version](https://img.shields.io/badge/version-v3.6.0-059669)](https://github.com/Oryn02/Fios)
+
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
 **Current version: v3.6.0**
