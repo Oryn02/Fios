@@ -428,9 +428,47 @@ export function getCachedCalendarEvents(): CalendarEvent[] {
   return deserializeEvents(loadLocalCalendarState().events_cache);
 }
 
+/**
+ * Map an iCal date-time to a JS Date using the feed's wall-clock components
+ * as the viewer's local time.
+ *
+ * College / ATU feeds often emit either floating local times
+ * (`DTSTART:20260928T100000`) or UTC-Z with the same digits
+ * (`DTSTART:20260928T100000Z`) meaning "10:00 on the printed timetable".
+ * `ICAL.Time#toJSDate()` treats Z/UTC as a real instant, so Ireland (IST,
+ * UTC+1 in late September) shows classes one hour ahead of timetables.atu.ie.
+ * Building from year/month/day/hour/minute keeps Fios aligned with the
+ * official wall clock; a later sync rewrites `events_cache`.
+ */
+export function icalTimeToLocalDate(time: ICAL.Time): Date {
+  if (time.isDate) {
+    return new Date(time.year, time.month - 1, time.day, 0, 0, 0, 0);
+  }
+  return new Date(
+    time.year,
+    time.month - 1,
+    time.day,
+    time.hour,
+    time.minute,
+    time.second || 0,
+    0
+  );
+}
+
+function registerVTimezones(comp: ICAL.Component): void {
+  for (const tzComp of comp.getAllSubcomponents('vtimezone')) {
+    try {
+      ICAL.TimezoneService.register(tzComp);
+    } catch {
+      /* ignore malformed VTIMEZONE */
+    }
+  }
+}
+
 export function parseIcsText(icsData: string): CalendarEvent[] {
   const parsedData = ICAL.parse(icsData);
   const comp = new ICAL.Component(parsedData);
+  registerVTimezones(comp);
   const vevents = comp.getAllSubcomponents('vevent');
 
   const events: CalendarEvent[] = vevents.map((vevent, index) => {
@@ -440,8 +478,8 @@ export function parseIcsText(icsData: string): CalendarEvent[] {
       title: event.summary || 'Untitled Lecture / Event',
       description: event.description || '',
       location: event.location || '',
-      startDate: event.startDate.toJSDate(),
-      endDate: event.endDate.toJSDate(),
+      startDate: icalTimeToLocalDate(event.startDate),
+      endDate: icalTimeToLocalDate(event.endDate),
     };
   });
 

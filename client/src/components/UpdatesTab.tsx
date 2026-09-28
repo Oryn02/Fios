@@ -4,6 +4,16 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.14',
+      date: 'September 2026',
+      title: 'Timetable times match ATU wall clock',
+      highlights: [
+        'Fix: iCal / Timetable class times no longer show one hour ahead of the official ATU timetable (timetables.atu.ie) during Irish Summer Time. Feed wall-clock times (floating or UTC-Z with local digits) are kept as local hours instead of being treated as UTC then shifted to Ireland.',
+        'Sync: re-fetch / re-import rewrites the local and cloud events cache with corrected times — open Timetable or tap sync once after updating.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.14.',
+      ],
+    },
+    {
       version: 'v3.1.13',
       date: 'September 2026',
       title: 'Timetable cloud sync recovers after pause',
@@ -392,7 +402,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.13</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.14</p>
       </header>
 
       <div className="space-y-4">
