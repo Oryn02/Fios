@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v3.1.11**
+**Current version: v3.1.12**
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -36,6 +36,13 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v3.1.12
+
+- Contribution heatmap (mobile / installed PWA): fluid day-cell sizing so the strip fits the Overview card without being clipped by layout overflow; larger tap targets and visible empty-day borders.
+- Touch: day cells prefer tap over horizontal pan so presses register on iOS Safari and standalone PWA; date + activity detail still appears under the grid.
+- Data: focus sessions resolve auth from the local session first (cold start / offline-friendly), re-fetch when the session restores and after a Pomodoro completes, with a clear retry on load failure.
+- Version alignment across packages and API `/health`.
 
 ### What’s new in v3.1.11
 
@@ -248,7 +255,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v3.1.11) — Render Static Site root
+├── client/                 # React + Vite frontend (v3.1.12) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/

@@ -1,9 +1,18 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Flame, Loader2, Info } from 'lucide-react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Flame, Loader2, Info, RefreshCw } from 'lucide-react';
 import { getStudyActivity, computeStreaks, type DayActivity } from '../lib/studyActivity';
+import { supabase } from '../lib/supabase';
+import { usePomodoroState } from '../context/PomodoroContext';
 
-/** Default visible window — ~4 months; keeps mobile width usable. */
+/** Default visible window — ~4 months; fits a phone card when cells are fluid. */
 const DEFAULT_WEEKS = 16;
+
+/** Mobile cell size bounds (px). Fluid fill prefers larger taps. */
+const CELL_MIN = 11;
+const CELL_MAX_MOBILE = 18;
+const CELL_DESKTOP = 11;
+const GAP = 2;
+const LABEL_COL = 18;
 
 const LEVEL_CLS = [
   'bg-[var(--fios-surface-2)]',
@@ -76,45 +85,156 @@ function formatDayTitle(cell: DayActivity): string {
   return `${nice} — ${activity}`;
 }
 
+function preferReducedMotion(): boolean {
+  try {
+    return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
+}
+
 export const StudyStreakHeatmap: React.FC = () => {
   const [days, setDays] = useState<DayActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   /** Tap-selected day for touch devices (title hover is unreliable on iOS). */
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [cellPx, setCellPx] = useState(CELL_DESKTOP);
+  const [needsScroll, setNeedsScroll] = useState(false);
+
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { completedSessions } = usePomodoroState();
+
+  const load = useCallback(async (opts?: { quiet?: boolean }) => {
+    if (!opts?.quiet) {
+      setLoading(true);
+      setLoadError(null);
+    }
+    try {
+      const d = await getStudyActivity(DEFAULT_WEEKS);
+      setDays(d);
+      if (!d.length) {
+        setLoadError('Could not build the activity window. Pull to refresh or try again.');
+      } else if (opts?.quiet) {
+        setLoadError(null);
+      }
+    } catch {
+      setDays([]);
+      setLoadError('Could not load study activity. Check your connection and try again.');
+    } finally {
+      if (!opts?.quiet) setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    getStudyActivity(DEFAULT_WEEKS)
-      .then((d) => {
-        if (!cancelled) setDays(d);
-      })
-      .catch(() => {
-        if (!cancelled) setDays([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    let initialDone = false;
+
+    const safeLoad = (quiet?: boolean) => {
+      if (!cancelled) void load(quiet ? { quiet: true } : undefined);
+    };
+
+    safeLoad();
+
+    // PWA / mobile cold start: first paint can race ahead of session restore.
+    // Also re-fetch after sign-in so focus_sessions RLS can return rows.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'INITIAL_SESSION') {
+        // Quiet re-fetch once session is restored (avoids empty first paint sticking).
+        if (!initialDone) {
+          initialDone = true;
+          safeLoad(true);
+        }
+        return;
+      }
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        safeLoad(true);
+      }
+    });
+
     return () => {
       cancelled = true;
+      subscription.unsubscribe();
     };
-  }, []);
+  }, [load]);
+
+  // Refresh when a Pomodoro work block completes (local + cloud log).
+  useEffect(() => {
+    if (completedSessions <= 0) return;
+    void load({ quiet: true });
+  }, [completedSessions, load]);
 
   const streaks = useMemo(() => computeStreaks(days), [days]);
   const cols = useMemo(() => weeksGrid(days), [days]);
   const monthLabels = useMemo(() => monthLabelsForCols(cols), [cols]);
   const activeDays = days.filter((d) => d.level > 0).length;
   const selected = selectedDate ? days.find((d) => d.date === selectedDate) : null;
+  const allQuiet = !loading && !loadError && cols.length > 0 && activeDays === 0;
+
+  const measure = useCallback(() => {
+    const el = viewportRef.current;
+    if (!el || cols.length === 0) return;
+    const width = el.clientWidth;
+    if (width <= 0) return;
+
+    const n = cols.length;
+    const usable = Math.max(0, width - LABEL_COL);
+    const ideal = Math.floor((usable - (n - 1) * GAP) / n);
+    const isNarrow = width < 640;
+
+    if (isNarrow) {
+      // Prefer fitting the whole strip so overflow-x-hidden parents cannot clip it,
+      // and taps do not fight horizontal pan on tiny fixed cells.
+      const size = Math.max(CELL_MIN, Math.min(CELL_MAX_MOBILE, ideal));
+      setCellPx(size);
+      setNeedsScroll(ideal < CELL_MIN);
+    } else {
+      setCellPx(CELL_DESKTOP);
+      setNeedsScroll(ideal < CELL_DESKTOP);
+    }
+  }, [cols.length]);
+
+  useLayoutEffect(() => {
+    measure();
+    const el = viewportRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  // When the strip still overflows, start at the most recent weeks (right edge).
+  useLayoutEffect(() => {
+    const sc = scrollRef.current;
+    if (!sc || !needsScroll || loading) return;
+    const jump = () => {
+      sc.scrollLeft = sc.scrollWidth;
+    };
+    jump();
+    if (!preferReducedMotion()) {
+      requestAnimationFrame(jump);
+    }
+  }, [needsScroll, loading, cols.length, cellPx]);
 
   const onCellActivate = (cell: DayActivity) => {
     if (!cell.date) return;
     setSelectedDate((prev) => (prev === cell.date ? null : cell.date));
   };
 
+  const cellStyle = { width: cellPx, height: cellPx } as const;
+  const gapStyle = { gap: GAP } as const;
+
   return (
-    // min-w-0: grid/flex parents default min-width:auto and expand to ~52w content,
+    // min-w-0: grid/flex parents default min-width:auto and expand to content width,
     // then DashboardLayout overflow-x-hidden clips the card — zero usable scroll on mobile.
-    <div className="bg-[var(--fios-surface)]/60 border fios-border rounded-2xl p-4 sm:p-6 space-y-4 shadow-xl min-w-0 w-full max-w-full">
+    <div className="bg-[var(--fios-surface)]/60 border fios-border rounded-2xl p-4 sm:p-6 space-y-4 shadow-xl min-w-0 w-full max-w-full overflow-hidden">
       <div className="flex items-center justify-between flex-wrap gap-3 border-b fios-border pb-3">
         <div className="min-w-0">
           <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-0.5 flex items-center gap-1.5">
@@ -175,22 +295,41 @@ export const StudyStreakHeatmap: React.FC = () => {
         <div className="py-8 flex justify-center">
           <Loader2 className="w-5 h-5 animate-spin text-[var(--fios-text-muted)]" />
         </div>
+      ) : loadError && cols.length === 0 ? (
+        <div className="py-6 flex flex-col items-center gap-3 text-center">
+          <p className="text-xs font-mono text-[var(--fios-text-muted)] max-w-sm">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border fios-border text-[11px] font-mono font-bold text-[var(--fios-text)] cursor-pointer active:opacity-80"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Retry
+          </button>
+        </div>
       ) : cols.length === 0 ? (
         <p className="py-6 text-center text-xs font-mono text-[var(--fios-text-muted)]">
           No activity window yet — finish a focus session or rate flashcards to light up days.
         </p>
       ) : (
-        <div className="min-w-0 w-full">
+        <div className="min-w-0 w-full max-w-full" ref={viewportRef}>
           {/*
-            fios-h-scroll: horizontal pan on touch (do NOT use .scroll-touch — that sets pan-y only).
-            Month row + grid share one scroll so labels stay aligned with weeks.
+            Fluid cell sizing on phones so the strip fits the card (no clip).
+            fios-h-scroll only when measurement says we still overflow.
+            Cells use manipulation (tap) — not pan-x — so iOS/PWA registers presses.
           */}
-          <div className="fios-h-scroll overflow-x-auto overflow-y-hidden max-w-full pb-1 -mx-0.5 px-0.5">
-            <div className="inline-block min-w-0 align-top">
+          <div
+            ref={scrollRef}
+            className={`${needsScroll ? 'fios-h-scroll overflow-x-auto' : 'overflow-x-hidden'} overflow-y-hidden max-w-full pb-1 -mx-0.5 px-0.5`}
+          >
+            <div className="inline-block align-top" style={{ minWidth: needsScroll ? undefined : '100%' }}>
               {/* Month labels — absolute text so “Sep” isn’t clipped to one cell width */}
-              <div className="flex gap-0.5 mb-1.5 pl-[18px] sm:pl-[22px] relative h-3" aria-hidden>
+              <div
+                className="flex mb-1.5 relative h-3"
+                style={{ ...gapStyle, paddingLeft: LABEL_COL }}
+                aria-hidden
+              >
                 {monthLabels.map((label, i) => (
-                  <div key={`m-${i}`} className="w-3 sm:w-[11px] shrink-0 relative">
+                  <div key={`m-${i}`} className="shrink-0 relative" style={{ width: cellPx }}>
                     {label ? (
                       <span className="absolute left-0 top-0 text-[9px] font-mono font-bold text-[var(--fios-text-muted)] leading-none whitespace-nowrap">
                         {label}
@@ -200,15 +339,17 @@ export const StudyStreakHeatmap: React.FC = () => {
                 ))}
               </div>
 
-              <div className="inline-flex gap-0.5 items-start">
+              <div className="inline-flex items-start" style={gapStyle}>
                 <div
-                  className="flex flex-col gap-0.5 pr-1 shrink-0 text-[9px] font-mono font-bold text-[var(--fios-text-muted)] select-none"
+                  className="flex flex-col shrink-0 text-[9px] font-mono font-bold text-[var(--fios-text-muted)] select-none"
+                  style={{ ...gapStyle, width: LABEL_COL - GAP, paddingRight: GAP }}
                   aria-hidden
                 >
                   {WEEKDAY_LABELS.map((lab, i) => (
                     <span
                       key={i}
-                      className="h-3 sm:h-[11px] leading-3 sm:leading-[11px] w-3.5 sm:w-4 text-right"
+                      className="leading-none text-right flex items-center justify-end"
+                      style={{ height: cellPx }}
                     >
                       <span className="sm:hidden">{lab.short}</span>
                       <span className="hidden sm:inline">{lab.full}</span>
@@ -216,11 +357,11 @@ export const StudyStreakHeatmap: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="flex gap-0.5" role="grid" aria-label="Study contribution by day">
+                <div className="flex" style={gapStyle} role="grid" aria-label="Study contribution by day">
                   {cols.map((col, ci) => (
-                    <div key={ci} className="flex flex-col gap-0.5" role="row">
+                    <div key={ci} className="flex flex-col" style={gapStyle} role="row">
                       {col.map((cell, ri) => {
-                        const isSelected = cell.date && cell.date === selectedDate;
+                        const isSelected = Boolean(cell.date && cell.date === selectedDate);
                         const label = cell.date ? formatDayTitle(cell) : undefined;
                         return (
                           <button
@@ -233,15 +374,16 @@ export const StudyStreakHeatmap: React.FC = () => {
                             aria-label={label || 'Empty'}
                             aria-pressed={isSelected || undefined}
                             onClick={() => onCellActivate(cell)}
-                            className={`w-3 h-3 sm:w-[11px] sm:h-[11px] rounded-[2px] shrink-0 border transition-[box-shadow,border-color] ${
+                            className={`fios-heatmap-cell relative rounded-[2px] shrink-0 border transition-[box-shadow,border-color] ${
                               cell.date
                                 ? `${LEVEL_CLS[cell.level]} cursor-pointer ${
                                     isSelected
                                       ? 'border-[var(--fios-accent-solid)] ring-1 ring-[var(--fios-accent-solid)]'
-                                      : 'border-transparent'
+                                      : 'border-[color-mix(in_srgb,var(--fios-border)_80%,transparent)]'
                                   }`
                                 : 'bg-transparent border-transparent pointer-events-none'
                             }`}
+                            style={cellStyle}
                           />
                         );
                       })}
@@ -259,15 +401,34 @@ export const StudyStreakHeatmap: React.FC = () => {
           >
             {selected ? (
               <span className="text-[var(--fios-text)]">{formatDayTitle(selected)}</span>
+            ) : allQuiet ? (
+              <span>No focus or reviews in this window yet — tap any day for its date.</span>
             ) : (
               <span className="sm:hidden">Tap a day for date & activity</span>
             )}
           </div>
 
+          {loadError && (
+            <div className="mt-1 flex items-center gap-2 text-[10px] font-mono text-amber-400/90">
+              <span>{loadError}</span>
+              <button
+                type="button"
+                onClick={() => void load()}
+                className="underline cursor-pointer shrink-0"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center gap-1.5 mt-2 text-[10px] font-mono text-[var(--fios-text-muted)] flex-wrap">
             <span>Less</span>
             {LEVEL_CLS.map((cls, i) => (
-              <span key={i} className={`w-3 h-3 sm:w-[11px] sm:h-[11px] rounded-[2px] ${cls}`} />
+              <span
+                key={i}
+                className={`rounded-[2px] border border-[color-mix(in_srgb,var(--fios-border)_80%,transparent)] ${cls}`}
+                style={{ width: Math.min(cellPx, 12), height: Math.min(cellPx, 12) }}
+              />
             ))}
             <span>More</span>
             <span className="w-full sm:w-auto sm:ml-auto pt-1 sm:pt-0">
