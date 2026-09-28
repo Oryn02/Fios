@@ -1,7 +1,15 @@
 import type { CalendarEvent } from './calendarService';
-import { fetchAndParseCalendar, getSavedCalendarUrl } from './calendarService';
+import {
+  fetchAndParseCalendar,
+  getSavedCalendarUrl,
+  getCachedCalendarEvents,
+  loadLocalCalendarState,
+  persistCalendarState,
+  reconcileCalendarState,
+  type ScheduleMode,
+} from './calendarService';
 
-export type ScheduleMode = 'ical' | 'manual';
+export type { ScheduleMode };
 
 export type ManualRecurrence = 'none' | 'weekly';
 
@@ -24,9 +32,6 @@ export interface ManualScheduleEvent {
   updatedAt: string;
 }
 
-const LS_EVENTS = 'fios_manual_schedule';
-const LS_META = 'fios_schedule_meta';
-
 export interface ScheduleMeta {
   mode: ScheduleMode;
   institutionName: string;
@@ -42,36 +47,27 @@ function uid(): string {
 }
 
 export function loadScheduleMeta(): ScheduleMeta {
-  try {
-    const raw = localStorage.getItem(LS_META);
-    if (!raw) return { ...DEFAULT_META };
-    const parsed = JSON.parse(raw);
-    return {
-      mode: parsed.mode === 'manual' ? 'manual' : 'ical',
-      institutionName: typeof parsed.institutionName === 'string' ? parsed.institutionName : '',
-    };
-  } catch {
-    return { ...DEFAULT_META };
-  }
+  const state = loadLocalCalendarState();
+  return {
+    mode: state.mode === 'manual' ? 'manual' : 'ical',
+    institutionName: state.institution_name || DEFAULT_META.institutionName,
+  };
 }
 
 export function saveScheduleMeta(meta: ScheduleMeta): void {
-  localStorage.setItem(LS_META, JSON.stringify(meta));
+  void persistCalendarState({
+    mode: meta.mode === 'manual' ? 'manual' : 'ical',
+    institution_name: meta.institutionName || '',
+  });
 }
 
 export function loadManualEvents(): ManualScheduleEvent[] {
-  try {
-    const raw = localStorage.getItem(LS_EVENTS);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  const state = loadLocalCalendarState();
+  return Array.isArray(state.manual_events) ? (state.manual_events as ManualScheduleEvent[]) : [];
 }
 
 export function saveManualEvents(events: ManualScheduleEvent[]): void {
-  localStorage.setItem(LS_EVENTS, JSON.stringify(events));
+  void persistCalendarState({ manual_events: events });
 }
 
 export function createManualEvent(
@@ -173,11 +169,17 @@ export function expandManualEvents(
 /**
  * Unified schedule loader for Overview / Schedule / widgets.
  * Manual mode never requires iCal; iCal mode still works when a feed URL exists.
+ * Offline-first: reconciles cloud state when online; falls back to cached events when the feed cannot be fetched.
  */
 export async function loadUnifiedScheduleEvents(
   rangeStart: Date,
   rangeEnd: Date
 ): Promise<{ events: CalendarEvent[]; mode: ScheduleMode; institutionName: string }> {
+  // Best-effort cloud ↔ local reconcile (no-op when offline / unsigned-in).
+  try {
+    await reconcileCalendarState();
+  } catch { /* keep local */ }
+
   const meta = loadScheduleMeta();
   if (meta.mode === 'manual') {
     return {
@@ -195,6 +197,10 @@ export async function loadUnifiedScheduleEvents(
     }
   } catch (err) {
     console.error('iCal schedule load failed:', err);
+    const cached = getCachedCalendarEvents();
+    if (cached.length) {
+      return { events: cached, mode: 'ical', institutionName: meta.institutionName };
+    }
   }
 
   // Fallback: still surface any manual events so the UI isn’t empty after a feed failure

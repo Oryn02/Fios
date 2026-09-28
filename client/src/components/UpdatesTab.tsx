@@ -6,9 +6,14 @@ const UpdatesTabInner: React.FC = () => {
     {
       version: 'v3.1.9',
       date: 'September 2026',
-      title: 'Maintenance & version alignment',
+      title: 'Gemini guidance, push fix, iCal offline sync & maintenance',
       highlights: [
-        'Reliability maintenance release: clearer cloud error handling for durable data writes and version chrome alignment across the app.',
+        'Reliability maintenance: clearer cloud error handling for durable data writes (including feedback delete) and version chrome alignment across the app.',
+        'Gemini locked screens: clearer step-by-step how to get a key in Google AI Studio, paste it in Settings (or the unlock modal), and why AI features stay blocked without a BYO key (privacy + your quota).',
+        'When free-tier Gemini feels slow or times out (“taking a long time”, 429s, quotas), Fios shows a helpful prompt explaining rate limits, shared quota, cold starts, and lower priority — plus how a paid Gemini API key usually speeds things up (higher quotas, fewer timeouts) with links to AI Studio, billing, and rate-limit docs.',
+        'Class Reminders: push notifications now display when the server sends a Web Push — the service worker handles push events and notification taps (open/focus Fios). Clearer Settings messages if notifications are blocked, unsupported, or need Add to Home Screen on iPhone/iPad. If you previously enabled reminders, toggle off/on once (or tap Send test notification) so the subscription refreshes.',
+        'Schedule / iCal: feed URL, sync status, and last-imported events persist locally first, then sync to your account when the network is available. While offline, timetable changes queue and flush on reconnect; Overview and Schedule can still show your last cached classes.',
+        'Optional SQL: run supabase/v3.1.9-calendar-state.sql then reload the PostgREST schema cache so calendar state persists in the database.',
         'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.9.',
       ],
     },

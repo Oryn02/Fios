@@ -20,8 +20,8 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Module Readiness Heatmap** — 0–100% readiness per module with calculation breakdown; rich module accent colors on badges/tags/heatmap.
 - **Study streak heatmap & exam countdown** — contribution grid from focus + flashcard reviews; live countdown to exams and due tasks.
 - **Brain Dump inbox** — floating quick-capture with optional AI parse into tasks (Settings toggle; desktop On / mobile Off by default, like Pomodoro / Quick Widget).
-- **Class Reminders** — optional browser notifications (5–30 min lead) for upcoming classes; Web Push when VAPID is configured.
-- **Universal schedule** — iCal sync or manual timetable for any college; iCal helper + clearer errors; finished classes muted; Next Up highlight; mobile month view with larger taps and clearer day hierarchy.
+- **Class Reminders** — optional browser notifications (5–30 min lead) for upcoming classes; Web Push when VAPID is configured (service worker shows notifications + opens Fios on tap).
+- **Universal schedule** — iCal sync or manual timetable for any college; offline-first feed URL / sync status / event cache with cloud reconcile when online; iCal helper + clearer errors; finished classes muted; Next Up highlight; mobile month view with larger taps and clearer day hierarchy.
 - **Unified agenda** — classes + timed tasks on a calendar-day timeline (memoized CompactAgenda); tasks sort by due date; start/due datetime pickers update and save.
 - **Holiday greetings & day-only themes** — Overview holiday greetings and temporary accent palettes on key dates (Christmas Eve–26 window), birthday greeting + theme when you set your birthday, plus subtle festive ambience (washes / sparse motion) when those themes are active; landing stays emerald.
 - **Contact Support** — in-app message form posts to the API and emails the support inbox (Resend/SendGrid when configured); mailto remains optional.
@@ -39,7 +39,12 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 
 ### What’s new in v3.1.9
 
-- Reliability maintenance release with clearer handling for durable cloud writes.
+- Reliability maintenance with clearer handling for durable cloud writes (including feedback delete).
+- Gemini locked screens: step-by-step how to get a key in [Google AI Studio](https://aistudio.google.com/app/apikey), paste it in Settings (or the unlock modal), and why AI features stay blocked without a BYO key.
+- Free-tier latency tips: when Gemini is “taking a long time” / timing out, a clear prompt explains rate limits, shared quota, cold starts, and lower priority — and how a paid Gemini API key usually speeds the app up (higher quotas, fewer 429s/timeouts), with links to AI Studio, [billing](https://ai.google.dev/gemini-api/docs/billing), and [rate limits](https://ai.google.dev/gemini-api/docs/rate-limits).
+- Class Reminders / Web Push: the service worker now handles push events and notification clicks, so server VAPID deliveries show a notification on supported browsers and installed PWAs. Clearer Settings messaging when notifications are blocked, unsupported, or require Add to Home Screen on iPhone/iPad. Re-subscribes if the VAPID public key changes.
+- iCal / schedule: feed URL, sync status, and last-imported events persist locally first, then sync to your account when Wi‑Fi / network is available. Offline changes queue and flush on reconnect; Overview and Schedule can show your last cached timetable while offline.
+- Optional SQL: `supabase/v3.1.9-calendar-state.sql` adds `calendar_state` (then reload the PostgREST schema cache).
 - Version alignment across packages and API `/health`.
 
 ### What’s new in v3.1.8

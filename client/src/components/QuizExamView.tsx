@@ -9,6 +9,8 @@ import { FileUpload } from './FileUpload';
 import { InlineEditableTitle } from './InlineEditableTitle';
 import { useAiAuth } from '../context/AiAuthContext';
 import { toast } from '../lib/toast';
+import { GeminiLatencyHint } from './GeminiLatencyHint';
+import { friendlyGeminiError } from '../lib/geminiUx';
 
 interface QuizExamViewProps {
   initialQuizId?: string | null;
@@ -77,7 +79,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
       setQuestions(questionList);
       if (!title.trim()) setTitle(studyNotes.trim().slice(0, 40));
     } catch (err: any) {
-      setError(err.message || 'Error generating quiz questions.');
+      setError(friendlyGeminiError(err.message || 'Error generating quiz questions.'));
     } finally {
       setLoading(false);
     }
@@ -189,7 +191,13 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
           >
             {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating practice exam…</> : <><Sparkles className="w-4 h-4" /> Generate Practice Quiz ↵</>}
           </motion.button>
-          {error && <div className="p-4 bg-rose-500/10 border-l-4 border-rose-500 text-rose-300 text-xs font-mono font-bold uppercase">{error}</div>}
+          {error && (
+            <div className="space-y-2">
+              <div className="p-4 bg-rose-500/10 border-l-4 border-rose-500 text-rose-300 text-xs font-mono font-bold uppercase">{error}</div>
+              <GeminiLatencyHint error={error} />
+            </div>
+          )}
+          <GeminiLatencyHint busy={loading} />
 
           {savedQuizzes.length > 0 && (
             <div className="pt-4 border-t border-slate-800 space-y-2">

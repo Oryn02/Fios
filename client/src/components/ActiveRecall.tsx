@@ -8,6 +8,8 @@ import type { DBModule, RecallConcept } from '../types/db';
 import { moduleDisplayName } from '../lib/moduleService';
 import { useHasGeminiKey, GeminiKeyModal } from './GeminiGate';
 import { useAiAuth } from '../context/AiAuthContext';
+import { GeminiLatencyHint } from './GeminiLatencyHint';
+import { friendlyGeminiError } from '../lib/geminiUx';
 
 interface Props {
   modules: DBModule[];
@@ -75,7 +77,7 @@ export const ActiveRecall: React.FC<Props> = ({ modules, initialModule = '', onC
         report: res.concepts as RecallConcept[],
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to evaluate recall.');
+      setError(friendlyGeminiError(err.message || 'Failed to evaluate recall.'));
       setRunning(true);
     } finally {
       setEvaluating(false);
@@ -133,7 +135,13 @@ export const ActiveRecall: React.FC<Props> = ({ modules, initialModule = '', onC
                   {evaluating ? 'Evaluating…' : 'Evaluate Recall'}
                 </motion.button>
               </div>
-              {error && <div className="p-3 bg-rose-500/10 border-l-4 border-rose-500 text-rose-300 text-xs font-mono rounded-r-lg">{error}</div>}
+              {error && (
+                <div className="space-y-2">
+                  <div className="p-3 bg-rose-500/10 border-l-4 border-rose-500 text-rose-300 text-xs font-mono rounded-r-lg">{error}</div>
+                  <GeminiLatencyHint error={error} />
+                </div>
+              )}
+              <GeminiLatencyHint busy={evaluating} />
             </>
           ) : (
             <div className="space-y-4">

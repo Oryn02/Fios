@@ -1,6 +1,7 @@
 import type { CodeExamType, CodeLanguage } from '../types/db';
 import { getGeminiKey } from '../lib/geminiKey';
 import { apiUrl } from '../lib/apiBase';
+import { fetchWithGeminiTimeout, friendlyGeminiError } from '../lib/geminiUx';
 
 export interface GeneratedCodeExam {
   title: string;
@@ -21,7 +22,7 @@ export interface CodeGradeResult {
 
 async function postJson<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const url = apiUrl(path);
-  const response = await fetch(url, {
+  const response = await fetchWithGeminiTimeout(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...body, apiKey: getGeminiKey() }),
@@ -36,7 +37,7 @@ async function postJson<T>(path: string, body: Record<string, unknown>): Promise
   }
 
   if (!response.ok) {
-    throw new Error(data?.error || `Server error: ${response.status}`);
+    throw new Error(friendlyGeminiError(data?.error || `Server error: ${response.status}`));
   }
   return data as T;
 }

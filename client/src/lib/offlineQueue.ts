@@ -9,12 +9,26 @@ const DB_NAME = 'fios-offline-queue';
 const STORE = 'mutations';
 const DB_VERSION = 1;
 
+type OnlineHook = () => void | Promise<void>;
+const onlineHooks: OnlineHook[] = [];
+
+/** Register extra work to run after the mutation queue flushes on reconnect. */
+export function onOfflineQueueOnline(hook: OnlineHook): () => void {
+  onlineHooks.push(hook);
+  return () => {
+    const i = onlineHooks.indexOf(hook);
+    if (i >= 0) onlineHooks.splice(i, 1);
+  };
+}
+
 export interface QueuedMutation {
   id?: number;
   table: string;
-  op: 'insert' | 'update' | 'delete';
+  op: 'insert' | 'update' | 'delete' | 'upsert';
   payload: Record<string, unknown>;
   match?: Record<string, unknown>;
+  /** Optional onConflict target for upsert (e.g. 'user_id'). */
+  onConflict?: string;
   createdAt: string;
 }
 
@@ -87,6 +101,12 @@ async function applyMutation(m: QueuedMutation): Promise<void> {
     if (error) throw error;
     return;
   }
+  if (m.op === 'upsert') {
+    const opts = m.onConflict ? { onConflict: m.onConflict } : undefined;
+    const { error } = await supabase.from(m.table).upsert(m.payload, opts);
+    if (error) throw error;
+    return;
+  }
   if (m.op === 'update') {
     let q = supabase.from(m.table).update(m.payload);
     for (const [k, v] of Object.entries(m.match || {})) {
@@ -131,9 +151,17 @@ export function startOfflineQueueListener(): () => void {
   if (listening) return () => {};
   listening = true;
   const onOnline = () => {
-    void flushOfflineQueue().then((r) => {
+    void (async () => {
+      const r = await flushOfflineQueue();
       if (r.flushed > 0) console.info(`[offlineQueue] flushed ${r.flushed} mutation(s)`);
-    });
+      for (const hook of [...onlineHooks]) {
+        try {
+          await hook();
+        } catch (err) {
+          console.warn('[offlineQueue] online hook failed', err);
+        }
+      }
+    })();
   };
   window.addEventListener('online', onOnline);
   if (navigator.onLine) onOnline();
