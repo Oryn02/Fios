@@ -4,6 +4,17 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.12',
+      date: 'September 2026',
+      title: 'Contribution heatmap mobile / PWA fix',
+      highlights: [
+        'Contribution heatmap: fluid cell sizing on phones so the strip fits the card (no clip under overflow-x-hidden); clearer empty-day borders and tap hit targets.',
+        'Touch / installed PWA: day cells use tap-friendly touch-action (no pan-x steal); tap still shows date + focus/reviews detail under the grid.',
+        'Data loading: prefer local auth session for focus sessions (works on cold start / flaky mobile); re-fetch when session restores and after Pomodoro completes; retry on load error.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.12.',
+      ],
+    },
+    {
       version: 'v3.1.11',
       date: 'September 2026',
       title: 'Offline sync banner no longer spins forever',
@@ -370,7 +381,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.11</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.12</p>
       </header>
 
       <div className="space-y-4">

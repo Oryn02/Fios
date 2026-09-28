@@ -461,9 +461,21 @@ summary,
   /* Avoid nested scroll fighting the page on iOS when content fits */
   scrollbar-width: thin;
 }
-/* Global `button { touch-action: manipulation }` blocks horizontal pan when the
-   gesture starts on a cell — allow pan-x so the week strip scrolls on phones. */
-.fios-h-scroll button {
+/* Heatmap day cells: prefer tap over pan. pan-x on 11–12px buttons made iOS/PWA
+   treat presses as aborted pans (no click). Scroll still works from gutters /
+   month row; fluid mobile sizing usually removes the need to pan at all. */
+.fios-heatmap-cell {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--fios-accent-solid) 22%, transparent);
+}
+/* Expand hit target ~6px without changing visual cell size (mobile / PWA). */
+.fios-heatmap-cell::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+}
+/* When a strip still overflows, allow pan to start on non-cell chrome only. */
+.fios-h-scroll button:not(.fios-heatmap-cell) {
   touch-action: pan-x;
 }
 
