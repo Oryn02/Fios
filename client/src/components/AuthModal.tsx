@@ -13,6 +13,8 @@ interface AuthModalProps {
   onSuccess?: () => void;
   /** Open directly on forgot-password (e.g. from /reset-password expired link). */
   initialPanel?: AuthPanel;
+  /** Surface OAuth / redirect auth errors (e.g. `#error=access_denied`). */
+  initialError?: string | null;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -20,6 +22,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   onSuccess,
   initialPanel = 'auth',
+  initialError = null,
 }) => {
   const [isSignUp, setIsSignUp] = useState(mode === 'signup');
   const [panel, setPanel] = useState<AuthPanel>(initialPanel);
@@ -28,7 +31,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [notice, setNotice] = useState<string | null>(null);
 
   const supportEmail = getSupportEmail();
@@ -40,6 +43,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   useEffect(() => {
     setPanel(initialPanel);
   }, [initialPanel]);
+
+  useEffect(() => {
+    if (initialError) setError(initialError);
+  }, [initialError]);
 
   const goPanel = (next: AuthPanel) => {
     setPanel(next);

@@ -302,7 +302,7 @@ export async function loadOverviewStats(feedback: FeedbackEntry[]): Promise<Over
     ...fb,
     profileCount,
     profilesError,
-    clientVersion: '3.6.4',
+    clientVersion: '3.6.5',
   };
 }
 

@@ -3,10 +3,20 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.6.4.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.6.5.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.6.5',
+      date: 'September 2026',
+      title: 'Reset-link and auth-error polish',
+      highlights: [
+        'Password reset: requesting a new link from an invalid/expired reset screen signs out a leftover normal session first so the forgot-password modal opens instead of dropping into the app.',
+        'Auth redirects: hash/query errors only open the expired-reset screen on `/reset-password` or `type=recovery`; other failures (for example cancelled GitHub sign-in) open the sign-in modal with the error.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.6.5.',
+      ],
+    },
     {
       version: 'v3.6.4',
       date: 'September 2026',
@@ -459,7 +469,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.6.4</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.6.5</p>
       </header>
 
       <div className="space-y-4">
