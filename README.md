@@ -2,7 +2,7 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v3.6.0**
+**Current version: v3.6.1**
 
 > Version numbers in Updates / README use coherent semver from the first published release as **v1.0.0** (reassigned by substance; SQL migration filenames on disk may still use older labels).
 
@@ -38,6 +38,12 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v3.6.1
+
+- Reliability maintenance: clearer cloud directory listing when schema policies need repair, with an optional SQL script and PostgREST schema reload.
+- Optional SQL: `supabase/v3.6.1-user-profiles-directory.sql` then reload PostgREST schema cache.
+- Version alignment across packages and API `/health`.
 
 ### What’s new in v3.6.0
 
@@ -278,7 +284,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v3.6.0) — Render Static Site root
+├── client/                 # React + Vite frontend (v3.6.1) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/

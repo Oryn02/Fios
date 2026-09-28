@@ -3,10 +3,20 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.6.0.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.6.1.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.6.1',
+      date: 'September 2026',
+      title: 'Reliability maintenance + version alignment',
+      highlights: [
+        'Reliability maintenance: clearer cloud directory listing when schema policies need repair, with an optional SQL script and PostgREST schema reload so signed-in profile rows stay visible across accounts.',
+        'Optional SQL: run supabase/v3.6.1-user-profiles-directory.sql then reload the PostgREST schema cache.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.6.1.',
+      ],
+    },
     {
       version: 'v3.6.0',
       date: 'September 2026',
@@ -418,7 +428,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.6.0</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.6.1</p>
       </header>
 
       <div className="space-y-4">
