@@ -471,7 +471,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         </form>
       )}
 
-      {/* 3. Schedule & Academic Tasks (Prioritized Above the Fold) */}
+      {/* 3. Timetable & Academic Tasks (Prioritized Above the Fold) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-[#0e131f]/60 border border-slate-800/80 rounded-2xl p-6 space-y-4 shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">

@@ -53,7 +53,7 @@ export const SMART_ACTION_LABELS: Record<SmartActionId, string> = {
   pomodoro: 'Start Pomodoro',
   tutor: 'Ask AI Tutor',
   tasks: 'Open Tasks',
-  schedule: 'College Schedule',
+  schedule: 'College Timetable',
   quiz: 'Exam Mode',
   modules: 'Modules',
   grades: 'Grade Predictor',

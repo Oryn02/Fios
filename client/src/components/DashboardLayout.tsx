@@ -33,9 +33,9 @@ export const NAV_ITEMS = [
   { id: 'atu-calendar', label: 'ATU Calendar', icon: GraduationCap },
   { id: 'grades', label: 'Grades', icon: Target },
   { id: 'timer', label: 'Focus Timer', icon: Timer },
-  { id: 'schedule', label: 'Schedule', icon: Calendar },
+  { id: 'schedule', label: 'Timetable', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.1.9', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.1.10', icon: Sparkles },
 ];
 
 /** True when the event target is a text-entry control (skip ⌘K / Ctrl+K while typing). */
@@ -74,16 +74,53 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
   const { profile } = useProfile();
   const preferredName = usePreferredName();
   const { theme, resolvedTheme, toggleTheme, holidayTheme } = useTheme();
-  const { zenMode, setZenMode, mobileNavSlots, navOrder, setNavOrder } = usePreferences();
+  const { zenMode, setZenMode, mobileNavSlots, setMobileNavSlots, navOrder, setNavOrder } = usePreferences();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   /** Desktop sidebar visibility (hamburger toggles this on md+). */
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  /** Mobile bottom-nav hold-to-reorder (slot order). */
+  const [mobileDragId, setMobileDragId] = useState<string | null>(null);
+  const [draftMobileSlots, setDraftMobileSlots] = useState<string[] | null>(null);
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true
   );
+
+  const HOLD_MS = 420;
+  const mobileHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mobileSuppressClick = useRef(false);
+  const mobileTouch = useRef<{ id: string; startX: number; startY: number; armed: boolean } | null>(null);
+  const draftMobileSlotsRef = useRef<string[] | null>(null);
+  const mobileNavElRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const drawerHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const drawerSuppressClick = useRef(false);
+  const drawerTouch = useRef<{ id: string; startX: number; startY: number; armed: boolean } | null>(null);
+  const draftNavOrderRef = useRef<string[] | null>(null);
+  const drawerNavElRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  const clearMobileHold = useCallback(() => {
+    if (mobileHoldTimer.current) {
+      clearTimeout(mobileHoldTimer.current);
+      mobileHoldTimer.current = null;
+    }
+  }, []);
+
+  const clearDrawerHold = useCallback(() => {
+    if (drawerHoldTimer.current) {
+      clearTimeout(drawerHoldTimer.current);
+      drawerHoldTimer.current = null;
+    }
+  }, []);
+
+  const hapticTick = useCallback(() => {
+    try {
+      navigator.vibrate?.(14);
+    } catch {
+      /* optional */
+    }
+  }, []);
 
   // Refs so the global shortcut listener stays mounted (no rebind gap on open/close).
   const paletteOpenRef = useRef(paletteOpen);
@@ -283,6 +320,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
   const [draftNavOrder, setDraftNavOrder] = useState<string[] | null>(null);
   const effectiveNavOrder = draftNavOrder ?? (navOrder?.length ? navOrder : DEFAULT_NAV_ORDER);
+  const baseMobileSlots = mobileNavSlots?.length ? mobileNavSlots : DEFAULT_MOBILE_NAV;
+  const effectiveMobileSlots = draftMobileSlots ?? baseMobileSlots;
 
   const orderedNav = useMemo(() => {
     const order = effectiveNavOrder;
@@ -314,7 +353,9 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
   const onDragStart = useCallback((id: string) => {
     setDragId(id);
-    setDraftNavOrder([...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)]);
+    const next = [...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)];
+    draftNavOrderRef.current = next;
+    setDraftNavOrder(next);
   }, [navOrder]);
 
   const onDragOver = useCallback((e: React.DragEvent, overId: string) => {
@@ -327,15 +368,150 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       if (from < 0 || to < 0 || from === to) return prev;
       order.splice(from, 1);
       order.splice(to, 0, dragId);
+      draftNavOrderRef.current = order;
       return order;
     });
   }, [dragId, navOrder]);
 
   const onDragEnd = useCallback(() => {
-    if (draftNavOrder) setNavOrder(draftNavOrder);
+    const next = draftNavOrderRef.current;
+    if (next) setNavOrder(next);
+    draftNavOrderRef.current = null;
     setDraftNavOrder(null);
     setDragId(null);
-  }, [draftNavOrder, setNavOrder]);
+  }, [setNavOrder]);
+
+  const reorderList = useCallback((order: string[], fromId: string, toId: string) => {
+    const from = order.indexOf(fromId);
+    const to = order.indexOf(toId);
+    if (from < 0 || to < 0 || from === to) return order;
+    const next = [...order];
+    next.splice(from, 1);
+    next.splice(to, 0, fromId);
+    return next;
+  }, []);
+
+  const onMobilePointerDown = useCallback((e: React.PointerEvent, id: string) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    mobileTouch.current = { id, startX: e.clientX, startY: e.clientY, armed: false };
+    clearMobileHold();
+    mobileHoldTimer.current = setTimeout(() => {
+      if (!mobileTouch.current || mobileTouch.current.id !== id) return;
+      mobileTouch.current.armed = true;
+      mobileSuppressClick.current = true;
+      const next = [...(mobileNavSlots?.length ? mobileNavSlots : DEFAULT_MOBILE_NAV)];
+      draftMobileSlotsRef.current = next;
+      setDraftMobileSlots(next);
+      setMobileDragId(id);
+      hapticTick();
+      try {
+        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    }, HOLD_MS);
+  }, [HOLD_MS, clearMobileHold, hapticTick, mobileNavSlots]);
+
+  const onMobilePointerMove = useCallback((e: React.PointerEvent) => {
+    const t = mobileTouch.current;
+    if (!t) return;
+    const dx = e.clientX - t.startX;
+    const dy = e.clientY - t.startY;
+    if (!t.armed) {
+      if (Math.hypot(dx, dy) > 12) clearMobileHold();
+      return;
+    }
+    e.preventDefault();
+    let overId: string | null = null;
+    for (const [slotId, el] of mobileNavElRefs.current) {
+      const rect = el.getBoundingClientRect();
+      if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top - 24 && e.clientY <= rect.bottom + 24) {
+        overId = slotId;
+        break;
+      }
+    }
+    if (!overId || overId === t.id) return;
+    setDraftMobileSlots((prev) => {
+      const base = prev ?? (mobileNavSlots?.length ? mobileNavSlots : DEFAULT_MOBILE_NAV);
+      const next = reorderList(base, t.id, overId!);
+      draftMobileSlotsRef.current = next;
+      return next;
+    });
+  }, [clearMobileHold, mobileNavSlots, reorderList]);
+
+  const onMobilePointerEnd = useCallback(() => {
+    clearMobileHold();
+    if (mobileTouch.current?.armed) {
+      const next = draftMobileSlotsRef.current;
+      if (next) setMobileNavSlots(next);
+      mobileSuppressClick.current = true;
+    }
+    mobileTouch.current = null;
+    draftMobileSlotsRef.current = null;
+    setDraftMobileSlots(null);
+    setMobileDragId(null);
+  }, [clearMobileHold, setMobileNavSlots]);
+
+  const onDrawerPointerDown = useCallback((e: React.PointerEvent, id: string) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    drawerTouch.current = { id, startX: e.clientX, startY: e.clientY, armed: false };
+    clearDrawerHold();
+    drawerHoldTimer.current = setTimeout(() => {
+      if (!drawerTouch.current || drawerTouch.current.id !== id) return;
+      drawerTouch.current.armed = true;
+      drawerSuppressClick.current = true;
+      const next = [...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)];
+      draftNavOrderRef.current = next;
+      setDraftNavOrder(next);
+      setDragId(id);
+      hapticTick();
+      try {
+        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    }, HOLD_MS);
+  }, [HOLD_MS, clearDrawerHold, hapticTick, navOrder]);
+
+  const onDrawerPointerMove = useCallback((e: React.PointerEvent) => {
+    const t = drawerTouch.current;
+    if (!t) return;
+    const dx = e.clientX - t.startX;
+    const dy = e.clientY - t.startY;
+    if (!t.armed) {
+      if (Math.hypot(dx, dy) > 12) clearDrawerHold();
+      return;
+    }
+    e.preventDefault();
+    let overId: string | null = null;
+    for (const [slotId, el] of drawerNavElRefs.current) {
+      const rect = el.getBoundingClientRect();
+      if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        overId = slotId;
+        break;
+      }
+    }
+    if (!overId || overId === t.id) return;
+    setDraftNavOrder((prev) => {
+      const base = prev ?? (navOrder?.length ? navOrder : DEFAULT_NAV_ORDER);
+      const next = reorderList(base, t.id, overId!);
+      draftNavOrderRef.current = next;
+      return next;
+    });
+  }, [clearDrawerHold, navOrder, reorderList]);
+
+  const onDrawerPointerEnd = useCallback(() => {
+    clearDrawerHold();
+    if (drawerTouch.current?.armed) {
+      const next = draftNavOrderRef.current;
+      if (next) setNavOrder(next);
+      drawerSuppressClick.current = true;
+    }
+    drawerTouch.current = null;
+    draftNavOrderRef.current = null;
+    setDraftNavOrder(null);
+    setDragId(null);
+  }, [clearDrawerHold, setNavOrder]);
 
   const commandItems: CommandItem[] = useMemo(() => [
     ...orderedNav.map((item) => ({
@@ -372,11 +548,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
   const ThemeIcon = theme === 'system' ? Monitor : (resolvedTheme === 'dark' ? Sun : Moon);
 
   const mobileItems = useMemo(() => {
-    const slots = mobileNavSlots?.length ? mobileNavSlots : DEFAULT_MOBILE_NAV;
-    return slots
+    return effectiveMobileSlots
       .map((id) => NAV_ITEMS.find((n) => n.id === id))
       .filter(Boolean) as typeof NAV_ITEMS;
-  }, [mobileNavSlots]);
+  }, [effectiveMobileSlots]);
 
   return (
     <div className="min-h-dvh fios-app-bg flex flex-col font-sans overflow-x-hidden">
@@ -419,10 +594,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               data-fios-version-badge
               className="relative z-[65] inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 3.1.9"
+              aria-label="Fios version 3.1.10"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v3.1.9
+              v3.1.10
             </span>
             {zenMode && (
               <button
@@ -540,16 +715,36 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                   </button>
                 </div>
                 <nav className="space-y-1 overflow-y-auto flex-1 scroll-touch" aria-label="Primary">
+                  <p className="px-3 pb-1 text-[9px] font-mono text-[var(--fios-text-muted)]">Hold &amp; drag to reorder</p>
                   {orderedNav.map((item) => {
                     const Icon = item.icon;
                     const isActive = activeTab === item.id;
+                    const isDragging = dragId === item.id;
                     return (
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => navigate(item.id)}
+                        ref={(el) => {
+                          if (el) drawerNavElRefs.current.set(item.id, el);
+                          else drawerNavElRefs.current.delete(item.id);
+                        }}
+                        onClick={() => {
+                          if (drawerSuppressClick.current) {
+                            drawerSuppressClick.current = false;
+                            return;
+                          }
+                          navigate(item.id);
+                        }}
+                        onPointerDown={(e) => onDrawerPointerDown(e, item.id)}
+                        onPointerMove={onDrawerPointerMove}
+                        onPointerUp={onDrawerPointerEnd}
+                        onPointerCancel={onDrawerPointerEnd}
                         aria-current={isActive ? 'page' : undefined}
-                        className={`w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 ${
+                        aria-grabbed={isDragging || undefined}
+                        style={{ touchAction: dragId ? 'none' : undefined }}
+                        className={`w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
+                          isDragging ? 'scale-[1.03] ring-2 ring-[var(--fios-accent-solid)]/50 shadow-lg z-10' : ''
+                        } ${
                           isActive ? 'accent-bg text-slate-950' : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
                         }`}
                       >
@@ -629,9 +824,11 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       {/* Mobile bottom nav — keep a Settings escape even in Zen study mode */}
       {(!hideChrome || zenMode) && (
         <nav
-          className={`fios-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-1 pt-1 pb-1 safe-bottom overflow-x-auto ${hideChrome ? 'shadow-2xl' : ''}`}
+          className={`fios-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-1 pt-1 pb-1 safe-bottom overflow-x-auto ${hideChrome ? 'shadow-2xl' : ''} ${mobileDragId ? 'select-none' : ''}`}
           aria-label="Mobile shortcuts"
+          aria-describedby="mobile-nav-reorder-hint"
         >
+          <span id="mobile-nav-reorder-hint" className="sr-only">Long-press a tab, then drag left or right to reorder. Order is saved to your preferences.</span>
           {hideChrome ? (
             <>
               <button
@@ -666,14 +863,33 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             mobileItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              const isDragging = mobileDragId === item.id;
               return (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => navigate(item.id)}
+                  ref={(el) => {
+                    if (el) mobileNavElRefs.current.set(item.id, el);
+                    else mobileNavElRefs.current.delete(item.id);
+                  }}
+                  onClick={() => {
+                    if (mobileSuppressClick.current) {
+                      mobileSuppressClick.current = false;
+                      return;
+                    }
+                    navigate(item.id);
+                  }}
+                  onPointerDown={(e) => onMobilePointerDown(e, item.id)}
+                  onPointerMove={onMobilePointerMove}
+                  onPointerUp={onMobilePointerEnd}
+                  onPointerCancel={onMobilePointerEnd}
                   aria-current={isActive ? 'page' : undefined}
                   aria-label={item.label}
-                  className={`touch-target flex flex-col items-center gap-0.5 min-w-[3.5rem] px-2 py-2 rounded-lg cursor-pointer active:bg-[var(--fios-surface-2)] ${isActive ? 'accent-solid-text' : 'text-[var(--fios-text-muted)]'}`}
+                  aria-grabbed={isDragging || undefined}
+                  style={{ touchAction: mobileDragId ? 'none' : 'manipulation' }}
+                  className={`touch-target flex flex-col items-center gap-0.5 min-w-[3.5rem] px-2 py-2 rounded-lg cursor-pointer active:bg-[var(--fios-surface-2)] transition-transform ${
+                    isDragging ? 'scale-110 -translate-y-1 accent-solid-text shadow-lg z-10' : ''
+                  } ${isActive && !isDragging ? 'accent-solid-text' : isDragging ? '' : 'text-[var(--fios-text-muted)]'}`}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-[9px] font-bold uppercase tracking-wide">{item.label.split(' ')[0]}</span>
@@ -714,16 +930,36 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                 </button>
               </div>
               <nav className="space-y-1 overflow-y-auto flex-1" aria-label="Primary">
+                <p className="px-3 pb-1 text-[9px] font-mono text-[var(--fios-text-muted)]">Hold &amp; drag to reorder</p>
                 {orderedNav.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
+                  const isDragging = dragId === item.id;
                   return (
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => navigate(item.id)}
+                      ref={(el) => {
+                        if (el) drawerNavElRefs.current.set(item.id, el);
+                        else drawerNavElRefs.current.delete(item.id);
+                      }}
+                      onClick={() => {
+                        if (drawerSuppressClick.current) {
+                          drawerSuppressClick.current = false;
+                          return;
+                        }
+                        navigate(item.id);
+                      }}
+                      onPointerDown={(e) => onDrawerPointerDown(e, item.id)}
+                      onPointerMove={onDrawerPointerMove}
+                      onPointerUp={onDrawerPointerEnd}
+                      onPointerCancel={onDrawerPointerEnd}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 ${
+                      aria-grabbed={isDragging || undefined}
+                      style={{ touchAction: dragId ? 'none' : undefined }}
+                      className={`w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
+                        isDragging ? 'scale-[1.03] ring-2 ring-[var(--fios-accent-solid)]/50 shadow-lg z-10' : ''
+                      } ${
                         isActive ? 'accent-bg text-slate-950' : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
                       }`}
                     >

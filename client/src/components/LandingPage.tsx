@@ -18,7 +18,7 @@ interface LandingPageProps {
 const features = [
   {
     icon: Calendar,
-    title: 'Schedule & unified agenda',
+    title: 'Timetable & unified agenda',
     body: 'Sync any college iCal feed or build a manual timetable. Classes and timed tasks interleave on one agenda with Next Up and finished-class mute.',
   },
   {
@@ -116,11 +116,11 @@ const faqs = [
   },
   {
     q: 'How do I sync my college timetable (iCal)?',
-    a: 'In Schedule or Settings, paste an HTTPS iCal feed URL and save. Fios fetches it through the API proxy so the browser never hits CORS-blocked campus hosts. Events appear on Overview and calendar views after a successful sync.',
+    a: 'In Timetable or Settings, paste an HTTPS iCal feed URL and save. Fios fetches it through the API proxy so the browser never hits CORS-blocked campus hosts. Events appear on Overview and calendar views after a successful sync.',
   },
   {
     q: 'What are the core study hubs?',
-    a: 'Overview (flight plan, heatmap, tasks, agenda), Flashcards (SM-2), Modules, Exam Mode (MCQ), Code Lab, Smart Notes, AI Tutor, Grades, Focus Timer / Pomodoro, Schedule / ATU Calendar, plus Settings and Updates. Customize mobile bottom nav and desktop sidebar order in Settings.',
+    a: 'Overview (flight plan, heatmap, tasks, agenda), Flashcards (SM-2), Modules, Exam Mode (MCQ), Code Lab, Smart Notes, AI Tutor, Grades, Focus Timer / Pomodoro, Timetable / ATU Calendar, plus Settings and Updates. Customize mobile bottom nav and desktop sidebar order in Settings.',
   },
   {
     q: 'How does the AI Tutor use my notes?',
@@ -301,7 +301,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-white">Everything connected for the semester.</h2>
               <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
-                Schedule, notes, recall, exams, and focus — one dashboard with privacy-first BYO Gemini. Build modules, track readiness, and keep deadlines on the same agenda as your classes.
+                Timetable, notes, recall, exams, and focus — one dashboard with privacy-first BYO Gemini. Build modules, track readiness, and keep deadlines on the same agenda as your classes.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
                 {['AI multi-modal', 'Class Reminders', 'Mobile Sticky Header', 'Custom Module Tags'].map((chip) => (
@@ -475,7 +475,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <span key={b} className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono text-slate-400">{b}</span>
             ))}
           </div>
-          <p className="text-[11px] text-slate-600">Fios v3.1.9 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
+          <p className="text-[11px] text-slate-600">Fios v3.1.10 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
         </div>
       </footer>
 

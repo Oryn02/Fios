@@ -347,7 +347,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '3.1.9',
+      version: '3.1.10',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -995,6 +995,7 @@ const SettingsTabInner: React.FC = () => {
 
         <div className="space-y-2">
           <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Mobile bottom nav (add / hide / reorder · max 5)</span>
+          <p className="text-[10px] text-[var(--fios-text-muted)]">On your phone, long-press a bottom tab and drag to reposition. Order saves to localStorage / profile prefs.</p>
           <div className="space-y-1.5">
             {(() => {
               const slots = mobileNavSlots.length ? mobileNavSlots : [...DEFAULT_MOBILE_NAV];
@@ -1189,7 +1190,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.1.9.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.1.10.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button

@@ -283,7 +283,7 @@ const ScheduleTabInner: React.FC = () => {
       <header className="space-y-1">
         <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-black uppercase tracking-widest">
           <CalendarIcon className="w-3.5 h-3.5" />
-          {scheduleMode === 'manual' ? 'MANUAL SCHEDULE' : 'TIMETABLE CONNECTED'}
+          {scheduleMode === 'manual' ? 'MANUAL TIMETABLE' : 'TIMETABLE CONNECTED'}
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">College Timetable</h1>
         {institutionName && (
