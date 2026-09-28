@@ -140,7 +140,7 @@ const faqs = [
   },
   {
     q: 'Can I get reminders before class starts?',
-    a: 'Yes. In Settings → Class Reminders, enable browser notifications and choose a lead time (5, 10, 15, or 30 minutes). Fios checks your synced timetable / manual schedule and alerts you before the next class. Optional server Web Push needs VAPID keys on the host; local reminders still work while the app is open.',
+    a: 'Yes. In Settings → Class Reminders, enable browser notifications and choose a lead time (5, 10, 15, or 30 minutes). Fios checks your synced timetable / manual schedule and alerts you before the next class, including the room when your timetable has one. Optional server Web Push needs VAPID keys on the host; local reminders still work while the app is open.',
   },
   {
     q: 'Can the AI Tutor read PDFs and photos?',
@@ -475,7 +475,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <span key={b} className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono text-slate-400">{b}</span>
             ))}
           </div>
-          <p className="text-[11px] text-slate-600">Fios v3.6.1 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
+          <p className="text-[11px] text-slate-600">Fios v3.6.2 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
         </div>
       </footer>
 
