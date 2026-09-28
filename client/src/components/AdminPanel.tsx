@@ -226,7 +226,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     } catch (err: any) {
       setProfilesError(
         err.message ||
-          'Profile directory unavailable. Apply user_profiles_admin_read policy from schema.sql.'
+          'Profile directory unavailable. Run supabase/v3.6.1-user-profiles-directory.sql (fios_admins required).'
       );
       setProfiles([]);
     } finally {
@@ -651,7 +651,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
               />
               <p className="text-[10px] text-[var(--fios-text-muted)] font-mono">
                 Basic directory fields only (no API keys / address). Requires{' '}
-                <code className="accent-solid-text">user_profiles_admin_read</code> in schema.
+                <code className="accent-solid-text">v3.6.1-user-profiles-directory.sql</code> +{' '}
+                <code className="accent-solid-text">fios_admins</code>.
               </p>
               <div className="relative">
                 <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-[var(--fios-text-muted)]" />

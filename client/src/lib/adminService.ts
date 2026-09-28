@@ -87,9 +87,34 @@ export function clearAdminAudit(): void {
 const PROFILE_SELECT_MINIMAL =
   'id, preferred_name, full_name, accent_color, theme, weekly_study_goal_hours';
 
-export async function listAdminProfiles(limit = 100): Promise<AdminProfileRow[]> {
-  // Prefer full select (created_at / updated_at). Fall back if live DB is missing
-  // those columns — apply v3.1.1 migration to add them.
+const PROFILE_DIR_HINT =
+  'Profile directory incomplete — run supabase/v3.6.1-user-profiles-directory.sql, reload PostgREST schema, and ensure your user is in fios_admins.';
+
+function isRpcMissing(message: string | undefined): boolean {
+  return /could not find the function|function .* does not exist|PGRST202/i.test(message || '');
+}
+
+/**
+ * Operator profile directory.
+ * Prefer admin_list_user_profiles RPC (SECURITY DEFINER) — direct SELECT under
+ * RLS silently returns only the caller's row when user_profiles_admin_read is
+ * missing/stale (looks like "one user" in the UI with no error).
+ */
+export async function listAdminProfiles(limit = 200): Promise<AdminProfileRow[]> {
+  const { data: rpcData, error: rpcError } = await supabase.rpc('admin_list_user_profiles', {
+    p_limit: limit,
+  });
+
+  if (!rpcError) {
+    return (Array.isArray(rpcData) ? rpcData : []) as AdminProfileRow[];
+  }
+
+  if (!isRpcMissing(rpcError.message)) {
+    throw new Error(rpcError.message || PROFILE_DIR_HINT);
+  }
+
+  // RPC missing (SQL not applied yet) → direct select; may still be owner-only
+  // until v3.6.1 SQL is run (symptom: exactly one row, no PostgREST error).
   const primary = await supabase
     .from('user_profiles')
     .select(PROFILE_SELECT)
@@ -105,10 +130,7 @@ export async function listAdminProfiles(limit = 100): Promise<AdminProfileRow[]>
     /created_at/i.test(msg) || /column .* does not exist/i.test(msg);
 
   if (!missingCreated) {
-    throw new Error(
-      msg ||
-        'Profile directory unavailable. Apply user_profiles_admin_read + created_at from schema.'
-    );
+    throw new Error(msg || PROFILE_DIR_HINT);
   }
 
   const fallback = await supabase
@@ -117,10 +139,7 @@ export async function listAdminProfiles(limit = 100): Promise<AdminProfileRow[]>
     .limit(limit);
 
   if (fallback.error) {
-    throw new Error(
-      fallback.error.message ||
-        'Profile directory unavailable. Apply user_profiles.created_at + user_profiles_admin_read (v3.1.1 SQL).'
-    );
+    throw new Error(fallback.error.message || PROFILE_DIR_HINT);
   }
 
   return ((fallback.data || []) as Omit<AdminProfileRow, 'created_at' | 'updated_at'>[]).map(
@@ -263,19 +282,27 @@ export async function loadOverviewStats(feedback: FeedbackEntry[]): Promise<Over
   let profileCount: number | null = null;
   let profilesError: string | null = null;
   try {
-    const { count, error } = await supabase
-      .from('user_profiles')
-      .select('id', { count: 'exact', head: true });
-    if (error) throw new Error(error.message);
-    profileCount = typeof count === 'number' ? count : null;
+    const { data: rpcCount, error: rpcError } = await supabase.rpc('admin_count_user_profiles');
+    if (!rpcError && (typeof rpcCount === 'number' || typeof rpcCount === 'string')) {
+      profileCount = Number(rpcCount);
+    } else if (rpcError && !isRpcMissing(rpcError.message)) {
+      throw new Error(rpcError.message);
+    } else {
+      // RPC missing → head count (may under-count without admin read policy).
+      const { count, error } = await supabase
+        .from('user_profiles')
+        .select('id', { count: 'exact', head: true });
+      if (error) throw new Error(error.message);
+      profileCount = typeof count === 'number' ? count : null;
+    }
   } catch (err: any) {
-    profilesError = err?.message || 'Profile count unavailable (admin RLS?)';
+    profilesError = err?.message || PROFILE_DIR_HINT;
   }
   return {
     ...fb,
     profileCount,
     profilesError,
-    clientVersion: '3.6.0',
+    clientVersion: '3.6.1',
   };
 }
 

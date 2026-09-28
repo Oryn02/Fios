@@ -571,18 +571,74 @@ begin
       using (public.current_user_is_admin())
       with check (public.current_user_is_admin());
   end if;
-
-  -- Admins may list basic profile rows (client must not select gemini_api_key).
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'user_profiles'
-      and policyname = 'user_profiles_admin_read'
-  ) then
-    create policy user_profiles_admin_read on public.user_profiles
-      for select to authenticated
-      using (public.current_user_is_admin());
-  end if;
 end $$;
+
+-- Repair profile directory policy (drop + create). Standalone:
+--   supabase/v3.6.1-user-profiles-directory.sql
+grant select on table public.user_profiles to authenticated;
+drop policy if exists user_profiles_admin_read on public.user_profiles;
+create policy user_profiles_admin_read on public.user_profiles
+  for select to authenticated
+  using (public.current_user_is_admin());
+
+-- SECURITY DEFINER RPCs for durable operator profile directory
+-- (explicit admin check; safe columns only — never gemini_api_key / address).
+create or replace function public.admin_list_user_profiles(p_limit integer default 200)
+returns table (
+  id uuid,
+  preferred_name text,
+  full_name text,
+  accent_color text,
+  theme text,
+  weekly_study_goal_hours integer,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null or not public.current_user_is_admin() then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+  return query
+  select
+    p.id,
+    p.preferred_name,
+    p.full_name,
+    p.accent_color,
+    p.theme,
+    p.weekly_study_goal_hours,
+    p.created_at,
+    p.updated_at
+  from public.user_profiles p
+  order by p.created_at desc nulls last, p.id asc
+  limit greatest(1, least(coalesce(p_limit, 200), 500));
+end;
+$$;
+
+create or replace function public.admin_count_user_profiles()
+returns bigint
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  n bigint;
+begin
+  if auth.uid() is null or not public.current_user_is_admin() then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+  select count(*)::bigint into n from public.user_profiles;
+  return coalesce(n, 0);
+end;
+$$;
+
+revoke all on function public.admin_list_user_profiles(integer) from public;
+revoke all on function public.admin_count_user_profiles() from public;
+grant execute on function public.admin_list_user_profiles(integer) to authenticated;
+grant execute on function public.admin_count_user_profiles() to authenticated;
 
 -- ============================================================================
 -- Additive migrations (idempotent) — run in Supabase SQL editor if missing
