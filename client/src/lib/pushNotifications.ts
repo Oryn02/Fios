@@ -8,6 +8,7 @@
  *    (imported by Workbox via vite-plugin-pwa importScripts).
  */
 import { apiUrl } from './apiBase';
+import { resolveEventPlace } from './calendarService';
 import { loadUnifiedScheduleEvents } from './scheduleService';
 
 export type ReminderLeadMinutes = 5 | 10 | 15 | 30;
@@ -446,9 +447,10 @@ async function checkUpcomingClasses(): Promise<void> {
 
       const mins = Math.max(1, Math.round(delta / 60000));
       const when = mins <= 1 ? 'in about a minute' : `in about ${mins} minutes`;
+      const room = resolveEventPlace(ev.location, ev.description);
       showLocalNotification(
-        'Upcoming class',
-        `${ev.title} starts ${when}${ev.location ? ` · ${ev.location}` : ''}`,
+        room ? `Upcoming class · ${room}` : 'Upcoming class',
+        `${ev.title} starts ${when}${room ? ` · ${room}` : ''}`,
         fireId
       );
       markFired(fireId);

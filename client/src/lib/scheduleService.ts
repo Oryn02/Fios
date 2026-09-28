@@ -6,6 +6,7 @@ import {
   loadLocalCalendarState,
   persistCalendarState,
   reconcileCalendarState,
+  resolveEventPlace,
   type ScheduleMode,
 } from './calendarService';
 
@@ -135,7 +136,7 @@ export function expandManualEvents(
         out.push({
           id: `${ev.id}-${ev.date}`,
           title: ev.title,
-          location: ev.location,
+          location: resolveEventPlace(ev.location, ev.description),
           description: ev.description,
           startDate: parseHm(ev.startTime, day),
           endDate: parseHm(ev.endTime, day),
@@ -152,7 +153,7 @@ export function expandManualEvents(
           out.push({
             id: `${ev.id}-${day.toISOString().slice(0, 10)}`,
             title: ev.title,
-            location: ev.location,
+            location: resolveEventPlace(ev.location, ev.description),
             description: ev.description,
             startDate: parseHm(ev.startTime, day),
             endDate: parseHm(ev.endTime, day),

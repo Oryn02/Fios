@@ -455,6 +455,33 @@ export function icalTimeToLocalDate(time: ICAL.Time): Date {
   );
 }
 
+/**
+ * Prefer ICS LOCATION / manual location; if empty, lift a Room/Rm/Venue/Location
+ * line from description (common when feeds bury the room in DESCRIPTION).
+ * Returns undefined when no place is available so callers can omit gracefully.
+ */
+export function resolveEventPlace(
+  location?: string | null,
+  description?: string | null
+): string | undefined {
+  const loc = typeof location === 'string' ? location.trim() : '';
+  if (loc) return loc;
+
+  const desc = (typeof description === 'string' ? description : '')
+    .replace(/\\n/g, '\n')
+    .replace(/\\,/g, ',');
+  if (!desc.trim()) return undefined;
+
+  for (const line of desc.split(/\r?\n/)) {
+    const m = line.match(
+      /^\s*(?:Room|Rm\.?|Venue|Location)(?:\s*[:\-–]\s*|\s+)(.+?)\s*$/i
+    );
+    const place = m?.[1]?.trim();
+    if (place) return place;
+  }
+  return undefined;
+}
+
 function registerVTimezones(comp: ICAL.Component): void {
   for (const tzComp of comp.getAllSubcomponents('vtimezone')) {
     try {
@@ -473,11 +500,13 @@ export function parseIcsText(icsData: string): CalendarEvent[] {
 
   const events: CalendarEvent[] = vevents.map((vevent, index) => {
     const event = new ICAL.Event(vevent);
+    const description = event.description || '';
+    const location = resolveEventPlace(event.location, description) || '';
     return {
       id: event.uid || `event-${index}`,
       title: event.summary || 'Untitled Lecture / Event',
-      description: event.description || '',
-      location: event.location || '',
+      description,
+      location,
       startDate: icalTimeToLocalDate(event.startDate),
       endDate: icalTimeToLocalDate(event.endDate),
     };
