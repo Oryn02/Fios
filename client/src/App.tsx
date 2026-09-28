@@ -28,12 +28,15 @@ import { AiTutorView } from './components/AiTutorView';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
 import { CookieConsent } from './components/CookieConsent';
+import { GeminiLatencyHint } from './components/GeminiLatencyHint';
+import { friendlyGeminiError } from './lib/geminiUx';
 import { ProfileProvider } from './context/ProfileContext';
 import { PomodoroProvider } from './context/PomodoroContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PreferencesProvider } from './context/PreferencesContext';
 import { AiAuthProvider } from './context/AiAuthContext';
-import { startOfflineQueueListener } from './lib/offlineQueue';
+import { startOfflineQueueListener, onOfflineQueueOnline } from './lib/offlineQueue';
+import { reconcileCalendarState } from './lib/calendarService';
 import { useAiAuth } from './context/AiAuthContext';
 import { lockLandingBrand } from './lib/landingBrand';
 import { NetworkStatusBanner } from './components/NetworkStatusBanner';
@@ -126,7 +129,11 @@ const Dashboard: React.FC = () => {
       });
     } catch (err: any) {
       const msg = err?.message || String(err) || 'Failed to connect to server.';
-      setError(msg.includes('is not a function') ? 'Flashcard generation failed. Check your Gemini key in Settings and try again.' : msg);
+      setError(
+        msg.includes('is not a function')
+          ? 'Flashcard generation failed. Check your Gemini key in Settings and try again.'
+          : friendlyGeminiError(msg)
+      );
     } finally {
       setLoading(false);
     }
@@ -382,10 +389,14 @@ const FlashcardGenerator: React.FC<{
     </form>
 
     {error && (
-      <div className="p-4 bg-rose-500/10 border-l-4 border-rose-500 rounded-r-lg text-rose-300 text-xs font-bold tracking-wide uppercase font-mono">
-        Notice: {error}
+      <div className="space-y-2">
+        <div className="p-4 bg-rose-500/10 border-l-4 border-rose-500 rounded-r-lg text-rose-300 text-xs font-bold tracking-wide uppercase font-mono">
+          Notice: {error}
+        </div>
+        <GeminiLatencyHint error={error} />
       </div>
     )}
+    <GeminiLatencyHint busy={loading} />
   </>
 );
 
@@ -401,7 +412,16 @@ export function App() {
     document.title = 'Fios v3.1.9 — Your Academic Command Center';
   }, []);
 
-  useEffect(() => startOfflineQueueListener(), []);
+  useEffect(() => {
+    const stopQueue = startOfflineQueueListener();
+    const stopCal = onOfflineQueueOnline(() => {
+      void reconcileCalendarState();
+    });
+    return () => {
+      stopQueue();
+      stopCal();
+    };
+  }, []);
 
   // Logged-out marketing surface: force default emerald + dark (ignore Settings prefs)
   useEffect(() => {

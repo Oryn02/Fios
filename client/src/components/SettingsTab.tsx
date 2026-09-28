@@ -38,16 +38,22 @@ import { toast } from '../lib/toast';
 import { NAV_ITEMS } from './DashboardLayout';
 import { normalizeBirthday } from '../lib/holidays';
 import {
+  AI_STUDIO_KEY_URL,
+  AI_STUDIO_HOME_URL,
+  GEMINI_BILLING_DOCS_URL,
+  GEMINI_RATE_LIMIT_DOCS_URL,
+} from '../lib/geminiUx';
+import { GeminiKeySetupGuide } from './GeminiGate';
+import {
   loadReminderPrefs,
   saveReminderPrefs,
   enableClassReminders,
   disableClassReminders,
   sendTestPush,
   getLeadOptions,
+  getPushSupportStatus,
   type ReminderLeadMinutes,
 } from '../lib/pushNotifications';
-
-const AI_STUDIO_URL = 'https://aistudio.google.com/app/apikey';
 
 const SettingsTabInner: React.FC = () => {
   const { profile, updateProfile } = useProfile();
@@ -92,6 +98,7 @@ const SettingsTabInner: React.FC = () => {
   const [reminderEnabled, setReminderEnabled] = useState(() => loadReminderPrefs().enabled);
   const [reminderLead, setReminderLead] = useState<ReminderLeadMinutes>(() => loadReminderPrefs().leadMinutes);
   const [reminderBusy, setReminderBusy] = useState(false);
+  const [pushSupport] = useState(() => getPushSupportStatus());
 
   // Weekly Study Goal State
   const [goalHours, setGoalHours] = useState(profile?.weekly_study_goal_hours ?? 10);
@@ -539,8 +546,19 @@ const SettingsTabInner: React.FC = () => {
         </div>
         <p className="text-xs text-slate-400 leading-relaxed">
           Get a browser notification before your next class from the synced timetable or manual schedule.
-          Choose how many minutes ahead to be notified.
+          Choose how many minutes ahead to be notified. While Fios is open, reminders use local notifications;
+          Web Push covers background delivery on supported browsers and installed PWAs.
         </p>
+        {!pushSupport.supported && (
+          <p className="text-xs text-amber-200/90 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 leading-relaxed">
+            {pushSupport.message}
+          </p>
+        )}
+        {pushSupport.supported && !pushSupport.pushCapable && (
+          <p className="text-xs text-slate-400 bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2 leading-relaxed">
+            {pushSupport.message}
+          </p>
+        )}
         <div className="space-y-2">
           <span className="text-[10px] font-mono font-bold uppercase text-slate-500">Lead time</span>
           <div className="flex flex-wrap gap-2">
@@ -573,7 +591,7 @@ const SettingsTabInner: React.FC = () => {
             setReminderBusy(true);
             try {
               const result = await sendTestPush();
-              toast(result.message, result.ok ? 'success' : 'info');
+              toast(result.message, result.ok ? 'success' : 'error');
             } finally {
               setReminderBusy(false);
             }
@@ -1094,55 +1112,48 @@ const SettingsTabInner: React.FC = () => {
           </button>
         </div>
 
-        {showKeyGuide && (
-          <div className="p-4 rounded-xl bg-[#07090e] border border-slate-800 space-y-3 text-xs">
-            <p className="font-bold text-slate-200">Interactive 3-Step Setup Guide:</p>
-            <div className="space-y-2">
-              <div className="flex items-start gap-2 text-slate-300">
-                <span className="w-5 h-5 rounded-full bg-slate-800 accent-solid-text flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-                <div>
-                  <p>Open Google AI Studio in a new tab:</p>
-                  <a href={AI_STUDIO_URL} target="_blank" rel="noreferrer" className="accent-solid-text hover:underline inline-flex items-center gap-1 font-mono mt-0.5">
-                    Open Google AI Studio <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-              <div className="flex items-start gap-2 text-slate-300">
-                <span className="w-5 h-5 rounded-full bg-slate-800 accent-solid-text flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-                <p>Sign in with your Google Account and click <strong className="text-white">"Create API Key"</strong>.</p>
-              </div>
-              <div className="flex items-start gap-2 text-slate-300">
-                <span className="w-5 h-5 rounded-full bg-slate-800 accent-solid-text flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-                <p>Copy string starting with <code className="accent-solid-text bg-slate-900 px-1 py-0.5 rounded font-mono">AIzaSy...</code> and paste it below.</p>
-              </div>
-            </div>
-          </div>
-        )}
+        {showKeyGuide && <GeminiKeySetupGuide />}
 
         <p className="text-xs text-[var(--fios-text-muted)]">
           {profile?.gemini_api_key
             ? 'A key is configured. AI features are unlocked. You can replace or remove it below.'
-            : 'Add your Gemini API key to unlock AI features. It is stored on your profile and used only for your requests.'}
+            : 'Add your Gemini API key to unlock AI features. It is stored on your profile and used only for your requests. Without a key, flashcards, quizzes, code exams, Smart Notes, and the tutor stay locked — Fios does not ship a shared Gemini key.'}
         </p>
 
         <div className="rounded-xl border fios-border bg-[var(--fios-surface-2)]/80 px-3.5 py-3 space-y-1.5">
           <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--fios-text-muted)]">
-            Tip · Free tier capacity
+            Tip · Free tier vs paid
           </p>
           <p className="text-xs text-[var(--fios-text-muted)] leading-relaxed">
-            When Google&apos;s free Gemini tier is busy (high demand / many active users), flashcards, quizzes, and the tutor
-            can feel slow or fail intermittently. If that happens often, consider upgrading to a{' '}
-            <strong className="text-[var(--fios-text)]">paid Gemini plan in Google AI Studio</strong> for more reliable
-            throughput — optional, and only if you need steadier AI responses.
+            Free Gemini keys share limited quota: rate limits, cold starts, and lower priority can make AI feel slow or time out when demand is high.
+            Enabling billing for a paid Gemini API key in Google AI Studio usually speeds Fios up a lot (higher quotas, fewer 429s/timeouts, lower latency). Optional — only if free-tier delays keep blocking study.
           </p>
-          <a
-            href="https://aistudio.google.com/"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-[11px] font-mono font-bold accent-solid-text hover:underline cursor-pointer"
-          >
-            Open Google AI Studio <ExternalLink className="w-3 h-3" />
-          </a>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <a
+              href={AI_STUDIO_HOME_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-mono font-bold accent-solid-text hover:underline cursor-pointer"
+            >
+              Open Google AI Studio <ExternalLink className="w-3 h-3" />
+            </a>
+            <a
+              href={GEMINI_BILLING_DOCS_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-mono text-[var(--fios-text-muted)] hover:accent-solid-text hover:underline cursor-pointer"
+            >
+              Billing docs <ExternalLink className="w-3 h-3" />
+            </a>
+            <a
+              href={GEMINI_RATE_LIMIT_DOCS_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-mono text-[var(--fios-text-muted)] hover:accent-solid-text hover:underline cursor-pointer"
+            >
+              Rate limits <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch gap-2">
@@ -1166,7 +1177,7 @@ const SettingsTabInner: React.FC = () => {
           {keyStatus === 'valid' && <span className="text-[11px] font-bold accent-solid-text flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Key is valid</span>}
           {keyStatus === 'invalid' && <span className="text-[11px] font-bold text-rose-400">Key could not be validated.</span>}
           {keyStatus === 'saved' && <span className="text-[11px] font-bold accent-solid-text flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Saved</span>}
-          <a href={AI_STUDIO_URL} target="_blank" rel="noreferrer" className="ml-auto text-[11px] font-mono text-[var(--fios-text-muted)] hover:accent-solid-text flex items-center gap-1">
+          <a href={AI_STUDIO_KEY_URL} target="_blank" rel="noreferrer" className="ml-auto text-[11px] font-mono text-[var(--fios-text-muted)] hover:accent-solid-text flex items-center gap-1">
             Get an API key <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>

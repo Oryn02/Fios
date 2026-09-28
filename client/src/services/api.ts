@@ -1,6 +1,7 @@
 import { Flashcard, FlashcardResponse } from '../types/api';
 import { getGeminiKey } from '../lib/geminiKey';
 import { apiUrl } from '../lib/apiBase';
+import { fetchWithGeminiTimeout, friendlyGeminiError } from '../lib/geminiUx';
 
 /** Normalize Gemini / proxy payloads into a flat Flashcard[]. */
 export function normalizeFlashcards(payload: unknown): Flashcard[] {
@@ -35,7 +36,7 @@ export function normalizeFlashcards(payload: unknown): Flashcard[] {
 
 export async function generateFlashcards(studyNotes: string): Promise<FlashcardResponse> {
   const path = '/api/generate/flashcards';
-  const response = await fetch(apiUrl(path), {
+  const response = await fetchWithGeminiTimeout(apiUrl(path), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -54,7 +55,7 @@ export async function generateFlashcards(studyNotes: string): Promise<FlashcardR
   }
 
   if (!response.ok) {
-    throw new Error(data?.error || `Server error: ${response.status}`);
+    throw new Error(friendlyGeminiError(data?.error || `Server error: ${response.status}`));
   }
 
   const cards = normalizeFlashcards(data);

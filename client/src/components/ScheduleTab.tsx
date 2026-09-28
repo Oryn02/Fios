@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { 
   saveCalendarUrl, getSavedCalendarUrl, fetchAndParseCalendar, 
-  parseIcsText, CalendarEvent 
+  parseIcsText, cacheSyncedEvents, CalendarEvent 
 } from '../lib/calendarService';
 import {
   loadUnifiedScheduleEvents,
@@ -152,6 +152,7 @@ const ScheduleTabInner: React.FC = () => {
       const rawText = await file.text();
       const parsedEvents = parseIcsText(rawText);
       setEvents(parsedEvents);
+      await cacheSyncedEvents(parsedEvents).catch(() => {});
       setStatusMessage({ type: 'success', text: `Loaded ${parsedEvents.length} events directly from file!` });
     } catch (err: any) {
       const msg = 'Failed to parse .ics file. Export a fresh calendar file from your portal and try again.';

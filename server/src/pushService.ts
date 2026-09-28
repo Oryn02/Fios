@@ -68,20 +68,54 @@ export function listSubscriptions(): PushSubscriptionJSON[] {
   return Array.from(subscriptions.values());
 }
 
-export async function sendTestPush(sub: PushSubscriptionJSON): Promise<void> {
+export async function sendPushToSubscription(
+  sub: PushSubscriptionJSON,
+  payload: { title: string; body: string; tag?: string; url?: string }
+): Promise<void> {
   if (!isVapidReady()) {
     throw new Error('VAPID keys are not configured on the server');
   }
-  const payload = JSON.stringify({
+  if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) {
+    throw new Error('Invalid push subscription payload');
+  }
+
+  try {
+    await webpush.sendNotification(
+      {
+        endpoint: sub.endpoint,
+        keys: sub.keys,
+      },
+      JSON.stringify({
+        title: payload.title,
+        body: payload.body,
+        tag: payload.tag || 'fios-push',
+        url: payload.url || '/',
+      })
+    );
+  } catch (err: any) {
+    const status = err?.statusCode || err?.status;
+    // Gone / Not Found → drop stale endpoint so the next subscribe can replace it.
+    if (status === 404 || status === 410) {
+      removeSubscription(sub.endpoint);
+      const gone = new Error(
+        'Push subscription expired or was revoked. Disable and re-enable Class Reminders, then try again.'
+      );
+      (gone as any).statusCode = status;
+      throw gone;
+    }
+    if (status === 403 || /VAPID|unauthorized|JWT/i.test(String(err?.message || ''))) {
+      throw new Error(
+        'Push rejected by the browser push service (VAPID key mismatch or unauthorized). Re-enable Class Reminders after confirming VAPID keys on the API host.'
+      );
+    }
+    throw new Error(err?.message || 'Failed to send push notification');
+  }
+}
+
+export async function sendTestPush(sub: PushSubscriptionJSON): Promise<void> {
+  await sendPushToSubscription(sub, {
     title: 'Fios class reminder',
     body: 'Push notifications are working. Upcoming classes can alert you before they start.',
     tag: 'fios-push-test',
   });
-  await webpush.sendNotification(
-    {
-      endpoint: sub.endpoint,
-      keys: sub.keys,
-    },
-    payload
-  );
 }
