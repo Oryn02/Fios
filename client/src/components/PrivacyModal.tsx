@@ -48,7 +48,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
               <h3 id="privacy-title" className={`text-base font-black uppercase ${landing ? 'text-white' : 'text-[var(--fios-text)]'}`}>
                 Privacy Policy & GDPR Statement
               </h3>
-              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v3.6.4 · Last updated September 2026</p>
+              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v3.6.5 · Last updated September 2026</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className={`${muted} hover:opacity-80 cursor-pointer p-1`} aria-label="Close">

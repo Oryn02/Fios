@@ -329,7 +329,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v3.6.4
+        Academic Suite · Study Lab · v3.6.5
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -426,6 +426,32 @@ function readAuthRedirectParams(): { type: string | null; error: string | null }
   }
 }
 
+/** Only recovery redirects (path and/or type=recovery) own URL auth errors — not GitHub OAuth failures. */
+function isRecoveryAuthFailure(redirect: { type: string | null; error: string | null }): boolean {
+  return !!redirect.error && (isResetPasswordPath() || redirect.type === 'recovery');
+}
+
+/** Drop auth error params from the URL so a refresh does not re-trigger handling. */
+function clearAuthErrorFromUrl(): void {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('error');
+    url.searchParams.delete('error_description');
+    url.searchParams.delete('error_code');
+    const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
+    if (hashParams.has('error') || hashParams.has('error_description') || hashParams.has('error_code')) {
+      hashParams.delete('error');
+      hashParams.delete('error_description');
+      hashParams.delete('error_code');
+      const nextHash = hashParams.toString();
+      url.hash = nextHash ? `#${nextHash}` : '';
+    }
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function App() {
   const [session, setSession] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -433,19 +459,22 @@ export function App() {
   const [passwordRecovery, setPasswordRecovery] = useState(() => isResetPasswordPath());
   /** True only after Supabase emits `PASSWORD_RECOVERY` (genuine reset link). */
   const [recoveryReady, setRecoveryReady] = useState(false);
-  const [recoveryInvalid, setRecoveryInvalid] = useState(() => !!readAuthRedirectParams().error);
+  const [recoveryInvalid, setRecoveryInvalid] = useState(() =>
+    isRecoveryAuthFailure(readAuthRedirectParams()),
+  );
   const recoveryReadyRef = useRef(false);
   const [authModal, setAuthModal] = useState<{
     isOpen: boolean;
     mode: 'signin' | 'signup';
     panel?: 'auth' | 'forgot-password' | 'forgot-email';
+    initialError?: string | null;
   }>({
     isOpen: false,
     mode: 'signin',
   });
 
   useEffect(() => {
-    document.title = 'Fios v3.6.4 — Your Academic Command Center';
+    document.title = 'Fios v3.6.5 — Your Academic Command Center';
   }, []);
 
   useEffect(() => {
@@ -484,11 +513,16 @@ export function App() {
     }, 60_000);
 
     const redirect = readAuthRedirectParams();
-    if (redirect.error) {
+    if (isRecoveryAuthFailure(redirect)) {
       setRecoveryInvalid(true);
       setPasswordRecovery(true);
     } else if (redirect.type === 'recovery') {
       setPasswordRecovery(true);
+    } else if (redirect.error) {
+      // OAuth / non-recovery auth errors: show AuthModal, do not hijack into reset UI.
+      const message = decodeURIComponent(redirect.error.replace(/\+/g, ' '));
+      clearAuthErrorFromUrl();
+      setAuthModal({ isOpen: true, mode: 'signin', panel: 'auth', initialError: message });
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -556,6 +590,19 @@ export function App() {
     clearRecoveryUi();
   }, [clearRecoveryUi]);
 
+  /** From invalid reset UI: open forgot-password; sign out first if a normal session would swallow AuthModal. */
+  const requestNewResetLink = useCallback(() => {
+    clearRecoveryUi();
+    setAuthModal({ isOpen: true, mode: 'signin', panel: 'forgot-password', initialError: null });
+    if (session) {
+      void supabase.auth.signOut();
+    }
+  }, [clearRecoveryUi, session]);
+
+  const closeAuthModal = useCallback(() => {
+    setAuthModal({ isOpen: false, mode: 'signin', initialError: null });
+  }, []);
+
   const recoveryStatus: 'waiting' | 'ready' | 'invalid' = recoveryReady
     ? 'ready'
     : recoveryInvalid
@@ -567,7 +614,7 @@ export function App() {
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v3.6.4…
+          Initializing Fios v3.6.5…
         </div>
       </div>
     );
@@ -581,17 +628,15 @@ export function App() {
             status={recoveryStatus}
             onDone={finishPasswordRecovery}
             onBackToApp={clearRecoveryUi}
-            onRequestNewLink={() => {
-              clearRecoveryUi();
-              setAuthModal({ isOpen: true, mode: 'signin', panel: 'forgot-password' });
-            }}
+            onRequestNewLink={requestNewResetLink}
           />
           <AnimatePresence>
             {authModal.isOpen && (
               <AuthModal
                 mode={authModal.mode}
                 initialPanel={authModal.panel || 'auth'}
-                onClose={() => setAuthModal({ isOpen: false, mode: 'signin' })}
+                initialError={authModal.initialError}
+                onClose={closeAuthModal}
               />
             )}
           </AnimatePresence>
@@ -612,7 +657,8 @@ export function App() {
               <AuthModal
                 mode={authModal.mode}
                 initialPanel={authModal.panel || 'auth'}
-                onClose={() => setAuthModal({ isOpen: false, mode: 'signin' })}
+                initialError={authModal.initialError}
+                onClose={closeAuthModal}
               />
             )}
           </AnimatePresence>
