@@ -964,7 +964,8 @@ router.post('/push/test', async (req: Request, res: Response) => {
     return res.status(200).json({ ok: true });
   } catch (error: any) {
     console.error('Push test error:', error);
-    return res.status(500).json({ error: error?.message || 'Failed to send test push' });
+    const status = error?.statusCode === 404 || error?.statusCode === 410 ? 410 : 500;
+    return res.status(status).json({ error: error?.message || 'Failed to send test push' });
   }
 });
 

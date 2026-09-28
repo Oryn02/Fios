@@ -44,6 +44,7 @@ import {
   disableClassReminders,
   sendTestPush,
   getLeadOptions,
+  getPushSupportStatus,
   type ReminderLeadMinutes,
 } from '../lib/pushNotifications';
 
@@ -92,6 +93,7 @@ const SettingsTabInner: React.FC = () => {
   const [reminderEnabled, setReminderEnabled] = useState(() => loadReminderPrefs().enabled);
   const [reminderLead, setReminderLead] = useState<ReminderLeadMinutes>(() => loadReminderPrefs().leadMinutes);
   const [reminderBusy, setReminderBusy] = useState(false);
+  const [pushSupport] = useState(() => getPushSupportStatus());
 
   // Weekly Study Goal State
   const [goalHours, setGoalHours] = useState(profile?.weekly_study_goal_hours ?? 10);
@@ -340,7 +342,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '3.1.9',
+      version: '3.1.11',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -539,8 +541,19 @@ const SettingsTabInner: React.FC = () => {
         </div>
         <p className="text-xs text-slate-400 leading-relaxed">
           Get a browser notification before your next class from the synced timetable or manual schedule.
-          Choose how many minutes ahead to be notified.
+          Choose how many minutes ahead to be notified. While Fios is open, reminders use local notifications;
+          Web Push covers background delivery on supported browsers and installed PWAs.
         </p>
+        {!pushSupport.supported && (
+          <p className="text-xs text-amber-200/90 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 leading-relaxed">
+            {pushSupport.message}
+          </p>
+        )}
+        {pushSupport.supported && !pushSupport.pushCapable && (
+          <p className="text-xs text-slate-400 bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2 leading-relaxed">
+            {pushSupport.message}
+          </p>
+        )}
         <div className="space-y-2">
           <span className="text-[10px] font-mono font-bold uppercase text-slate-500">Lead time</span>
           <div className="flex flex-wrap gap-2">
@@ -573,7 +586,7 @@ const SettingsTabInner: React.FC = () => {
             setReminderBusy(true);
             try {
               const result = await sendTestPush();
-              toast(result.message, result.ok ? 'success' : 'info');
+              toast(result.message, result.ok ? 'success' : 'error');
             } finally {
               setReminderBusy(false);
             }
@@ -1178,7 +1191,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.1.9.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.1.11.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
