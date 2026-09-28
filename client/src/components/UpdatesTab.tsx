@@ -4,6 +4,17 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.11',
+      date: 'September 2026',
+      title: 'Offline sync banner no longer spins forever',
+      highlights: [
+        'Fix: the floating “Syncing N offline changes…” pill no longer sticks or flickers when timetable cloud sync cannot land (for example if supabase/v3.1.9-calendar-state.sql was not applied yet).',
+        'Offline queue: duplicate calendar upserts coalesce to one entry; permanent schema/table errors dequeue and show a single clear message instead of retry spam; transient failures use exponential backoff.',
+        'Local timetable / iCal cache still works when cloud sync is paused. After you run the calendar_state SQL and reload PostgREST, sync resumes automatically.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.11.',
+      ],
+    },
+    {
       version: 'v3.1.10',
       date: 'September 2026',
       title: 'Mobile nav hold-to-reorder + Timetable rename',
@@ -359,7 +370,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.10</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.11</p>
       </header>
 
       <div className="space-y-4">

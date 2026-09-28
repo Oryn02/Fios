@@ -1,7 +1,13 @@
 import ICAL from 'ical.js';
 import { supabase } from './supabase';
 import { apiUrl } from './apiBase';
-import { enqueueMutation } from './offlineQueue';
+import {
+  enqueueMutation,
+  getSyncStatus,
+  isPermanentSchemaError,
+  reportPermanentSyncError,
+  clearSyncError,
+} from './offlineQueue';
 
 export type ScheduleMode = 'ical' | 'manual';
 
@@ -208,6 +214,11 @@ async function pushStateToCloud(state: CalendarStateRow): Promise<void> {
     console.warn('[calendar] auth metadata update failed', err);
   }
 
+  // Missing calendar_state SQL / schema cache — keep local only; never requeue forever.
+  if (getSyncStatus().schemaMissing) {
+    return;
+  }
+
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     await enqueueMutation({
       table: TABLE,
@@ -220,7 +231,11 @@ async function pushStateToCloud(state: CalendarStateRow): Promise<void> {
 
   const { error } = await supabase.from(TABLE).upsert(payload, { onConflict: 'user_id' });
   if (error) {
-    // Queue for later if network/schema hiccup
+    if (isPermanentSchemaError(error)) {
+      await reportPermanentSyncError(TABLE, error);
+      throw error;
+    }
+    // Transient network/server hiccup — coalesce into the offline queue.
     await enqueueMutation({
       table: TABLE,
       op: 'upsert',
@@ -228,6 +243,9 @@ async function pushStateToCloud(state: CalendarStateRow): Promise<void> {
       onConflict: 'user_id',
     });
     throw error;
+  }
+  if (getSyncStatus().schemaMissing || getSyncStatus().error) {
+    clearSyncError();
   }
 }
 
@@ -284,7 +302,10 @@ export async function reconcileCalendarState(): Promise<CalendarStateRow> {
       .maybeSingle();
 
     if (error) {
-      // Table may not exist yet — keep local + seed from auth metadata.
+      // Table may not exist yet — keep local + seed from auth metadata; one clear error.
+      if (isPermanentSchemaError(error)) {
+        await reportPermanentSyncError(TABLE, error);
+      }
       if (metaUrl && !local.ical_url) {
         return saveLocalCalendarState({ ical_url: metaUrl });
       }
