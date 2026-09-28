@@ -184,7 +184,14 @@ export const StudyStreakHeatmap: React.FC = () => {
     const n = cols.length;
     const usable = Math.max(0, width - LABEL_COL);
     const ideal = Math.floor((usable - (n - 1) * GAP) / n);
-    const isNarrow = width < 640;
+    // Prefer viewport breakpoint (not card width): on lg the heatmap sits in a
+    // ~half column that is still <640px wide, but desktop should keep 11px cells.
+    let isNarrow = true;
+    try {
+      isNarrow = !window.matchMedia('(min-width: 640px)').matches;
+    } catch {
+      isNarrow = width < 640;
+    }
 
     if (isNarrow) {
       // Prefer fitting the whole strip so overflow-x-hidden parents cannot clip it,
