@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AlarmClock, Loader2 } from 'lucide-react';
 import { getUserModules, type DBModule, moduleDisplayName } from '../lib/moduleService';
 import { getTasks } from '../lib/taskService';
+import { parseExamDate } from '../lib/agendaService';
 import type { Task } from '../types/db';
 
 interface CountdownItem {
@@ -17,9 +18,8 @@ function buildItems(modules: DBModule[], tasks: Task[]): CountdownItem[] {
   const items: CountdownItem[] = [];
 
   for (const m of modules) {
-    if (!m.exam_date) continue;
-    const at = new Date(m.exam_date);
-    if (Number.isNaN(at.getTime()) || at.getTime() < now - 3600000) continue;
+    const at = parseExamDate(m.exam_date);
+    if (!at || at.getTime() < now - 3600000) continue;
     items.push({
       id: `exam-${m.id}`,
       label: `${moduleDisplayName(m)} exam`,
@@ -65,15 +65,25 @@ export const ExamCountdownWidget: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getUserModules(), getTasks()])
-      .then(([m, t]) => {
-        if (!cancelled) {
-          setModules(m);
-          setTasks(t);
-        }
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+    const load = () => {
+      Promise.all([getUserModules(), getTasks()])
+        .then(([m, t]) => {
+          if (!cancelled) {
+            setModules(m);
+            setTasks(t);
+          }
+        })
+        .finally(() => { if (!cancelled) setLoading(false); });
+    };
+    load();
+    const onVis = () => {
+      if (document.visibilityState === 'visible') load();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, []);
 
   useEffect(() => {

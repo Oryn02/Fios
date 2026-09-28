@@ -1,64 +1,80 @@
 import React from 'react';
 import { Sparkles, CheckCircle2 } from 'lucide-react';
 
+/**
+ * Semver remapped from historical labels (first published → 1.0.0).
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.6.0.
+ */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
-      version: 'v3.1.14',
+      version: 'v3.6.0',
+      date: 'September 2026',
+      title: 'Module exam date & time + semver changelog',
+      highlights: [
+        'Modules: Create and Edit Academic Module include Exam date & time (mobile-friendly datetime picker + Clear). Saved values drive Overview “Exam & submission countdown” and Revision Flight Plan.',
+        'Soft-empty fix: `modules.exam_date` already existed but was never wired into the form — countdown empty state (“Set an exam date on a module…”) now has a real input path.',
+        'Optional SQL: run supabase/v3.6.0-module-exam-datetime.sql then reload the PostgREST schema cache so exam_date is timestamptz (upgrades legacy date-only columns).',
+        'Changelog: public Updates + README remapped to coherent semver from the first published release as v1.0.0 (substance-based majors/minors/patches).',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.6.0.',
+      ],
+    },
+    {
+      version: 'v3.5.4',
       date: 'September 2026',
       title: 'Timetable times match ATU wall clock',
       highlights: [
         'Fix: iCal / Timetable class times no longer show one hour ahead of the official ATU timetable (timetables.atu.ie) during Irish Summer Time. Feed wall-clock times (floating or UTC-Z with local digits) are kept as local hours instead of being treated as UTC then shifted to Ireland.',
         'Sync: re-fetch / re-import rewrites the local and cloud events cache with corrected times — open Timetable or tap sync once after updating.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.14.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.5.4.',
       ],
     },
     {
-      version: 'v3.1.13',
+      version: 'v3.5.3',
       date: 'September 2026',
       title: 'Timetable cloud sync recovers after pause',
       highlights: [
-        'Fix: timetable / iCal cloud sync no longer stays permanently dead after a missing calendar_state table or schema-cache error (v3.1.11 over-paused pushes). Fios re-probes on a short cooldown, on reconnect, and after a successful select/upsert — sync resumes once the SQL exists or the network returns.',
+        'Fix: timetable / iCal cloud sync no longer stays permanently dead after a missing calendar_state table or schema-cache error (v3.5.1 over-paused pushes). Fios re-probes on a short cooldown, on reconnect, and after a successful select/upsert — sync resumes once the SQL exists or the network returns.',
         'Clear UX: one banner naming supabase/v3.1.9-calendar-state.sql + PostgREST reload; local timetable and offline-first queue still work while cloud is paused.',
         'Reconcile: empty newer cloud rows no longer wipe a populated local events cache; sticky schemaMissing from older clients is treated as expired so the first load can recover.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.13.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.5.3.',
       ],
     },
     {
-      version: 'v3.1.12',
+      version: 'v3.5.2',
       date: 'September 2026',
       title: 'Contribution heatmap mobile / PWA fix',
       highlights: [
         'Contribution heatmap: fluid cell sizing on phones so the strip fits the card (no clip under overflow-x-hidden); clearer empty-day borders and tap hit targets.',
         'Touch / installed PWA: day cells use tap-friendly touch-action (no pan-x steal); tap still shows date + focus/reviews detail under the grid.',
         'Data loading: prefer local auth session for focus sessions (works on cold start / flaky mobile); re-fetch when session restores and after Pomodoro completes; retry on load error.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.12.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.5.2.',
       ],
     },
     {
-      version: 'v3.1.11',
+      version: 'v3.5.1',
       date: 'September 2026',
       title: 'Offline sync banner no longer spins forever',
       highlights: [
         'Fix: the floating “Syncing N offline changes…” pill no longer sticks or flickers when timetable cloud sync cannot land (for example if supabase/v3.1.9-calendar-state.sql was not applied yet).',
         'Offline queue: duplicate calendar upserts coalesce to one entry; permanent schema/table errors dequeue and show a single clear message instead of retry spam; transient failures use exponential backoff.',
-        'Local timetable / iCal cache still works when cloud sync is paused. (v3.1.13 makes auto-resume reliable after the SQL is applied.)',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.11.',
+        'Local timetable / iCal cache still works when cloud sync is paused. (v3.5.3 makes auto-resume reliable after the SQL is applied.)',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.5.1.',
       ],
     },
     {
-      version: 'v3.1.10',
+      version: 'v3.5.0',
       date: 'September 2026',
       title: 'Mobile nav hold-to-reorder + Timetable rename',
       highlights: [
         'Mobile: long-press a bottom-nav tab, then drag to reposition — order persists via localStorage / profile prefs (same Settings mobile slots). Haptic + lift feedback when supported; tap still navigates normally.',
         'Mobile drawer: long-press and drag up/down to reorder the full nav list (same order as the desktop sidebar).',
         'Renamed user-facing “Schedule” → “Timetable” (nav label, Smart Quick action, landing/privacy copy, timetable view eyebrow). Route id stays `schedule` so bookmarks and deep links keep working.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.10.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.5.0.',
       ],
     },
     {
-      version: 'v3.1.9',
+      version: 'v3.4.0',
       date: 'September 2026',
       title: 'Gemini guidance, push fix, iCal offline sync & maintenance',
       highlights: [
@@ -68,73 +84,73 @@ const UpdatesTabInner: React.FC = () => {
         'Class Reminders: push notifications now display when the server sends a Web Push — the service worker handles push events and notification taps (open/focus Fios). Clearer Settings messages if notifications are blocked, unsupported, or need Add to Home Screen on iPhone/iPad. If you previously enabled reminders, toggle off/on once (or tap Send test notification) so the subscription refreshes.',
         'Timetable / iCal: feed URL, sync status, and last-imported events persist locally first, then sync to your account when the network is available. While offline, timetable changes queue and flush on reconnect; Overview and Timetable can still show your last cached classes.',
         'Optional SQL: run supabase/v3.1.9-calendar-state.sql then reload the PostgREST schema cache so calendar state persists in the database.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.9.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.4.0.',
       ],
     },
     {
-      version: 'v3.1.8',
+      version: 'v3.3.0',
       date: 'September 2026',
       title: 'St Patrick ambience fix + birthday theme',
       highlights: [
         'St Patrick’s Day: festive shamrock / rainbow / leprechaun / pot-of-gold background motifs animate clearly again — gold-forward colors and sustained float motion instead of near-invisible sparkles on emerald chrome.',
         'Birthday: add your birthday in Settings → Profile. On that day Overview greets you with “Happy Birthday, {name}” and applies a coral–gold–teal festive gradient with party / cake / balloon ambience.',
         'Optional SQL: run supabase/v3.1.8-user-birthday.sql then reload the PostgREST schema cache so birthday saves persist.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.8.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.3.0.',
       ],
     },
     {
-      version: 'v3.1.7',
+      version: 'v3.2.5',
       date: 'September 2026',
       title: 'Smart Notes save success path',
       highlights: [
         'Smart Notes: Summarize & Save with General / no module no longer leaves a cloud-save-failed banner when the document was written — recovers from Postgres not-null (23502) on module_code / summary / legacy body columns and from empty INSERT RETURNING.',
         'Client still sends module_code as an empty string (never null); cloud-failure copy names the rejected column only when cloud write truly fails after retries.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.7.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.2.5.',
       ],
     },
     {
-      version: 'v3.1.6',
+      version: 'v3.2.4',
       date: 'September 2026',
       title: 'Modules tab strip scroll on mobile',
       highlights: [
         'Modules: on phones, swipe/scroll the Decks · MCQ Quizzes · Code Exams · Tasks · Documents tab strip horizontally so tabs past the edge (including Documents) are reachable.',
         'Active tab scrolls into view when selected; desktop tab layout unchanged.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.6.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.2.4.',
       ],
     },
     {
-      version: 'v3.1.5',
+      version: 'v3.2.3',
       date: 'September 2026',
       title: 'Smart Notes General module save',
       highlights: [
         'Smart Notes: Summarize & Save with General / no module no longer fails with Postgres 23502 (module_code not-null) — client sends empty string instead of null.',
         'Optional SQL: run supabase/v3.1.5-documents-module-code.sql then reload the PostgREST schema cache so live DBs drop NOT NULL on module_code and default to \'\'.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.5.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.2.3.',
       ],
     },
     {
-      version: 'v3.1.4',
+      version: 'v3.2.2',
       date: 'September 2026',
       title: 'Smart Notes load fix',
       highlights: [
         'Smart Notes: documents list surfaces the real PostgREST error instead of a silent empty load after the consolidated Supabase schema.',
         'Client select/upsert/parse aligned with documents.content + summary (not null default \'\'), glossary jsonb, module_code, and title; hardened glossary JSON parsing.',
         'Optional SQL: run supabase/v3.1.4-documents-load.sql then reload the PostgREST schema cache if notes still fail to load.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.4.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.2.2.',
       ],
     },
     {
-      version: 'v3.1.3',
+      version: 'v3.2.1',
       date: 'September 2026',
       title: 'Mobile version badge + Smart Notes schema',
       highlights: [
-        'Mobile top bar: version badge (v3.1.x) stays visible beside the Fios logo on narrow phones — compact logo sizing so it no longer disappears under header controls.',
+        'Mobile top bar: version badge stays visible beside the Fios logo on narrow phones — compact logo sizing so it no longer disappears under header controls.',
         'Smart Notes: Summarize & Save aligns with documents.glossary, summary, and content columns; clearer message when the Supabase schema cache is stale, with local save fallback.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.3.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.2.1.',
       ],
     },
     {
-      version: 'v3.1.2',
+      version: 'v3.2.0',
       date: 'September 2026',
       title: 'Holiday motifs, Brain Dump toggle & mobile nav swipe',
       highlights: [
@@ -145,7 +161,7 @@ const UpdatesTabInner: React.FC = () => {
         'Holiday background animations use clearer seasonal icons: Halloween skulls (plus ghost/ember/bat vibes — no candy canes), St Patrick’s Day shamrocks, rainbows, leprechauns & pot of gold, Easter bunnies, eggs & stars.',
         'Christmas holly / snow / candy cane motifs unchanged; accent gradients and color washes kept.',
         'Landing marketing stays default emerald; reduced-motion and Low-Power still show a static wash only.',
-        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.2.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.2.0.',
       ],
     },
     {
@@ -168,7 +184,7 @@ const UpdatesTabInner: React.FC = () => {
       title: 'Study polish — ambience, widgets, schedule, modules & PWA',
       highlights: [
         'Desktop: Pomodoro floating widget and Smart Quick Widget default ON again when you have not toggled them in Settings (viewport ≥768px).',
-        'Mobile: both floating widgets still default OFF until explicitly toggled (`floatingWidgetsExplicit` from v2.2.9) — intentional Settings choices stay saved.',
+        'Mobile: both floating widgets still default OFF until explicitly toggled (`floatingWidgetsExplicit` from v2.5.2) — intentional Settings choices stay saved.',
         'Brain Dump inbox: re-laid out in the shared FAB dock beside Pomodoro + Quick Widget — opens upward alongside them without covering the FAB or fighting mobile bottom nav.',
         'OpenDyslexic: self-hosted woff faces with font-display:swap; applies on iOS Safari, Android Chrome, and installed PWA (standalone) — no broken CDN stylesheet.',
         'OpenDyslexic overrides Tailwind chrome fonts so the accessibility setting is visible across the UI; true code samples stay monospace.',
@@ -190,7 +206,7 @@ const UpdatesTabInner: React.FC = () => {
         'Badges & selectors: decks, quizzes, exams, documents, tasks, pickers, heatmaps, GPA, and agenda labels prefer the module name over course-code shorthand.',
         'Contribution heatmap: mobile-friendly grid with horizontal touch scroll, month/day labels, tap-a-cell activity detail, and a shorter default window (last 16 weeks).',
         'PWA & web: in-app “Update available” prompt with Reload when a new service worker is ready (respects reduced motion).',
-        'Mobile top bar: version badge (v3.1.0) visible beside the logo.',
+        'Mobile top bar: version badge visible beside the logo.',
         'Quick Nav: ⌘K / Ctrl+K reliably opens the same command palette as the header chip (capture-phase + preventDefault); ignored while typing in inputs.',
         'Privacy & Terms refresh: clearer disclosures for Feedback & Ratings (what’s collected, anonymous vs signed-in, purpose, retention, who receives it) plus Contact Support, study data, BYO Gemini / multimodal uploads, Web Push, local/PWA storage, and an explicit no ad-tracker / no analytics-SDK statement — aligned with v3.0.0 push + upload language.',
         'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.0.',
@@ -234,7 +250,7 @@ const UpdatesTabInner: React.FC = () => {
       ],
     },
     {
-      version: 'v2.2.9',
+      version: 'v2.5.2',
       date: 'September 2026',
       title: 'Mobile widgets OFF + drawer scroll lock',
       highlights: [
@@ -242,22 +258,22 @@ const UpdatesTabInner: React.FC = () => {
         'Adds `floatingWidgetsExplicit` so intentional Settings toggles are preserved; profile sync no longer re-enables widgets from legacy remote prefs.',
         'Desktop viewport defaults stay ON until the user changes them; Reset Preferences returns to viewport-aware defaults.',
         'Mobile nav drawer: background page scroll is locked while the drawer/overlay is open (body position fixed + touchmove blocked on backdrop); scroll position restored on close. Drawer panel itself still scrolls.',
-        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.9.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.5.2.',
       ],
     },
     {
-      version: 'v2.2.8',
+      version: 'v2.5.1',
       date: 'September 2026',
       title: 'Logo & PWA icon polish',
       highlights: [
         'In-app Fios mark: rebalanced `</>` proportions — wider optical balance, even gaps between `<` `/` `>`, comfortable padding inside the square, slightly more space before the wordmark.',
         'PWA / Add to Home Screen / Apple touch: regenerated white `</>` on solid black with ~18–22% inset (centered, not tall-stretched or edge-cramped); apple-touch 180×180, 192/512, maskable, and favicon share the same geometry.',
-        'Header logo → Overview and landing emerald brand lock unchanged from v2.2.7.',
-        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.8.',
+        'Header logo → Overview and landing emerald brand lock unchanged from v2.5.0.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.5.1.',
       ],
     },
     {
-      version: 'v2.2.7',
+      version: 'v2.5.0',
       date: 'September 2026',
       title: 'Mobile widget defaults, SM-2 previews & brand polish',
       highlights: [
@@ -267,11 +283,11 @@ const UpdatesTabInner: React.FC = () => {
         'Logo mark: decorative orbit dots / frame removed — in-app `</>` only. PWA / Apple touch icons rebuilt as larger white `</>` on solid black (no border chrome); apple-touch 180×180 + 192/512/maskable refreshed.',
         'Command palette: ⌘K / Ctrl+K reliably opens the same palette as the header ⌘ K chip (capture-phase handler so browser search bindings do not steal it).',
         'Smart Quick Widget: Zen / Deep Focus available in the action catalog (toggle enter/exit); mobile Quick Widget still defaults off.',
-        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.7.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.5.0.',
       ],
     },
     {
-      version: 'v2.2.6',
+      version: 'v2.4.0',
       date: 'September 2026',
       title: 'Landing density, mobile uploads & PWA icons',
       highlights: [
@@ -284,11 +300,11 @@ const UpdatesTabInner: React.FC = () => {
         'Images from iPhone Photos / Android gallery accepted in study upload (Vision / multimodal → notes); SUPPORTS copy updated for PDF, TXT, and images.',
         'Flashcards generate: hardened card payload parsing and safe rich-text rendering to stop the mobile “undefined is not a function” crash.',
         'PWA / Add to Home Screen: regenerated apple-touch-icon 180×180 and 192/512 PNGs from the current Fios mark with safe padding; manifest + HTML link tags updated.',
-        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.6.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.4.0.',
       ],
     },
     {
-      version: 'v2.2.5',
+      version: 'v2.3.1',
       date: 'September 2026',
       title: 'Nav chrome polish & agenda by due date',
       highlights: [
@@ -298,11 +314,11 @@ const UpdatesTabInner: React.FC = () => {
         'Overview Focus card: no more “You’re all caught up” flash while tasks are still loading — shows a loading state until the real pending count arrives.',
         'ATU Academic Calendar: stripped leftover `[cite: N]` citation markers from key-date descriptions so copy renders cleanly.',
         'Mobile polish: Focus/agenda/header wrap without overflow; bottom nav scrollable; Schedule institution field full-width on small screens; ATU filter chips typed as buttons.',
-        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.5.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.3.1.',
       ],
     },
     {
-      version: 'v2.2.4',
+      version: 'v2.3.0',
       date: 'September 2026',
       title: 'Nav toggle, task dates, support send & landing refresh',
       highlights: [
@@ -310,11 +326,11 @@ const UpdatesTabInner: React.FC = () => {
         'Task create Start / Due fields use a reliable datetime-local control (theme-aware color-scheme + open-picker button) that updates state and saves timed agenda tasks.',
         'Contact Support: keep showing the support inbox (`VITE_SUPPORT_EMAIL` or oryn02@gmail.com); add an in-app message form that POSTs to `/api/support` and emails the inbox via Resend/SendGrid when configured — clear error if the provider key is missing (no crash). Mailto remains optional.',
         'Landing page refresh: brand-first hero, schedule/agenda, study hubs, AI Tutor, SM-2 flashcards, Smart Notes, Code Lab, themes, PWA, and privacy/legal links — purposeful motion, responsive, aligned with the emerald/teal Fios identity.',
-        'Version alignment: packages, HTML title, Updates tab, and README report v2.2.4.',
+        'Version alignment: packages, HTML title, Updates tab, and README report v2.3.0.',
       ],
     },
     {
-      version: 'v2.2.3',
+      version: 'v2.2.0',
       date: 'September 2026',
       title: 'Zen, schedule, agenda, privacy & visual polish',
       highlights: [
@@ -337,11 +353,11 @@ const UpdatesTabInner: React.FC = () => {
         'Privacy & GDPR: expanded Privacy Policy and Terms (landing footer + Settings); clearer cookie/local-storage consent; Export My Data (JSON) and erasure guidance aligned with processors (Supabase, Gemini, GitHub, hosting).',
         'Mobile touch: ~44px targets on bottom nav, Zen Exit, drawer, FAB/Pomodoro; flashcard swipe ignores vertical scroll; agenda scroll uses touch-action pan-y; active: states so critical actions are not hover-only.',
         'Settings: helpful tip that a paid Gemini plan via Google AI Studio can avoid slowdowns when the free tier is overloaded (optional; link to AI Studio).',
-        'Version alignment: packages, HTML title, Updates tab, and README all report v2.2.3. Builds on v2.2.2 Render/Zen/widget work without regressing Bugbot fixes.',
+        'Version alignment: packages, HTML title, Updates tab, and README all report v2.2.0. Builds on v2.1.0 Render/Zen/widget work without regressing Bugbot fixes.',
       ],
     },
     {
-      version: 'v2.2.2',
+      version: 'v2.1.0',
       date: 'September 2026',
       title: 'Render deploy, API 405 fix, Zen escape & widget prefs',
       highlights: [
@@ -356,7 +372,7 @@ const UpdatesTabInner: React.FC = () => {
       ],
     },
     {
-      version: 'v2.2.0',
+      version: 'v2.0.0',
       date: 'September 2026',
       title: 'PWA, Themes, Tutor & Study Engine UI',
       highlights: [
@@ -373,7 +389,7 @@ const UpdatesTabInner: React.FC = () => {
       ],
     },
     {
-      version: 'v2.1',
+      version: 'v1.1.0',
       date: 'September 2026',
       title: 'Timetable Proxy & Interactive Month Grid',
       highlights: [
@@ -383,7 +399,7 @@ const UpdatesTabInner: React.FC = () => {
       ],
     },
     {
-      version: 'v2.0',
+      version: 'v1.0.0',
       date: 'August 2026',
       title: 'Core Study Suite Architecture',
       highlights: [
@@ -402,12 +418,12 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.14</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.6.0</p>
       </header>
 
       <div className="space-y-4">
         {releases.map((rel, idx) => (
-          <div key={idx} className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 space-y-4 shadow-xl">
+          <div key={rel.version} className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 space-y-4 shadow-xl">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800/80">
               <div className="flex items-center gap-3">
                 <span className="bg-emerald-400 text-slate-950 font-mono font-black text-xs px-2.5 py-1 rounded-md uppercase">

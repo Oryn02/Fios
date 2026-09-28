@@ -225,6 +225,32 @@ export function toDatetimeLocalValue(d: Date): string {
 }
 
 /**
+ * Map stored `modules.exam_date` (ISO timestamptz or legacy date-only) into a
+ * `datetime-local` control value. Date-only rows default to 09:00 local.
+ */
+export function examDateToLocalInput(raw?: string | null): string {
+  if (!raw) return '';
+  const trimmed = raw.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return `${trimmed}T09:00`;
+  const d = new Date(trimmed);
+  if (Number.isNaN(d.getTime())) return '';
+  return toDatetimeLocalValue(d);
+}
+
+/** Parse exam_date for countdown / flight plan; date-only → local 09:00. */
+export function parseExamDate(raw?: string | null): Date | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return fromDatetimeLocalValue(`${trimmed}T09:00`);
+  }
+  const fromLocal = fromDatetimeLocalValue(trimmed);
+  if (fromLocal) return fromLocal;
+  const d = new Date(trimmed);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
  * Parse `datetime-local` values as *local* wall time.
  * `new Date("YYYY-MM-DDTHH:mm")` is treated as UTC in some mobile browsers
  * (Safari / Chrome Android), which shifts tasks by the timezone offset.
