@@ -1,9 +1,9 @@
 /**
- * Shared create/edit module form — keeps ModulesView edits small for parallel 3.1.0 merges.
+ * Shared create/edit module form — keeps ModulesView edits small for parallel merges.
  */
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Folder, Palette, Pencil, X } from 'lucide-react';
+import { CalendarClock, Folder, Palette, Pencil, X } from 'lucide-react';
 import {
   COLOR_OPTIONS,
   DBModule,
@@ -12,6 +12,8 @@ import {
   updateModule,
 } from '../lib/moduleService';
 import { MOD_BADGE_CLASS } from '../lib/moduleColors';
+import { examDateToLocalInput, fromDatetimeLocalValue } from '../lib/agendaService';
+import { DatetimeLocalInput } from './DatetimeLocalInput';
 
 export type ModuleFormMode = 'create' | 'edit';
 
@@ -33,6 +35,7 @@ export const ModuleFormPanel: React.FC<ModuleFormPanelProps> = ({
   const [name, setName] = useState('');
   const [color, setColor] = useState('deep-emerald');
   const [tags, setTags] = useState('');
+  const [examDateLocal, setExamDateLocal] = useState('');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -41,11 +44,13 @@ export const ModuleFormPanel: React.FC<ModuleFormPanelProps> = ({
       setCode(moduleCourseCode(module) || '');
       setColor(module.color || 'deep-emerald');
       setTags((module.tags || []).join(', '));
+      setExamDateLocal(examDateToLocalInput(module.exam_date));
     } else {
       setName('');
       setCode('');
       setColor('deep-emerald');
       setTags('');
+      setExamDateLocal('');
     }
   }, [mode, module]);
 
@@ -55,16 +60,19 @@ export const ModuleFormPanel: React.FC<ModuleFormPanelProps> = ({
     setBusy(true);
     try {
       const tagList = tags.split(',').map((t) => t.trim()).filter(Boolean);
+      const parsedExam = fromDatetimeLocalValue(examDateLocal);
+      const exam_date = parsedExam ? parsedExam.toISOString() : null;
       if (mode === 'edit' && module) {
         const updated = await updateModule(module.id, {
           name,
           code,
           color,
           tags: tagList,
+          exam_date,
         });
         if (updated) onSaved(updated);
       } else {
-        const created = await createModule(code, name, color, { tags: tagList });
+        const created = await createModule(code, name, color, { tags: tagList, exam_date });
         if (created) onSaved(created);
       }
     } catch (err: any) {
@@ -117,6 +125,31 @@ export const ModuleFormPanel: React.FC<ModuleFormPanelProps> = ({
         onChange={(e) => setTags(e.target.value)}
         className="w-full bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400"
       />
+      <label className="space-y-1.5 block" htmlFor="fios-module-exam-date">
+        <span className="text-[10px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1.5">
+          <CalendarClock className="w-3.5 h-3.5 text-cyan-400" /> Exam date &amp; time
+        </span>
+        <DatetimeLocalInput
+          id="fios-module-exam-date"
+          value={examDateLocal}
+          onChange={setExamDateLocal}
+          aria-label="Module exam date and time"
+        />
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] font-mono text-slate-500">
+            Powers Overview countdown and Revision Flight Plan. Leave blank if unknown.
+          </p>
+          {examDateLocal ? (
+            <button
+              type="button"
+              onClick={() => setExamDateLocal('')}
+              className="shrink-0 text-[10px] font-mono uppercase text-slate-500 hover:text-slate-300 cursor-pointer"
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
+      </label>
       <div className="space-y-2">
         <label className="text-[10px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1.5">
           <Palette className="w-3.5 h-3.5 text-cyan-400" /> Module Accent Color

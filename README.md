@@ -2,7 +2,9 @@
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v3.1.14**
+**Current version: v3.6.0**
+
+> Version numbers in Updates / README use coherent semver from the first published release as **v1.0.0** (reassigned by substance; SQL migration filenames on disk may still use older labels).
 
 Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizzes, Monaco-powered code exams, and an AI tutor**, wrapped in a modern dashboard with a global Pomodoro timer, a grade predictor, and a module-readiness heatmap.
 
@@ -37,40 +39,48 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
 
-### What’s new in v3.1.14
+### What’s new in v3.6.0
+
+- Modules: Create / Edit Academic Module includes **Exam date & time** (datetime picker). Values drive Overview countdown and Revision Flight Plan.
+- Soft-empty fix: `modules.exam_date` existed but was unwired — countdown empty state now has a form path.
+- Optional SQL: `supabase/v3.6.0-module-exam-datetime.sql` (timestamptz upgrade) then reload PostgREST schema cache.
+- Public Updates + README changelog remapped to coherent semver from first published release as **v1.0.0**.
+- Version alignment across packages and API `/health`.
+
+### What’s new in v3.5.4
 
 - Fix: Timetable / iCal class times match the official ATU wall clock (no longer one hour ahead during Irish Summer Time). Feed times are kept as local hours instead of UTC→Ireland shifting.
 - Re-sync / reopen Timetable rewrites the cached events with corrected times.
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.13
+### What’s new in v3.5.3
 
-- Fix: timetable / iCal cloud sync no longer stays permanently paused after a missing `calendar_state` table or schema-cache error (v3.1.11 over-blocked pushes). Fios re-probes on a short cooldown, on reconnect, and after a successful select/upsert.
+- Fix: timetable / iCal cloud sync no longer stays permanently paused after a missing `calendar_state` table or schema-cache error (v3.5.1 over-blocked pushes). Fios re-probes on a short cooldown, on reconnect, and after a successful select/upsert.
 - Clear UX: one banner pointing at `supabase/v3.1.9-calendar-state.sql` + PostgREST reload; local timetable and the offline-first queue keep working while cloud is paused.
 - Reconcile: empty newer cloud rows no longer wipe a populated local events cache; sticky `schemaMissing` from older clients is treated as expired so the first load can recover.
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.12
+### What’s new in v3.5.2
 
 - Contribution heatmap (mobile / installed PWA): fluid day-cell sizing so the strip fits the Overview card without being clipped by layout overflow; larger tap targets and visible empty-day borders.
 - Touch: day cells prefer tap over horizontal pan so presses register on iOS Safari and standalone PWA; date + activity detail still appears under the grid.
 - Data: focus sessions resolve auth from the local session first (cold start / offline-friendly), re-fetch when the session restores and after a Pomodoro completes, with a clear retry on load failure.
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.11
+### What’s new in v3.5.1
 
 - Fix: the floating “Syncing N offline changes…” indicator no longer sticks or keeps counting when timetable cloud sync cannot land (commonly when `supabase/v3.1.9-calendar-state.sql` has not been applied yet).
 - Offline queue: calendar upserts coalesce; missing-table / schema-cache errors dequeue with one clear message (local timetable still works); transient failures back off instead of retry-spamming.
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.10
+### What’s new in v3.5.0
 
 - Mobile bottom nav: long-press a tab, then drag to reposition — order persists via localStorage / profile prefs (same Settings mobile slots). Lift + haptic feedback when the device supports it; normal taps still navigate.
 - Mobile drawer: long-press and drag up/down to reorder the full nav list (shared with desktop sidebar order).
 - User-facing rename: **Schedule → Timetable** (nav label, Smart Quick action, landing/privacy copy, timetable view). Route id stays `schedule` so bookmarks and deep links keep working.
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.9
+### What’s new in v3.4.0
 
 - Reliability maintenance with clearer handling for durable cloud writes (including feedback delete).
 - Gemini locked screens: step-by-step how to get a key in [Google AI Studio](https://aistudio.google.com/app/apikey), paste it in Settings (or the unlock modal), and why AI features stay blocked without a BYO key.
@@ -80,45 +90,45 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Optional SQL: `supabase/v3.1.9-calendar-state.sql` adds `calendar_state` (then reload the PostgREST schema cache).
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.8
+### What’s new in v3.3.0
 
 - St Patrick’s Day ambience: shamrock / rainbow / leprechaun / pot-of-gold motifs animate again with clearer gold–green contrast and sustained float motion (no longer near-invisible sparkles on emerald chrome).
 - Birthday: set your birthday in Settings → Profile; on that day Overview greets you with “Happy Birthday, {name}” and a coral–gold–teal festive theme with party / cake / balloon ambience.
 - Optional SQL: `supabase/v3.1.8-user-birthday.sql` adds `user_profiles.birthday` (then reload the PostgREST schema cache).
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.7
+### What’s new in v3.2.5
 
 - Smart Notes: Summarize & Save no longer shows a cloud-save-failed banner when the note actually writes (or can write after a not-null retry) — recovers from Postgres 23502 on `module_code` / summary / legacy body columns, and from empty INSERT RETURNING.
 - General / no module keeps sending `module_code: ''` (never null); error copy names the rejected column when still needed.
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.6
+### What’s new in v3.2.4
 
 - Modules: mobile tab strip (Decks / MCQ Quizzes / Code Exams / Tasks / Documents) scrolls horizontally so out-of-view tabs like Documents are reachable; desktop layout unchanged.
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.5
+### What’s new in v3.2.3
 
 - Smart Notes: Summarize & Save no longer sends `module_code: null` for General — uses empty string so live DBs with NOT NULL still accept the row.
 - Apply `supabase/v3.1.5-documents-module-code.sql` in the Supabase SQL editor (coalesce nulls, drop NOT NULL on `module_code`, default `''`), then reload the PostgREST schema cache.
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.4
+### What’s new in v3.2.2
 
 - Smart Notes: documents list surfaces the real PostgREST error instead of failing silently after the consolidated Supabase schema.
 - Client select/upsert/parse aligned with `documents.content` + `summary` (not null default `''`), `glossary` jsonb, `module_code`, and `title`; hardened glossary JSON parsing.
 - Apply `supabase/v3.1.4-documents-load.sql` in the Supabase SQL editor, then reload the PostgREST schema cache if notes still fail to load.
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.3
+### What’s new in v3.2.1
 
 - Mobile top bar: version badge stays visible beside the Fios logo on narrow phones (compact logo sizing so it is not lost under header controls).
 - Smart Notes: Summarize & Save aligns with `documents.glossary`, `summary`, and `content`; clearer stale-schema-cache guidance; local save fallback when cloud upsert cannot complete.
 - Apply `supabase/v3.1.3-documents-columns.sql` in the Supabase SQL editor, then reload the PostgREST schema cache if Summarize still errors.
 - Version alignment across packages and API `/health`.
 
-### What’s new in v3.1.2
+### What’s new in v3.2.0
 
 - Mobile: left-edge (or clear content) swipe-right opens the nav drawer without fighting vertical scroll.
 - Desktop flashcards: no swipe-to-rate; swipe Easy/Hard hints are touch/mobile only. Click-to-flip, Previous/Next, and SM-2 buttons stay.
@@ -159,22 +169,22 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Render: set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` for server Web Push (local reminders still work without them).
 - See the in-app **Updates** tab for the full changelog (items covering the v3.0.0 feature set).
 
-### What’s new in v2.2.9
+### What’s new in v2.5.2
 
-- Mobile: Quick Widget FAB + Pomodoro floating widget **reliably default OFF** unless the user has toggled them in Settings (fixes returning users stuck with old baked-in `true` prefs from v2.2.7’s incomplete fix).
+- Mobile: Quick Widget FAB + Pomodoro floating widget **reliably default OFF** unless the user has toggled them in Settings (fixes returning users stuck with old baked-in `true` prefs from v2.5.0’s incomplete fix).
 - New `floatingWidgetsExplicit` flag distinguishes intentional overrides from system defaults; profile sync no longer re-enables widgets from legacy remote prefs.
 - Desktop defaults remain ON; Settings toggles still persist across devices once set explicitly.
 - Mobile nav drawer: page scroll locked while open (iOS-safe body lock + backdrop touchmove block); scroll restored on close.
 - See the in-app **Updates** tab for the full changelog.
 
-### What’s new in v2.2.8
+### What’s new in v2.5.1
 
 - Logo polish: in-app `</>` mark rebalanced (wider optical weight, even stroke gaps, comfortable padding, slightly more air before the wordmark).
 - PWA / Apple touch / favicon: regenerated white `</>` on solid black with ~18–22% inset — centered, not stretched or edge-cramped (180 / 192 / 512 / maskable).
 - Same geometric mark language across header, landing, and home-screen icons.
 - See the in-app **Updates** tab for the full changelog.
 
-### What’s new in v2.2.7
+### What’s new in v2.5.0
 
 - Mobile: Quick Widget + Pomodoro default **off** for new / unsaved prefs (saved prefs preserved); desktop defaults unchanged.
 - SM-2 rating previews: Again ~1m, Hard ~10m, Good 1d, Easy 4d on new cards — labels match scheduled `next_review`.
@@ -184,7 +194,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Smart Quick: **Zen / Deep Focus** toggle available in the Quick Widget action catalog.
 - See the in-app **Updates** tab for the full changelog.
 
-### What’s new in v2.2.6
+### What’s new in v2.4.0
 
 - Landing: tighter hero/nav spacing so content sits higher; smaller inset product mockup (no heavy window on the section divider).
 - Landing: expanded study-hubs blurb + FAQ (tutor grounding, unified agenda, multi-device) for a fuller page below the fold.
@@ -193,7 +203,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - PWA: apple-touch-icon **180×180** plus 192/512 icons regenerated from the current Fios logo with safe padding (manifest + HTML tags).
 - See the in-app **Updates** tab for the full changelog.
 
-### What’s new in v2.2.5
+### What’s new in v2.3.1
 
 - Header hamburger / X restyled to match top-bar chrome (size, radius, accent border, logo alignment); toggle still opens drawer / sidebar.
 - Compact agenda: tasks sort and appear by **due date** (not start); calendar day headers (Today / Tomorrow / weekday) group classes + tasks.
@@ -202,7 +212,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Mobile polish for Focus/agenda/header wrap, scrollable bottom nav, and Timetable institution field.
 - See the in-app **Updates** tab for the full changelog.
 
-### What’s new in v2.2.4
+### What’s new in v2.3.0
 
 - Header menu (hamburger / X) reliably toggles mobile drawer + desktop sidebar (toggle stays above the drawer).
 - Task Start / Due datetime inputs actually changeable and saved (theme-aware native picker + open button).
@@ -210,7 +220,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - Landing page refresh covering schedule/agenda, study hubs, AI Tutor, flashcards, notes, Code Lab, themes, PWA, privacy/legal.
 - See the in-app **Updates** tab for the full changelog.
 
-### What’s new in v2.2.3
+### What’s new in v2.2.0
 
 - Zen/mobile escape hardening, bottom-nav + widget prefs, FAB/Pomodoro dock, expanded Smart Quick catalog.
 - Icons, accent gradients, light-mode cream/contrast, card/tab hierarchy.
@@ -268,7 +278,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v3.1.14) — Render Static Site root
+├── client/                 # React + Vite frontend (v3.6.0) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/

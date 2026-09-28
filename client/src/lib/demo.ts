@@ -65,13 +65,15 @@ export const demoProfile: UserProfile = {
   pomodoro_long_break: 15,
 };
 
-function daysFromNow(d: number): string {
-  return new Date(Date.now() + d * 86400_000).toISOString().slice(0, 10);
+function daysFromNowAt(d: number, hour = 9, minute = 0): string {
+  const t = new Date(Date.now() + d * 86400_000);
+  t.setHours(hour, minute, 0, 0);
+  return t.toISOString();
 }
 
 export const demoModules: DBModule[] = [
-  { id: 'm1', user_id: DEMO_USER.id, code: 'SOFT06001', name: 'Software Engineering', color: 'deep-emerald', exam_date: daysFromNow(6), created_at: new Date().toISOString() },
-  { id: 'm2', user_id: DEMO_USER.id, code: 'COMP07020', name: 'Data Structures & Algorithms', color: 'ocean-cyan', exam_date: daysFromNow(14), created_at: new Date().toISOString() },
+  { id: 'm1', user_id: DEMO_USER.id, code: 'SOFT06001', name: 'Software Engineering', color: 'deep-emerald', exam_date: daysFromNowAt(6, 9, 30), created_at: new Date().toISOString() },
+  { id: 'm2', user_id: DEMO_USER.id, code: 'COMP07020', name: 'Data Structures & Algorithms', color: 'ocean-cyan', exam_date: daysFromNowAt(14, 14, 0), created_at: new Date().toISOString() },
   { id: 'm3', user_id: DEMO_USER.id, code: 'DBMS06110', name: 'Database Systems', color: 'vibrant-indigo', exam_date: null, created_at: new Date().toISOString() },
 ];
 

@@ -57,11 +57,11 @@ create table if not exists public.modules (
   code text not null,
   name text not null,
   color text not null default 'emerald',
-  exam_date date,
+  exam_date timestamptz,
   created_at timestamptz not null default now()
 );
 create index if not exists modules_user_idx on public.modules (user_id);
-alter table public.modules add column if not exists exam_date date;
+alter table public.modules add column if not exists exam_date timestamptz;
 
 -- ----------------------------------------------------------------------------
 -- decks + cards (cards carry SM-2 spaced-repetition scheduling fields)

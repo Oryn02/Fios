@@ -6,6 +6,7 @@ import { getUserDecksWithCards } from './deckService';
 import { getQuizzes } from './mcqService';
 import { getCodeExams } from './codeExamService';
 import { isCardDue } from './spacedRepetition';
+import { parseExamDate } from './agendaService';
 
 export type FlightIntent = 'review' | 'quiz' | 'code' | 'make' | 'recall';
 
@@ -30,10 +31,9 @@ function readiness(decks: number, quizzes: number, code: number): number {
 }
 
 function daysUntil(dateStr?: string | null): number | null {
-  if (!dateStr) return null;
-  const d = new Date(dateStr).getTime();
-  if (Number.isNaN(d)) return null;
-  return Math.ceil((d - Date.now()) / 86400_000);
+  const parsed = parseExamDate(dateStr);
+  if (!parsed) return null;
+  return Math.ceil((parsed.getTime() - Date.now()) / 86400_000);
 }
 
 /**

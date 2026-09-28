@@ -138,7 +138,7 @@ export async function createModule(
   code: string,
   name: string,
   color: string,
-  opts?: { tags?: string[]; parent_code?: string | null }
+  opts?: { tags?: string[]; parent_code?: string | null; exam_date?: string | null }
 ): Promise<DBModule | null> {
   const normalizedColor = normalizeModuleColor(color);
   const trimmedName = name.trim();
@@ -146,6 +146,7 @@ export async function createModule(
   // Course code fully optional — synthesize an internal key when blank (not shown as primary label).
   const userCode = code.trim().toUpperCase();
   const trimmedCode = userCode || synthesizeModuleCode(trimmedName);
+  const examDate = opts?.exam_date !== undefined ? opts.exam_date : null;
 
   if (IS_DEMO) {
     const mod: DBModule = {
@@ -156,6 +157,7 @@ export async function createModule(
       color: normalizedColor,
       tags: opts?.tags || [],
       parent_code: opts?.parent_code || null,
+      exam_date: examDate,
       created_at: new Date().toISOString(),
     };
     demoModuleState = [...demoModuleState, mod];
@@ -174,6 +176,7 @@ export async function createModule(
       color: normalizedColor,
       tags: opts?.tags || [],
       parent_code: opts?.parent_code || null,
+      exam_date: examDate,
     })
     .select()
     .single();
@@ -188,6 +191,7 @@ export type UpdateModuleFields = {
   color?: string;
   tags?: string[];
   parent_code?: string | null;
+  exam_date?: string | null;
 };
 
 /** Update an existing module; cascades `module_code` FKs when the internal key changes. */
@@ -224,6 +228,7 @@ export async function updateModule(
   if (fields.color !== undefined) patch.color = normalizeModuleColor(fields.color);
   if (fields.tags !== undefined) patch.tags = fields.tags;
   if (fields.parent_code !== undefined) patch.parent_code = fields.parent_code;
+  if (fields.exam_date !== undefined) patch.exam_date = fields.exam_date;
 
   if (IS_DEMO) {
     if (existing.code !== nextCode) {
