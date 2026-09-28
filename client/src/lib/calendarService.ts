@@ -7,6 +7,7 @@ import {
   isPermanentSchemaError,
   reportPermanentSyncError,
   clearSyncError,
+  shouldDeferCloudWrites,
 } from './offlineQueue';
 
 export type ScheduleMode = 'ical' | 'manual';
@@ -214,8 +215,9 @@ async function pushStateToCloud(state: CalendarStateRow): Promise<void> {
     console.warn('[calendar] auth metadata update failed', err);
   }
 
-  // Missing calendar_state SQL / schema cache — keep local only; never requeue forever.
-  if (getSyncStatus().schemaMissing) {
+  // Brief pause after a confirmed missing-table error — then re-probe so sync
+  // recovers once SQL is applied / PostgREST reloads (no permanent dead sync).
+  if (shouldDeferCloudWrites(TABLE)) {
     return;
   }
 
@@ -244,6 +246,7 @@ async function pushStateToCloud(state: CalendarStateRow): Promise<void> {
     });
     throw error;
   }
+  // Successful write proves schema is healthy — clear sticky pause / banner.
   if (getSyncStatus().schemaMissing || getSyncStatus().error) {
     clearSyncError();
   }
@@ -295,6 +298,14 @@ export async function reconcileCalendarState(): Promise<CalendarStateRow> {
     const metaUrl =
       typeof user.user_metadata?.ical_url === 'string' ? user.user_metadata.ical_url.trim() : '';
 
+    // Soft probe during schema cooldown: skip the select spam briefly, keep local.
+    if (shouldDeferCloudWrites(TABLE)) {
+      if (metaUrl && !local.ical_url) {
+        return saveLocalCalendarState({ ical_url: metaUrl });
+      }
+      return local;
+    }
+
     const { data, error } = await supabase
       .from(TABLE)
       .select('*')
@@ -310,6 +321,11 @@ export async function reconcileCalendarState(): Promise<CalendarStateRow> {
         return saveLocalCalendarState({ ical_url: metaUrl });
       }
       return local;
+    }
+
+    // Select succeeded — schema is available; clear any sticky pause from v3.1.11.
+    if (getSyncStatus().schemaMissing || getSyncStatus().error) {
+      clearSyncError();
     }
 
     const remote = parseRemoteRow(data as Record<string, unknown> | null);
@@ -331,17 +347,29 @@ export async function reconcileCalendarState(): Promise<CalendarStateRow> {
     let winner: CalendarStateRow =
       remoteTs > localTs ? { ...local, ...remote } : { ...remote, ...local, updated_at: local.updated_at };
 
-    // Prefer non-empty URL / cache when the other side is blank.
+    // Prefer non-empty URL / cache / manuals when the other side is blank
+    // (never let an empty newer remote wipe a populated local timetable cache).
     if (!winner.ical_url) winner.ical_url = remote.ical_url || local.ical_url || metaUrl || '';
-    if (!winner.events_cache?.length && remote.events_cache?.length) {
-      winner.events_cache = remote.events_cache;
+    if (!winner.events_cache?.length) {
+      winner.events_cache = remote.events_cache?.length
+        ? remote.events_cache
+        : local.events_cache?.length
+          ? local.events_cache
+          : [];
     }
-    if (!winner.manual_events?.length && remote.manual_events?.length) {
-      winner.manual_events = remote.manual_events;
+    if (!winner.manual_events?.length) {
+      winner.manual_events = remote.manual_events?.length
+        ? remote.manual_events
+        : local.manual_events?.length
+          ? local.manual_events
+          : [];
+    }
+    if (!winner.institution_name) {
+      winner.institution_name = remote.institution_name || local.institution_name || '';
     }
 
     const saved = saveLocalCalendarState(winner);
-    // If local was newer, push so cloud catches up.
+    // If local was newer (or equal), push so cloud catches up.
     if (localTs >= remoteTs) {
       try {
         await pushStateToCloud(saved);
