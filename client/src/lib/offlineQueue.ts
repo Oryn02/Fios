@@ -6,6 +6,8 @@
  * - Upserts for the same table + conflict key coalesce (no stack of duplicates).
  * - Permanent errors (missing table / schema) dequeue and surface one clear message.
  * - Transient errors use exponential backoff — no infinite retry spam.
+ * - schemaMissing pauses cloud writes briefly, then re-probes so sync recovers after
+ *   SQL is applied / PostgREST reloads / network returns (no permanent dead sync).
  */
 
 import { supabase } from './supabase';
@@ -16,6 +18,8 @@ const DB_VERSION = 1;
 const MAX_ATTEMPTS = 6;
 const BASE_BACKOFF_MS = 4_000;
 const MAX_BACKOFF_MS = 5 * 60_000;
+/** How long to skip calendar cloud writes after a confirmed missing-table error. */
+const SCHEMA_PROBE_COOLDOWN_MS = 45_000;
 const STATUS_KEY = 'fios_offline_sync_status';
 
 type OnlineHook = () => void | Promise<void>;
@@ -30,6 +34,8 @@ export interface SyncStatus {
   error: string | null;
   /** True when cloud schema/table is missing — local data still works. */
   schemaMissing: boolean;
+  /** ISO time when schemaMissing last flipped true (for probe cooldown). */
+  schemaMissingAt: string | null;
   updatedAt: string;
 }
 
@@ -41,6 +47,7 @@ let cachedStatus: SyncStatus = readStoredStatus() || {
   pending: 0,
   error: null,
   schemaMissing: false,
+  schemaMissingAt: null,
   updatedAt: new Date().toISOString(),
 };
 
@@ -91,6 +98,13 @@ function readStoredStatus(): SyncStatus | null {
       pending: typeof parsed.pending === 'number' ? parsed.pending : 0,
       error: typeof parsed.error === 'string' ? parsed.error : null,
       schemaMissing: Boolean(parsed.schemaMissing),
+      schemaMissingAt:
+        typeof parsed.schemaMissingAt === 'string'
+          ? parsed.schemaMissingAt
+          : Boolean(parsed.schemaMissing)
+            ? // Legacy sticky flag from v3.1.11 — treat as expired so we re-probe immediately.
+              new Date(0).toISOString()
+            : null,
       updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : new Date().toISOString(),
     };
   } catch {
@@ -135,8 +149,21 @@ export function clearSyncError(): void {
   publishStatus({
     error: null,
     schemaMissing: false,
+    schemaMissingAt: null,
     phase: cachedStatus.pending > 0 ? 'syncing' : 'idle',
   });
+}
+
+/**
+ * True while we recently confirmed a missing table/schema — skip cloud writes briefly
+ * to avoid queue spam, but allow periodic re-probes so sync recovers after SQL / network.
+ */
+export function shouldDeferCloudWrites(table?: string): boolean {
+  if (!cachedStatus.schemaMissing) return false;
+  if (table && table !== 'calendar_state') return false;
+  const at = Date.parse(cachedStatus.schemaMissingAt || '');
+  if (Number.isNaN(at)) return false;
+  return Date.now() - at < SCHEMA_PROBE_COOLDOWN_MS;
 }
 
 function errMessage(err: unknown): string {
@@ -164,9 +191,9 @@ export function isPermanentSchemaError(err: unknown): boolean {
 
 function userFacingSchemaError(table: string): string {
   if (table === 'calendar_state') {
-    return 'Timetable cloud sync needs supabase/v3.1.9-calendar-state.sql (then reload PostgREST). Local timetable still works.';
+    return 'Timetable cloud sync needs supabase/v3.1.9-calendar-state.sql (then reload PostgREST). Local timetable still works — Fios retries automatically.';
   }
-  return `Cloud sync paused — missing database table “${table}”. Local data is kept.`;
+  return `Cloud sync paused — missing database table “${table}”. Local data is kept; Fios will retry.`;
 }
 
 /** Call when a live upsert/select proves the cloud table/schema is missing. */
@@ -186,8 +213,10 @@ export async function reportPermanentSyncError(table: string, err?: unknown): Pr
     phase: 'error',
     error: message,
     schemaMissing: true,
+    schemaMissingAt: new Date().toISOString(),
     pending: await listQueuedCount().catch(() => 0),
   });
+  scheduleSchemaProbe();
 }
 
 function coalesceKey(m: Pick<QueuedMutation, 'table' | 'op' | 'onConflict' | 'payload' | 'match'>): string | null {
@@ -219,8 +248,8 @@ async function putMutation(row: QueuedMutation): Promise<void> {
 export async function enqueueMutation(
   mutation: Omit<QueuedMutation, 'id' | 'createdAt'> & { createdAt?: string }
 ): Promise<void> {
-  // Don't keep stacking when schema is known-missing for this table.
-  if (cachedStatus.schemaMissing && mutation.table === 'calendar_state') {
+  // Don't keep stacking while schema probe cooldown is active for calendar_state.
+  if (shouldDeferCloudWrites(mutation.table)) {
     return;
   }
 
@@ -389,8 +418,10 @@ export async function flushOfflineQueue(): Promise<{
             phase: 'error',
             error: userFacingSchemaError(item.table),
             schemaMissing: true,
+            schemaMissingAt: new Date().toISOString(),
             pending: await listQueuedCount(),
           });
+          scheduleSchemaProbe();
           failed++;
           break;
         }
@@ -441,6 +472,7 @@ export async function flushOfflineQueue(): Promise<{
 
 let listening = false;
 let backoffTimer: number | null = null;
+let schemaProbeTimer: number | null = null;
 
 function scheduleBackoffFlush(): void {
   if (typeof window === 'undefined') return;
@@ -454,6 +486,37 @@ function scheduleBackoffFlush(): void {
   }, BASE_BACKOFF_MS);
 }
 
+/** After a schema-missing pause, re-run online hooks so calendar sync can recover. */
+function scheduleSchemaProbe(): void {
+  if (typeof window === 'undefined') return;
+  if (schemaProbeTimer != null) {
+    window.clearTimeout(schemaProbeTimer);
+    schemaProbeTimer = null;
+  }
+  if (!cachedStatus.schemaMissing) return;
+  const at = Date.parse(cachedStatus.schemaMissingAt || '');
+  const elapsed = Number.isNaN(at) ? SCHEMA_PROBE_COOLDOWN_MS : Date.now() - at;
+  const wait = Math.max(1_000, SCHEMA_PROBE_COOLDOWN_MS - elapsed + 250);
+  schemaProbeTimer = window.setTimeout(() => {
+    schemaProbeTimer = null;
+    if (!navigator.onLine || !cachedStatus.schemaMissing) return;
+    // Cooldown expired — allow push/select again.
+    void (async () => {
+      for (const hook of [...onlineHooks]) {
+        try {
+          await hook();
+        } catch (err) {
+          console.warn('[offlineQueue] schema probe hook failed', err);
+        }
+      }
+      const r = await flushOfflineQueue();
+      if (r.deferred > 0) scheduleBackoffFlush();
+      // Still missing? schedule another probe cycle.
+      if (cachedStatus.schemaMissing) scheduleSchemaProbe();
+    })();
+  }, wait);
+}
+
 /** Attach a single `online` listener that flushes the queue. Safe to call repeatedly. */
 export function startOfflineQueueListener(): () => void {
   if (listening) return () => {};
@@ -463,29 +526,33 @@ export function startOfflineQueueListener(): () => void {
       const r = await flushOfflineQueue();
       if (r.flushed > 0) console.info(`[offlineQueue] flushed ${r.flushed} mutation(s)`);
       if (r.deferred > 0) scheduleBackoffFlush();
-      // Only run reconcile hooks when the queue is clear (or no schema block).
-      if (!cachedStatus.schemaMissing) {
-        for (const hook of [...onlineHooks]) {
-          try {
-            await hook();
-          } catch (err) {
-            console.warn('[offlineQueue] online hook failed', err);
-          }
+      // Always run reconcile hooks — calendarService re-probes after schema cooldown
+      // so sync recovers once SQL exists / PostgREST reloads (no permanent dead sync).
+      for (const hook of [...onlineHooks]) {
+        try {
+          await hook();
+        } catch (err) {
+          console.warn('[offlineQueue] online hook failed', err);
         }
       }
-      // Re-flush in case hooks enqueued fresh work — but hooks must not requeue
-      // permanent schema failures (calendarService checks schemaMissing).
+      // Re-flush in case hooks enqueued fresh work.
       const r2 = await flushOfflineQueue();
       if (r2.deferred > 0) scheduleBackoffFlush();
     })();
   };
   window.addEventListener('online', onOnline);
   if (navigator.onLine) onOnline();
+  // Recover sticky schemaMissing from older clients (v3.1.11) on boot.
+  if (cachedStatus.schemaMissing) scheduleSchemaProbe();
   return () => {
     window.removeEventListener('online', onOnline);
     if (backoffTimer != null) {
       window.clearTimeout(backoffTimer);
       backoffTimer = null;
+    }
+    if (schemaProbeTimer != null) {
+      window.clearTimeout(schemaProbeTimer);
+      schemaProbeTimer = null;
     }
     listening = false;
   };

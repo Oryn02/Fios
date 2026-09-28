@@ -4,6 +4,17 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 const UpdatesTabInner: React.FC = () => {
   const releases = [
     {
+      version: 'v3.1.13',
+      date: 'September 2026',
+      title: 'Timetable cloud sync recovers after pause',
+      highlights: [
+        'Fix: timetable / iCal cloud sync no longer stays permanently dead after a missing calendar_state table or schema-cache error (v3.1.11 over-paused pushes). Fios re-probes on a short cooldown, on reconnect, and after a successful select/upsert — sync resumes once the SQL exists or the network returns.',
+        'Clear UX: one banner naming supabase/v3.1.9-calendar-state.sql + PostgREST reload; local timetable and offline-first queue still work while cloud is paused.',
+        'Reconcile: empty newer cloud rows no longer wipe a populated local events cache; sticky schemaMissing from older clients is treated as expired so the first load can recover.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.13.',
+      ],
+    },
+    {
       version: 'v3.1.12',
       date: 'September 2026',
       title: 'Contribution heatmap mobile / PWA fix',
@@ -21,7 +32,7 @@ const UpdatesTabInner: React.FC = () => {
       highlights: [
         'Fix: the floating “Syncing N offline changes…” pill no longer sticks or flickers when timetable cloud sync cannot land (for example if supabase/v3.1.9-calendar-state.sql was not applied yet).',
         'Offline queue: duplicate calendar upserts coalesce to one entry; permanent schema/table errors dequeue and show a single clear message instead of retry spam; transient failures use exponential backoff.',
-        'Local timetable / iCal cache still works when cloud sync is paused. After you run the calendar_state SQL and reload PostgREST, sync resumes automatically.',
+        'Local timetable / iCal cache still works when cloud sync is paused. (v3.1.13 makes auto-resume reliable after the SQL is applied.)',
         'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.1.11.',
       ],
     },
@@ -381,7 +392,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.1.12</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.1.13</p>
       </header>
 
       <div className="space-y-4">
