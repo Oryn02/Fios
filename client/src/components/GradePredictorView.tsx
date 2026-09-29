@@ -67,7 +67,7 @@ const STATUS_STYLE: Record<ModulePrediction['status'], { label: string; cls: str
   achieved: { label: 'On target', cls: 'text-emerald-400' },
   onTrack: { label: 'Achievable', cls: 'text-cyan-400' },
   impossible: { label: 'At risk', cls: 'text-rose-400' },
-  pending: { label: 'No data', cls: 'text-slate-400' },
+  pending: { label: 'No data', cls: 'text-muted-foreground' },
 };
 
 export const GradePredictorView: React.FC = () => {
@@ -319,9 +319,9 @@ export const GradePredictorView: React.FC = () => {
         <div className="p-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-[var(--fios-text-muted)]" /></div>
       ) : grades.length === 0 ? (
         <div className="rounded-2xl border border-dashed fios-border p-10 text-center space-y-2">
-          <Award className="w-8 h-8 text-slate-500 mx-auto" />
+          <Award className="w-8 h-8 text-muted-foreground mx-auto" />
           <p className="text-xs font-bold uppercase text-[var(--fios-text-muted)]">No assessments tracked yet</p>
-          <p className="text-[11px] font-mono text-slate-500">Add your CAs and exams with their weights to predict required scores.</p>
+          <p className="text-[11px] font-mono text-muted-foreground">Add your CAs and exams with their weights to predict required scores.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -382,7 +382,7 @@ export const GradePredictorView: React.FC = () => {
                         className="w-16 bg-[var(--fios-surface)] border fios-border rounded px-2 py-1 text-xs text-[var(--fios-text)] focus:outline-none text-center"
                         aria-label="Score %"
                       />
-                      <button type="button" onClick={() => void handleDelete(g.id)} className="text-slate-500 hover:text-rose-400 p-1 cursor-pointer">
+                      <button type="button" onClick={() => void handleDelete(g.id)} className="text-muted-foreground hover:text-rose-400 p-1 cursor-pointer">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>

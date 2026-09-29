@@ -96,7 +96,7 @@ export const ExamCountdownWidget: React.FC = () => {
   const countdown = next ? partsUntil(next.at, now) : null;
 
   return (
-    <div className="bg-[var(--fios-surface)]/60 border fios-border rounded-2xl p-6 space-y-4 shadow-xl">
+    <div className="bg-[var(--fios-surface)] border fios-border rounded-2xl p-6 space-y-4 shadow-sm dark:shadow-none">
       <div className="flex items-center justify-between border-b fios-border pb-3">
         <div>
           <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-0.5 flex items-center gap-1.5">

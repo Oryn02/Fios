@@ -38,12 +38,12 @@ export const ModalShell: React.FC<ModalShellProps> = ({
   useBodyScrollLock(open, allowScrollSelector);
   if (!open) return null;
 
-  const border = landing ? 'border-slate-800' : 'fios-border';
+  const border = landing ? 'border-border' : 'fios-border';
   const surface = landing
-    ? 'border-slate-800 bg-[#0e131f] text-slate-100'
-    : 'fios-border bg-[var(--fios-surface)] text-[var(--fios-text)]';
-  const muted = landing ? 'text-slate-400' : 'text-[var(--fios-text-muted)]';
-  const headerBg = landing ? 'bg-[#0e131f]' : 'bg-[var(--fios-surface)]';
+    ? 'border-border bg-card text-foreground'
+    : 'fios-border bg-card text-foreground';
+  const muted = 'text-muted-foreground';
+  const headerBg = landing ? 'bg-card/95' : 'bg-[hsl(var(--background)/0.95)]';
 
   return (
     <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
@@ -51,7 +51,7 @@ export const ModalShell: React.FC<ModalShellProps> = ({
       <div
         role="dialog"
         aria-modal="true"
-        className={`relative z-50 w-full ${maxWidthClass} max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border shadow-2xl ${surface} ${panelClassName}`}
+        className={`relative z-50 w-full ${maxWidthClass} max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border shadow-sm dark:shadow-none ${surface} ${panelClassName}`}
       >
         <div
           className={`sticky top-0 z-10 shrink-0 flex items-center justify-between gap-3 border-b px-5 py-3.5 sm:px-6 ${border} ${headerBg}/95 backdrop-blur-md`}

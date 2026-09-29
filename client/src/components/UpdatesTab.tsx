@@ -3,10 +3,22 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.4.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.5.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.7.5',
+      date: 'September 2026',
+      title: 'Theme Engine & Light Mode overhaul',
+      highlights: [
+        'Theme Engine: semantic CSS tokens (`--background`, `--foreground`, `--card`, `--primary`, …) for Light and Dark, wired into Tailwind utilities.',
+        'Light Mode: inputs/textareas use a light background with dark text; layout cards and modals use semantic surfaces instead of hardcoded slate utilities.',
+        'Module tags and timetable badges use `bg-primary/10` / `bg-secondary` for readable contrast in both themes; code snippets stay muted-surface + foreground.',
+        'Bottom nav and sticky chrome blur docks track `--background` so translucent bars stay correct when toggling themes.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.7.5.',
+      ],
+    },
     {
       version: 'v3.7.4',
       date: 'September 2026',
@@ -533,32 +545,32 @@ const UpdatesTabInner: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto font-sans text-slate-100">
+    <div className="space-y-6 max-w-4xl mx-auto font-sans text-foreground">
       <header className="space-y-1">
         <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-black uppercase tracking-widest">
           <Sparkles className="w-3.5 h-3.5" />
           SYSTEM CHANGELOG
         </div>
-        <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.7.4</p>
+        <h1 className="text-3xl font-black italic uppercase text-foreground tracking-tight">Fios Updates</h1>
+        <p className="text-xs font-mono text-muted-foreground">Current release · v3.7.5</p>
       </header>
 
       <div className="space-y-4">
         {releases.map((rel, idx) => (
-          <div key={rel.version} className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 space-y-4 shadow-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800/80">
+          <div key={rel.version} className="bg-card border border-border rounded-xl p-6 space-y-4 shadow-sm dark:shadow-none">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-border/80">
               <div className="flex items-center gap-3">
                 <span className="bg-emerald-400 text-slate-950 font-mono font-black text-xs px-2.5 py-1 rounded-md uppercase">
                   {rel.version}
                 </span>
-                <h3 className="text-base font-black text-white italic tracking-wide">{rel.title}</h3>
+                <h3 className="text-base font-black text-foreground italic tracking-wide">{rel.title}</h3>
               </div>
-              <span className="text-xs font-mono text-slate-500 font-bold">{rel.date}</span>
+              <span className="text-xs font-mono text-muted-foreground font-bold">{rel.date}</span>
             </div>
 
             <ul className="space-y-2.5">
               {rel.highlights.map((point, pIdx) => (
-                <li key={pIdx} className="flex items-start gap-2.5 text-xs font-mono text-slate-300 leading-relaxed">
+                <li key={pIdx} className="flex items-start gap-2.5 text-xs font-mono text-foreground leading-relaxed">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                   <span>{point}</span>
                 </li>

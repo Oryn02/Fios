@@ -21,12 +21,12 @@ const BigReadout: React.FC = () => {
 
   return (
     <>
-      <div className="text-7xl font-black font-mono tracking-tight text-white mb-2">{formatClock(timeLeft)}</div>
+      <div className="text-7xl font-black font-mono tracking-tight text-foreground mb-2">{formatClock(timeLeft)}</div>
       <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-bold uppercase">
-        <Flame className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-slate-600'}`} />
+        <Flame className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-muted-foreground'}`} />
         {isActive ? 'Focus session in progress' : 'Paused'}
       </div>
-      <div className="w-full bg-slate-800/80 h-1.5 rounded-full mt-6 overflow-hidden">
+      <div className="w-full bg-secondary/80 h-1.5 rounded-full mt-6 overflow-hidden">
         <div
           className="bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)] h-full transition-[width] duration-1000 ease-linear"
           style={{ width: `${progress}%`, willChange: 'width' }}
@@ -56,14 +56,14 @@ export const FocusTimer: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#0e131f] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 max-w-xl mx-auto font-sans text-slate-100 my-6">
-      <div className="flex items-center justify-center gap-2 bg-[#07090e] border border-slate-800 rounded-xl p-1">
+    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm dark:shadow-none space-y-6 max-w-xl mx-auto font-sans text-foreground my-6">
+      <div className="flex items-center justify-center gap-2 bg-background border border-border rounded-xl p-1">
         {MODES.map((m) => (
           <button
             key={m}
             onClick={() => switchMode(m)}
             className={`px-4 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-colors cursor-pointer ${
-              mode === m ? 'bg-emerald-400 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-slate-200'
+              mode === m ? 'bg-emerald-400 text-slate-950 font-black shadow-md' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {modeLabel(m)}
@@ -87,7 +87,7 @@ export const FocusTimer: React.FC = () => {
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={reset}
-          className="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors cursor-pointer"
+          className="p-3 bg-secondary hover:bg-muted text-foreground rounded-xl transition-colors cursor-pointer"
           title="Reset Timer"
         >
           <RotateCcw className="w-4 h-4" />
@@ -96,7 +96,7 @@ export const FocusTimer: React.FC = () => {
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={skip}
-          className="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors cursor-pointer"
+          className="p-3 bg-secondary hover:bg-muted text-foreground rounded-xl transition-colors cursor-pointer"
           title="Skip"
         >
           <SkipForward className="w-4 h-4" />
@@ -111,7 +111,7 @@ export const FocusTimer: React.FC = () => {
           className={`p-3 rounded-xl border transition-colors cursor-pointer ${
             activeSound !== 'off'
               ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.15)]'
-              : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+              : 'bg-secondary border-border text-foreground hover:bg-muted'
           }`}
           title="Toggle Soundscape"
         >
@@ -120,14 +120,14 @@ export const FocusTimer: React.FC = () => {
       </div>
 
       {showSoundPanel && (
-        <div className="p-5 rounded-xl bg-[#07090e] border border-slate-800 space-y-4 animate-in fade-in slide-in-from-top-2">
+        <div className="p-5 rounded-xl bg-background border border-border space-y-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
               <Music className="w-3.5 h-3.5" /> Ambient Soundscape
             </div>
             <button
               onClick={() => setShowSoundPanel(false)}
-              className="text-slate-400 hover:text-white text-xs cursor-pointer"
+              className="text-muted-foreground hover:text-foreground text-xs cursor-pointer"
             >
               ✕
             </button>
@@ -142,7 +142,7 @@ export const FocusTimer: React.FC = () => {
                 className={`py-2 px-2.5 rounded-lg text-[10px] font-mono font-bold tracking-wide transition-all border cursor-pointer ${
                   activeSound === sound.key
                     ? 'accent-bg text-slate-950 border-transparent shadow-md'
-                    : 'bg-slate-800/80 border-slate-700/60 text-slate-300 hover:border-emerald-500/40'
+                    : 'bg-secondary/80 border-border/60 text-foreground hover:border-emerald-500/40'
                 }`}
               >
                 {sound.label.toUpperCase()}
@@ -151,7 +151,7 @@ export const FocusTimer: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 pt-2">
-            <Volume2 className="w-4 h-4 text-slate-400" />
+            <Volume2 className="w-4 h-4 text-muted-foreground" />
             <input
               type="range"
               min="0"
@@ -161,16 +161,16 @@ export const FocusTimer: React.FC = () => {
               onChange={(e) => onVolume(parseFloat(e.target.value))}
               className="w-full accent-emerald-400 cursor-pointer"
             />
-            <span className="text-[10px] font-mono text-slate-400 w-8 text-right">
+            <span className="text-[10px] font-mono text-muted-foreground w-8 text-right">
               {Math.round(volume * 100)}%
             </span>
           </div>
         </div>
       )}
 
-      <div className="flex items-center justify-between text-xs font-mono text-slate-500 pt-2 border-t border-slate-800/80">
+      <div className="flex items-center justify-between text-xs font-mono text-muted-foreground pt-2 border-t border-border/80">
         <span>COMPLETED SESSIONS: {completedSessions}</span>
-        <span className="flex items-center gap-1 text-slate-400">
+        <span className="flex items-center gap-1 text-muted-foreground">
           <Clock className="w-3.5 h-3.5 text-cyan-400" /> Synced with floating timer
         </span>
       </div>

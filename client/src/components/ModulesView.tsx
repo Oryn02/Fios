@@ -249,14 +249,14 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   const activeCount = filtered[entityTab].length;
 
   return (
-    <div className="space-y-8 font-sans text-slate-100 max-w-6xl mx-auto min-w-0">
+    <div className="space-y-8 font-sans text-foreground max-w-6xl mx-auto min-w-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black italic text-white uppercase tracking-tight flex items-center gap-2">
+          <h2 className="text-2xl font-black italic text-foreground uppercase tracking-tight flex items-center gap-2">
             <BookOpen className="w-6 h-6 text-emerald-400" /> Academic Modules
           </h2>
-          <p className="text-xs font-mono text-slate-400 mt-1">Organize decks, quizzes, code exams, tasks, and documents into subject folders.</p>
+          <p className="text-xs font-mono text-muted-foreground mt-1">Organize decks, quizzes, code exams, tasks, and documents into subject folders.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => setRecallOpen(true)} className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
@@ -286,11 +286,11 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
       {/* Tag / folder groups */}
       {tagFolders.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-mono font-bold uppercase text-slate-500">Folders:</span>
+          <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground">Folders:</span>
           <button
             type="button"
             onClick={() => setFolderFilter(null)}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border cursor-pointer ${folderFilter === null ? 'accent-bg text-slate-950 border-transparent' : 'border-slate-800 text-slate-400'}`}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border cursor-pointer ${folderFilter === null ? 'accent-bg text-slate-950 border-transparent' : 'border-border text-muted-foreground'}`}
           >
             All
           </button>
@@ -299,7 +299,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
               key={tag}
               type="button"
               onClick={() => setFolderFilter(tag)}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border cursor-pointer ${folderFilter === tag ? 'accent-bg text-slate-950 border-transparent' : 'border-slate-800 text-slate-400'}`}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border cursor-pointer ${folderFilter === tag ? 'accent-bg text-slate-950 border-transparent' : 'border-border text-muted-foreground'}`}
             >
               <Tag className="w-3 h-3 inline mr-1" />{tag} ({list.length})
             </button>
@@ -310,12 +310,12 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
       {/* Module folders */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <button onClick={() => setSelectedModule(null)}
-          className={`p-4 rounded-xl border text-left transition-colors cursor-pointer ${selectedModule === null ? 'border-emerald-400 bg-emerald-500/10 shadow-lg shadow-emerald-500/10' : 'border-slate-800 bg-[#0e131f]/60 hover:border-slate-700'}`}>
-          <div className="flex items-center justify-between text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
+          className={`p-4 rounded-xl border text-left transition-colors cursor-pointer ${selectedModule === null ? 'border-emerald-400 bg-emerald-500/10 shadow-lg shadow-emerald-500/10' : 'border-border bg-card hover:border-border shadow-sm dark:shadow-none'}`}>
+          <div className="flex items-center justify-between text-xs font-mono font-bold uppercase tracking-wider text-foreground">
             <span>All Modules</span><Layers className="w-4 h-4 text-emerald-400" />
           </div>
-          <p className="text-2xl font-black text-white mt-2">{modules.length}</p>
-          <p className="text-[10px] font-mono text-slate-500 mt-1">{decks.length} decks · {quizzes.length} quizzes · {codeExams.length} exams · {documents.length} docs</p>
+          <p className="text-2xl font-black text-foreground mt-2">{modules.length}</p>
+          <p className="text-[10px] font-mono text-muted-foreground mt-1">{decks.length} decks · {quizzes.length} quizzes · {codeExams.length} exams · {documents.length} docs</p>
         </button>
 
         {visibleModules.map((mod) => {
@@ -330,7 +330,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
               whileHover={{ y: -2 }}
               onClick={() => setSelectedModule(mod.code)}
               data-mod-color={colorKey}
-              className={`p-4 rounded-xl border text-left transition-colors cursor-pointer relative group flex flex-col justify-between ${isSelected ? 'mod-border bg-[#0e131f] shadow-xl' : 'border-slate-800 bg-[#0e131f]/60 hover:border-slate-700'}`}
+              className={`p-4 rounded-xl border text-left transition-colors cursor-pointer relative group flex flex-col justify-between ${isSelected ? 'mod-border bg-card shadow-sm dark:shadow-none' : 'border-border bg-card hover:border-border shadow-sm dark:shadow-none'}`}
             >
               <div>
                 <div className="flex items-center justify-between gap-2">
@@ -341,7 +341,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                     <button
                       type="button"
                       onClick={(e) => openEditModule(e, mod)}
-                      className="text-slate-500 hover:text-cyan-400 p-1 cursor-pointer"
+                      className="text-muted-foreground hover:text-cyan-400 p-1 cursor-pointer"
                       title="Edit module"
                       aria-label={`Edit ${title}`}
                     >
@@ -350,7 +350,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                     <button
                       type="button"
                       onClick={(e) => handleDeleteModule(e, mod)}
-                      className="text-slate-500 hover:text-rose-400 p-1 cursor-pointer"
+                      className="text-muted-foreground hover:text-rose-400 p-1 cursor-pointer"
                       title="Delete Module Folder"
                       aria-label={`Delete ${title}`}
                     >
@@ -359,7 +359,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                   </div>
                 </div>
                 {courseCode && (
-                  <p className="text-[10px] font-mono text-slate-500 mt-1.5 truncate" title={courseCode}>
+                  <p className="text-[10px] font-mono text-muted-foreground mt-1.5 truncate" title={courseCode}>
                     {courseCode}
                   </p>
                 )}
@@ -371,7 +371,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                   </div>
                 )}
               </div>
-              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[10px] font-mono text-slate-400 mt-3 pt-2 border-t border-slate-800/60">
+              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[10px] font-mono text-muted-foreground mt-3 pt-2 border-t border-border/60">
                 <span className="flex items-center gap-1"><Layers className="w-3 h-3 text-cyan-400" />{counts.decks}</span>
                 <span className="flex items-center gap-1"><HelpCircle className="w-3 h-3 text-emerald-400" />{counts.quizzes}</span>
                 <span className="flex items-center gap-1"><Code2 className="w-3 h-3 text-indigo-400" />{counts.code}</span>
@@ -385,12 +385,12 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
 
       {/* Entity type tabs — fios-h-scroll enables touch pan-x (global button touch-action otherwise blocks swipe) */}
       <div className="space-y-4 min-w-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-3 min-w-0">
           <div
             ref={entityTabStripRef}
             role="tablist"
             aria-label="Module content types"
-            className="fios-h-scroll flex items-center gap-1 bg-[#07090e] border border-slate-800 rounded-xl p-1 max-w-full w-full sm:w-fit overflow-x-auto overflow-y-hidden"
+            className="fios-h-scroll flex items-center gap-1 bg-background border border-border rounded-xl p-1 max-w-full w-full sm:w-fit overflow-x-auto overflow-y-hidden"
           >
             {ENTITY_TABS.map((t) => {
               const Icon = t.icon;
@@ -402,14 +402,14 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                   aria-selected={entityTab === t.id}
                   data-entity-tab={t.id}
                   onClick={() => setEntityTab(t.id)}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 ${entityTab === t.id ? 'bg-emerald-400 text-slate-950' : 'text-slate-400 hover:text-slate-200'}`}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 ${entityTab === t.id ? 'bg-emerald-400 text-slate-950' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   <Icon className="w-3.5 h-3.5" /> {t.label}
                 </button>
               );
             })}
           </div>
-          <span className="text-xs font-mono text-slate-500 shrink-0">
+          <span className="text-xs font-mono text-muted-foreground shrink-0">
             {selectedModule
               ? `${resolveModuleLabel(modules, selectedModule, selectedModule)} · `
               : 'All · '}
@@ -430,7 +430,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
         )}
 
         {loading ? (
-          <div className="p-8 text-center font-mono text-xs text-slate-500 animate-pulse">Loading module content…</div>
+          <div className="p-8 text-center font-mono text-xs text-muted-foreground animate-pulse">Loading module content…</div>
         ) : (
           <AnimatePresence mode="wait">
             <motion.div key={entityTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
@@ -440,12 +440,12 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filtered.decks.map((deck) => (
                       <motion.div key={deck.id} whileHover={{ y: -2 }} onClick={() => onOpenFlashcards(deck.cards, deck.title, deck.module_code, true)}
-                        className="p-5 bg-[#0e131f]/90 border border-slate-800 rounded-xl space-y-3 hover:border-emerald-500/50 transition-colors group cursor-pointer">
+                        className="p-5 bg-card border border-border rounded-xl space-y-3 hover:border-emerald-500/50 transition-colors group cursor-pointer shadow-sm dark:shadow-none">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                            <Tag className="w-3 h-3 text-slate-500" />
+                            <Tag className="w-3 h-3 text-muted-foreground" />
                             <select value={deck.module_code || ''} onChange={(e) => handleUpdateDeckModule(e, deck.id)}
-                              className="bg-[#07090e] border border-slate-800 text-[10px] font-mono font-bold text-emerald-400 rounded px-1.5 py-0.5 focus:outline-none focus:border-emerald-400 cursor-pointer max-w-[10rem]">
+                              className="bg-background border border-border text-[10px] font-mono font-bold text-emerald-400 rounded px-1.5 py-0.5 focus:outline-none focus:border-emerald-400 cursor-pointer max-w-[10rem]">
                               <option value="">General</option>
                               {modules.map((m) => <option key={m.id} value={m.code}>{moduleDisplayName(m)}</option>)}
                             </select>
@@ -459,7 +459,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                                 downloadDeckJson(payload);
                                 toast('Deck JSON downloaded', 'success');
                               }}
-                              className="text-slate-600 hover:text-slate-200 p-1 cursor-pointer"
+                              className="text-muted-foreground hover:text-foreground p-1 cursor-pointer"
                               title="Export JSON"
                             >
                               <Download className="w-3.5 h-3.5" />
@@ -477,13 +477,13 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                                   toast('Could not copy share code', 'error');
                                 }
                               }}
-                              className="text-slate-600 hover:text-slate-200 p-1 cursor-pointer"
+                              className="text-muted-foreground hover:text-foreground p-1 cursor-pointer"
                               title="Copy share code"
                             >
                               <Share2 className="w-3.5 h-3.5" />
                             </button>
-                            <span className="text-[10px] font-mono text-slate-500">{new Date(deck.created_at).toLocaleDateString('en-GB')}</span>
-                            <button onClick={(e) => handleDeleteDeck(e, deck.id)} className="text-slate-600 hover:text-rose-400 p-1 transition-colors cursor-pointer" title="Delete deck">
+                            <span className="text-[10px] font-mono text-muted-foreground">{new Date(deck.created_at).toLocaleDateString('en-GB')}</span>
+                            <button onClick={(e) => handleDeleteDeck(e, deck.id)} className="text-muted-foreground hover:text-rose-400 p-1 transition-colors cursor-pointer" title="Delete deck">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -496,11 +496,11 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                               setDecks((prev) => prev.map((d) => (d.id === deck.id ? { ...d, title: next } : d)));
                               toast('Deck renamed', 'success');
                             }}
-                            className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors line-clamp-2"
+                            className="text-sm font-bold text-foreground group-hover:text-emerald-300 transition-colors line-clamp-2"
                             placeholder="Untitled Deck"
                           />
                         </div>
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs font-mono text-slate-400">
+                        <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs font-mono text-muted-foreground">
                           <span>{deck.cards?.length || 0} Flashcards</span>
                           <span className="text-emerald-400 group-hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Study <ArrowRight className="w-3 h-3" /></span>
                         </div>
@@ -522,7 +522,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                           if (onOpenQuiz) onOpenQuiz(quiz.id);
                           if (setActiveTab) setActiveTab('quiz');
                         }}
-                        className="p-5 bg-[#0e131f]/90 border border-slate-800 rounded-xl space-y-3 hover:border-emerald-500/50 transition-colors group cursor-pointer shadow-lg"
+                        className="p-5 bg-card border border-border rounded-xl space-y-3 hover:border-emerald-500/50 transition-colors group cursor-pointer shadow-sm dark:shadow-none"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{quiz.questions.length} Q</span>
@@ -535,7 +535,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                             );
                           })()}
                         </div>
-                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors line-clamp-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <h4 className="text-sm font-bold text-foreground group-hover:text-emerald-300 transition-colors line-clamp-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                           <InlineEditableTitle
                             value={quiz.title}
@@ -548,7 +548,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                             placeholder="Untitled Quiz"
                           />
                         </h4>
-                        <div className="flex items-center justify-end pt-2 border-t border-slate-800/60 text-xs font-mono text-slate-400">
+                        <div className="flex items-center justify-end pt-2 border-t border-border/60 text-xs font-mono text-muted-foreground">
                           <span className="text-emerald-400 group-hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">Take Exam <ArrowRight className="w-3 h-3" /></span>
                         </div>
                       </motion.div>
@@ -569,7 +569,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                           if (onOpenCodeExam) onOpenCodeExam(exam.id);
                           if (setActiveTab) setActiveTab('code');
                         }}
-                        className="p-5 bg-[#0e131f]/90 border border-slate-800 rounded-xl space-y-3 hover:border-indigo-500/50 transition-colors group cursor-pointer shadow-lg"
+                        className="p-5 bg-card border border-border rounded-xl space-y-3 hover:border-indigo-500/50 transition-colors group cursor-pointer shadow-sm dark:shadow-none"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">{exam.language}</span>
@@ -582,7 +582,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                             );
                           })()}
                         </div>
-                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-indigo-300 transition-colors line-clamp-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <h4 className="text-sm font-bold text-foreground group-hover:text-indigo-300 transition-colors line-clamp-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <Code2 className="w-4 h-4 text-indigo-400 shrink-0" />
                           <InlineEditableTitle
                             value={exam.title}
@@ -595,7 +595,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                             placeholder="Untitled Code Exam"
                           />
                         </h4>
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[10px] font-mono text-slate-500">
+                        <div className="flex items-center justify-between pt-2 border-t border-border/60 text-[10px] font-mono text-muted-foreground">
                           <span className="flex items-center gap-1.5 capitalize">
                             {EXAM_ICON[exam.exam_type]} {exam.exam_type.replace('_', ' ')}
                           </span>
@@ -612,10 +612,10 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                 filtered.tasks.length === 0 ? <EmptyState label="No tasks in this module" /> : (
                   <div className="space-y-2">
                     {filtered.tasks.map((task) => (
-                      <div key={task.id} className={`flex items-center justify-between p-3.5 rounded-xl border transition-colors ${task.completed ? 'bg-[#07090e]/50 border-slate-800/50 opacity-50' : 'bg-[#0e131f] border-slate-800'}`}>
+                      <div key={task.id} className={`flex items-center justify-between p-3.5 rounded-xl border transition-colors ${task.completed ? 'bg-background/50 border-border/50 opacity-50' : 'bg-card border-border'}`}>
                         <button onClick={() => handleToggleTask(task)} className="flex items-center gap-3 min-w-0 cursor-pointer text-left">
-                          {task.completed ? <CheckSquare className="w-4 h-4 text-emerald-400 shrink-0" /> : <Square className="w-4 h-4 text-slate-500 shrink-0" />}
-                          <span className={`text-xs font-mono truncate ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}>{task.title}</span>
+                          {task.completed ? <CheckSquare className="w-4 h-4 text-emerald-400 shrink-0" /> : <Square className="w-4 h-4 text-muted-foreground shrink-0" />}
+                          <span className={`text-xs font-mono truncate ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{task.title}</span>
                         </button>
                         <div className="flex items-center gap-2 shrink-0">
                           {task.module_code && (() => {
@@ -626,7 +626,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                               </span>
                             );
                           })()}
-                          {task.due_date && <span className="text-[10px] font-mono text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded">{task.due_date}</span>}
+                          {task.due_date && <span className="text-[10px] font-mono text-muted-foreground bg-secondary/60 px-2 py-0.5 rounded">{task.due_date}</span>}
                         </div>
                       </div>
                     ))}
@@ -652,7 +652,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                           if (onOpenDocument) onOpenDocument(doc.id);
                           if (setActiveTab) setActiveTab('documents');
                         }}
-                        className="p-5 bg-[#0e131f]/90 border border-slate-800 rounded-xl space-y-3 hover:border-rose-500/50 transition-colors group cursor-pointer shadow-lg"
+                        className="p-5 bg-card border border-border rounded-xl space-y-3 hover:border-rose-500/50 transition-colors group cursor-pointer shadow-sm dark:shadow-none"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
@@ -669,14 +669,14 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                             })()}
                             <button
                               onClick={(e) => handleDeleteDocument(e, doc.id)}
-                              className="text-slate-600 hover:text-rose-400 p-1 transition-colors cursor-pointer"
+                              className="text-muted-foreground hover:text-rose-400 p-1 transition-colors cursor-pointer"
                               title="Delete document"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
-                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-rose-300 transition-colors line-clamp-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <h4 className="text-sm font-bold text-foreground group-hover:text-rose-300 transition-colors line-clamp-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <FileText className="w-4 h-4 text-rose-400 shrink-0" />
                           <InlineEditableTitle
                             value={doc.title}
@@ -689,8 +689,8 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                             placeholder="Untitled Document"
                           />
                         </h4>
-                        <p className="text-[11px] text-slate-400 font-mono line-clamp-2">{doc.summary}</p>
-                        <div className="flex items-center justify-end pt-2 border-t border-slate-800/60 text-xs font-mono text-slate-400">
+                        <p className="text-[11px] text-muted-foreground font-mono line-clamp-2">{doc.summary}</p>
+                        <div className="flex items-center justify-end pt-2 border-t border-border/60 text-xs font-mono text-muted-foreground">
                           <span className="text-rose-400 group-hover:underline text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
                             Open Notes <ArrowRight className="w-3 h-3" />
                           </span>
@@ -719,9 +719,9 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
 };
 
 const EmptyState: React.FC<{ label: string; onAction?: () => void; actionLabel?: string }> = ({ label, onAction, actionLabel }) => (
-  <div className="p-12 text-center bg-[#0e131f]/40 border border-slate-800/80 rounded-2xl space-y-3">
-    <Sparkles className="w-8 h-8 text-slate-600 mx-auto" />
-    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">{label}</p>
+  <div className="p-12 text-center bg-card border border-border/80 rounded-2xl space-y-3 shadow-sm dark:shadow-none">
+    <Sparkles className="w-8 h-8 text-muted-foreground mx-auto" />
+    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{label}</p>
     {onAction && actionLabel && (
       <button onClick={onAction} className="px-4 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer">
         <Sparkles className="w-3.5 h-3.5" /> {actionLabel}

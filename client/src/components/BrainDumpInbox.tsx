@@ -215,7 +215,7 @@ ${dump.text}`,
                         <button
                           type="button"
                           onClick={() => handleDelete(d.id)}
-                          className="p-1 text-slate-500 hover:text-rose-400 cursor-pointer"
+                          className="p-1 text-muted-foreground hover:text-rose-400 cursor-pointer"
                           aria-label="Delete dump"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

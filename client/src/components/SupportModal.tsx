@@ -96,7 +96,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({ onClose }) => {
         exit={{ opacity: 0 }}
         role="dialog"
         aria-labelledby="support-title"
-        className="relative z-50 w-full max-w-lg max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border fios-border bg-[var(--fios-surface)] shadow-2xl text-[var(--fios-text)]"
+        className="relative z-50 w-full max-w-lg max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border fios-border bg-[var(--fios-surface)] shadow-sm dark:shadow-none text-[var(--fios-text)]"
       >
         <div className="sticky top-0 z-10 shrink-0 flex items-center justify-between border-b fios-border px-5 py-3.5 bg-[var(--fios-surface)]/95 backdrop-blur-md">
           <div className="flex items-center gap-2.5 min-w-0">

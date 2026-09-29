@@ -79,10 +79,10 @@ export function resolveSubjectColorKey(
 
 /** Tailwind-free class helpers using CSS vars set by `data-mod-color`. */
 export const MOD_BADGE_CLASS =
-  'mod-badge inline-flex items-center px-2 py-0.5 text-[9px] font-black uppercase rounded border tracking-widest max-w-[180px] truncate min-h-[1.25rem]';
+  'mod-badge inline-flex items-center px-2 py-0.5 text-[9px] font-black uppercase rounded border tracking-widest bg-primary/10 max-w-[180px] truncate min-h-[1.25rem]';
 
 export const MOD_PILL_CLASS =
-  'mod-pill inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-bold truncate rounded border max-w-[180px] min-h-[1.25rem]';
+  'mod-pill inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-bold truncate rounded border bg-secondary max-w-[180px] min-h-[1.25rem]';
 
 export const MOD_CARD_ACCENT_CLASS = 'mod-card-accent';
 

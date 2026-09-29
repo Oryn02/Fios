@@ -155,7 +155,7 @@ export const PomodoroWidget: React.FC = () => {
         className={`relative select-none font-sans pointer-events-auto ${expanded ? 'z-40' : 'z-30'}`}
         style={{ willChange: 'transform, opacity' }}
       >
-        <div className={`rounded-3xl border fios-border bg-[var(--fios-surface)]/90 backdrop-blur-2xl shadow-2xl accent-glow overflow-hidden transition-all ${expanded ? 'w-[280px]' : 'w-auto'}`}>
+        <div className={`rounded-3xl border fios-border bg-[var(--fios-surface)] backdrop-blur-2xl shadow-2xl accent-glow overflow-hidden transition-all ${expanded ? 'w-[280px]' : 'w-auto'}`}>
           <button
             type="button"
             onClick={() => setExpanded((e) => !e)}

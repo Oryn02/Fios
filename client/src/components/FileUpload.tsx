@@ -199,18 +199,18 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
             }
           }}
           style={{ '--tw-border-opacity': '1' } as React.CSSProperties}
-          className="border-2 border-dashed border-slate-700 hover:border-[var(--fios-accent-solid)] rounded-xl p-5 text-center bg-[#07090e]/50 hover:bg-[#07090e] transition-all cursor-pointer group hover:shadow-[0_0_20px_color-mix(in_srgb,var(--fios-accent-solid)_25%,transparent)]"
+          className="border-2 border-dashed border-border hover:border-[var(--fios-accent-solid)] rounded-xl p-5 text-center bg-background/50 hover:bg-background transition-all cursor-pointer group hover:shadow-[0_0_20px_color-mix(in_srgb,var(--fios-accent-solid)_25%,transparent)]"
         >
           <div className="flex flex-col items-center gap-2">
             {isProcessing ? (
               <Loader2 className="w-6 h-6 accent-solid-text animate-spin" />
             ) : (
-              <Upload className="w-6 h-6 text-slate-500 group-hover:accent-solid-text transition-colors" />
+              <Upload className="w-6 h-6 text-muted-foreground group-hover:accent-solid-text transition-colors" />
             )}
-            <p className="text-xs font-medium text-slate-400">
+            <p className="text-xs font-medium text-muted-foreground">
               <span className="accent-solid-text font-bold">Click to upload</span> or drag and drop lecture slides / PDFs / photos
             </p>
-            <p className="text-[10px] font-mono text-slate-600 uppercase">
+            <p className="text-[10px] font-mono text-muted-foreground uppercase">
               Supports PDF, TXT, Images · Photos & Files · Max ~12MB
             </p>
           </div>
@@ -230,7 +230,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTextExtracted }) => {
           <button
             type="button"
             onClick={clearFile}
-            className="text-slate-400 hover:text-slate-200 transition-colors p-1 cursor-pointer"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
             aria-label="Clear uploaded file"
           >
             <X className="w-4 h-4" />

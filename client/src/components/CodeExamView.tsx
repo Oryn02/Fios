@@ -185,27 +185,27 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
   }, [loadSaved]);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto font-sans text-slate-100">
+    <div className="space-y-6 max-w-6xl mx-auto font-sans text-foreground">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-black italic text-white uppercase tracking-tight flex items-center gap-2">
+        <h2 className="text-2xl font-black italic text-foreground uppercase tracking-tight flex items-center gap-2">
           <Code2 className="w-6 h-6 text-emerald-400" />
           Code Lab · AI Exams
         </h2>
-        <p className="text-xs font-mono text-slate-400 mt-1">
+        <p className="text-xs font-mono text-muted-foreground mt-1">
           Generate Gemini-powered coding challenges, solve them in the editor, and grade your solution.
         </p>
       </div>
 
       {/* Generator controls */}
-      <div className="bg-[#0e131f]/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-5 shadow-sm dark:shadow-none space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-mono font-bold uppercase text-slate-400">Language</label>
+            <label className="text-[10px] font-mono font-bold uppercase text-muted-foreground">Language</label>
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value as CodeLanguage)}
-              className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-400 cursor-pointer"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:border-emerald-400 cursor-pointer"
             >
               {CODE_LANGUAGES.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
@@ -214,11 +214,11 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-mono font-bold uppercase text-slate-400">Challenge Type</label>
+            <label className="text-[10px] font-mono font-bold uppercase text-muted-foreground">Challenge Type</label>
             <select
               value={examType}
               onChange={(e) => setExamType(e.target.value as CodeExamType)}
-              className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-400 cursor-pointer"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:border-emerald-400 cursor-pointer"
             >
               {CODE_EXAM_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -227,23 +227,23 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-mono font-bold uppercase text-slate-400">Topic (optional)</label>
+            <label className="text-[10px] font-mono font-bold uppercase text-muted-foreground">Topic (optional)</label>
             <input
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="e.g. recursion, pointers…"
-              className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-400"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-400"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1">
+            <label className="text-[10px] font-mono font-bold uppercase text-muted-foreground flex items-center gap-1">
               <Folder className="w-3 h-3 text-cyan-400" /> Module
             </label>
             <select
               value={moduleCode}
               onChange={(e) => setModuleCode(e.target.value)}
-              className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-400 cursor-pointer"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:border-emerald-400 cursor-pointer"
             >
               <option value="">General</option>
               {modules.map((m) => (
@@ -254,19 +254,19 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[10px] font-mono font-bold uppercase text-slate-400">Custom challenge prompt (optional)</label>
+          <label className="text-[10px] font-mono font-bold uppercase text-muted-foreground">Custom challenge prompt (optional)</label>
           <textarea
             value={customPrompt}
             onChange={(e) => setCustomPrompt(e.target.value)}
             placeholder="Describe a targeted challenge — e.g. ‘Write a recursive DFS that detects cycles in an adjacency list’…"
             rows={3}
-            className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-base sm:text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-400 resize-y"
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-base sm:text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-400 resize-y"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {CODE_EXAM_TYPES.filter((t) => t.value === examType).map((t) => (
-            <span key={t.value} className="text-[11px] font-mono text-slate-500 flex items-center gap-1.5">
+            <span key={t.value} className="text-[11px] font-mono text-muted-foreground flex items-center gap-1.5">
               {EXAM_ICON[t.value]} {t.description}
             </span>
           ))}
@@ -308,7 +308,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
           >
             {/* Prompt + editor */}
             <div className="space-y-3">
-              <div className="bg-[#0e131f] border border-slate-800 rounded-2xl p-4 space-y-2">
+              <div className="bg-card border border-border rounded-2xl p-4 space-y-2 shadow-sm dark:shadow-none">
                 <div className="flex items-center gap-2">
                   <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
                     {EXAM_ICON[challenge.examType]} {challenge.examType.replace('_', ' ')}
@@ -317,16 +317,16 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                     {challenge.language}
                   </span>
                 </div>
-                <h3 className="text-sm font-black text-white uppercase tracking-wide">{challenge.title}</h3>
-                <p className="text-xs text-slate-300 font-mono leading-relaxed whitespace-pre-wrap">{challenge.prompt}</p>
+                <h3 className="text-sm font-black text-foreground uppercase tracking-wide">{challenge.title}</h3>
+                <p className="text-xs text-foreground font-mono leading-relaxed whitespace-pre-wrap">{challenge.prompt}</p>
               </div>
 
-              <div className="rounded-2xl overflow-hidden border border-slate-800 fios-code-scroll">
-                <div className="flex items-center justify-between px-3 py-2 bg-[#07090e] border-b border-slate-800">
-                  <span className="text-[10px] font-mono font-bold uppercase text-slate-400">solution.{challenge.language === 'python' ? 'py' : challenge.language === 'c' ? 'c' : 'ts'}</span>
+              <div className="rounded-2xl overflow-hidden border border-border fios-code-scroll">
+                <div className="flex items-center justify-between px-3 py-2 bg-muted border-b border-border">
+                  <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground">solution.{challenge.language === 'python' ? 'py' : challenge.language === 'c' ? 'c' : 'ts'}</span>
                   <button
                     onClick={() => setUserCode(challenge.starterCode)}
-                    className="touch-target text-[10px] font-mono text-slate-500 hover:text-slate-300 flex items-center gap-1 cursor-pointer"
+                    className="touch-target text-[10px] font-mono text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
                   >
                     <RotateCcw className="w-3 h-3" /> Reset code
                   </button>
@@ -347,7 +347,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                     smoothScrolling: true,
                     automaticLayout: true,
                   }}
-                  loading={<div className="p-6 text-xs font-mono text-slate-500">Loading editor…</div>}
+                  loading={<div className="p-6 text-xs font-mono text-muted-foreground">Loading editor…</div>}
                 />
                 </div>
               </div>
@@ -365,14 +365,14 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleSave}
-                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2.5 bg-secondary hover:bg-muted text-foreground font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <Save className="w-3.5 h-3.5 text-emerald-400" /> Save
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setShowSolution((s) => !s)}
-                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2.5 bg-secondary hover:bg-muted text-foreground font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <Eye className="w-3.5 h-3.5 text-amber-400" /> {showSolution ? 'Hide' : 'Solution'}
                 </motion.button>
@@ -402,16 +402,16 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                           <><XCircle className="w-5 h-5 text-amber-400" /> <span className="text-amber-300">Keep going</span></>
                         )}
                       </span>
-                      <span className="text-2xl font-black font-mono text-white">{grade.score}<span className="text-sm text-slate-500">/100</span></span>
+                      <span className="text-2xl font-black font-mono text-foreground">{grade.score}<span className="text-sm text-muted-foreground">/100</span></span>
                     </div>
-                    <p className="text-xs text-slate-200 font-mono leading-relaxed mt-3 whitespace-pre-wrap">{grade.feedback}</p>
+                    <p className="text-xs text-foreground font-mono leading-relaxed mt-3 whitespace-pre-wrap">{grade.feedback}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {showSolution && (
-                <div className="rounded-2xl overflow-hidden border border-slate-800">
-                  <div className="px-3 py-2 bg-[#07090e] border-b border-slate-800 text-[10px] font-mono font-bold uppercase text-amber-400 flex items-center gap-1.5">
+                <div className="rounded-2xl overflow-hidden border border-border">
+                  <div className="px-3 py-2 bg-background border-b border-border text-[10px] font-mono font-bold uppercase text-amber-400 flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Reference Solution
                   </div>
                   <Editor
@@ -422,7 +422,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                     options={{ readOnly: true, fontSize: 13, minimap: { enabled: false }, scrollBeyondLastLine: false, padding: { top: 12 }, automaticLayout: true }}
                   />
                   {challenge.explanation && (
-                    <div className="p-3 bg-[#0e131f] text-xs text-slate-300 leading-relaxed border-t border-slate-800">
+                    <div className="p-3 bg-card text-xs text-foreground leading-relaxed border-t border-border">
                       <span className="text-amber-400 font-bold uppercase">Why: </span>
                       <FormattedContent text={challenge.explanation} />
                     </div>
@@ -431,7 +431,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
               )}
 
               {!grade && !showSolution && (
-                <div className="rounded-2xl border border-dashed border-slate-800 p-8 text-center text-xs font-mono text-slate-500">
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center text-xs font-mono text-muted-foreground">
                   Submit your solution to get an AI grade and feedback, or reveal the reference solution.
                 </div>
               )}
@@ -442,12 +442,12 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
 
       {/* Saved exams */}
       <div className="space-y-3">
-        <h3 className="text-sm font-black uppercase tracking-wider text-slate-300 flex items-center gap-2 border-b border-slate-800/80 pb-3">
+        <h3 className="text-sm font-black uppercase tracking-wider text-foreground flex items-center gap-2 border-b border-border/80 pb-3">
           <Code2 className="w-4 h-4 text-emerald-400" /> Saved Code Exams
-          <span className="text-xs font-mono text-slate-500 ml-auto">{savedExams.length}</span>
+          <span className="text-xs font-mono text-muted-foreground ml-auto">{savedExams.length}</span>
         </h3>
         {savedExams.length === 0 ? (
-          <p className="text-xs font-mono text-slate-600 py-4">No saved code exams yet. Generate one above and hit Save.</p>
+          <p className="text-xs font-mono text-muted-foreground py-4">No saved code exams yet. Generate one above and hit Save.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {savedExams.map((exam) => (
@@ -455,7 +455,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                 key={exam.id}
                 whileHover={{ scale: 1.02 }}
                 onClick={() => openSaved(exam)}
-                className="p-4 bg-[#0e131f]/90 border border-slate-800 rounded-xl hover:border-emerald-500/40 transition-colors cursor-pointer space-y-2 group"
+                className="p-4 bg-card border border-border rounded-xl hover:border-emerald-500/40 transition-colors cursor-pointer space-y-2 group shadow-sm dark:shadow-none"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
@@ -465,7 +465,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                     {exam.completed && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
                     <button
                       onClick={(e) => handleDeleteSaved(e, exam.id)}
-                      className="text-slate-600 hover:text-rose-400 p-0.5 cursor-pointer"
+                      className="text-muted-foreground hover:text-rose-400 p-0.5 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -479,11 +479,11 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                       setSavedExams((prev) => prev.map((x) => (x.id === exam.id ? { ...x, title: next } : x)));
                       toast('Code exam renamed', 'success');
                     }}
-                    className="text-sm font-bold text-slate-100 line-clamp-1 group-hover:text-emerald-300 transition-colors"
+                    className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-emerald-300 transition-colors"
                     placeholder="Untitled Code Exam"
                   />
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
                   {EXAM_ICON[exam.exam_type]} {exam.exam_type.replace('_', ' ')}
                   {exam.module_code && <span className="ml-auto text-emerald-400">{resolveModuleLabel(modules, exam.module_code)}</span>}
                 </div>

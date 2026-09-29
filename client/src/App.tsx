@@ -67,7 +67,7 @@ const HOT_TABS = new Set(['overview', 'schedule', 'modules']);
 
 function TabFallback() {
   return (
-    <div className="py-16 flex items-center justify-center gap-2 text-xs font-mono text-slate-500">
+    <div className="py-16 flex items-center justify-center gap-2 text-xs font-mono text-muted-foreground">
       <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
       Loading…
     </div>
@@ -296,8 +296,8 @@ const Dashboard: React.FC = () => {
                     />
                   ) : (
                     <div className="space-y-4">
-                      <div className="flex justify-between items-center bg-[#0e131f] border border-slate-800 p-3 rounded-xl">
-                        <span className="text-xs font-mono font-bold text-slate-400 uppercase">
+                      <div className="flex justify-between items-center bg-card border border-border p-3 rounded-xl">
+                        <span className="text-xs font-mono font-bold text-muted-foreground uppercase">
                           Active deck studying
                         </span>
                         <button
@@ -393,27 +393,27 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v3.7.4
+        Academic Suite · Study Lab · v3.7.5
       </div>
-      <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
+      <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-foreground uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
       </h1>
-      <p className="text-slate-400 text-xs sm:text-sm font-medium max-w-md">
+      <p className="text-muted-foreground text-xs sm:text-sm font-medium max-w-md">
         Convert lecture slides and study notes into high-contrast flashcards instantly.
       </p>
     </header>
 
     <form
       onSubmit={onGenerate}
-      className="bg-[#0e131f]/95 backdrop-blur-xl border border-slate-800/80 rounded-xl p-6 shadow-2xl space-y-4 relative overflow-hidden font-sans"
+      className="bg-card/95 backdrop-blur-xl border border-border/80 rounded-xl p-6 shadow-2xl space-y-4 relative overflow-hidden font-sans"
     >
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--fios-accent-solid)] to-transparent" />
       <div className="flex items-center justify-between">
-        <label className="text-xs font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+        <label className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-2">
           <span className="w-1 h-3 accent-bg rounded-xs" />
           Source Material
         </label>
-        <span className="text-[11px] font-mono text-slate-500">{studyNotes.length} CHARS</span>
+        <span className="text-[11px] font-mono text-muted-foreground">{studyNotes.length} CHARS</span>
       </div>
 
       <FileUpload onTextExtracted={(extractedText) => setStudyNotes(extractedText)} />
@@ -422,7 +422,7 @@ const FlashcardGenerator: React.FC<{
         value={studyNotes}
         onChange={(e) => setStudyNotes(e.target.value)}
         placeholder="Paste your course notes or lecture slides here…"
-        className="w-full h-44 p-4 bg-[#07090e]/90 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none focus:accent-border focus:ring-1 focus:ring-[var(--fios-accent-solid)] resize-none font-mono text-xs sm:text-sm transition-all"
+        className="w-full h-44 p-4 bg-background/90 border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:accent-border focus:ring-1 focus:ring-[var(--fios-accent-solid)] resize-none font-mono text-xs sm:text-sm transition-all"
       />
 
       <div className="flex items-center gap-3">
@@ -445,7 +445,7 @@ const FlashcardGenerator: React.FC<{
           <button
             type="button"
             onClick={() => setStudyNotes('')}
-            className="px-5 py-3.5 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/50 text-slate-300 font-bold uppercase tracking-wider text-xs rounded-lg transition-colors cursor-pointer"
+            className="px-5 py-3.5 bg-secondary/80 hover:bg-muted/80 border border-border/50 text-foreground font-bold uppercase tracking-wider text-xs rounded-lg transition-colors cursor-pointer"
           >
             Clear
           </button>
@@ -538,7 +538,7 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v3.7.4 — Your Academic Command Center';
+    document.title = 'Fios v3.7.5 — Your Academic Command Center';
   }, []);
 
   useEffect(() => {
@@ -686,7 +686,7 @@ export function App() {
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v3.7.4…
+          Initializing Fios v3.7.5…
         </div>
       </div>
     );

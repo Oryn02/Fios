@@ -52,7 +52,7 @@ export const FeedbackForm: React.FC = () => {
   };
 
   return (
-    <section className="bg-[var(--fios-surface)] border fios-border-strong rounded-xl p-6 shadow-xl space-y-4 fios-card">
+    <section className="bg-[var(--fios-surface)] border fios-border-strong rounded-xl p-6 shadow-sm dark:shadow-none space-y-4 fios-card">
       <h2 className="text-xs font-mono font-black uppercase tracking-widest text-[var(--fios-text-muted)] flex items-center gap-2">
         <MessageSquareHeart className="w-4 h-4 accent-solid-text" /> Feedback & Ratings
       </h2>

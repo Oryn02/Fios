@@ -365,7 +365,7 @@ const AiTutorInner: React.FC = () => {
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
           placeholder="Ask about slides, diagrams, notes…"
-          className="flex-1 bg-[var(--fios-surface)] border fios-border rounded-xl px-3.5 py-3 text-sm text-[var(--fios-text)] focus:outline-none focus:accent-border"
+          className="flex-1 bg-[var(--fios-surface)] border fios-border rounded-xl px-3.5 py-3 text-sm text-[var(--fios-text)] focus:outline-none focus:accent-border shadow-sm dark:shadow-none"
           aria-label="Tutor question"
         />
         <motion.button

@@ -63,7 +63,7 @@ export const AiAuthLockModal: React.FC<AiAuthLockModalProps> = ({ open, onClose 
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-            className="relative z-50 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] shadow-2xl overflow-hidden"
+            className="relative z-50 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] shadow-sm dark:shadow-none overflow-hidden"
           >
             <div className="absolute top-0 left-0 right-0 h-[2px] accent-bg opacity-80" />
             <button
@@ -91,7 +91,7 @@ export const AiAuthLockModal: React.FC<AiAuthLockModalProps> = ({ open, onClose 
               </div>
 
               <p className="text-sm text-[var(--fios-text-muted)] leading-relaxed">
-                AI features and cloud generation are locked in the live demo view. Please sign up or log in with GitHub to unlock full access to Fios v3.7.4.
+                AI features and cloud generation are locked in the live demo view. Please sign up or log in with GitHub to unlock full access to Fios v3.7.5.
               </p>
 
               <button

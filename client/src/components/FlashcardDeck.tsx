@@ -367,7 +367,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     <div className="space-y-4 max-w-xl mx-auto my-6 font-sans">
       
       {/* 1. Dynamic Save / Info Header */}
-      <div className="bg-[#0e131f] border border-slate-800/80 rounded-xl p-4 shadow-xl space-y-3">
+      <div className="bg-card border border-border/80 rounded-xl p-4 shadow-sm dark:shadow-none space-y-3">
         {!hasSaved ? (
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <input
@@ -375,19 +375,19 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               value={deckTitle}
               onChange={(e) => setDeckTitle(e.target.value)}
               placeholder="Deck Title..."
-              className="flex-1 w-full bg-[#07090e] border border-slate-800 rounded-lg px-3.5 py-2 text-xs font-bold text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-400 uppercase tracking-wider font-mono"
+              className="flex-1 w-full bg-background border border-border rounded-lg px-3.5 py-2 text-xs font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-400 uppercase tracking-wider font-mono"
             />
 
-            <div className="flex items-center gap-1.5 bg-[#07090e] border border-slate-800 rounded-lg px-2.5 py-2 w-full sm:w-auto">
+            <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-2.5 py-2 w-full sm:w-auto">
               <Folder className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
               <select
                 value={selectedModuleCode}
                 onChange={(e) => setSelectedModuleCode(e.target.value)}
-                className="bg-transparent text-xs font-mono font-bold text-slate-200 focus:outline-none cursor-pointer w-full"
+                className="bg-transparent text-xs font-mono font-bold text-foreground focus:outline-none cursor-pointer w-full"
               >
-                <option value="" className="bg-[#07090e] text-slate-400">General (No Module)</option>
+                <option value="" className="bg-background text-muted-foreground">General (No Module)</option>
                 {modules.map((m) => (
-                  <option key={m.id} value={m.code} className="bg-[#07090e] text-emerald-400 font-bold">
+                  <option key={m.id} value={m.code} className="bg-background text-emerald-400 font-bold">
                     {moduleDisplayName(m)}
                   </option>
                 ))}
@@ -421,7 +421,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               <InlineEditableTitle
                 value={deckTitle}
                 onSave={handleRename}
-                className="text-sm font-bold text-white uppercase tracking-wide truncate max-w-xs"
+                className="text-sm font-bold text-foreground uppercase tracking-wide truncate max-w-xs"
                 placeholder="Untitled Deck"
               />
             </div>
@@ -429,7 +429,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               <button
                 type="button"
                 onClick={handleExportJson}
-                className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+                className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground cursor-pointer"
                 title="Export JSON"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -437,7 +437,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               <button
                 type="button"
                 onClick={() => void handleCopyShareCode()}
-                className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer"
+                className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground cursor-pointer"
                 title="Copy share code"
               >
                 <Share2 className="w-3.5 h-3.5" />
@@ -447,7 +447,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
                   targetType="deck"
                   targetId={savedDeckId}
                   targetLabel={deckTitle}
-                  className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-amber-400 cursor-pointer"
+                  className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-amber-400 cursor-pointer"
                 />
               )}
               <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase flex items-center gap-1">
@@ -462,14 +462,14 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             <button
               type="button"
               onClick={handleExportJson}
-              className="text-[10px] font-mono font-bold uppercase text-slate-500 hover:text-slate-300 flex items-center gap-1 cursor-pointer"
+              className="text-[10px] font-mono font-bold uppercase text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
             >
               <Download className="w-3 h-3" /> Export JSON
             </button>
             <button
               type="button"
               onClick={() => void handleCopyShareCode()}
-              className="text-[10px] font-mono font-bold uppercase text-slate-500 hover:text-slate-300 flex items-center gap-1 cursor-pointer"
+              className="text-[10px] font-mono font-bold uppercase text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
             >
               <Share2 className="w-3 h-3" /> Share code
             </button>
@@ -477,12 +477,12 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
         )}
 
         {/* Study Filter & Mode Controls — equal-width segmented rows (no empty left gap) */}
-        <div className="flex flex-col sm:flex-row items-stretch justify-between pt-2 border-t border-slate-800/60 gap-3">
-          <div className="flex items-center gap-1 bg-[#07090e] p-1 rounded-xl border border-slate-800 w-full sm:flex-1 min-w-0">
+        <div className="flex flex-col sm:flex-row items-stretch justify-between pt-2 border-t border-border/60 gap-3">
+          <div className="flex items-center gap-1 bg-background p-1 rounded-xl border border-border w-full sm:flex-1 min-w-0">
             <button
               onClick={() => { setStudyFilter('due'); setCurrentIndex(0); }}
               className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                studyFilter === 'due' ? 'bg-cyan-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
+                studyFilter === 'due' ? 'bg-cyan-400 text-slate-950 shadow font-black' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Clock className="w-3.5 h-3.5 shrink-0" /> Due Today ({dueCards.length})
@@ -490,19 +490,19 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             <button
               onClick={() => { setStudyFilter('all'); setCurrentIndex(0); }}
               className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                studyFilter === 'all' ? 'bg-cyan-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
+                studyFilter === 'all' ? 'bg-cyan-400 text-slate-950 shadow font-black' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Layers className="w-3.5 h-3.5 shrink-0" /> All ({cards.length})
             </button>
           </div>
 
-          <div className="flex items-center gap-1 bg-[#07090e] p-1 rounded-xl border border-slate-800 w-full sm:flex-1 min-w-0">
+          <div className="flex items-center gap-1 bg-background p-1 rounded-xl border border-border w-full sm:flex-1 min-w-0">
             <button
               onClick={() => setMode('browse')}
               title="Browse: flip freely. Grading still updates your SM-2 schedule when you rate after reveal."
               className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                mode === 'browse' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
+                mode === 'browse' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Eye className="w-3.5 h-3.5 shrink-0" /> Browse
@@ -511,18 +511,18 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               onClick={() => setMode('test')}
               title="Active Recall: answer stays hidden until you tap Reveal, then self-grade."
               className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                mode === 'test' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
+                mode === 'test' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Target className="w-3.5 h-3.5 shrink-0" /> Recall
             </button>
           </div>
         </div>
-        <p className="text-[10px] font-mono text-slate-500 flex items-start gap-1.5 pt-1">
+        <p className="text-[10px] font-mono text-muted-foreground flex items-start gap-1.5 pt-1">
           <Info className="w-3 h-3 shrink-0 mt-0.5 accent-solid-text" />
           <span>
-            <strong className="text-slate-400">Browse</strong> = flip when ready (answer hidden until flip).{' '}
-            <strong className="text-slate-400">Recall</strong> = quiz with explicit Reveal. Again/Hard/Good/Easy grades schedule the next review — Hard no longer resets your streak.
+            <strong className="text-muted-foreground">Browse</strong> = flip when ready (answer hidden until flip).{' '}
+            <strong className="text-muted-foreground">Recall</strong> = quiz with explicit Reveal. Again/Hard/Good/Easy grades schedule the next review — Hard no longer resets your streak.
           </span>
         </p>
       </div>
@@ -541,9 +541,9 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
       {mode === 'test' ? (
         <ActiveRecallQuiz cards={activeCards} onFinish={() => setMode('browse')} />
       ) : activeCards.length === 0 ? (
-        <div className="text-center py-12 space-y-3 bg-[#0e131f] border border-slate-800 rounded-xl p-6">
-          <h3 className="text-base font-bold text-white uppercase">All caught up! 🎉</h3>
-          <p className="text-xs text-slate-400">No flashcards are due for review today according to your SM-2 schedule.</p>
+        <div className="text-center py-12 space-y-3 bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none">
+          <h3 className="text-base font-bold text-foreground uppercase">All caught up! 🎉</h3>
+          <p className="text-xs text-muted-foreground">No flashcards are due for review today according to your SM-2 schedule.</p>
           <button 
             onClick={() => setStudyFilter('all')}
             className="px-4 py-2 bg-emerald-400 text-slate-950 font-bold text-xs rounded-lg cursor-pointer"
@@ -553,12 +553,12 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest text-slate-400 bg-[#0e131f]/60 px-4 py-2.5 rounded-lg border border-slate-800/80 font-mono">
+          <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest text-muted-foreground bg-card px-4 py-2.5 rounded-lg border border-border/80 font-mono">
             <span className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
-              CARD <span className="text-white">{currentIndex + 1}</span> / {activeCards.length}
+              CARD <span className="text-foreground">{currentIndex + 1}</span> / {activeCards.length}
             </span>
-            <div className="w-36 h-2 bg-slate-800 rounded-full overflow-hidden p-0.5">
+            <div className="w-36 h-2 bg-secondary rounded-full overflow-hidden p-0.5">
               <div 
                 className="h-full bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)] rounded-full transition-all duration-300" 
                 style={{ width: `${((currentIndex + 1) / activeCards.length) * 100}%` }}
@@ -571,7 +571,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             onClick={handleToggleFlip}
             onTouchStart={touchGestures ? onTouchStart : undefined}
             onTouchEnd={touchGestures ? onTouchEnd : undefined}
-            className={`${touchGestures ? 'fios-swipe-card' : ''} w-full min-h-[280px] bg-[#0e131f] rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-slate-800 hover:border-emerald-400/50 shadow-2xl transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99]`}
+            className={`${touchGestures ? 'fios-swipe-card' : ''} w-full min-h-[280px] bg-card rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-border hover:border-emerald-400/50 shadow-sm dark:shadow-none transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99]`}
           >
             <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${isFlipped ? 'from-emerald-400/20' : 'from-cyan-400/20'} to-transparent rounded-tr-xl pointer-events-none`} />
 
@@ -581,7 +581,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               }`}>
                 {isFlipped ? 'ANSWER' : 'QUESTION'}
               </span>
-              <span className="text-[11px] text-slate-500 uppercase tracking-wider group-hover:text-slate-300 transition-colors">
+              <span className="text-[11px] text-muted-foreground uppercase tracking-wider group-hover:text-foreground transition-colors">
                 TAP TO FLIP
               </span>
             </div>
@@ -591,7 +591,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             </div>
 
             <div className="w-full flex justify-center z-10 font-mono pt-2">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest group-hover:text-slate-400 transition-colors">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest group-hover:text-muted-foreground transition-colors">
                 {touchGestures
                   ? 'Tap to flip · swipe right Easy / left Hard when flipped'
                   : 'Click or tap to flip'}
@@ -604,18 +604,18 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             <div className="space-y-2 relative">
               {showSm2Onboard && (
                 <div
-                  className="absolute inset-x-0 -top-2 bottom-0 z-20 rounded-xl bg-[#07090e]/95 border border-emerald-500/40 p-3 flex flex-col items-center justify-center gap-2 text-center shadow-xl"
+                  className="absolute inset-x-0 -top-2 bottom-0 z-20 rounded-xl bg-background/95 border border-emerald-500/40 p-3 flex flex-col items-center justify-center gap-2 text-center shadow-xl"
                   role="dialog"
                   aria-label="SM-2 rating tip"
                 >
                   <p className="text-[11px] font-mono font-bold uppercase tracking-wider accent-solid-text">
                     How SM-2 grading works
                   </p>
-                  <p className="text-[11px] text-slate-300 leading-relaxed max-w-sm">
+                  <p className="text-[11px] text-foreground leading-relaxed max-w-sm">
                     After you reveal the answer, rate how well you recalled it.
-                    <strong className="text-slate-100"> Again</strong> resets the card,
-                    <strong className="text-slate-100"> Hard</strong> keeps progress with a short interval,
-                    <strong className="text-slate-100"> Good</strong> / <strong className="text-slate-100">Easy</strong> schedule further out.
+                    <strong className="text-foreground"> Again</strong> resets the card,
+                    <strong className="text-foreground"> Hard</strong> keeps progress with a short interval,
+                    <strong className="text-foreground"> Good</strong> / <strong className="text-foreground">Easy</strong> schedule further out.
                   </p>
                   <button
                     type="button"
@@ -626,7 +626,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
                   </button>
                 </div>
               )}
-              <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500 text-center flex items-center justify-center gap-1">
+              <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground text-center flex items-center justify-center gap-1">
                 Rate recall (updates SM-2 queue)
                 <span title="Grading chooses the next local-calendar due date. Again lapses; Hard keeps progress.">
                   <HelpCircle className="w-3 h-3" />
@@ -667,14 +667,14 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             <div className="grid grid-cols-2 gap-3 font-mono">
               <button
                 onClick={handlePrev}
-                className="py-3.5 bg-[#0e131f] hover:bg-slate-800/80 border border-slate-800 text-slate-200 font-extrabold italic uppercase tracking-wider text-xs rounded-lg transition-colors cursor-pointer text-center active:scale-[0.98]"
+                className="py-3.5 bg-card hover:bg-secondary/80 border border-border text-foreground font-extrabold italic uppercase tracking-wider text-xs rounded-lg transition-colors cursor-pointer text-center active:scale-[0.98]"
               >
                 ← PREVIOUS
               </button>
 
               <button
                 onClick={handleNext}
-                className="py-3.5 bg-[#0e131f] hover:bg-slate-800/80 border border-slate-800 text-slate-200 font-extrabold italic uppercase tracking-wider text-xs rounded-lg transition-colors cursor-pointer text-center active:scale-[0.98]"
+                className="py-3.5 bg-card hover:bg-secondary/80 border border-border text-foreground font-extrabold italic uppercase tracking-wider text-xs rounded-lg transition-colors cursor-pointer text-center active:scale-[0.98]"
               >
                 NEXT →
               </button>

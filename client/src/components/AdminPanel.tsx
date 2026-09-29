@@ -1252,7 +1252,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                   <button
                     type="button"
                     onClick={() => void handleDeleteAllFeedback()}
-                    className="px-3 py-2 rounded-lg bg-rose-600/80 text-white text-[10px] font-black uppercase cursor-pointer inline-flex items-center gap-1.5"
+                    className="px-3 py-2 rounded-lg bg-rose-600/80 text-foreground text-[10px] font-black uppercase cursor-pointer inline-flex items-center gap-1.5"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Confirm bulk delete
                   </button>
