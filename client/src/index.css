@@ -632,11 +632,17 @@ input, select, textarea { font-size: 16px; }
 .fios-drawer-reorder-item * {
   -webkit-user-select: none !important;
   user-select: none !important;
-  -webkit-touch-callout: none !important;
   -webkit-tap-highlight-color: transparent;
 }
+/* Safari iOS: keep callout suppression (also set inline — bundlers may drop the property) */
+@supports (-webkit-touch-callout: none) {
+  .fios-drawer-reorder-item,
+  .fios-drawer-reorder-item * {
+    -webkit-touch-callout: none !important;
+  }
+}
 .fios-drawer-reorder-item {
-  /* Allow parent nav to scroll vertically; block browser long-press gestures */
+  /* Parent nav scrolls; row blocks browser long-press / double-tap gestures */
   touch-action: manipulation;
 }
 .fios-drawer-reorder-item[aria-grabbed='true'] {
