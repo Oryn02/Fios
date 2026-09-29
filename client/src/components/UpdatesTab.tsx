@@ -3,10 +3,23 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.6.6.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.0.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.7.0',
+      date: 'September 2026',
+      title: 'Snappy load · local-first Timetable, Modules & Tasks',
+      highlights: [
+        'Instant feel: Timetable, Modules, and Tasks paint from local cache first, then refresh in the background (stale-while-revalidate).',
+        'Navigation: Overview / Timetable / Modules stay mounted after first visit so switching tabs no longer remounts and refetches from empty.',
+        'PWA boot: themed splash + shell background before React paints to soften white flash and chrome pop-in.',
+        'Bundle: heavy study routes (Quiz, Code Lab, Smart Notes, Tutor, Grades, ATU calendar) load on demand without changing the UI.',
+        'Reliability: shared fetch dedupe for modules/tasks, Quick Actions uses cached timetable metrics, Timetable no longer flashes “No Timetable Synced” while loading.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.7.0.',
+      ],
+    },
     {
       version: 'v3.6.6',
       date: 'September 2026',
@@ -478,7 +491,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.6.6</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.7.0</p>
       </header>
 
       <div className="space-y-4">

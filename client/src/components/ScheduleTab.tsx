@@ -4,16 +4,18 @@ import {
   Upload, ChevronLeft, ChevronRight, Check, Play, Coffee, HelpCircle,
 } from 'lucide-react';
 import { 
-  saveCalendarUrl, getSavedCalendarUrl, fetchAndParseCalendar, 
+  saveCalendarUrl, fetchAndParseCalendar, 
   parseIcsText, cacheSyncedEvents, CalendarEvent 
 } from '../lib/calendarService';
 import {
   loadUnifiedScheduleEvents,
   loadScheduleMeta,
   saveScheduleMeta,
+  peekUnifiedScheduleEvents,
+  peekSavedCalendarUrl,
   type ScheduleMode,
 } from '../lib/scheduleService';
-import { getUserModules, type DBModule } from '../lib/moduleService';
+import { getUserModules, peekCachedModules, type DBModule } from '../lib/moduleService';
 import { MOD_BADGE_CLASS, MOD_PILL_CLASS, resolveSubjectColorKey } from '../lib/moduleColors';
 import {
   classStateCardClass,
@@ -37,16 +39,34 @@ interface TimetableItem {
   data: CalendarEvent | BreakData;
 }
 
+function defaultScheduleRange(): { start: Date; end: Date } {
+  const start = new Date();
+  start.setMonth(start.getMonth() - 1);
+  const end = new Date();
+  end.setMonth(end.getMonth() + 3);
+  return { start, end };
+}
+
 const ScheduleTabInner: React.FC = () => {
   /* ==========================================================================
      1. STATE MANAGEMENT
      ========================================================================== */
-  const [icalUrl, setIcalUrl] = useState('');
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [modules, setModules] = useState<DBModule[]>([]);
-  const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('ical');
-  const [institutionName, setInstitutionName] = useState('');
-  const [loading, setLoading] = useState(false);
+  const initialPeek = (() => {
+    const { start, end } = defaultScheduleRange();
+    return peekUnifiedScheduleEvents(start, end);
+  })();
+  const initialMeta = loadScheduleMeta();
+  const [icalUrl, setIcalUrl] = useState(() => peekSavedCalendarUrl());
+  const [events, setEvents] = useState<CalendarEvent[]>(() => initialPeek.events);
+  const [modules, setModules] = useState<DBModule[]>(() => peekCachedModules() || []);
+  const [scheduleMode, setScheduleMode] = useState<ScheduleMode>(
+    () => initialPeek.mode || initialMeta.mode
+  );
+  const [institutionName, setInstitutionName] = useState(
+    () => initialPeek.institutionName || initialMeta.institutionName
+  );
+  const [loading, setLoading] = useState(() => initialPeek.events.length === 0);
+  const [refreshing, setRefreshing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // View Controls
@@ -62,34 +82,48 @@ const ScheduleTabInner: React.FC = () => {
   }, []);
 
   /* ==========================================================================
-     2. INITIAL LOAD HANDLER
+     2. INITIAL LOAD HANDLER — paint cache first, refresh in background
      ========================================================================== */
   useEffect(() => {
+    let cancelled = false;
     async function bootstrap() {
       try {
         const meta = loadScheduleMeta();
-        setScheduleMode(meta.mode);
-        setInstitutionName(meta.institutionName);
-        const mods = await getUserModules();
+        if (!cancelled) {
+          setScheduleMode(meta.mode);
+          setInstitutionName(meta.institutionName);
+          const localUrl = peekSavedCalendarUrl();
+          if (localUrl) setIcalUrl(localUrl);
+        }
+
+        const hadCache = initialPeek.events.length > 0;
+        if (!hadCache && !cancelled) setLoading(true);
+        else if (hadCache && !cancelled) setRefreshing(true);
+
+        const { start, end } = defaultScheduleRange();
+        const [mods, unified] = await Promise.all([
+          getUserModules(),
+          loadUnifiedScheduleEvents(start, end),
+        ]);
+        if (cancelled) return;
         setModules(mods);
-        const savedUrl = await getSavedCalendarUrl();
-        if (savedUrl) setIcalUrl(savedUrl);
-        const start = new Date();
-        start.setMonth(start.getMonth() - 1);
-        const end = new Date();
-        end.setMonth(end.getMonth() + 3);
-        setLoading(true);
-        const { events: unified, mode, institutionName: inst } = await loadUnifiedScheduleEvents(start, end);
-        setEvents(unified);
-        setScheduleMode(mode);
-        setInstitutionName(inst);
+        setEvents(unified.events);
+        setScheduleMode(unified.mode);
+        setInstitutionName(unified.institutionName);
+        const url = peekSavedCalendarUrl();
+        if (url) setIcalUrl(url);
       } catch (err: any) {
         console.error('Failed to load schedule:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     }
     void bootstrap();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once SWR bootstrap
   }, []);
 
   /* ==========================================================================
@@ -452,7 +486,12 @@ const ScheduleTabInner: React.FC = () => {
       </div>
 
       {/* Timetable Events Container */}
-      {events.length === 0 && !loading ? (
+      {events.length === 0 && (loading || refreshing) ? (
+        <div className="bg-[#0e131f]/50 border border-slate-800 rounded-xl p-12 text-center space-y-2">
+          <RefreshCw className="w-6 h-6 text-slate-500 mx-auto animate-spin" />
+          <p className="text-xs font-bold text-slate-400 uppercase">Loading timetable…</p>
+        </div>
+      ) : events.length === 0 && !loading ? (
         <div className="bg-[#0e131f]/50 border border-slate-800 rounded-xl p-12 text-center space-y-2">
           <CalendarIcon className="w-8 h-8 text-slate-600 mx-auto" />
           <p className="text-xs font-bold text-slate-400 uppercase">No Timetable Synced</p>
