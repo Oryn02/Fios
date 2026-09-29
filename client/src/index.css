@@ -47,6 +47,9 @@
     --fios-text-muted: hsl(var(--muted-foreground));
     --fios-card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --fios-tab-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.06);
+  }
+
+  .dark,
   [data-theme="dark"] {
     --background: 222.2 84% 4.9%; /* Slate 950 base */
     --foreground: 210 40% 98%;
