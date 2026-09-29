@@ -90,7 +90,11 @@ const SoundscapePanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [current, setCurrent] = useState<Soundscape>(soundscapeEngine.getCurrent());
   const [volume, setVolume] = useState(soundscapeEngine.getVolume());
 
-  const pick = (s: Soundscape) => { soundscapeEngine.play(s); setCurrent(s); };
+  const pick = (s: Soundscape) => {
+    void soundscapeEngine.unlock();
+    soundscapeEngine.play(s);
+    setCurrent(s);
+  };
 
   return (
     <div className="space-y-2.5 pt-3 border-t fios-border">
@@ -214,7 +218,10 @@ export const PomodoroWidget: React.FC = () => {
                     </motion.button>
                     <IconBtn onClick={reset} title="Reset"><RotateCcw className="w-3.5 h-3.5" /></IconBtn>
                     <IconBtn onClick={skip} title="Skip"><SkipForward className="w-3.5 h-3.5" /></IconBtn>
-                    <IconBtn onClick={() => setPanel(panel === 'sound' ? 'none' : 'sound')} active={panel === 'sound'} title="Soundscapes"><Music className="w-3.5 h-3.5" /></IconBtn>
+                    <IconBtn onClick={() => {
+                      void soundscapeEngine.unlock();
+                      setPanel(panel === 'sound' ? 'none' : 'sound');
+                    }} active={panel === 'sound'} title="Soundscapes"><Music className="w-3.5 h-3.5" /></IconBtn>
                     <IconBtn onClick={() => setPanel(panel === 'settings' ? 'none' : 'settings')} active={panel === 'settings'} title="Timer settings"><Settings2 className="w-3.5 h-3.5" /></IconBtn>
                   </div>
 
