@@ -20,7 +20,7 @@
     <meta name="apple-mobile-web-app-title" content="Fios" />
     <meta name="mobile-web-app-capable" content="yes" />
 
-    <title>Fios v3.7.4 — Your Academic Command Center</title>
+    <title>Fios v3.7.5 — Your Academic Command Center</title>
     <!-- Apply stored theme/accent before first paint to avoid auth/theme flashes -->
     <script>
       (function () {
@@ -59,7 +59,7 @@
           root.style.setProperty('--fios-accent-solid', stops[3]);
           root.dataset.accent = accents[key] ? key : 'emerald';
           var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute('content', resolved === 'light' ? '#e4dfd4' : '#07090e');
+          if (meta) meta.setAttribute('content', resolved === 'light' ? '#ffffff' : '#07090e');
           // OpenDyslexic: apply before paint so mobile/PWA don't flash system fonts
           try {
             var prefs = JSON.parse(localStorage.getItem('fios_preferences') || '{}');
@@ -79,8 +79,8 @@
         color: #f8fafc;
       }
       html[data-theme="light"], html[data-theme="light"] body {
-        background: #e4dfd4;
-        color: #1c1917;
+        background: #ffffff;
+        color: #0f172a;
       }
       #fios-boot-splash {
         min-height: 100dvh;

@@ -18,19 +18,20 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
   const landing = variant === 'landing';
   const heading = landing ? 'text-emerald-400' : 'accent-solid-text';
   const surface = landing
-    ? 'border-slate-800 bg-[#0e131f] text-slate-100'
+    ? 'border-border bg-card text-foreground'
     : 'fios-border bg-[var(--fios-surface)] text-[var(--fios-text)]';
-  const muted = landing ? 'text-slate-400' : 'text-[var(--fios-text-muted)]';
-  const body = landing ? 'text-slate-300' : 'text-[var(--fios-text-muted)]';
+  const muted = landing ? 'text-muted-foreground' : 'text-[var(--fios-text-muted)]';
+  const body = landing ? 'text-foreground' : 'text-[var(--fios-text-muted)]';
   const iconBox = landing
-    ? 'bg-[#07090e] border-slate-800 text-emerald-400'
+    ? 'bg-background border-border text-emerald-400'
     : 'bg-[var(--fios-surface-2)] border fios-border accent-solid-text';
   const closeBtn = landing
     ? 'bg-emerald-400 text-slate-950'
     : 'accent-bg text-slate-950';
-  const strong = landing ? 'text-slate-200' : 'text-[var(--fios-text)]';
-  const headerBg = landing ? 'bg-[#0e131f]' : 'bg-[var(--fios-surface)]';
-  const borderCls = landing ? 'border-slate-800' : 'fios-border';
+  const strong = landing ? 'text-foreground' : 'text-[var(--fios-text)]';
+  const headerBg = landing ? 'bg-card/95' : 'bg-[hsl(var(--background)/0.95)]';
+  const footerBg = landing ? 'bg-card' : 'bg-[hsl(var(--background))]';
+  const borderCls = landing ? 'border-border' : 'fios-border';
 
   return (
     <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
@@ -44,16 +45,16 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
         aria-labelledby="privacy-title"
         className={`relative z-50 w-full max-w-2xl max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border shadow-2xl ${surface}`}
       >
-        <div className={`sticky top-0 z-10 shrink-0 flex items-center justify-between gap-3 border-b px-5 py-3.5 sm:px-6 ${borderCls} ${headerBg}/95 backdrop-blur-md`}>
+        <div className={`sticky top-0 z-10 shrink-0 flex items-center justify-between gap-3 border-b px-5 py-3.5 sm:px-6 ${borderCls} ${headerBg} backdrop-blur-md`}>
           <div className="flex items-center gap-2.5 min-w-0">
             <div className={`p-2 rounded-lg border shrink-0 ${iconBox}`}>
               <Shield className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h3 id="privacy-title" className={`text-base font-black uppercase truncate ${landing ? 'text-white' : 'text-[var(--fios-text)]'}`}>
+              <h3 id="privacy-title" className={`text-base font-black uppercase truncate ${landing ? 'text-foreground' : 'text-[var(--fios-text)]'}`}>
                 Privacy Policy & GDPR Statement
               </h3>
-              <p className={`text-[11px] font-mono truncate ${muted}`}>Fios Academic Command Center · v3.7.4 · Last updated September 2026</p>
+              <p className={`text-[11px] font-mono truncate ${muted}`}>Fios Academic Command Center · v3.7.5 · Last updated September 2026</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className={`touch-target shrink-0 rounded-lg cursor-pointer ${muted} hover:opacity-80`} aria-label="Close">

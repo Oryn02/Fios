@@ -311,7 +311,7 @@ const ScheduleTabInner: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto font-sans text-slate-100 overflow-x-hidden px-0.5 sm:px-0">
+    <div className="space-y-6 max-w-5xl mx-auto font-sans text-foreground overflow-x-hidden px-0.5 sm:px-0">
       
       {/* Header Banner */}
       <header className="space-y-1">
@@ -319,14 +319,14 @@ const ScheduleTabInner: React.FC = () => {
           <CalendarIcon className="w-3.5 h-3.5" />
           {scheduleMode === 'manual' ? 'MANUAL TIMETABLE' : 'TIMETABLE CONNECTED'}
         </div>
-        <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">College Timetable</h1>
+        <h1 className="text-3xl font-black italic uppercase text-foreground tracking-tight">College Timetable</h1>
         {institutionName && (
-          <p className="text-xs font-mono text-slate-400">{institutionName}</p>
+          <p className="text-xs font-mono text-muted-foreground">{institutionName}</p>
         )}
       </header>
 
       {/* Sync Control Card */}
-      <div className="bg-[#0e131f] border border-slate-800 rounded-xl p-4 shadow-xl space-y-3">
+      <div className="bg-card border border-border rounded-xl p-4 shadow-xl space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {(['ical', 'manual'] as ScheduleMode[]).map((mode) => (
             <button
@@ -350,7 +350,7 @@ const ScheduleTabInner: React.FC = () => {
                 })();
               }}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-black uppercase border cursor-pointer ${
-                scheduleMode === mode ? 'accent-bg text-slate-950 border-transparent' : 'border-slate-800 text-slate-400'
+                scheduleMode === mode ? 'accent-bg text-slate-950 border-transparent' : 'border-border text-muted-foreground'
               }`}
             >
               {mode === 'ical' ? 'iCal sync' : 'Manual'}
@@ -365,18 +365,18 @@ const ScheduleTabInner: React.FC = () => {
               saveScheduleMeta({ mode: scheduleMode, institutionName: v });
             }}
             placeholder="Institution (optional)"
-            className="w-full sm:flex-1 sm:min-w-[10rem] bg-[#07090e] border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:accent-border"
+            className="w-full sm:flex-1 sm:min-w-[10rem] bg-background border border-border rounded-lg px-3 py-1.5 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:accent-border"
           />
         </div>
         <form onSubmit={handleSaveAndFetch} className={`flex flex-col sm:flex-row items-center gap-3 ${scheduleMode === 'manual' ? 'opacity-50 pointer-events-none' : ''}`}>
           <div className="relative flex-1 w-full">
-            <Link2 className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+            <Link2 className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5" />
             <input
               type="url"
               value={icalUrl}
               onChange={(e) => setIcalUrl(e.target.value)}
               placeholder="https://timetables.atu.ie/Ical/StudentSet?studentSetID=..."
-              className="w-full bg-[#07090e] border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-400 transition-colors"
+              className="w-full bg-background border border-border rounded-lg pl-9 pr-3 py-2 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-400 transition-colors"
             />
           </div>
           <button
@@ -387,7 +387,7 @@ const ScheduleTabInner: React.FC = () => {
             {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : 'Sync'}
           </button>
           
-          <label className="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 shrink-0">
+          <label className="w-full sm:w-auto px-4 py-2 bg-secondary hover:bg-muted text-foreground text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 shrink-0">
             <Upload className="w-3.5 h-3.5 text-cyan-400" />
             Import .ics
             <input type="file" accept=".ics" onChange={handleFileUpload} className="hidden" />
@@ -395,14 +395,14 @@ const ScheduleTabInner: React.FC = () => {
         </form>
 
         {scheduleMode === 'ical' && (
-          <details className="rounded-lg border border-slate-800 bg-[#07090e]/80 p-3 text-[11px] font-mono text-slate-400">
-            <summary className="cursor-pointer list-none flex items-center gap-1.5 text-slate-300 font-bold uppercase tracking-wider text-[10px]">
+          <details className="rounded-lg border border-border bg-background/80 p-3 text-[11px] font-mono text-muted-foreground">
+            <summary className="cursor-pointer list-none flex items-center gap-1.5 text-foreground font-bold uppercase tracking-wider text-[10px]">
               <HelpCircle className="w-3.5 h-3.5 accent-solid-text" /> How to find your official iCal link
             </summary>
             <ol className="list-decimal list-inside space-y-1 pl-0.5 pt-2">
               <li>Open your college timetable / student portal.</li>
               <li>Look for Subscribe, Export, or iCal / ICS.</li>
-              <li>Copy the HTTPS URL (or replace <span className="text-slate-300">webcal://</span> with <span className="text-slate-300">https://</span>).</li>
+              <li>Copy the HTTPS URL (or replace <span className="text-foreground">webcal://</span> with <span className="text-foreground">https://</span>).</li>
               <li>Paste above and Sync — Fios proxies the feed past campus CORS.</li>
               <li>No web calendar? Download a .ics file and use Import instead.</li>
             </ol>
@@ -410,7 +410,7 @@ const ScheduleTabInner: React.FC = () => {
         )}
 
         {statusMessage && (
-          <p className={`text-[11px] font-mono ${statusMessage.type === 'success' ? 'text-slate-400' : 'text-rose-400'}`}>
+          <p className={`text-[11px] font-mono ${statusMessage.type === 'success' ? 'text-muted-foreground' : 'text-rose-400'}`}>
             {statusMessage.text}
           </p>
         )}
@@ -418,7 +418,7 @@ const ScheduleTabInner: React.FC = () => {
 
       {/* Date Header & View Selector */}
       <div className="flex flex-col items-center justify-center space-y-3 sm:space-y-4 py-2 px-1">
-        <h2 className="text-lg sm:text-2xl font-black italic uppercase text-white tracking-wide text-center leading-snug px-1">
+        <h2 className="text-lg sm:text-2xl font-black italic uppercase text-foreground tracking-wide text-center leading-snug px-1">
           {viewMode === 'day' && selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           {viewMode === 'week' && `Week of ${weekDays[0].toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – ${weekDays[6].toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
           {viewMode === 'month' && selectedDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
@@ -428,19 +428,19 @@ const ScheduleTabInner: React.FC = () => {
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full max-w-xl">
           
           {/* Day Arrows & Today */}
-          <div className="flex items-center bg-[#07090e] border border-slate-800 rounded-lg p-0.5 sm:p-1 gap-0.5">
+          <div className="flex items-center bg-background border border-border rounded-lg p-0.5 sm:p-1 gap-0.5">
             <button
               type="button"
               onClick={() => changeDate(-1)}
               aria-label="Previous"
-              className="touch-target p-2 sm:p-1.5 hover:bg-slate-800 active:bg-slate-800 text-slate-200 rounded-md transition-colors cursor-pointer"
+              className="touch-target p-2 sm:p-1.5 hover:bg-secondary active:bg-secondary text-foreground rounded-md transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-5 h-5 sm:w-4 sm:h-4" />
             </button>
             <button
               type="button"
               onClick={resetToToday}
-              className="touch-target-row px-3 py-2 sm:py-1 text-xs font-mono font-bold uppercase text-slate-100 hover:bg-slate-800 active:bg-slate-800 rounded-md transition-colors cursor-pointer"
+              className="touch-target-row px-3 py-2 sm:py-1 text-xs font-mono font-bold uppercase text-foreground hover:bg-secondary active:bg-secondary rounded-md transition-colors cursor-pointer"
             >
               Today
             </button>
@@ -448,25 +448,25 @@ const ScheduleTabInner: React.FC = () => {
               type="button"
               onClick={() => changeDate(1)}
               aria-label="Next"
-              className="touch-target p-2 sm:p-1.5 hover:bg-slate-800 active:bg-slate-800 text-slate-200 rounded-md transition-colors cursor-pointer"
+              className="touch-target p-2 sm:p-1.5 hover:bg-secondary active:bg-secondary text-foreground rounded-md transition-colors cursor-pointer"
             >
               <ChevronRight className="w-5 h-5 sm:w-4 sm:h-4" />
             </button>
           </div>
 
           {/* Date Picker Input */}
-          <div className="relative flex items-center touch-target-row bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 sm:py-1.5 hover:border-slate-700 transition-colors">
+          <div className="relative flex items-center touch-target-row bg-background border border-border rounded-lg px-3 py-2 sm:py-1.5 hover:border-border transition-colors">
             <CalendarIcon className="w-3.5 h-3.5 text-cyan-400 mr-2 shrink-0 pointer-events-none" />
             <input
               type="date"
               value={formattedInputDate}
               onChange={handleDateChange}
-              className="bg-transparent text-xs font-mono font-bold text-slate-100 focus:outline-none cursor-pointer scheme-dark min-w-0"
+              className="bg-transparent text-xs font-mono font-bold text-foreground focus:outline-none cursor-pointer scheme-dark min-w-0"
             />
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-[#07090e] border border-slate-800 rounded-lg p-0.5 sm:p-1 w-full sm:w-auto justify-stretch sm:justify-center">
+          <div className="flex items-center bg-background border border-border rounded-lg p-0.5 sm:p-1 w-full sm:w-auto justify-stretch sm:justify-center">
             {(['day', 'week', 'month'] as ViewMode[]).map((mode) => (
               <button
                 type="button"
@@ -475,7 +475,7 @@ const ScheduleTabInner: React.FC = () => {
                 className={`flex-1 sm:flex-none touch-target-row px-3 sm:px-4 py-2.5 sm:py-1.5 rounded-md text-xs font-mono font-bold uppercase transition-all cursor-pointer active:opacity-90 ${
                   viewMode === mode
                     ? 'bg-emerald-400 text-slate-950 font-black shadow-md'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {mode}
@@ -487,19 +487,19 @@ const ScheduleTabInner: React.FC = () => {
 
       {/* Timetable Events Container */}
       {events.length === 0 && (loading || refreshing) ? (
-        <div className="bg-[#0e131f]/50 border border-slate-800 rounded-xl p-12 text-center space-y-2">
-          <RefreshCw className="w-6 h-6 text-slate-500 mx-auto animate-spin" />
-          <p className="text-xs font-bold text-slate-400 uppercase">Loading timetable…</p>
+        <div className="bg-card/50 border border-border rounded-xl p-12 text-center space-y-2">
+          <RefreshCw className="w-6 h-6 text-muted-foreground mx-auto animate-spin" />
+          <p className="text-xs font-bold text-muted-foreground uppercase">Loading timetable…</p>
         </div>
       ) : events.length === 0 && !loading ? (
-        <div className="bg-[#0e131f]/50 border border-slate-800 rounded-xl p-12 text-center space-y-2">
-          <CalendarIcon className="w-8 h-8 text-slate-600 mx-auto" />
-          <p className="text-xs font-bold text-slate-400 uppercase">No Timetable Synced</p>
+        <div className="bg-card/50 border border-border rounded-xl p-12 text-center space-y-2">
+          <CalendarIcon className="w-8 h-8 text-muted-foreground mx-auto" />
+          <p className="text-xs font-bold text-muted-foreground uppercase">No Timetable Synced</p>
         </div>
       ) : viewMode === 'day' ? (
         <div className="space-y-3">
           {singleDayTimeline.length === 0 ? (
-            <div className="bg-[#0e131f] border border-slate-800 rounded-xl p-10 text-center text-slate-400 text-xs font-mono font-bold uppercase">
+            <div className="bg-card border border-border rounded-xl p-10 text-center text-muted-foreground text-xs font-mono font-bold uppercase">
               No classes scheduled for this day.
             </div>
           ) : (
@@ -508,8 +508,8 @@ const ScheduleTabInner: React.FC = () => {
                 const breakData = item.data as BreakData;
                 return (
                   <div key={breakData.id} className="relative flex items-center justify-center my-4">
-                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800/80"></div></div>
-                    <span className="relative bg-[#07090e] px-4 py-1 border border-slate-800 rounded-full text-[11px] font-mono font-bold text-slate-400 flex items-center gap-1.5">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/80"></div></div>
+                    <span className="relative bg-background px-4 py-1 border border-border rounded-full text-[11px] font-mono font-bold text-muted-foreground flex items-center gap-1.5">
                       <Coffee className="w-3.5 h-3.5 text-amber-400" />
                       {formatBreakDuration(breakData.durationMinutes)}
                     </span>
@@ -531,17 +531,17 @@ const ScheduleTabInner: React.FC = () => {
                 <div
                   key={event.id}
                   data-mod-color={colorKey}
-                  className={`bg-[#0e131f] border rounded-xl p-5 flex flex-col sm:flex-row items-start gap-6 transition-all ${classStateCardClass(state)} ${
+                  className={`bg-card border rounded-xl p-5 flex flex-col sm:flex-row items-start gap-6 transition-all ${classStateCardClass(state)} ${
                     state === 'next' ? 'ring-1 ring-[color-mix(in_srgb,var(--mod-solid)_45%,transparent)] scale-[1.01]' : ''
                   }`}
                 >
-                  <div className={`w-32 shrink-0 font-mono text-sm font-black pt-0.5 ${muted ? 'text-slate-500' : 'text-slate-100'}`}>
+                  <div className={`w-32 shrink-0 font-mono text-sm font-black pt-0.5 ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>
                     {formatTimeRange(event.startDate, event.endDate)}
                   </div>
 
                   <div className="flex-1 space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className={`text-base font-black tracking-wide truncate max-w-full min-w-0 ${muted ? 'text-slate-500 line-through decoration-slate-600' : 'text-white'}`}>
+                      <h3 className={`text-base font-black tracking-wide truncate max-w-full min-w-0 ${muted ? 'text-muted-foreground line-through decoration-slate-600' : 'text-foreground'}`}>
                         {event.title}
                       </h3>
                       <span data-mod-color={colorKey} className={MOD_PILL_CLASS}>
@@ -563,7 +563,7 @@ const ScheduleTabInner: React.FC = () => {
                       )}
 
                       {muted && (
-                        <span className="bg-slate-800 text-slate-400 text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded flex items-center gap-1">
+                        <span className="bg-secondary text-muted-foreground text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded flex items-center gap-1">
                           <Check className="w-3 h-3" />
                           FINISHED
                         </span>
@@ -571,13 +571,13 @@ const ScheduleTabInner: React.FC = () => {
                     </div>
 
                     {event.location && (
-                      <p className={`text-xs font-mono flex items-center gap-1.5 font-bold ${muted ? 'text-slate-600' : 'mod-text'}`} data-mod-color={colorKey}>
+                      <p className={`text-xs font-mono flex items-center gap-1.5 font-bold ${muted ? 'text-muted-foreground' : 'mod-text'}`} data-mod-color={colorKey}>
                         <MapPin className="w-3.5 h-3.5" /> {event.location}
                       </p>
                     )}
 
                     {event.description && (
-                      <p className={`text-xs font-mono leading-relaxed pt-1 whitespace-pre-line ${muted ? 'text-slate-600' : 'text-slate-400'}`}>
+                      <p className={`text-xs font-mono leading-relaxed pt-1 whitespace-pre-line ${muted ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                         {event.description}
                       </p>
                     )}
@@ -595,17 +595,17 @@ const ScheduleTabInner: React.FC = () => {
 
             return (
               <div key={day.toDateString()} className="space-y-3">
-                <div className="border-b border-slate-800 pb-2">
-                  <h3 className={`text-sm font-black italic uppercase tracking-wider ${isToday ? 'text-emerald-400' : 'text-slate-300'}`}>
+                <div className="border-b border-border pb-2">
+                  <h3 className={`text-sm font-black italic uppercase tracking-wider ${isToday ? 'text-emerald-400' : 'text-foreground'}`}>
                     {day.toLocaleDateString('en-GB', { weekday: 'long' })}
                   </h3>
-                  <p className="text-xs font-mono text-slate-500">
+                  <p className="text-xs font-mono text-muted-foreground">
                     {day.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
 
                 {timeline.length === 0 ? (
-                  <p className="text-xs font-mono text-slate-600 py-2">No classes</p>
+                  <p className="text-xs font-mono text-muted-foreground py-2">No classes</p>
                 ) : (
                   <div className="space-y-3">
                     {timeline.map((item) => {
@@ -613,8 +613,8 @@ const ScheduleTabInner: React.FC = () => {
                         const breakData = item.data as BreakData;
                         return (
                           <div key={breakData.id} className="relative flex items-center justify-center my-3">
-                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800/80"></div></div>
-                            <span className="relative bg-[#07090e] px-3 text-[11px] font-mono text-slate-500 font-bold">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/80"></div></div>
+                            <span className="relative bg-background px-3 text-[11px] font-mono text-muted-foreground font-bold">
                               {formatBreakDuration(breakData.durationMinutes)}
                             </span>
                           </div>
@@ -639,14 +639,14 @@ const ScheduleTabInner: React.FC = () => {
                         <div
                           key={event.id}
                           data-mod-color={colorKey}
-                          className={`bg-[#0e131f] border border-slate-800/80 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 ${classStateCardClass(state)}`}
+                          className={`bg-card border border-border/80 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 ${classStateCardClass(state)}`}
                         >
-                          <div className={`w-32 shrink-0 font-mono text-xs font-bold pt-0.5 ${muted ? 'text-slate-500' : 'text-white'}`}>
+                          <div className={`w-32 shrink-0 font-mono text-xs font-bold pt-0.5 ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>
                             {formatTimeRange(event.startDate, event.endDate)}
                           </div>
                           <div className="flex-1 space-y-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className={`text-sm font-bold truncate max-w-[min(100%,18rem)] ${muted ? 'text-slate-500 line-through' : 'text-white'}`}>{event.title}</h4>
+                              <h4 className={`text-sm font-bold truncate max-w-[min(100%,18rem)] ${muted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{event.title}</h4>
                               <span data-mod-color={colorKey} className={MOD_PILL_CLASS}>
                                 {event.title.split(/[\s·|—-]/)[0]?.slice(0, 10) || 'Class'}
                               </span>
@@ -654,16 +654,16 @@ const ScheduleTabInner: React.FC = () => {
                                 <span data-mod-color={colorKey} className={MOD_BADGE_CLASS}>NEXT</span>
                               )}
                               {muted && (
-                                <span className="text-[9px] font-mono uppercase text-slate-500">Done</span>
+                                <span className="text-[9px] font-mono uppercase text-muted-foreground">Done</span>
                               )}
                             </div>
                             {event.location && (
-                              <p className={`text-xs font-mono flex items-center gap-1 font-bold ${muted ? 'text-slate-600' : 'mod-text'}`} data-mod-color={colorKey}>
+                              <p className={`text-xs font-mono flex items-center gap-1 font-bold ${muted ? 'text-muted-foreground' : 'mod-text'}`} data-mod-color={colorKey}>
                                 <MapPin className="w-3 h-3" /> {event.location}
                               </p>
                             )}
                             {event.description && (
-                              <p className={`text-xs font-mono line-clamp-2 ${muted ? 'text-slate-600' : 'text-slate-400'}`}>{event.description}</p>
+                              <p className={`text-xs font-mono line-clamp-2 ${muted ? 'text-muted-foreground' : 'text-muted-foreground'}`}>{event.description}</p>
                             )}
                           </div>
                         </div>
@@ -676,8 +676,8 @@ const ScheduleTabInner: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="fios-month-grid bg-[#0e131f] border border-slate-800 rounded-xl p-2.5 sm:p-6 space-y-2.5 sm:space-y-4 overflow-x-hidden w-full max-w-full">
-          <div className="grid grid-cols-7 gap-0.5 sm:gap-2 text-center font-mono text-[10px] sm:text-[11px] font-black uppercase text-slate-400 sm:text-slate-500 pb-2 border-b border-slate-800">
+        <div className="fios-month-grid bg-card border border-border rounded-xl p-2.5 sm:p-6 space-y-2.5 sm:space-y-4 overflow-x-hidden w-full max-w-full">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-2 text-center font-mono text-[10px] sm:text-[11px] font-black uppercase text-muted-foreground sm:text-muted-foreground pb-2 border-b border-border">
             {([
               ['M', 'Mon'],
               ['T', 'Tue'],
@@ -711,7 +711,7 @@ const ScheduleTabInner: React.FC = () => {
                 calendarCells.push(
                   <div
                     key={`pad-${i}`}
-                    className="min-w-0 min-h-[3.75rem] sm:min-h-0 sm:h-24 bg-[#07090e]/30 border border-slate-900 rounded-md sm:rounded-lg opacity-20"
+                    className="min-w-0 min-h-[3.75rem] sm:min-h-0 sm:h-24 bg-background/30 border border-border rounded-md sm:rounded-lg opacity-20"
                     aria-hidden
                   />
                 );
@@ -738,7 +738,7 @@ const ScheduleTabInner: React.FC = () => {
                     }}
                     aria-label={`${currentDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}${hasEvents ? `, ${dayEvents.length} class${dayEvents.length === 1 ? '' : 'es'}` : ''}`}
                     aria-current={isTodayCell ? 'date' : undefined}
-                    className={`fios-month-cell min-w-0 min-h-[3.75rem] sm:min-h-0 sm:h-24 bg-[#07090e] border rounded-md sm:rounded-lg p-1 sm:p-2 flex flex-col items-stretch justify-between text-left cursor-pointer transition-colors hover:border-emerald-400/50 active:bg-slate-900/80 overflow-hidden box-border ${
+                    className={`fios-month-cell min-w-0 min-h-[3.75rem] sm:min-h-0 sm:h-24 bg-background border rounded-md sm:rounded-lg p-1 sm:p-2 flex flex-col items-stretch justify-between text-left cursor-pointer transition-colors hover:border-emerald-400/50 active:bg-card/80 overflow-hidden box-border ${
                       isSelectedCell
                         ? 'border-emerald-400 shadow-[inset_0_0_0_1px_rgba(52,211,153,0.45)] bg-emerald-950/25'
                         : isTodayCell
@@ -746,8 +746,8 @@ const ScheduleTabInner: React.FC = () => {
                           : hasEvents
                             ? unfinishedCount > 0
                               ? 'border-cyan-400/35'
-                              : 'border-slate-700/80'
-                            : 'border-slate-800'
+                              : 'border-border/80'
+                            : 'border-border'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-0.5 min-w-0 w-full">
@@ -757,7 +757,7 @@ const ScheduleTabInner: React.FC = () => {
                             ? 'bg-emerald-400 text-slate-950 px-1.5 py-1 sm:py-0.5 rounded-md sm:rounded-full'
                             : isSelectedCell
                               ? 'text-emerald-300'
-                              : 'text-slate-50'
+                              : 'text-foreground'
                         }`}
                       >
                         {day}
@@ -815,7 +815,7 @@ const ScheduleTabInner: React.FC = () => {
                         );
                       })}
                       {dayEvents.length > 2 && (
-                        <div className="text-[9px] font-mono text-slate-500 italic">
+                        <div className="text-[9px] font-mono text-muted-foreground italic">
                           +{dayEvents.length - 2} more
                         </div>
                       )}
@@ -829,7 +829,7 @@ const ScheduleTabInner: React.FC = () => {
           </div>
 
           {/* Mobile hint under month grid */}
-          <p className="sm:hidden text-[10px] font-mono text-slate-400 text-center pt-1 leading-relaxed">
+          <p className="sm:hidden text-[10px] font-mono text-muted-foreground text-center pt-1 leading-relaxed">
             Colored dots = classes · muted = finished · tap a day for full titles
           </p>
         </div>

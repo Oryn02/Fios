@@ -70,14 +70,14 @@ export const ModulePicker: React.FC<Props> = ({
           className="bg-transparent text-xs sm:text-sm font-mono font-bold text-[var(--fios-text)] focus:outline-none cursor-pointer w-full"
           aria-label="Module"
         >
-          <option value="" className="bg-[#07090e] text-slate-400">No module</option>
+          <option value="" className="bg-background text-muted-foreground">No module</option>
           {modules.map((m) => (
-            <option key={m.id} value={m.code} className="bg-[#07090e] text-slate-100">
+            <option key={m.id} value={m.code} className="bg-background text-foreground">
               {moduleDisplayName(m)}
             </option>
           ))}
           {allowCreate && (
-            <option value="__create__" className="bg-[#07090e] text-emerald-400">
+            <option value="__create__" className="bg-background text-emerald-400">
               + Create new module…
             </option>
           )}

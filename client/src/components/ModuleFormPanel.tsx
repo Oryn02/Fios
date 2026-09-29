@@ -90,14 +90,14 @@ export const ModuleFormPanel: React.FC<ModuleFormPanelProps> = ({
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       onSubmit={handleSubmit}
-      className="bg-[#0e131f] border border-cyan-500/50 rounded-2xl p-6 shadow-2xl space-y-4 overflow-hidden"
+      className="bg-card border border-cyan-500/50 rounded-2xl p-6 shadow-2xl space-y-4 overflow-hidden"
     >
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="flex items-center justify-between border-b border-border pb-3">
         <span className="text-xs font-mono font-black uppercase text-cyan-400 flex items-center gap-2">
           {isEdit ? <Pencil className="w-4 h-4" /> : <Folder className="w-4 h-4" />}
           {isEdit ? 'Edit Academic Module' : 'Create Custom Academic Module'}
         </span>
-        <button type="button" onClick={onClose} className="text-slate-500 hover:text-slate-300 cursor-pointer" aria-label="Close">
+        <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label="Close">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -108,14 +108,14 @@ export const ModuleFormPanel: React.FC<ModuleFormPanelProps> = ({
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="sm:col-span-2 bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400"
+          className="sm:col-span-2 bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs font-mono text-foreground focus:outline-none focus:border-cyan-400"
         />
         <input
           type="text"
           placeholder="Course code (optional)…"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          className="bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400 uppercase font-bold"
+          className="bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs font-mono text-foreground focus:outline-none focus:border-cyan-400 uppercase font-bold"
         />
       </div>
       <input
@@ -123,10 +123,10 @@ export const ModuleFormPanel: React.FC<ModuleFormPanelProps> = ({
         placeholder="Folder tags (comma-separated, e.g. Year1, Core)…"
         value={tags}
         onChange={(e) => setTags(e.target.value)}
-        className="w-full bg-[#07090e] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-400"
+        className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs font-mono text-foreground focus:outline-none focus:border-cyan-400"
       />
       <label className="space-y-1.5 block" htmlFor="fios-module-exam-date">
-        <span className="text-[10px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1.5">
+        <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground flex items-center gap-1.5">
           <CalendarClock className="w-3.5 h-3.5 text-cyan-400" /> Exam date &amp; time
         </span>
         <DatetimeLocalInput
@@ -136,14 +136,14 @@ export const ModuleFormPanel: React.FC<ModuleFormPanelProps> = ({
           aria-label="Module exam date and time"
         />
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[10px] font-mono text-slate-500">
+          <p className="text-[10px] font-mono text-muted-foreground">
             Powers Overview countdown and Revision Flight Plan. Leave blank if unknown.
           </p>
           {examDateLocal ? (
             <button
               type="button"
               onClick={() => setExamDateLocal('')}
-              className="shrink-0 text-[10px] font-mono uppercase text-slate-500 hover:text-slate-300 cursor-pointer"
+              className="shrink-0 text-[10px] font-mono uppercase text-muted-foreground hover:text-foreground cursor-pointer"
             >
               Clear
             </button>
@@ -151,7 +151,7 @@ export const ModuleFormPanel: React.FC<ModuleFormPanelProps> = ({
         </div>
       </label>
       <div className="space-y-2">
-        <label className="text-[10px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1.5">
+        <label className="text-[10px] font-mono font-bold uppercase text-muted-foreground flex items-center gap-1.5">
           <Palette className="w-3.5 h-3.5 text-cyan-400" /> Module Accent Color
         </label>
         <div className="flex flex-wrap gap-2">

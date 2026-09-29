@@ -37,7 +37,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Timetable', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.7.4', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.7.5', icon: Sparkles },
 ];
 
 /** True when the event target is a text-entry control (skip ⌘K / Ctrl+K while typing). */
@@ -516,7 +516,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       <HolidayAmbience />
       {/* Top HUD Bar — always visible unless Zen is hiding study chrome */}
       {!hideChrome && (
-        <header className="h-14 sm:h-16 border-b fios-border bg-[var(--fios-surface)]/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 fixed top-0 left-0 right-0 z-50 safe-top">
+        <header className="h-14 sm:h-16 border-b fios-border fios-chrome-blur bg-[hsl(var(--background)/0.95)] backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 fixed top-0 left-0 right-0 z-50 safe-top">
           {/* Brand cluster: logo may shrink; version badge never hides / never shrinks away */}
           <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 overflow-visible self-center">
             <button
@@ -552,10 +552,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               data-fios-version-badge
               className="relative z-[65] inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 3.7.4"
+              aria-label="Fios version 3.7.5"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v3.7.4
+              v3.7.5
             </span>
             {zenMode && (
               <button
@@ -782,7 +782,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       {/* Mobile bottom nav — keep a Settings escape even in Zen study mode; hide on keyboard */}
       {(!hideChrome || zenMode) && (
         <nav
-          className={`fios-bottom-nav md:hidden fixed bottom-0 left-0 right-0 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-1 pt-1 overflow-x-auto transition-all duration-200 ${hideChrome ? 'shadow-2xl' : ''} ${mobileDragId ? 'select-none' : ''} ${keyboardVisible ? 'fios-chrome-hidden' : ''}`}
+          className={`fios-bottom-nav md:hidden fixed bottom-0 left-0 right-0 bg-[hsl(var(--background)/0.95)] backdrop-blur-md border-t fios-border flex items-center justify-around px-1 pt-1 pb-1 safe-bottom overflow-x-auto transition-all duration-200 ${hideChrome ? 'shadow-2xl' : ''} ${mobileDragId ? 'select-none' : ''} ${keyboardVisible ? 'fios-chrome-hidden' : ''}`}
           aria-label="Mobile shortcuts"
           aria-describedby="mobile-nav-reorder-hint"
           aria-hidden={keyboardVisible || undefined}

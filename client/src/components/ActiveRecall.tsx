@@ -95,7 +95,7 @@ export const ActiveRecall: React.FC<Props> = ({ modules, initialModule = '', onC
         className="relative z-10 w-full max-w-3xl max-h-[92dvh] overflow-y-auto scroll-touch rounded-2xl border fios-border bg-[var(--fios-surface)] shadow-2xl"
       >
         {/* Header */}
-        <div className="p-4 border-b fios-border flex flex-wrap items-center gap-3 sticky top-0 bg-[var(--fios-surface)] z-10">
+        <div className="p-4 border-b fios-border flex flex-wrap items-center gap-3 sticky top-0 bg-[hsl(var(--background))] z-10">
           <div className="w-9 h-9 rounded-xl accent-bg flex items-center justify-center text-slate-950"><Brain className="w-5 h-5" /></div>
           <div className="flex-1 min-w-[140px]">
             <p className="text-sm font-black text-[var(--fios-text)]">Active Recall · Blurting</p>
@@ -127,7 +127,7 @@ export const ActiveRecall: React.FC<Props> = ({ modules, initialModule = '', onC
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Start blurting — write down everything you can recall about this topic…"
-                className="w-full h-64 p-4 bg-[var(--fios-surface-2)] border fios-border rounded-xl text-[var(--fios-text)] placeholder:text-slate-500 focus:outline-none focus:accent-border text-sm leading-relaxed resize-none"
+                className="w-full h-64 p-4 bg-[var(--fios-surface-2)] border fios-border rounded-xl text-[var(--fios-text)] placeholder:text-muted-foreground focus:outline-none focus:accent-border text-sm leading-relaxed resize-none"
               />
 
               <div className="flex items-center justify-between">

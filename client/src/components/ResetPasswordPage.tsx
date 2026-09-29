@@ -72,7 +72,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
         : 'Confirming your reset link…';
 
   return (
-    <div className="min-h-dvh bg-[#07090e] flex items-center justify-center p-4 font-sans relative overflow-hidden">
+    <div className="min-h-dvh bg-background flex items-center justify-center p-4 font-sans relative overflow-hidden">
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
 
@@ -80,7 +80,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
         initial={{ opacity: 0, scale: 0.94, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-        className="w-full max-w-md bg-[#0e131f]/95 backdrop-blur-xl border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-5 relative z-10 overflow-hidden"
+        className="w-full max-w-md bg-card/95 backdrop-blur-xl border border-border rounded-2xl p-8 shadow-2xl space-y-5 relative z-10 overflow-hidden"
       >
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-cyan-400 to-transparent" />
 
@@ -88,7 +88,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
           <div className="flex justify-center">
             <FiosLogo size="lg" withWordmark fixedEmerald />
           </div>
-          <p className="text-slate-400 text-xs font-medium">{subtitle}</p>
+          <p className="text-muted-foreground text-xs font-medium">{subtitle}</p>
         </div>
 
         {status === 'waiting' && !done && (
@@ -113,7 +113,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
               <button
                 type="button"
                 onClick={onRequestNewLink}
-                className="w-full py-3 rounded-xl border border-slate-800 bg-[#07090e]/90 text-slate-200 text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
+                className="w-full py-3 rounded-xl border border-border bg-background/90 text-foreground text-xs font-semibold hover:bg-secondary transition-colors cursor-pointer"
               >
                 Request a new reset link
               </button>
@@ -133,7 +133,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
         {status === 'ready' && !done && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-300">New password</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-foreground">New password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -143,12 +143,12 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
                   autoComplete="new-password"
-                  className="w-full pl-4 pr-10 py-3 bg-[#07090e]/90 border border-slate-800 rounded-xl text-slate-100 text-xs font-mono placeholder-slate-600 focus:outline-none focus:border-emerald-400 transition-colors"
+                  className="w-full pl-4 pr-10 py-3 bg-background/90 border border-border rounded-xl text-foreground text-xs font-mono placeholder:text-muted-foreground focus:outline-none focus:border-emerald-400 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-3 text-slate-500 hover:text-slate-300 p-0.5 cursor-pointer"
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
                   tabIndex={-1}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
@@ -158,7 +158,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-300">Confirm password</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-foreground">Confirm password</label>
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
@@ -167,7 +167,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="••••••••••••"
                 autoComplete="new-password"
-                className="w-full px-4 py-3 bg-[#07090e]/90 border border-slate-800 rounded-xl text-slate-100 text-xs font-mono placeholder-slate-600 focus:outline-none focus:border-emerald-400 transition-colors"
+                className="w-full px-4 py-3 bg-background/90 border border-border rounded-xl text-foreground text-xs font-mono placeholder:text-muted-foreground focus:outline-none focus:border-emerald-400 transition-colors"
               />
             </div>
 

@@ -76,7 +76,7 @@ export const WeeklyGoalWidget: React.FC<WeeklyGoalWidgetProps> = ({
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                className="touch-target shrink-0 rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer"
+              className="touch-target shrink-0 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />

@@ -38,16 +38,16 @@ const AgendaRow = memo(function AgendaRow({
   return (
     <div
       data-mod-color={item.colorKey}
-      className={`rounded-xl bg-[#07090e]/80 border border-slate-800/80 flex items-center justify-between gap-3 transition-colors ${classStateCardClass(item.state)} ${
+      className={`rounded-xl bg-background/80 border border-border/80 flex items-center justify-between gap-3 transition-colors ${classStateCardClass(item.state)} ${
         item.state === 'next' ? 'ring-1 ring-[color-mix(in_srgb,var(--mod-solid)_40%,transparent)]' : ''
       } ${compact ? 'p-2.5' : 'p-3.5'}`}
     >
       <div className="min-w-0 flex-1 space-y-0.5">
-        <div className={`text-[10px] font-mono font-bold ${muted ? 'text-slate-600' : 'text-slate-400'}`}>
+        <div className={`text-[10px] font-mono font-bold ${muted ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
           {formatAgendaWhen(item)}
         </div>
         <div className="flex items-center gap-2 min-w-0 flex-wrap">
-          <div className={`text-sm sm:text-xs font-black truncate ${muted ? 'text-slate-500 line-through' : 'text-white'}`}>
+          <div className={`text-sm sm:text-xs font-black truncate ${muted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
             {item.title}
           </div>
           <span data-mod-color={item.colorKey} className={MOD_PILL_CLASS}>
@@ -59,13 +59,13 @@ const AgendaRow = memo(function AgendaRow({
             </span>
           )}
           {muted && item.kind === 'class' && (
-            <span className="text-[9px] font-mono uppercase text-slate-500 flex items-center gap-0.5">
+            <span className="text-[9px] font-mono uppercase text-muted-foreground flex items-center gap-0.5">
               <Check className="w-3 h-3" /> Done
             </span>
           )}
         </div>
         {item.location && (
-          <div className={`text-[11px] font-mono flex items-center gap-1 truncate ${muted ? 'text-slate-600' : 'mod-text'}`} data-mod-color={item.colorKey}>
+          <div className={`text-[11px] font-mono flex items-center gap-1 truncate ${muted ? 'text-muted-foreground' : 'mod-text'}`} data-mod-color={item.colorKey}>
             <MapPin className="w-3 h-3 shrink-0" /> {item.location}
           </div>
         )}
@@ -79,7 +79,7 @@ const AgendaRow = memo(function AgendaRow({
           type="button"
           onClick={() => onToggleTask(item.sourceId, !!item.completed)}
           className={`touch-target shrink-0 p-2 rounded-lg border cursor-pointer active:opacity-80 ${
-            item.completed ? 'accent-bg border-transparent text-slate-950' : 'border-slate-600 text-slate-400'
+            item.completed ? 'accent-bg border-transparent text-slate-950' : 'border-border text-muted-foreground'
           }`}
           aria-label={item.completed ? 'Mark incomplete' : 'Mark complete'}
         >
@@ -123,11 +123,11 @@ export const CompactAgenda = memo(function CompactAgenda({
   }, [classes, tasks, moduleKey, limit, day?.getTime()]);
 
   if (loading) {
-    return <div className="py-6 text-center text-xs font-mono text-slate-500 animate-pulse">Loading agenda…</div>;
+    return <div className="py-6 text-center text-xs font-mono text-muted-foreground animate-pulse">Loading agenda…</div>;
   }
 
   if (groups.length === 0) {
-    return <p className="text-xs text-slate-400 py-4">{emptyMessage}</p>;
+    return <p className="text-xs text-muted-foreground py-4">{emptyMessage}</p>;
   }
 
   return (
@@ -136,7 +136,7 @@ export const CompactAgenda = memo(function CompactAgenda({
         <section key={group.key} className="space-y-2" aria-labelledby={`agenda-day-${group.key}`}>
           <h4
             id={`agenda-day-${group.key}`}
-            className="sticky top-0 z-[1] text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text bg-[var(--fios-surface)]/95 backdrop-blur-sm py-1.5 border-b border-slate-800/60 truncate"
+            className="sticky top-0 z-[1] text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text bg-[hsl(var(--background)/0.95)] backdrop-blur-sm py-1.5 border-b border-border/60 truncate"
           >
             {group.label}
           </h4>

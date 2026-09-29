@@ -327,7 +327,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '3.7.4',
+      version: '3.7.5',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -425,14 +425,14 @@ const SettingsTabInner: React.FC = () => {
 
   const numberField = (label: string, value: number, setValue: (n: number) => void) => (
     <div className="space-y-2">
-      <label className="text-[11px] font-mono font-bold uppercase text-slate-400 block">{label}</label>
+      <label className="text-[11px] font-mono font-bold uppercase text-muted-foreground block">{label}</label>
       <input
         type="number"
         min={1}
         max={120}
         value={value}
         onChange={(e) => setValue(Math.max(1, Math.min(120, Number(e.target.value))))}
-        className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border"
+        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:accent-border"
       />
     </div>
   );
@@ -444,24 +444,24 @@ const SettingsTabInner: React.FC = () => {
   const remaining = Math.max(0, Math.round((goalHours - doneHours) * 10) / 10).toFixed(1);
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto font-sans text-slate-100 pb-12">
+    <div className="space-y-8 max-w-5xl mx-auto font-sans text-foreground pb-12">
       <header className="space-y-1">
         <div className="flex items-center gap-2 accent-solid-text text-xs font-mono font-black uppercase tracking-widest">
           <Sliders className="w-3.5 h-3.5" /> System Preferences · Profile
         </div>
-        <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Account & Studio Settings</h1>
-        <p className="text-xs text-slate-400 font-medium">Manage your Fios profile, focus timer defaults, and connected feeds.</p>
+        <h1 className="text-3xl font-black italic uppercase text-foreground tracking-tight">Account & Studio Settings</h1>
+        <p className="text-xs text-muted-foreground font-medium">Manage your Fios profile, focus timer defaults, and connected feeds.</p>
       </header>
 
       {/* INSTALL APP SECTION */}
-      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
             <Smartphone className="w-4 h-4 accent-solid-text" /> Install Fios as an App
           </h2>
           <span className="text-[10px] font-mono accent-solid-text bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">PWA Ready</span>
         </div>
-        <p className="text-xs text-slate-400 leading-relaxed">
+        <p className="text-xs text-muted-foreground leading-relaxed">
           Pin Fios directly to your phone or desktop home screen for a full-screen, native app experience with zero browser clutter.
         </p>
 
@@ -476,22 +476,22 @@ const SettingsTabInner: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-[#07090e] p-4 rounded-xl border border-slate-800/80 space-y-2 text-xs font-mono text-slate-300">
-          <p className="font-bold text-white uppercase tracking-wide text-[11px] accent-solid-text">📱 How to add on iOS / iPhone:</p>
-          <p className="text-slate-400">1. Open this page in <strong className="text-slate-200">Safari</strong>.</p>
-          <p className="text-slate-400">2. Tap the <strong className="text-slate-200">Share</strong> button in the bottom menu bar.</p>
-          <p className="text-slate-400">3. Scroll down and select <strong className="text-slate-200">"Add to Home Screen"</strong>.</p>
+        <div className="bg-background p-4 rounded-xl border border-border/80 space-y-2 text-xs font-mono text-foreground">
+          <p className="font-bold text-foreground uppercase tracking-wide text-[11px] accent-solid-text">📱 How to add on iOS / iPhone:</p>
+          <p className="text-muted-foreground">1. Open this page in <strong className="text-foreground">Safari</strong>.</p>
+          <p className="text-muted-foreground">2. Tap the <strong className="text-foreground">Share</strong> button in the bottom menu bar.</p>
+          <p className="text-muted-foreground">3. Scroll down and select <strong className="text-foreground">"Add to Home Screen"</strong>.</p>
         </div>
       </section>
 
       {/* CLASS REMINDERS */}
-      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
             <Bell className="w-4 h-4 accent-solid-text" /> Class Reminders
           </h2>
           <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-[10px] font-mono text-slate-500 uppercase">{reminderEnabled ? 'On' : 'Off'}</span>
+            <span className="text-[10px] font-mono text-muted-foreground uppercase">{reminderEnabled ? 'On' : 'Off'}</span>
             <button
               type="button"
               role="switch"
@@ -514,7 +514,7 @@ const SettingsTabInner: React.FC = () => {
                 }
               }}
               className={`relative w-11 h-6 rounded-full border transition-colors cursor-pointer disabled:opacity-50 ${
-                reminderEnabled ? 'accent-bg border-transparent' : 'bg-slate-800 border-slate-700'
+                reminderEnabled ? 'accent-bg border-transparent' : 'bg-secondary border-border'
               }`}
             >
               <span
@@ -525,7 +525,7 @@ const SettingsTabInner: React.FC = () => {
             </button>
           </label>
         </div>
-        <p className="text-xs text-slate-400 leading-relaxed">
+        <p className="text-xs text-muted-foreground leading-relaxed">
           Get a browser notification before your next class from the synced timetable or manual schedule.
           Choose how many minutes ahead to be notified. While Fios is open, reminders use local notifications;
           Web Push covers background delivery on supported browsers and installed PWAs.
@@ -536,12 +536,12 @@ const SettingsTabInner: React.FC = () => {
           </p>
         )}
         {pushSupport.supported && !pushSupport.pushCapable && (
-          <p className="text-xs text-slate-400 bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2 leading-relaxed">
+          <p className="text-xs text-muted-foreground bg-card/60 border border-border rounded-lg px-3 py-2 leading-relaxed">
             {pushSupport.message}
           </p>
         )}
         <div className="space-y-2">
-          <span className="text-[10px] font-mono font-bold uppercase text-slate-500">Lead time</span>
+          <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground">Lead time</span>
           <div className="flex flex-wrap gap-2">
             {getLeadOptions().map((mins) => (
               <button
@@ -557,7 +557,7 @@ const SettingsTabInner: React.FC = () => {
                 className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-black uppercase border cursor-pointer ${
                   reminderLead === mins
                     ? 'accent-bg text-slate-950 border-transparent'
-                    : 'bg-[#07090e] border-slate-800 text-slate-400 hover:text-slate-200'
+                    : 'bg-background border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {mins} min
@@ -577,16 +577,16 @@ const SettingsTabInner: React.FC = () => {
               setReminderBusy(false);
             }
           }}
-          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold uppercase rounded-lg cursor-pointer disabled:opacity-40"
+          className="px-4 py-2 bg-secondary hover:bg-muted text-foreground text-xs font-bold uppercase rounded-lg cursor-pointer disabled:opacity-40"
         >
           Send test notification
         </button>
       </section>
 
       {/* 1. PROFILE */}
-      <form onSubmit={handleSaveProfile} className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
+      <form onSubmit={handleSaveProfile} className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
             <User className="w-4 h-4 accent-solid-text" /> Profile Information
           </h2>
           {profileSaved && (
@@ -598,45 +598,45 @@ const SettingsTabInner: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-2">
-            <label className="text-[11px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1"><IdCard className="w-3 h-3 accent-solid-text" /> Full Name</label>
+            <label className="text-[11px] font-mono font-bold uppercase text-muted-foreground flex items-center gap-1"><IdCard className="w-3 h-3 accent-solid-text" /> Full Name</label>
             <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ada Lovelace"
-              className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border" />
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:accent-border" />
           </div>
           <div className="space-y-2">
-            <label className="text-[11px] font-mono font-bold uppercase text-slate-400">Preferred Name (used in greetings)</label>
+            <label className="text-[11px] font-mono font-bold uppercase text-muted-foreground">Preferred Name (used in greetings)</label>
             <input value={preferredName} onChange={(e) => setPreferredName(e.target.value)} placeholder="Ada"
-              className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border" />
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:accent-border" />
           </div>
           <div className="space-y-2">
-            <label className="text-[11px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1">
+            <label className="text-[11px] font-mono font-bold uppercase text-muted-foreground flex items-center gap-1">
               <Calendar className="w-3 h-3 accent-solid-text" /> Birthday
             </label>
             <input
               type="date"
               value={birthday}
               onChange={(e) => setBirthday(e.target.value)}
-              className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:accent-border"
               aria-describedby="birthday-hint"
             />
-            <p id="birthday-hint" className="text-[10px] font-mono text-slate-500">
+            <p id="birthday-hint" className="text-[10px] font-mono text-muted-foreground">
               Optional — unlocks a birthday greeting and festive theme on your day.
             </p>
           </div>
           <div className="space-y-2 md:col-span-2">
-            <label className="text-[11px] font-mono font-bold uppercase text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3 accent-solid-text" /> Address</label>
+            <label className="text-[11px] font-mono font-bold uppercase text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3 accent-solid-text" /> Address</label>
             <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="City, Country"
-              className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border" />
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:accent-border" />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-[#07090e] border border-slate-800/80 rounded-lg p-3.5 space-y-1">
-            <span className="text-[10px] font-mono font-bold uppercase text-slate-500">Authenticated Email</span>
-            <p className="font-mono text-xs text-slate-200 font-bold truncate">{email}</p>
+          <div className="bg-background border border-border/80 rounded-lg p-3.5 space-y-1">
+            <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground">Authenticated Email</span>
+            <p className="font-mono text-xs text-foreground font-bold truncate">{email}</p>
           </div>
-          <div className="bg-[#07090e] border border-slate-800/80 rounded-lg p-3.5 space-y-1">
-            <span className="text-[10px] font-mono font-bold uppercase text-slate-500">User ID</span>
-            <p className="font-mono text-xs text-slate-400 truncate font-semibold">{userId}</p>
+          <div className="bg-background border border-border/80 rounded-lg p-3.5 space-y-1">
+            <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground">User ID</span>
+            <p className="font-mono text-xs text-muted-foreground truncate font-semibold">{userId}</p>
           </div>
         </div>
 
@@ -649,9 +649,9 @@ const SettingsTabInner: React.FC = () => {
       </form>
 
       {/* 2. WEEKLY STUDY TARGET */}
-      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
             <Target className="w-4 h-4 accent-solid-text" /> Weekly Study Goal Tracker
           </h2>
           {goalSaved && (
@@ -659,46 +659,46 @@ const SettingsTabInner: React.FC = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center bg-[#07090e] p-4 rounded-xl border border-slate-800/80">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center bg-background p-4 rounded-xl border border-border/80">
           <div>
-            <span className="text-[10px] font-mono uppercase text-slate-500">Logged Focus Time</span>
-            <p className="text-xl font-mono font-black text-white">{actualHours}h <span className="text-xs text-slate-500">/ {goalHours}h</span></p>
+            <span className="text-[10px] font-mono uppercase text-muted-foreground">Logged Focus Time</span>
+            <p className="text-xl font-mono font-black text-foreground">{actualHours}h <span className="text-xs text-muted-foreground">/ {goalHours}h</span></p>
           </div>
           <div>
-            <span className="text-[10px] font-mono uppercase text-slate-500">Target Progress</span>
+            <span className="text-[10px] font-mono uppercase text-muted-foreground">Target Progress</span>
             <p className="text-xl font-mono font-black accent-solid-text">{percentage}%</p>
           </div>
           <div>
-            <span className="text-[10px] font-mono uppercase text-slate-500">Hours Remaining</span>
-            <p className="text-xs font-mono font-bold text-slate-300">{remaining}h to go this week</p>
+            <span className="text-[10px] font-mono uppercase text-muted-foreground">Hours Remaining</span>
+            <p className="text-xs font-mono font-bold text-foreground">{remaining}h to go this week</p>
           </div>
         </div>
 
-        <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+        <div className="w-full h-2 bg-card rounded-full overflow-hidden border border-border">
           <div className="h-full accent-bg transition-all duration-500" style={{ width: `${percentage}%` }} />
         </div>
 
         <form onSubmit={handleSaveStudyGoal} className="flex items-center justify-between gap-3 pt-2">
           <div className="flex items-center gap-3">
-            <label className="text-xs text-slate-400 font-mono">Weekly Target (Hours):</label>
+            <label className="text-xs text-muted-foreground font-mono">Weekly Target (Hours):</label>
             <input
               type="number"
               min={1}
               max={100}
               value={goalHours}
               onChange={(e) => setGoalHours(Number(e.target.value))}
-              className="w-20 px-3 py-1.5 bg-[#07090e] border border-slate-800 rounded-lg text-xs font-mono text-white focus:outline-none focus:accent-border"
+              className="w-20 px-3 py-1.5 bg-background border border-border rounded-lg text-xs font-mono text-foreground focus:outline-none focus:accent-border"
             />
           </div>
-          <button type="submit" className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 rounded-lg transition-colors cursor-pointer">
+          <button type="submit" className="px-4 py-2 bg-secondary hover:bg-muted text-xs font-bold text-foreground rounded-lg transition-colors cursor-pointer">
             Save Target
           </button>
         </form>
       </section>
 
       {/* ACCOUNT SECURITY */}
-      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
-        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-5">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
           <Lock className="w-4 h-4 accent-solid-text" /> Account Security
         </h2>
 
@@ -711,7 +711,7 @@ const SettingsTabInner: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <form onSubmit={handleUpdateEmail} className="space-y-2">
-            <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">Update Email</label>
+            <label className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block">Update Email</label>
             <div className="flex gap-2">
               <input
                 type="email"
@@ -719,12 +719,12 @@ const SettingsTabInner: React.FC = () => {
                 placeholder="new.email@university.ie"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                className="flex-1 px-3.5 py-2 bg-[#07090e] border border-slate-800 rounded-lg text-slate-100 text-xs font-mono focus:outline-none focus:accent-border"
+                className="flex-1 px-3.5 py-2 bg-background border border-border rounded-lg text-foreground text-xs font-mono focus:outline-none focus:accent-border"
               />
               <button
                 type="submit"
                 disabled={loadingEmail}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg transition-colors shrink-0 cursor-pointer"
+                className="px-4 py-2 bg-secondary hover:bg-muted text-foreground text-xs font-bold rounded-lg transition-colors shrink-0 cursor-pointer"
               >
                 {loadingEmail ? 'Saving...' : 'Update'}
               </button>
@@ -732,7 +732,7 @@ const SettingsTabInner: React.FC = () => {
           </form>
 
           <form onSubmit={handleUpdatePassword} className="space-y-2">
-            <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">Change Password</label>
+            <label className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block">Change Password</label>
             <div className="flex gap-2">
               <input
                 type="password"
@@ -740,12 +740,12 @@ const SettingsTabInner: React.FC = () => {
                 placeholder="••••••••••••"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="flex-1 px-3.5 py-2 bg-[#07090e] border border-slate-800 rounded-lg text-slate-100 text-xs font-mono focus:outline-none focus:accent-border"
+                className="flex-1 px-3.5 py-2 bg-background border border-border rounded-lg text-foreground text-xs font-mono focus:outline-none focus:accent-border"
               />
               <button
                 type="submit"
                 disabled={loadingPassword}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg transition-colors shrink-0 cursor-pointer"
+                className="px-4 py-2 bg-secondary hover:bg-muted text-foreground text-xs font-bold rounded-lg transition-colors shrink-0 cursor-pointer"
               >
                 {loadingPassword ? 'Saving...' : 'Change'}
               </button>
@@ -755,9 +755,9 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* 3. POMODORO DEFAULTS */}
-      <form onSubmit={handleSavePomodoro} className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
+      <form onSubmit={handleSavePomodoro} className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+          <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
             <Timer className="w-4 h-4 accent-solid-text" /> Pomodoro Timer Defaults
           </h2>
           {pomodoroSaved && (
@@ -769,7 +769,7 @@ const SettingsTabInner: React.FC = () => {
           {numberField('Short Break (min)', shortBreak, setShortBreak)}
           {numberField('Long Break (min)', longBreak, setLongBreak)}
         </div>
-        <p className="text-[10px] text-slate-500 leading-tight">These durations drive both the Focus Timer tab and the floating timer widget across the app.</p>
+        <p className="text-[10px] text-muted-foreground leading-tight">These durations drive both the Focus Timer tab and the floating timer widget across the app.</p>
         <div className="flex justify-end">
           <motion.button whileTap={{ scale: 0.97 }} type="submit" disabled={savingPomodoro}
             className="px-5 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50">
@@ -1166,42 +1166,42 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* ABOUT, LEGAL & SUPPORT */}
-      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
-        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
-        <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.7.4.
+        <p className="text-xs text-muted-foreground">
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.7.5.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
             onClick={() => setShowPrivacy(true)}
-            className="px-4 py-2 rounded-lg bg-[#07090e] border border-slate-800 text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
+            className="px-4 py-2 rounded-lg bg-background border border-border text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
           >
             <Shield className="w-3.5 h-3.5" /> Privacy Policy & GDPR
           </button>
           <button
             onClick={() => setShowTerms(true)}
-            className="px-4 py-2 rounded-lg bg-[#07090e] border border-slate-800 text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
+            className="px-4 py-2 rounded-lg bg-background border border-border text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
           >
             <FileText className="w-3.5 h-3.5" /> Terms of Service
           </button>
           <button
             onClick={() => { resetCookieConsent(); toast('Cookie consent reset — banner will reappear', 'info'); }}
-            className="px-4 py-2 rounded-lg bg-[#07090e] border border-slate-800 text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
+            className="px-4 py-2 rounded-lg bg-background border border-border text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
           >
             <Cookie className="w-3.5 h-3.5" /> Reset cookie consent
           </button>
           <button
             onClick={() => setShowSupport(true)}
-            className="px-4 py-2 rounded-lg bg-[#07090e] border border-slate-800 text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
+            className="px-4 py-2 rounded-lg bg-background border border-border text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
           >
             <Mail className="w-3.5 h-3.5" /> Contact Support
           </button>
           {isAdmin && (
             <button
               onClick={() => setShowAdmin((v) => !v)}
-              className="px-4 py-2 rounded-lg bg-[#07090e] border accent-border text-xs font-mono accent-solid-text cursor-pointer inline-flex items-center gap-1.5"
+              className="px-4 py-2 rounded-lg bg-background border accent-border text-xs font-mono accent-solid-text cursor-pointer inline-flex items-center gap-1.5"
             >
               <ShieldCheck className="w-3.5 h-3.5" /> Admin panel
             </button>
@@ -1211,8 +1211,8 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* GitHub */}
-      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
-        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
           <GitBranch className="w-4 h-4 accent-solid-text" /> GitHub
         </h2>
         <div className="flex flex-wrap gap-3">
@@ -1226,35 +1226,35 @@ const SettingsTabInner: React.FC = () => {
           <button
             type="button"
             onClick={() => void handleGistExport()}
-            className="px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
+            className="px-4 py-2 rounded-lg bg-secondary border border-border text-foreground text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
           >
             Export Code Lab as Gist
           </button>
         </div>
-        {gistStatus && <p className="text-[11px] font-mono text-slate-400">{gistStatus}</p>}
-        <p className="text-[10px] text-slate-500">Optional: set <code className="accent-solid-text">fios_github_token</code> in localStorage or <code className="accent-solid-text">VITE_GITHUB_TOKEN</code> for automatic gist creation.</p>
+        {gistStatus && <p className="text-[11px] font-mono text-muted-foreground">{gistStatus}</p>}
+        <p className="text-[10px] text-muted-foreground">Optional: set <code className="accent-solid-text">fios_github_token</code> in localStorage or <code className="accent-solid-text">VITE_GITHUB_TOKEN</code> for automatic gist creation.</p>
       </section>
 
       <FeedbackForm />
 
       {/* PRIVACY & DATA RIGHTS */}
-      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
-        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
           <Shield className="w-4 h-4 accent-solid-text" /> Privacy & Data Security
         </h2>
 
-        <div className="text-xs text-slate-400 space-y-2 leading-relaxed bg-[#07090e]/60 p-4 rounded-xl border border-slate-800/80">
-          <p>• <strong className="text-slate-200">Controllers & processors:</strong> Your study data is stored in Supabase under RLS. AI calls use your Gemini key. Optional GitHub OAuth/gists, hosting logs, email delivery for Contact Support, and Web Push are described in the Privacy Policy.</p>
-          <p>• <strong className="text-slate-200">BYO Gemini key:</strong> Stored on your profile (RLS). Not used to train public models from your notes.</p>
-          <p>• <strong className="text-slate-200">Feedback & support:</strong> Optional ratings/messages and support form submissions go to the app operator — see Privacy Policy for anonymous vs signed-in, retention, and lawful basis.</p>
-          <p>• <strong className="text-slate-200">Your rights:</strong> Export a JSON copy below, update your profile anytime, or email support for erasure. Full GDPR statement via Privacy Policy.</p>
-          <p>• <strong className="text-slate-200">Consent:</strong> Essential browser storage only (no ad trackers / analytics SDKs) — reset the cookie banner above anytime.</p>
+        <div className="text-xs text-muted-foreground space-y-2 leading-relaxed bg-background/60 p-4 rounded-xl border border-border/80">
+          <p>• <strong className="text-foreground">Controllers & processors:</strong> Your study data is stored in Supabase under RLS. AI calls use your Gemini key. Optional GitHub OAuth/gists, hosting logs, email delivery for Contact Support, and Web Push are described in the Privacy Policy.</p>
+          <p>• <strong className="text-foreground">BYO Gemini key:</strong> Stored on your profile (RLS). Not used to train public models from your notes.</p>
+          <p>• <strong className="text-foreground">Feedback & support:</strong> Optional ratings/messages and support form submissions go to the app operator — see Privacy Policy for anonymous vs signed-in, retention, and lawful basis.</p>
+          <p>• <strong className="text-foreground">Your rights:</strong> Export a JSON copy below, update your profile anytime, or email support for erasure. Full GDPR statement via Privacy Policy.</p>
+          <p>• <strong className="text-foreground">Consent:</strong> Essential browser storage only (no ad trackers / analytics SDKs) — reset the cookie banner above anytime.</p>
         </div>
 
         <div className="pt-1 flex flex-wrap gap-3">
           <button
             onClick={() => void handleExportData()}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-muted text-foreground text-xs font-bold transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 accent-solid-text" /> Export My Data (JSON)
           </button>
@@ -1276,18 +1276,18 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* 4. TIMETABLE FEED */}
-      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
-        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
           <Calendar className="w-4 h-4 accent-solid-text" /> Timetable Feed URL (iCal)
         </h2>
         <form onSubmit={handleSaveFeed} className="flex flex-col sm:flex-row items-center gap-3">
           <input type="url" value={icalUrl} onChange={(e) => setIcalUrl(e.target.value)}
             placeholder="https://timetables.atu.ie/Ical/StudentSet?studentSetID=…"
-            className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:accent-border" />
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:accent-border" />
           <button type="submit" className="w-full sm:w-auto px-5 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors shrink-0 cursor-pointer">Update Feed</button>
         </form>
         <div className="flex items-center justify-between pt-1">
-          <p className="text-xs text-slate-400 font-mono">Need to unlink or reset your timetable sync?</p>
+          <p className="text-xs text-muted-foreground font-mono">Need to unlink or reset your timetable sync?</p>
           <button type="button" onClick={handleRemoveFeed}
             className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-mono font-bold uppercase rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
             <Trash2 className="w-3.5 h-3.5" /> Remove Link
@@ -1297,15 +1297,15 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* 5. SESSION */}
-      <section className="bg-[#0e131f] border border-slate-800 rounded-xl p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-xs font-mono font-black uppercase tracking-widest text-rose-400 flex items-center gap-2">
             <Shield className="w-4 h-4" /> Session Termination
           </h2>
-          <p className="text-xs text-slate-400">Securely log out of your Fios session on this device.</p>
+          <p className="text-xs text-muted-foreground">Securely log out of your Fios session on this device.</p>
         </div>
         <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={handleLogout}
-          className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-black italic uppercase text-xs rounded-lg transition-colors flex items-center gap-2 shrink-0 cursor-pointer shadow-lg shadow-rose-500/20">
+          className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-foreground font-black italic uppercase text-xs rounded-lg transition-colors flex items-center gap-2 shrink-0 cursor-pointer shadow-lg shadow-rose-500/20">
           <LogOut className="w-4 h-4" /> Log Out of Fios
         </motion.button>
       </section>

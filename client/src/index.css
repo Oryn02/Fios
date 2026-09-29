@@ -1,46 +1,151 @@
 @import "tailwindcss";
 
-/* ==========================================================================
-   Fios theme tokens
-   Accent variables (3-stop gradient) power the universal gradient engine:
-   buttons, gradient text, glowing borders, and active rings.
-   Surface variables drive the dashboard dark/light themes.
-   ========================================================================== */
-:root {
-  --fios-accent-from: #34d399;
-  --fios-accent-via: #2dd4bf;
-  --fios-accent-to: #14b8a6;
-  --fios-accent-solid: #34d399;
+/* Class-based dark variant (ThemeContext adds .dark / .light on <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
 
-  /* Dark theme (default) — stronger borders for scannable cards/tabs */
-  --fios-bg: #05070b;
-  --fios-surface: #0e131f;
-  --fios-surface-2: #07090e;
-  --fios-border: rgba(148, 163, 184, 0.18);
-  --fios-border-strong: rgba(148, 163, 184, 0.32);
-  --fios-text: #f8fafc;
-  --fios-text-muted: #94a3b8;
-  --fios-card-shadow: 0 10px 28px -14px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(148, 163, 184, 0.08);
-  --fios-tab-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.55);
+/* ==========================================================================
+   Section 1.1 — Strict semantic theme tokens (HSL channels)
+   :root = Light Mode · .dark / [data-theme="dark"] = Dark Mode
+   Tailwind maps via @theme; --fios-* surfaces bridge for legacy helpers.
+   Accent variables (3-stop gradient) still power the universal gradient engine.
+   ========================================================================== */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 142.1 76.2% 36.3%; /* Emerald base */
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 142.1 76.2% 36.3%;
+    --radius: 0.75rem;
+
+    --fios-accent-from: #34d399;
+    --fios-accent-via: #2dd4bf;
+    --fios-accent-to: #14b8a6;
+    --fios-accent-solid: #34d399;
+
+    --fios-bg: hsl(var(--background));
+    --fios-surface: hsl(var(--card));
+    --fios-surface-2: hsl(var(--secondary));
+    --fios-border: hsl(var(--border));
+    --fios-border-strong: hsl(var(--border));
+    --fios-text: hsl(var(--foreground));
+    --fios-text-muted: hsl(var(--muted-foreground));
+    --fios-card-shadow: 0 10px 28px -16px rgba(28, 25, 23, 0.18), 0 0 0 1px hsl(var(--border));
+    --fios-tab-shadow: 0 4px 12px -6px rgba(28, 25, 23, 0.12);
+  }
+
+  .dark,
+  [data-theme="dark"] {
+    --background: 222.2 84% 4.9%; /* Slate 950 base */
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 142.1 70.6% 45.3%; /* Emerald base */
+    --primary-foreground: 144.9 80.4% 10%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 142.1 70.6% 45.3%;
+
+    /* Preserve deep Fios dark surfaces while staying on semantic tokens */
+    --fios-bg: #05070b;
+    --fios-surface: #0e131f;
+    --fios-surface-2: #07090e;
+    --fios-border: rgba(148, 163, 184, 0.18);
+    --fios-border-strong: rgba(148, 163, 184, 0.32);
+    --fios-text: #f8fafc;
+    --fios-text-muted: #94a3b8;
+    --fios-card-shadow: 0 10px 28px -14px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(148, 163, 184, 0.08);
+    --fios-tab-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Explicit light attribute (ThemeContext / boot script) mirrors :root */
+  [data-theme="light"] {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 142.1 76.2% 36.3%;
+
+    --fios-bg: hsl(var(--background));
+    --fios-surface: hsl(var(--card));
+    --fios-surface-2: hsl(var(--secondary));
+    --fios-border: hsl(var(--border));
+    --fios-border-strong: hsl(var(--muted-foreground) / 0.35);
+    --fios-text: hsl(var(--foreground));
+    --fios-text-muted: hsl(var(--muted-foreground));
+    --fios-card-shadow: 0 10px 28px -16px rgba(28, 25, 23, 0.18), 0 0 0 1px hsl(var(--border));
+    --fios-tab-shadow: 0 4px 12px -6px rgba(28, 25, 23, 0.12);
+  }
 }
 
-[data-theme="light"] {
-  /* Softer, slightly darker cream — not harsh pure white */
-  --fios-bg: #e4dfd4;
-  --fios-surface: #efe9de;
-  --fios-surface-2: #e7e0d3;
-  --fios-border: #c9c0b0;
-  --fios-border-strong: #a89f8e;
-  --fios-text: #1c1917;
-  --fios-text-muted: #44403c;
-  --fios-card-shadow: 0 10px 28px -16px rgba(28, 25, 23, 0.22), 0 0 0 1px rgba(28, 25, 23, 0.06);
-  --fios-tab-shadow: 0 4px 12px -6px rgba(28, 25, 23, 0.16);
+/* Tailwind v4 semantic color bridge */
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
 }
 
 /* Semantic helpers used by theme-aware surfaces */
 .fios-app-bg {
-  background-color: var(--fios-bg);
-  color: var(--fios-text);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   position: relative;
   isolation: isolate;
 }
@@ -50,6 +155,49 @@
 .fios-border-strong { border-color: var(--fios-border-strong); }
 .fios-text { color: var(--fios-text); }
 .fios-text-muted { color: var(--fios-text-muted); }
+
+/* Chrome blur docks — always track --background (header / bottom nav / sticky docks) */
+.fios-chrome-blur,
+.fios-bottom-nav {
+  background-color: hsl(var(--background) / 0.95);
+}
+.fios-code-block {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border));
+}
+
+/* Form controls: light bg + dark text in Light Mode; readable in Dark Mode */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+textarea,
+select {
+  color-scheme: light dark;
+}
+[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+[data-theme="light"] textarea,
+[data-theme="light"] select,
+.light input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+.light textarea,
+.light select {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+  color-scheme: light;
+}
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder,
+.light input::placeholder,
+.light textarea::placeholder {
+  color: hsl(var(--muted-foreground)) !important;
+}
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+[data-theme="dark"] textarea,
+[data-theme="dark"] select,
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+.dark textarea,
+.dark select {
+  color-scheme: dark;
+}
 
 /* Card / panel / tab hierarchy */
 .fios-card {
@@ -190,11 +338,15 @@
   --mod-border: color-mix(in srgb, var(--mod-solid) 40%, transparent);
 }
 
-.mod-badge,
+.mod-badge {
+  color: var(--mod-text);
+  background-color: hsl(var(--primary) / 0.1);
+  border-color: color-mix(in srgb, var(--mod-solid, hsl(var(--primary))) 40%, transparent);
+}
 .mod-pill {
   color: var(--mod-text);
-  background-color: var(--mod-bg);
-  border-color: var(--mod-border);
+  background-color: hsl(var(--secondary));
+  border-color: color-mix(in srgb, var(--mod-solid, hsl(var(--primary))) 40%, transparent);
 }
 
 .mod-border { border-color: var(--mod-solid) !important; }
@@ -234,41 +386,52 @@ html.theme-ready .fios-card {
 }
 
 /* ==========================================================================
-   Comprehensive Light Mode remap.
-   Legacy views use hard-coded dark tokens; when the dashboard root is in
-   light mode we remap those tokens to the cream palette so every card,
-   sidebar, modal and drawer stays readable.
+   Comprehensive Light Mode remap (safety net for residual dark utilities).
+   Primary surfaces should use semantic tokens; this catches leftovers.
    ========================================================================== */
-[data-theme="light"] body { background-color: var(--fios-bg) !important; color: var(--fios-text); }
-[data-theme="light"] [class*="#0e131f"] { background-color: var(--fios-surface) !important; }
-[data-theme="light"] [class*="#07090e"] { background-color: var(--fios-surface-2) !important; }
+[data-theme="light"] body,
+.light body {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground));
+}
+[data-theme="light"] [class*="#0e131f"],
+[data-theme="light"] [class*="#07090e"],
+[data-theme="light"] [class*="#05070b"] {
+  background-color: hsl(var(--card)) !important;
+}
 [data-theme="light"] [class*="bg-slate-800"],
 [data-theme="light"] [class*="bg-slate-900"],
 [data-theme="light"] [class*="bg-slate-700"],
-[data-theme="light"] [class*="bg-black"] { background-color: var(--fios-surface-2) !important; }
+[data-theme="light"] [class*="bg-black"] {
+  background-color: hsl(var(--secondary)) !important;
+}
 
 [data-theme="light"] [class*="border-slate-800"],
 [data-theme="light"] [class*="border-slate-700"],
-[data-theme="light"] [class*="border-slate-600"] { border-color: var(--fios-border-strong) !important; }
+[data-theme="light"] [class*="border-slate-600"] {
+  border-color: hsl(var(--border)) !important;
+}
 
 [data-theme="light"] [class*="text-white"],
 [data-theme="light"] [class*="text-slate-100"],
 [data-theme="light"] [class*="text-slate-200"],
-[data-theme="light"] [class*="text-slate-300"] { color: var(--fios-text) !important; }
+[data-theme="light"] [class*="text-slate-300"] {
+  color: hsl(var(--foreground)) !important;
+}
 [data-theme="light"] [class*="text-slate-400"],
 [data-theme="light"] [class*="text-slate-500"],
-[data-theme="light"] [class*="text-slate-600"] { color: var(--fios-text-muted) !important; }
+[data-theme="light"] [class*="text-slate-600"] {
+  color: hsl(var(--muted-foreground)) !important;
+}
 
 /* Keep dark text legible on accent-filled buttons in both themes. */
 [data-theme="light"] [class*="text-slate-950"] { color: #020617 !important; }
 
-/* Stronger card elevation in light mode */
 [data-theme="light"] [class*="shadow-xl"],
 [data-theme="light"] [class*="shadow-2xl"] {
   box-shadow: var(--fios-card-shadow) !important;
 }
 
-/* Dark mode: lift borders on common card patterns */
 [data-theme="dark"] [class*="border-slate-800"],
 [data-theme="dark"] [class*="border-slate-700"] {
   border-color: var(--fios-border-strong) !important;
@@ -276,6 +439,19 @@ html.theme-ready .fios-card {
 [data-theme="dark"] [class*="shadow-xl"],
 [data-theme="dark"] [class*="shadow-2xl"] {
   box-shadow: var(--fios-card-shadow) !important;
+}
+
+/* Code blocks: never white-on-white / black-on-black */
+.fios-prose pre,
+.fios-code-block,
+pre.fios-code-block {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border));
+}
+.fios-prose code:not(pre code) {
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
 }
 
 /* ==========================================================================

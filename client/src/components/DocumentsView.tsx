@@ -309,7 +309,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="…or paste your notes here to summarize."
-          className="w-full h-32 p-4 bg-[var(--fios-surface-2)] border fios-border rounded-xl text-[var(--fios-text)] placeholder:text-slate-500 focus:outline-none focus:accent-border font-mono text-base sm:text-xs"
+                  className="w-full h-32 p-4 bg-[var(--fios-surface-2)] border fios-border rounded-xl text-[var(--fios-text)] placeholder:text-muted-foreground focus:outline-none focus:accent-border font-mono text-base sm:text-xs"
         />
 
         <div className="fios-sticky-action">
@@ -427,7 +427,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         </h3>
         {docs.length === 0 ? (
           <div className="rounded-2xl border border-dashed fios-border p-10 text-center space-y-2">
-            <Upload className="w-8 h-8 text-slate-500 mx-auto" />
+            <Upload className="w-8 h-8 text-muted-foreground mx-auto" />
             <p className="text-xs font-bold uppercase text-[var(--fios-text-muted)]">No documents yet</p>
           </div>
         ) : (
@@ -439,9 +439,9 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
                   <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded accent-bg text-slate-950">{doc.glossary?.length || 0} terms</span>
                   <div className="flex items-center gap-2">
                     {doc.module_code && <span className="text-[10px] font-mono text-cyan-400 font-bold">{resolveModuleLabel(modules, doc.module_code)}</span>}
-                    <button onClick={(e) => { e.stopPropagation(); openTutor(doc); }} className="text-slate-500 hover:accent-solid-text p-0.5 cursor-pointer" title="Ask AI Tutor"><MessageSquare className="w-3.5 h-3.5" /></button>
+                    <button onClick={(e) => { e.stopPropagation(); openTutor(doc); }} className="text-muted-foreground hover:accent-solid-text p-0.5 cursor-pointer" title="Ask AI Tutor"><MessageSquare className="w-3.5 h-3.5" /></button>
                     <ReportContentButton targetType="document" targetId={doc.id} targetLabel={doc.title} />
-                    <button onClick={(e) => handleDelete(e, doc.id)} className="text-slate-500 hover:text-rose-400 p-0.5 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+                    <button onClick={(e) => handleDelete(e, doc.id)} className="text-muted-foreground hover:text-rose-400 p-0.5 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
                 <div onClick={(e) => e.stopPropagation()} className="min-w-0">
@@ -482,7 +482,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
                     <p className="text-[10px] font-mono text-[var(--fios-text-muted)] truncate max-w-[240px]">{active?.title || 'General Assistant'}</p>
                   </div>
                 </div>
-                <button onClick={() => setTutorOpen(false)} className="text-slate-400 hover:text-slate-200 cursor-pointer"><X className="w-5 h-5" /></button>
+                <button onClick={() => setTutorOpen(false)} className="text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-5 h-5" /></button>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3 scroll-touch">
                 {messages.map((m, i) => (

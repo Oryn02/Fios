@@ -55,7 +55,7 @@ export function applyResolvedTheme(resolved: ResolvedTheme) {
   root.classList.remove('light', 'dark');
   root.classList.add(resolved);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', resolved === 'light' ? '#e4dfd4' : '#07090e');
+  if (meta) meta.setAttribute('content', resolved === 'light' ? '#ffffff' : '#07090e');
 }
 
 function normalizeTheme(raw: string | null | undefined): ThemeMode {
