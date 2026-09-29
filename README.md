@@ -42,6 +42,16 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
 
+### What’s new in v3.7.6
+
+- Mobile UI polish: Overview main scroll pad clears the floating Pomodoro / Brain Dump / FAB stack + bottom nav so section headers never clip under chrome.
+- Header icon buttons fit inside the header strip (safe-area-aware height) while keeping ≥44px touch targets.
+- Timetable day cards wrap long module titles instead of clipping mid-word; drawer long-press reorder no longer triggers native text selection.
+- FAB hides “Start Pomodoro” when the floating Pomodoro widget is already enabled; drawer regrouped into Core Hubs / Academic Tools / System Preferences.
+- Dashboard greeting truncates safely on 375–390px; secondary widgets compress into mobile pills; contribution heatmap gains edge-fade swipe masks.
+- Alpha-transparent semantic chips/tags; `sanitizeDeckTitle` strips `PAGE n` residue; code blocks stay dark-locked in both themes; flashcard rating rows keep ≥12px clearance above the floating zone.
+- Version alignment across packages and API `/health`.
+
 ### What’s new in v3.7.5
 
 - Theme Engine: semantic Light/Dark CSS variables wired into Tailwind (`bg-background`, `text-foreground`, `bg-card`, `bg-primary/10`, …).
