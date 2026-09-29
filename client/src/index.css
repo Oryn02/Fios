@@ -627,6 +627,30 @@ input, select, textarea { font-size: 16px; }
   line-height: 0;
 }
 
+/*
+  Drawer open / body scroll lock: block sideways document pan & rubber-band (v3.7.7).
+  Inline styles in useBodyScrollLock mirror these; class is the CSS fallback.
+*/
+html.fios-scroll-locked,
+html.fios-scroll-locked body {
+  overflow-x: hidden !important;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
+}
+html.fios-scroll-locked body {
+  max-width: 100%;
+}
+
+/* Mobile nav drawer: fixed width/max-width + contain so slide transform cannot widen the page */
+.fios-mobile-drawer {
+  width: 80%;
+  max-width: 300px;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
+  contain: layout paint;
+}
+
 /* Drawer reorder rows: long-press starts drag, never native text selection / callout */
 .fios-drawer-reorder-item,
 .fios-drawer-reorder-item * {

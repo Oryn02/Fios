@@ -37,10 +37,10 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Timetable', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.7.6', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.7.7', icon: Sparkles },
 ];
 
-/** Mobile drawer sections — Extended Tools & Settings regroup (v3.7.6). */
+/** Mobile drawer sections — Extended Tools & Settings regroup (v3.7.7). */
 const DRAWER_SECTIONS: { label: string; ids: readonly string[] }[] = [
   { label: 'Core Hubs', ids: ['overview', 'flashcards', 'modules', 'schedule', 'atu-calendar'] },
   { label: 'Academic Tools', ids: ['quiz', 'code', 'documents', 'tutor', 'grades', 'timer'] },
@@ -636,10 +636,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               data-fios-version-badge
               className="relative z-[65] inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 3.7.6"
+              aria-label="Fios version 3.7.7"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v3.7.6
+              v3.7.7
             </span>
             {zenMode && (
               <button
@@ -727,7 +727,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         </div>
       )}
 
-      <div className="flex flex-1 relative">
+      <div className={`flex flex-1 relative min-w-0 ${drawerOpen && !isDesktop ? 'overflow-x-hidden' : ''}`}>
         <AnimatePresence>
           {drawerOpen && !hideChrome && !isDesktop && (
             <>
@@ -735,7 +735,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 top-14 sm:top-16 z-40 bg-black/50"
+                className="fixed inset-0 top-[var(--fios-header-offset)] z-40 bg-black/50 overscroll-x-none touch-none"
                 onClick={() => setDrawerOpen(false)}
                 onTouchMove={(e) => e.preventDefault()}
                 aria-hidden
@@ -747,7 +747,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
                 transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-                className="fixed top-[var(--fios-header-offset)] left-0 bottom-0 z-50 w-[80vw] max-w-xs bg-[var(--fios-surface)] border-r fios-border p-4 flex flex-col safe-bottom"
+                className="fios-mobile-drawer fixed top-[var(--fios-header-offset)] left-0 bottom-0 z-50 w-[80%] max-w-[300px] overflow-hidden overscroll-x-none bg-[var(--fios-surface)] border-r fios-border shadow-2xl p-4 flex flex-col safe-bottom transform-gpu will-change-transform"
+                style={{ touchAction: 'pan-y' }}
                 aria-label="Mobile navigation"
               >
                 <div className="flex items-center justify-between mb-4">
