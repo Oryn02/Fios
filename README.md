@@ -45,6 +45,7 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 
 - Seamless scrollbars: hide scrollbar indicators app-wide (Overview agenda / timeline lists, page scroll, Modules tabs, drawers, modals) while keeping scroll and horizontal pan.
 - Shared stylesheet rule for overflow areas (Firefox / Chromium / legacy Edge); desktop + mobile / PWA.
+- Flashcards: Browse / Recall mode bar uses equal-width segments (no empty left gap under Due Today / All).
 - Version alignment across packages and API `/health`.
 
 ### What’s new in v3.7.0

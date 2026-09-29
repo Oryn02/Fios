@@ -14,6 +14,7 @@ const UpdatesTabInner: React.FC = () => {
       highlights: [
         'UI: scrollbars are hidden app-wide (Overview agenda lists, page scroll, Modules tabs, drawers, modals) while scrolling and horizontal pan still work.',
         'Touch / desktop / PWA: Firefox, Chromium, and legacy Edge scrollbar chrome suppressed via a shared stylesheet rule — no feature loss.',
+        'Flashcards: Browse / Recall mode bar uses equal-width segments (no empty left gap under Due Today / All).',
         'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.7.1.',
       ],
     },
