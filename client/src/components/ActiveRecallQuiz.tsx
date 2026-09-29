@@ -137,16 +137,16 @@ export const ActiveRecallQuiz: React.FC<ActiveRecallQuizProps> = ({ cards, onFin
             Reveal Answer <ArrowRight className="w-4 h-4" />
           </button>
         ) : (
-          <div className="grid grid-cols-2 gap-4 animate-fadeIn font-mono">
+          <div className="grid grid-cols-2 gap-4 animate-fadeIn font-mono fios-rating-clearance">
             <button
               onClick={() => handleAnswer(false)}
-              className="py-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="min-h-11 py-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <XCircle className="w-4 h-4" /> Needs Review
             </button>
             <button
               onClick={() => handleAnswer(true)}
-              className="py-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="min-h-11 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" /> Got It Right
             </button>

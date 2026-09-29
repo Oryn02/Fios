@@ -139,6 +139,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
   const { timeLeft, isActive } = usePomodoroState();
   const {
     showSmartWidget,
+    showPomodoroWidget,
     smartWidgetActions,
     smartWidgetMetrics,
     smartWidgetCompact,
@@ -234,6 +235,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
     const ids = (Array.isArray(smartWidgetActions) ? smartWidgetActions : DEFAULT_SMART_ACTIONS) as SmartActionId[];
     return ids
       .filter((id) => ACTION_ICONS[id])
+      // Floating Pomodoro already owns Start — hide duplicate from FAB when widget is on
+      .filter((id) => !(showPomodoroWidget && id === 'pomodoro'))
       .map((id) => ({
         id,
         label: id === 'zen'
@@ -243,7 +246,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
         onClick: actionHandlers[id],
       }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartWidgetActions, onNavigate, onOpenTutor, zenMode, setZenMode]);
+  }, [smartWidgetActions, onNavigate, onOpenTutor, zenMode, setZenMode, showPomodoroWidget]);
 
   const metricChips = useMemo(() => {
     const order = (smartWidgetMetrics?.length ? smartWidgetMetrics : ['dueCards', 'tasks']) as SmartMetricId[];

@@ -104,7 +104,7 @@ export const FeedbackForm: React.FC = () => {
                   type="button"
                   onClick={() => toggleCategory(c)}
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border cursor-pointer ${
-                    on ? 'accent-bg text-slate-950 border-transparent' : 'fios-border text-[var(--fios-text-muted)]'
+                    on ? 'fios-chip-active' : 'fios-border text-[var(--fios-text-muted)]'
                   }`}
                 >
                   {CATEGORY_LABELS[c]}

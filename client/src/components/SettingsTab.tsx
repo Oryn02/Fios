@@ -327,7 +327,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '3.7.5',
+      version: '3.7.6',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -556,7 +556,7 @@ const SettingsTabInner: React.FC = () => {
                 }}
                 className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-black uppercase border cursor-pointer ${
                   reminderLead === mins
-                    ? 'accent-bg text-slate-950 border-transparent'
+                    ? 'fios-chip-active'
                     : 'bg-background border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -794,7 +794,7 @@ const SettingsTabInner: React.FC = () => {
             ]).map(({ id, label, Icon }) => (
               <button key={id} type="button" onClick={() => setTheme(id)}
                 className={`px-4 py-2 rounded-lg text-xs font-black uppercase flex items-center gap-1.5 border transition-colors cursor-pointer ${
-                  theme === id ? 'accent-bg text-slate-950 border-transparent' : 'bg-[var(--fios-surface-2)] fios-border text-[var(--fios-text-muted)]'
+                  theme === id ? 'fios-chip-active' : 'bg-[var(--fios-surface-2)] fios-border text-[var(--fios-text-muted)]'
                 }`}>
                 <Icon className="w-3.5 h-3.5" /> {label}
               </button>
@@ -871,14 +871,14 @@ const SettingsTabInner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSmartWidgetCompact(!smartWidgetCompact)}
-                className={`px-3 py-2 rounded-lg border text-[10px] font-bold uppercase cursor-pointer ${smartWidgetCompact ? 'accent-bg text-slate-950 border-transparent' : 'fios-border text-[var(--fios-text-muted)]'}`}
+                className={`px-3 py-2 rounded-lg border text-[10px] font-bold uppercase cursor-pointer ${smartWidgetCompact ? 'fios-chip-active' : 'fios-border text-[var(--fios-text-muted)]'}`}
               >
                 Compact FAB {smartWidgetCompact ? 'On' : 'Off'}
               </button>
               <button
                 type="button"
                 onClick={() => setSmartWidgetShowMetrics(!smartWidgetShowMetrics)}
-                className={`px-3 py-2 rounded-lg border text-[10px] font-bold uppercase cursor-pointer ${smartWidgetShowMetrics ? 'accent-bg text-slate-950 border-transparent' : 'fios-border text-[var(--fios-text-muted)]'}`}
+                className={`px-3 py-2 rounded-lg border text-[10px] font-bold uppercase cursor-pointer ${smartWidgetShowMetrics ? 'fios-chip-active' : 'fios-border text-[var(--fios-text-muted)]'}`}
               >
                 Metrics chip {smartWidgetShowMetrics ? 'On' : 'Off'}
               </button>
@@ -1171,7 +1171,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-muted-foreground">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.7.5.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.7.6.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
