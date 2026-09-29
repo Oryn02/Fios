@@ -440,6 +440,11 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       if (!drawerTouch.current || drawerTouch.current.id !== id) return;
       drawerTouch.current.armed = true;
       drawerSuppressClick.current = true;
+      try {
+        window.getSelection()?.removeAllRanges();
+      } catch {
+        /* ignore */
+      }
       const next = [...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)];
       draftNavOrderRef.current = next;
       setDraftNavOrder(next);
@@ -724,17 +729,18 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                             onPointerMove={onDrawerPointerMove}
                             onPointerUp={onDrawerPointerEnd}
                             onPointerCancel={onDrawerPointerEnd}
+                            onContextMenu={(e) => e.preventDefault()}
                             aria-current={isActive ? 'page' : undefined}
                             aria-grabbed={isDragging || undefined}
-                            style={{ touchAction: dragId ? 'none' : 'manipulation' }}
-                            className={`fios-drawer-reorder-item w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
+                            style={{ touchAction: dragId ? 'none' : 'manipulation', userSelect: 'none', WebkitUserSelect: 'none' } as React.CSSProperties}
+                            className={`fios-drawer-reorder-item select-none w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
                               isDragging ? 'scale-[1.03] ring-2 ring-[var(--fios-accent-solid)]/50 shadow-lg z-10' : ''
                             } ${
                               isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent'
                             }`}
                           >
-                            <Icon className="w-4 h-4 shrink-0 pointer-events-none" />
-                            <span className="pointer-events-none">{item.label}</span>
+                            <Icon className="w-4 h-4 shrink-0 pointer-events-none select-none" />
+                            <span className="pointer-events-none select-none">{item.label}</span>
                           </button>
                         );
                       })}
@@ -947,17 +953,18 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                           onPointerMove={onDrawerPointerMove}
                           onPointerUp={onDrawerPointerEnd}
                           onPointerCancel={onDrawerPointerEnd}
+                          onContextMenu={(e) => e.preventDefault()}
                           aria-current={isActive ? 'page' : undefined}
                           aria-grabbed={isDragging || undefined}
-                          style={{ touchAction: dragId ? 'none' : 'manipulation' }}
-                          className={`fios-drawer-reorder-item w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
+                          style={{ touchAction: dragId ? 'none' : 'manipulation', userSelect: 'none', WebkitUserSelect: 'none' } as React.CSSProperties}
+                          className={`fios-drawer-reorder-item select-none w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
                             isDragging ? 'scale-[1.03] ring-2 ring-[var(--fios-accent-solid)]/50 shadow-lg z-10' : ''
                           } ${
                             isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent'
                           }`}
                         >
-                          <Icon className="w-4 h-4 shrink-0 pointer-events-none" />
-                          <span className="pointer-events-none">{item.label}</span>
+                          <Icon className="w-4 h-4 shrink-0 pointer-events-none select-none" />
+                          <span className="pointer-events-none select-none">{item.label}</span>
                         </button>
                       );
                     })}

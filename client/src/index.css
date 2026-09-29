@@ -595,17 +595,18 @@ input, select, textarea { font-size: 16px; }
 
 /* Header: grow with safe-area so 44px controls never spill past the navy strip */
 :root {
-  --fios-header-content: 3.5rem; /* 56px */
+  --fios-header-content: 3.75rem; /* 60px — room for 44px targets + 8px vertical pad */
   --fios-header-offset: calc(var(--fios-header-content) + env(safe-area-inset-top, 0px));
 }
 @media (min-width: 640px) {
-  :root { --fios-header-content: 4rem; }
+  :root { --fios-header-content: 4.25rem; }
 }
 .fios-header {
   box-sizing: border-box;
   min-height: var(--fios-header-offset);
   height: var(--fios-header-offset);
   padding-top: env(safe-area-inset-top, 0px);
+  overflow: hidden;
 }
 .fios-header-spacer {
   height: var(--fios-header-offset);
@@ -618,16 +619,28 @@ input, select, textarea { font-size: 16px; }
   justify-content: center;
   width: 2.75rem;
   height: 2.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  max-height: 44px;
   padding: 0;
   flex-shrink: 0;
+  line-height: 0;
 }
 
-/* Drawer reorder rows: long-press starts drag, never native text selection */
-.fios-drawer-reorder-item {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
+/* Drawer reorder rows: long-press starts drag, never native text selection / callout */
+.fios-drawer-reorder-item,
+.fios-drawer-reorder-item * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
   -webkit-tap-highlight-color: transparent;
+}
+.fios-drawer-reorder-item {
+  /* Allow parent nav to scroll vertically; block browser long-press gestures */
+  touch-action: manipulation;
+}
+.fios-drawer-reorder-item[aria-grabbed='true'] {
+  touch-action: none;
 }
 
 /* Bottom nav: home-indicator clearance (plan: env(safe-area)+6px, floor 12px) */
