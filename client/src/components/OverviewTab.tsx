@@ -687,7 +687,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
                   <span className="text-[9px] font-black font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-slate-900 accent-solid-text border fios-border">
                     {deck.cards?.length || 0} Cards
                   </span>
-                  <h4 className="text-sm font-black text-white group-hover:accent-solid-text transition-colors mt-2 line-clamp-1">{deck.title}</h4>
+                  <h4 className="text-sm font-black text-white group-hover:accent-solid-text transition-colors mt-2 line-clamp-1 truncate max-w-full">{deck.title}</h4>
                 </div>
                 <div className="text-[10px] font-mono text-slate-500 flex items-center justify-between">
                   <span>{new Date(deck.created_at).toLocaleDateString('en-GB')}</span>

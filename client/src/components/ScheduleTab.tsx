@@ -541,7 +541,7 @@ const ScheduleTabInner: React.FC = () => {
 
                   <div className="flex-1 space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className={`text-base font-black tracking-wide ${muted ? 'text-slate-500 line-through decoration-slate-600' : 'text-white'}`}>
+                      <h3 className={`text-base font-black tracking-wide truncate max-w-full min-w-0 ${muted ? 'text-slate-500 line-through decoration-slate-600' : 'text-white'}`}>
                         {event.title}
                       </h3>
                       <span data-mod-color={colorKey} className={MOD_PILL_CLASS}>
@@ -646,7 +646,7 @@ const ScheduleTabInner: React.FC = () => {
                           </div>
                           <div className="flex-1 space-y-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className={`text-sm font-bold ${muted ? 'text-slate-500 line-through' : 'text-white'}`}>{event.title}</h4>
+                              <h4 className={`text-sm font-bold truncate max-w-[min(100%,18rem)] ${muted ? 'text-slate-500 line-through' : 'text-white'}`}>{event.title}</h4>
                               <span data-mod-color={colorKey} className={MOD_PILL_CLASS}>
                                 {event.title.split(/[\s·|—-]/)[0]?.slice(0, 10) || 'Class'}
                               </span>

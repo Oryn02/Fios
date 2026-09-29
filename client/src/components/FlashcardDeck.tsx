@@ -16,6 +16,7 @@ import { InlineEditableTitle } from './InlineEditableTitle';
 import { ReportContentButton } from './ReportContentButton';
 import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle, Download, Share2 } from 'lucide-react';
 import { toast } from '../lib/toast';
+import { sanitizeDeckTitle } from '../lib/sanitizeDeckTitle';
 
 const SM2_ONBOARD_KEY = 'fios_sm2_onboarded';
 
@@ -39,7 +40,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
   const [studyFilter, setStudyFilter] = useState<'due' | 'all'>('due');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [deckTitle, setDeckTitle] = useState(initialTitle);
+  const [deckTitle, setDeckTitle] = useState(() => sanitizeDeckTitle(initialTitle, 'Generated Flashcard Deck'));
   const [selectedModuleCode, setSelectedModuleCode] = useState<string>(initialModule);
   const [modules, setModules] = useState<DBModule[]>([]);
   const [saving, setSaving] = useState(false);

@@ -334,7 +334,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
             >
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <span data-mod-color={colorKey} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide max-w-[70%] truncate`} title={title}>
+                  <span data-mod-color={colorKey} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide`} title={title}>
                     {title}
                   </span>
                   <div className="flex items-center gap-0.5 shrink-0">
@@ -364,9 +364,9 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                   </p>
                 )}
                 {mod.tags && mod.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5 min-w-0">
                     {mod.tags.map((t) => (
-                      <span key={t} data-mod-color={colorKey} className="mod-pill text-[9px] font-mono px-1.5 py-0.5 rounded border">{t}</span>
+                      <span key={t} data-mod-color={colorKey} className="mod-pill text-[9px] font-mono px-1.5 py-0.5 rounded border max-w-[180px] truncate min-h-[1.25rem]">{t}</span>
                     ))}
                   </div>
                 )}

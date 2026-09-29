@@ -1,10 +1,10 @@
 # Fios — Your Academic Command Center
 
-[![Version](https://img.shields.io/badge/version-v3.7.3-059669)](https://github.com/Oryn02/Fios)
+[![Version](https://img.shields.io/badge/version-v3.7.4-059669)](https://github.com/Oryn02/Fios)
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v3.7.3**
+**Current version: v3.7.4**
 
 > Version numbers in Updates / README use coherent semver from the first published release as **v1.0.0** (reassigned by substance; SQL migration filenames on disk may still use older labels).
 
@@ -40,6 +40,15 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v3.7.4
+
+- Mobile UI/UX master refactor: strict z-index scale so Pomodoro / FAB / bottom nav / drawers / toasts no longer collide.
+- Floating widgets clear the bottom nav and auto-hide when the keyboard or a text field is focused; FAB speed dial uses a backdrop + scroll lock.
+- Toast singleton at the top of the viewport (2s dismiss) — rating toasts no longer stack over bottom chrome.
+- Sticky keyboard-aware action bars + 16px inputs on Smart Notes, Exam Simulator, and Code Lab; code blocks scroll horizontally without wrapping line numbers.
+- Deck title sanitization and truncated module badges/tags; bottom nav safe-area padding and 44px touch targets.
+- Version alignment across packages and API `/health`.
 
 ### What’s new in v3.7.3
 
@@ -343,7 +352,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v3.7.3) — Render Static Site root
+├── client/                 # React + Vite frontend (v3.7.4) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/

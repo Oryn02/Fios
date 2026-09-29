@@ -3,10 +3,26 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.3.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.4.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.7.4',
+      date: 'September 2026',
+      title: 'Mobile UI/UX master refactor',
+      highlights: [
+        'Z-index scale: sticky (10) → bottom nav (20) → floating widgets (30) → backdrops (40) → drawers (50) → toasts (60).',
+        'Floating Pomodoro + Quick FAB sit clear of the bottom nav; both hide with the nav when the soft keyboard / text focus is open.',
+        'FAB speed dial uses a blurred backdrop and locks background scroll while expanded.',
+        'Toasts are a singleton banner at the top (under the header), auto-dismiss in 2s — no more bottom-left stacks over study actions.',
+        'Smart Notes / Exam Simulator / Code Lab: sticky keyboard-aware primary CTAs (44px) + 16px inputs on mobile to stop iOS zoom.',
+        'Code Lab / markdown code blocks: horizontal scroll with min-width pre so line numbers never wrap into code.',
+        'sanitizeDeckTitle strips markdown dash artifacts; module badges / tags truncate at 180px with flex-wrap.',
+        'Bottom nav home-indicator padding + ≥44px touch targets; drawer / modal body scroll lock retained.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.7.4.',
+      ],
+    },
     {
       version: 'v3.7.3',
       date: 'September 2026',

@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { Flashcard } from '../types/api';
 import { IS_DEMO, demoDecks } from './demo';
+import { sanitizeDeckTitle } from './sanitizeDeckTitle';
 
 export interface SavedDeck {
   id: string;
@@ -34,11 +35,12 @@ export async function saveDeckWithCards(
   cards: Flashcard[],
   moduleCode?: string
 ) {
+  const cleanTitle = sanitizeDeckTitle(title, 'Untitled Study Deck');
   if (IS_DEMO) {
     const deck: SavedDeck = {
       id: `demo-${Date.now()}`,
       user_id: 'demo',
-      title: title || 'Untitled Study Deck',
+      title: cleanTitle,
       module_code: moduleCode || undefined,
       created_at: new Date().toISOString(),
       cards: cards.map((c, i) => ({
@@ -64,7 +66,7 @@ export async function saveDeckWithCards(
     .insert([
       {
         user_id: user.id,
-        title: title || 'Untitled Study Deck',
+        title: cleanTitle,
         module_code: moduleCode || null,
       },
     ])
@@ -120,7 +122,7 @@ export async function getUserDecksWithCards() {
 }
 
 export async function renameDeck(deckId: string, title: string): Promise<void> {
-  const next = title.trim() || 'Untitled Study Deck';
+  const next = sanitizeDeckTitle(title, 'Untitled Study Deck');
   if (IS_DEMO) {
     demoDeckState = demoDeckState.map((d) => (d.id === deckId ? { ...d, title: next } : d));
     return;
@@ -136,7 +138,7 @@ export function buildDeckExport(
 ): DeckExportPayload {
   return {
     version: 1,
-    title: title || 'Untitled Study Deck',
+    title: sanitizeDeckTitle(title, 'Untitled Study Deck'),
     module_code: moduleCode || null,
     exported_at: new Date().toISOString(),
     cards: (cards || []).map((c) => ({

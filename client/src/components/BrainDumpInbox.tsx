@@ -142,7 +142,7 @@ ${dump.text}`,
   };
 
   return (
-    <div className="relative z-[60] pointer-events-auto flex flex-col items-start font-sans">
+    <div className="relative z-30 pointer-events-auto flex flex-col items-start font-sans">
       <AnimatePresence>
         {open && (
           <motion.div
@@ -150,7 +150,7 @@ ${dump.text}`,
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 360, damping: 28 }}
-            className="absolute bottom-full mb-3 left-0 z-[72] w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border fios-border-strong bg-[var(--fios-surface)]/95 backdrop-blur-xl shadow-2xl p-4 space-y-3"
+            className="absolute bottom-full mb-3 left-0 z-40 w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border fios-border-strong bg-[var(--fios-surface)]/95 backdrop-blur-xl shadow-2xl p-4 space-y-3"
             role="dialog"
             aria-label="Brain dump inbox"
           >

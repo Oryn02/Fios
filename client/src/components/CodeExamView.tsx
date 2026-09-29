@@ -260,7 +260,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
             onChange={(e) => setCustomPrompt(e.target.value)}
             placeholder="Describe a targeted challenge — e.g. ‘Write a recursive DFS that detects cycles in an adjacency list’…"
             rows={3}
-            className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-400 resize-y"
+            className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2 text-base sm:text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-400 resize-y"
           />
         </div>
 
@@ -272,15 +272,17 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
           ))}
         </div>
 
-        <motion.button
-          whileTap={{ scale: 0.99 }}
-          onClick={handleGenerate}
-          disabled={generating}
-          className="w-full py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
-        >
-          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {generating ? 'Generating challenge…' : 'Generate Code Challenge'}
-        </motion.button>
+        <div className="fios-sticky-action">
+          <motion.button
+            whileTap={{ scale: 0.99 }}
+            onClick={handleGenerate}
+            disabled={generating}
+            className="fios-sticky-cta w-full py-3 min-h-11 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 touch-manipulation"
+          >
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {generating ? 'Generating challenge…' : 'Generate Code Challenge'}
+          </motion.button>
+        </div>
 
         {error && (
           <div className="space-y-2">
@@ -319,16 +321,17 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                 <p className="text-xs text-slate-300 font-mono leading-relaxed whitespace-pre-wrap">{challenge.prompt}</p>
               </div>
 
-              <div className="rounded-2xl overflow-hidden border border-slate-800">
+              <div className="rounded-2xl overflow-hidden border border-slate-800 fios-code-scroll">
                 <div className="flex items-center justify-between px-3 py-2 bg-[#07090e] border-b border-slate-800">
                   <span className="text-[10px] font-mono font-bold uppercase text-slate-400">solution.{challenge.language === 'python' ? 'py' : challenge.language === 'c' ? 'c' : 'ts'}</span>
                   <button
                     onClick={() => setUserCode(challenge.starterCode)}
-                    className="text-[10px] font-mono text-slate-500 hover:text-slate-300 flex items-center gap-1 cursor-pointer"
+                    className="touch-target text-[10px] font-mono text-slate-500 hover:text-slate-300 flex items-center gap-1 cursor-pointer"
                   >
                     <RotateCcw className="w-3 h-3" /> Reset code
                   </button>
                 </div>
+                <div className="min-w-0 overflow-x-auto">
                 <Editor
                   height="320px"
                   theme={monacoTheme}
@@ -346,6 +349,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                   }}
                   loading={<div className="p-6 text-xs font-mono text-slate-500">Loading editor…</div>}
                 />
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">

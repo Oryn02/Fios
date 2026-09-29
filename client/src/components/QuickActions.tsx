@@ -20,6 +20,8 @@ import { getTasks, peekCachedTasks } from '../lib/taskService';
 import { getFocusSessions } from '../lib/focusService';
 import { getCachedCalendarEvents } from '../lib/calendarService';
 import { peekUnifiedScheduleEvents, peekSavedCalendarUrl } from '../lib/scheduleService';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { sanitizeDeckTitle } from '../lib/sanitizeDeckTitle';
 
 interface QuickActionsProps {
   onNavigate: (tab: string, options?: { openTutor?: boolean }) => void;
@@ -64,7 +66,7 @@ const QuickAddFlashcardModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
         if (!user) throw new Error('Authentication required.');
         const { data: deck, error: deckErr } = await supabase
           .from('decks')
-          .insert({ user_id: user.id, title: title.trim() || 'Quick Deck', module_code: moduleCode || null })
+          .insert({ user_id: user.id, title: sanitizeDeckTitle(title.trim() || 'Quick Deck'), module_code: moduleCode || null })
           .select().single();
         if (deckErr || !deck) throw new Error(deckErr?.message || 'Failed to create deck.');
         const { error: cardErr } = await supabase.from('cards').insert({ deck_id: deck.id, question: front.trim(), answer: back.trim() });
@@ -147,6 +149,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
   const [open, setOpen] = useState(false);
   const [showFlashcard, setShowFlashcard] = useState(false);
   const [metrics, setMetrics] = useState<Partial<Record<SmartMetricId, string | number>>>({});
+  useBodyScrollLock(open);
 
   useEffect(() => {
     if (!showSmartWidget || !smartWidgetShowMetrics) return;
@@ -268,13 +271,14 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-xs"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs"
+            aria-hidden
           />
         )}
       </AnimatePresence>
 
-      {/* Dock child — parent FloatingDock owns fixed placement */}
-      <div className="relative z-[60] flex flex-col items-end gap-2 font-sans pointer-events-auto">
+      {/* Dock child — parent FloatingDock owns fixed placement; raise above backdrop when open */}
+      <div className={`relative flex flex-col items-end gap-2 font-sans pointer-events-auto ${open ? 'z-40' : 'z-30'}`}>
         <AnimatePresence>
           {open && (
             <motion.div

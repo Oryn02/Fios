@@ -10,6 +10,7 @@ import {
 import { useProfile } from '../context/ProfileContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { soundscapeEngine, SOUNDSCAPES, type Soundscape } from '../lib/soundscapes';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 const MODES: PomodoroMode[] = ['work', 'shortBreak', 'longBreak'];
 
@@ -128,6 +129,7 @@ export const PomodoroWidget: React.FC = () => {
   const { showPomodoroWidget } = usePreferences();
   const [expanded, setExpanded] = useState(false);
   const [panel, setPanel] = useState<'none' | 'settings' | 'sound'>('none');
+  useBodyScrollLock(expanded);
 
   if (!showPomodoroWidget) return null;
 
@@ -141,7 +143,7 @@ export const PomodoroWidget: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setExpanded(false)}
-            className="fixed inset-0 z-[65] bg-black/60 backdrop-blur-xs"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs"
           />
         )}
       </AnimatePresence>
@@ -150,7 +152,7 @@ export const PomodoroWidget: React.FC = () => {
         initial={{ opacity: 0, y: 24, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-        className="relative z-[68] select-none font-sans pointer-events-auto"
+        className={`relative select-none font-sans pointer-events-auto ${expanded ? 'z-40' : 'z-30'}`}
         style={{ willChange: 'transform, opacity' }}
       >
         <div className={`rounded-3xl border fios-border bg-[var(--fios-surface)]/90 backdrop-blur-2xl shadow-2xl accent-glow overflow-hidden transition-all ${expanded ? 'w-[280px]' : 'w-auto'}`}>

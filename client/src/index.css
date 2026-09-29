@@ -359,6 +359,19 @@ html[data-theme="light"] [data-landing] [class*="text-slate-950"] {
 /* ==========================================================================
    Mobile / cross-browser optimizations + touch (v2.2.3)
    ========================================================================== */
+
+/* Strict z-index hierarchy (v3.7.4 mobile UI refactor)
+   z-10 sticky sub-headers · z-20 bottom nav · z-30 floating widgets
+   z-40 modal / FAB backdrops · z-50 drawers & slide-overs · z-60 toasts */
+:root {
+  --fios-z-sticky: 10;
+  --fios-z-nav: 20;
+  --fios-z-float: 30;
+  --fios-z-backdrop: 40;
+  --fios-z-drawer: 50;
+  --fios-z-toast: 60;
+}
+
 input, select, textarea { font-size: 16px; }
 @media (min-width: 768px) {
   input, select, textarea { font-size: inherit; }
@@ -368,6 +381,38 @@ input, select, textarea { font-size: 16px; }
 .safe-top { padding-top: max(1rem, env(safe-area-inset-top, 0px)); }
 .min-h-dvh { min-height: 100vh; min-height: 100dvh; }
 .h-dvh { height: 100vh; height: 100dvh; }
+
+/* Bottom nav: home-indicator clearance (plan: env(safe-area)+6px, floor 12px) */
+.fios-bottom-nav {
+  padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 6px);
+  z-index: var(--fios-z-nav);
+}
+
+/* Floating Pomodoro / FAB dock clearance above bottom nav on mobile */
+.fios-fab-dock {
+  z-index: var(--fios-z-float);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 4.75rem);
+  transition: opacity 200ms ease, transform 200ms ease, visibility 200ms ease;
+}
+@media (min-width: 768px) {
+  .fios-fab-dock {
+    bottom: 1.5rem;
+  }
+}
+.fios-fab-dock.fios-chrome-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(8px);
+}
+
+.fios-bottom-nav.fios-chrome-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(100%);
+  transition: opacity 200ms ease, transform 200ms ease, visibility 200ms ease;
+}
 
 html, body, #root { min-height: 100vh; min-height: 100dvh; }
 body { background-color: var(--fios-bg, #05070b); color: var(--fios-text, #f8fafc); overscroll-behavior-y: none; }
@@ -451,6 +496,50 @@ summary,
 .fios-bottom-nav,
 .fios-fab-dock {
   touch-action: manipulation;
+}
+
+/* Sticky keyboard-aware primary action bars (Smart Notes / Exam / Code Lab) */
+.fios-sticky-action {
+  position: sticky;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 4.5rem);
+  z-index: var(--fios-z-sticky);
+  margin-left: -0.25rem;
+  margin-right: -0.25rem;
+  padding: 0.5rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--fios-surface) 92%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--fios-border);
+}
+@media (min-width: 768px) {
+  .fios-sticky-action {
+    position: static;
+    bottom: auto;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-top: 0;
+  }
+}
+.fios-sticky-action > button,
+.fios-sticky-action > .fios-sticky-cta {
+  min-height: 44px;
+}
+
+/* Code blocks: force horizontal scroll; keep line numbers / pre from wrapping */
+.fios-code-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+.fios-code-scroll > pre,
+pre.fios-code-pre {
+  min-width: 500px;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 /* Horizontal flashcard swipe without fighting vertical page scroll */
