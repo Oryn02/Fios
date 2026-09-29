@@ -82,10 +82,10 @@ const QuickAddFlashcardModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
   };
 
   return (
-    <div className="fixed inset-0 z-[85] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+    <div className="fixed inset-0 z-40 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="absolute inset-0" onClick={onClose} />
       <motion.div initial={{ opacity: 0, scale: 0.95, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }}
-        className="relative z-10 w-full max-w-md rounded-2xl border fios-border-strong bg-[var(--fios-surface)] p-6 space-y-4 shadow-2xl fios-card">
+        className="relative z-50 w-full max-w-md rounded-2xl border fios-border-strong bg-[var(--fios-surface)] p-6 space-y-4 shadow-2xl fios-card">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-black text-[var(--fios-text)] flex items-center gap-2"><Layers className="w-4 h-4 accent-solid-text" /> Quick Add Flashcard</h3>
           <button type="button" onClick={onClose} className="text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer" aria-label="Close"><X className="w-5 h-5" /></button>

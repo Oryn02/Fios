@@ -18,6 +18,7 @@ import { useAiAuth } from '../context/AiAuthContext';
 import { toast } from '../lib/toast';
 import { GeminiLatencyHint } from './GeminiLatencyHint';
 import { friendlyGeminiError } from '../lib/geminiUx';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface ChatMessage { role: 'user' | 'assistant'; text: string; }
 
@@ -43,6 +44,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
   const [active, setActive] = useState<FiosDocument | null>(null);
 
   const [tutorOpen, setTutorOpen] = useState(false);
+  useBodyScrollLock(tutorOpen, '[data-modal-scroll]');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [question, setQuestion] = useState('');
   const [thinking, setThinking] = useState(false);

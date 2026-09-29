@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { KeyRound, Lock, ExternalLink, Check, Loader2, X, HelpCircle, GitBranch, Shield } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useProfile } from '../context/ProfileContext';
 import { useAiAuth } from '../context/AiAuthContext';
 import { validateGeminiKey } from '../services/aiApi';
@@ -73,13 +74,13 @@ export const GeminiKeyModal: React.FC<{ onClose: () => void; onSaved?: () => voi
   };
 
   return (
-    <div className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="absolute inset-0" onClick={onClose} />
       <motion.div
         initial={{ opacity: 0, scale: 0.94, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94 }}
-        className="relative z-10 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+        className="relative z-50 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 cursor-pointer">
           <X className="w-5 h-5" />
@@ -161,6 +162,7 @@ export const GeminiGate: React.FC<{ feature: string; children: React.ReactNode }
   const hasKey = useHasGeminiKey();
   const { allowed, openLock } = useAiAuth();
   const [open, setOpen] = useState(false);
+  useBodyScrollLock(open);
 
   if (!allowed) {
     return (
@@ -171,7 +173,7 @@ export const GeminiGate: React.FC<{ feature: string; children: React.ReactNode }
         <div className="space-y-1">
           <h3 className="text-lg font-black text-[var(--fios-text)]">{feature} is locked in the live demo</h3>
           <p className="text-sm text-[var(--fios-text-muted)]">
-            AI features and cloud generation need a signed-in account. Sign in with GitHub to unlock Fios v3.7.3.
+            AI features and cloud generation need a signed-in account. Sign in with GitHub to unlock Fios v3.7.4.
           </p>
         </div>
         <button

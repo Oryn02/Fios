@@ -522,7 +522,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             <button
               type="button"
               onClick={toggleNavChrome}
-              className={`relative z-[70] inline-flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-md bg-[var(--fios-surface-2)] border transition-colors cursor-pointer self-center ${
+              className={`relative z-[70] touch-target shrink-0 rounded-md bg-[var(--fios-surface-2)] border transition-colors cursor-pointer self-center ${
                 navToggleOpen
                   ? 'accent-border accent-solid-text'
                   : 'fios-border text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:accent-border'
@@ -531,7 +531,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               aria-expanded={navToggleOpen}
               aria-controls={isDesktop ? 'fios-desktop-sidebar' : 'fios-mobile-drawer'}
             >
-              {navToggleOpen ? <X className="w-3.5 h-3.5" strokeWidth={2.25} /> : <Menu className="w-3.5 h-3.5" strokeWidth={2.25} />}
+              {navToggleOpen ? <X className="w-4 h-4" strokeWidth={2.25} /> : <Menu className="w-4 h-4" strokeWidth={2.25} />}
             </button>
             <button
               type="button"
@@ -771,7 +771,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           </aside>
         )}
 
-        <main className={`flex-1 min-w-0 p-4 sm:p-8 max-w-7xl mx-auto w-full relative ${hideChrome ? 'pb-24 md:pb-8' : 'pb-24 md:pb-8'}`} id="main-content">
+        <main className={`flex-1 min-w-0 p-4 sm:p-8 max-w-7xl mx-auto w-full relative pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] md:pb-8`} id="main-content">
           {!hideChrome && (
             <div className="absolute top-10 left-10 w-96 h-96 rounded-full blur-[100px] pointer-events-none opacity-40" style={{ backgroundColor: 'color-mix(in srgb, var(--fios-accent-solid) 8%, transparent)' }} />
           )}

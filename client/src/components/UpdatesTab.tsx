@@ -540,7 +540,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.7.3</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.7.4</p>
       </header>
 
       <div className="space-y-4">

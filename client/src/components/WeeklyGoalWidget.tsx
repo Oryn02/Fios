@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Pencil, Check, X, Flame } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useProfile } from '../context/ProfileContext';
 import { usePomodoroState } from '../context/PomodoroContext';
 import { getWeeklyFocusMinutes } from '../lib/focusService';
@@ -25,6 +26,7 @@ export const WeeklyGoalWidget: React.FC<WeeklyGoalWidgetProps> = ({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(10);
   const [saving, setSaving] = useState(false);
+  useBodyScrollLock(editing);
 
   const goalHours = profile?.weekly_study_goal_hours ?? 10;
 
@@ -59,13 +61,13 @@ export const WeeklyGoalWidget: React.FC<WeeklyGoalWidgetProps> = ({
   const editModal = (
     <AnimatePresence>
       {editing && (
-        <div className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="absolute inset-0" onClick={() => setEditing(false)} />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="relative z-10 w-full max-w-sm rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 space-y-4"
+            className="relative z-50 w-full max-w-sm rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 space-y-4"
           >
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-[var(--fios-text)] flex items-center gap-2">
@@ -74,7 +76,7 @@ export const WeeklyGoalWidget: React.FC<WeeklyGoalWidgetProps> = ({
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                className="text-slate-400 hover:text-slate-200 cursor-pointer"
+                className="touch-target shrink-0 rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />

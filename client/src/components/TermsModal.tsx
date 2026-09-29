@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FileText, X } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface TermsModalProps {
   onClose: () => void;
@@ -8,6 +9,8 @@ interface TermsModalProps {
 }
 
 export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dashboard' }) => {
+  useBodyScrollLock(true, '[data-modal-scroll]');
+
   const landing = variant === 'landing';
   const heading = landing ? 'text-emerald-400' : 'accent-solid-text';
   const surface = landing
@@ -21,7 +24,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
   const closeBtn = landing ? 'bg-emerald-400 text-slate-950' : 'accent-bg text-slate-950';
 
   return (
-    <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+    <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="absolute inset-0" onClick={onClose} aria-hidden />
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 12 }}
@@ -29,26 +32,26 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
         exit={{ opacity: 0 }}
         role="dialog"
         aria-labelledby="tos-title"
-        className={`relative z-10 w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border p-6 sm:p-8 space-y-6 shadow-2xl ${surface}`}
+        className={`relative z-50 w-full max-w-2xl max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border shadow-2xl ${surface}`}
       >
-        <div className={`flex items-center justify-between border-b pb-4 ${landing ? 'border-slate-800' : 'fios-border'}`}>
-          <div className="flex items-center gap-2.5">
-            <div className={`p-2 rounded-lg border ${iconBox}`}>
+        <div className={`sticky top-0 z-10 shrink-0 flex items-center justify-between gap-3 border-b px-5 py-3.5 sm:px-6 backdrop-blur-md ${landing ? 'border-slate-800 bg-[#0e131f]/95' : 'fios-border bg-[var(--fios-surface)]/95'}`}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className={`p-2 rounded-lg border shrink-0 ${iconBox}`}>
               <FileText className="w-5 h-5" />
             </div>
-            <div>
-              <h3 id="tos-title" className={`text-base font-black uppercase ${landing ? 'text-white' : 'text-[var(--fios-text)]'}`}>
+            <div className="min-w-0">
+              <h3 id="tos-title" className={`text-base font-black uppercase truncate ${landing ? 'text-white' : 'text-[var(--fios-text)]'}`}>
                 Terms of Service
               </h3>
-              <p className={`text-[11px] font-mono ${muted}`}>Fios Academic Command Center · v3.7.3 · September 2026</p>
+              <p className={`text-[11px] font-mono truncate ${muted}`}>Fios Academic Command Center · v3.7.4 · September 2026</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className={`${muted} hover:opacity-80 cursor-pointer p-1`} aria-label="Close">
+          <button type="button" onClick={onClose} className={`touch-target shrink-0 rounded-lg cursor-pointer ${muted} hover:opacity-80`} aria-label="Close">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className={`space-y-4 text-xs sm:text-sm leading-relaxed ${body}`}>
+        <div data-modal-scroll className={`flex-1 min-h-0 overflow-y-auto scroll-touch px-5 py-4 sm:px-6 sm:py-5 space-y-4 text-xs sm:text-sm leading-relaxed ${body}`}>
           <section className="space-y-1.5">
             <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>1. Acceptance</h4>
             <p>
@@ -128,11 +131,11 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
           </section>
         </div>
 
-        <div className={`border-t pt-4 flex justify-end ${landing ? 'border-slate-800' : 'fios-border'}`}>
+        <div className={`shrink-0 border-t px-5 py-3 sm:px-6 flex justify-end ${landing ? 'border-slate-800 bg-[#0e131f]' : 'fios-border bg-[var(--fios-surface)]'}`}>
           <button
             type="button"
             onClick={onClose}
-            className={`px-5 py-2.5 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90 ${closeBtn}`}
+            className={`touch-target-row px-5 py-2.5 min-h-11 font-black uppercase text-xs rounded-xl cursor-pointer hover:opacity-90 ${closeBtn}`}
           >
             Close
           </button>

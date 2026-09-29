@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GitBranch, Lock, Sparkles, X } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, disableDemo } from '../lib/demo';
 import { toast } from '../lib/toast';
@@ -15,6 +16,8 @@ interface AiAuthLockModalProps {
  * CTA starts Supabase GitHub OAuth (same redirect flow as Settings / AuthModal).
  */
 export const AiAuthLockModal: React.FC<AiAuthLockModalProps> = ({ open, onClose }) => {
+  useBodyScrollLock(!!open, '[data-modal-scroll]');
+
   const [busy, setBusy] = useState(false);
 
   const signInWithGithub = async () => {
@@ -42,7 +45,7 @@ export const AiAuthLockModal: React.FC<AiAuthLockModalProps> = ({ open, onClose 
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4">
+        <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center p-4">
           <motion.button
             type="button"
             aria-label="Dismiss"
@@ -60,7 +63,7 @@ export const AiAuthLockModal: React.FC<AiAuthLockModalProps> = ({ open, onClose 
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-            className="relative z-10 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] shadow-2xl overflow-hidden"
+            className="relative z-50 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] shadow-2xl overflow-hidden"
           >
             <div className="absolute top-0 left-0 right-0 h-[2px] accent-bg opacity-80" />
             <button
@@ -88,7 +91,7 @@ export const AiAuthLockModal: React.FC<AiAuthLockModalProps> = ({ open, onClose 
               </div>
 
               <p className="text-sm text-[var(--fios-text-muted)] leading-relaxed">
-                AI features and cloud generation are locked in the live demo view. Please sign up or log in with GitHub to unlock full access to Fios v3.7.3.
+                AI features and cloud generation are locked in the live demo view. Please sign up or log in with GitHub to unlock full access to Fios v3.7.4.
               </p>
 
               <button
