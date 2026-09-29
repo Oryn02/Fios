@@ -171,7 +171,7 @@ export const GeminiGate: React.FC<{ feature: string; children: React.ReactNode }
         <div className="space-y-1">
           <h3 className="text-lg font-black text-[var(--fios-text)]">{feature} is locked in the live demo</h3>
           <p className="text-sm text-[var(--fios-text-muted)]">
-            AI features and cloud generation need a signed-in account. Sign in with GitHub to unlock Fios v3.7.2.
+            AI features and cloud generation need a signed-in account. Sign in with GitHub to unlock Fios v3.7.3.
           </p>
         </div>
         <button
