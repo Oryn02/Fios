@@ -377,6 +377,39 @@ body { background-color: var(--fios-bg, #05070b); color: var(--fios-text, #f8faf
   touch-action: pan-y;
 }
 
+/* Seamless scrollbars (v3.7.1): hide indicators; keep scroll / pan-x */
+html,
+body,
+.fios-hide-scrollbar,
+.overflow-auto,
+.overflow-scroll,
+.overflow-y-auto,
+.overflow-x-auto,
+.overflow-y-scroll,
+.overflow-x-scroll,
+.scroll-touch,
+.fios-agenda-scroll,
+.fios-h-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.fios-hide-scrollbar::-webkit-scrollbar,
+.overflow-auto::-webkit-scrollbar,
+.overflow-scroll::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-y-scroll::-webkit-scrollbar,
+.overflow-x-scroll::-webkit-scrollbar,
+.scroll-touch::-webkit-scrollbar,
+.fios-agenda-scroll::-webkit-scrollbar,
+.fios-h-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* Prefer tap over 300ms delay / hover stickiness on interactive controls */
 button,
 [role="button"],
@@ -458,8 +491,6 @@ summary,
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
   touch-action: pan-x;
-  /* Avoid nested scroll fighting the page on iOS when content fits */
-  scrollbar-width: thin;
 }
 /* Heatmap day cells: prefer tap over pan. pan-x on 11–12px buttons made iOS/PWA
    treat presses as aborted pans (no click). Scroll still works from gutters /

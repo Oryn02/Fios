@@ -3,10 +3,20 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.0.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.1.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.7.1',
+      date: 'September 2026',
+      title: 'Seamless scrollbars',
+      highlights: [
+        'UI: scrollbars are hidden app-wide (Overview agenda lists, page scroll, Modules tabs, drawers, modals) while scrolling and horizontal pan still work.',
+        'Touch / desktop / PWA: Firefox, Chromium, and legacy Edge scrollbar chrome suppressed via a shared stylesheet rule — no feature loss.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.7.1.',
+      ],
+    },
     {
       version: 'v3.7.0',
       date: 'September 2026',
@@ -491,7 +501,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.7.0</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.7.1</p>
       </header>
 
       <div className="space-y-4">
