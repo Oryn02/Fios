@@ -90,7 +90,7 @@ export const ModuleFormPanel: React.FC<ModuleFormPanelProps> = ({
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       onSubmit={handleSubmit}
-      className="bg-card border border-cyan-500/50 rounded-2xl p-6 shadow-2xl space-y-4 overflow-hidden"
+      className="bg-card border border-cyan-500/50 rounded-2xl p-6 shadow-sm dark:shadow-none space-y-4 overflow-hidden"
     >
       <div className="flex items-center justify-between border-b border-border pb-3">
         <span className="text-xs font-mono font-black uppercase text-cyan-400 flex items-center gap-2">

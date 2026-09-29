@@ -557,7 +557,7 @@ const UpdatesTabInner: React.FC = () => {
 
       <div className="space-y-4">
         {releases.map((rel, idx) => (
-          <div key={rel.version} className="bg-card border border-border rounded-xl p-6 space-y-4 shadow-xl">
+          <div key={rel.version} className="bg-card border border-border rounded-xl p-6 space-y-4 shadow-sm dark:shadow-none">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-border/80">
               <div className="flex items-center gap-3">
                 <span className="bg-emerald-400 text-slate-950 font-mono font-black text-xs px-2.5 py-1 rounded-md uppercase">

@@ -59,7 +59,7 @@
           root.style.setProperty('--fios-accent-solid', stops[3]);
           root.dataset.accent = accents[key] ? key : 'emerald';
           var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute('content', resolved === 'light' ? '#ffffff' : '#07090e');
+          if (meta) meta.setAttribute('content', resolved === 'light' ? '#f8fafc' : '#07090e');
           // OpenDyslexic: apply before paint so mobile/PWA don't flash system fonts
           try {
             var prefs = JSON.parse(localStorage.getItem('fios_preferences') || '{}');
@@ -79,7 +79,7 @@
         color: #f8fafc;
       }
       html[data-theme="light"], html[data-theme="light"] body {
-        background: #ffffff;
+        background: #f8fafc;
         color: #0f172a;
       }
       #fios-boot-splash {

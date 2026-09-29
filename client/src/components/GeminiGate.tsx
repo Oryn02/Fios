@@ -80,7 +80,7 @@ export const GeminiKeyModal: React.FC<{ onClose: () => void; onSaved?: () => voi
         initial={{ opacity: 0, scale: 0.94, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94 }}
-        className="relative z-50 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+        className="relative z-50 w-full max-w-md rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 shadow-sm dark:shadow-none space-y-4 max-h-[90vh] overflow-y-auto"
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
           <X className="w-5 h-5" />

@@ -367,7 +367,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     <div className="space-y-4 max-w-xl mx-auto my-6 font-sans">
       
       {/* 1. Dynamic Save / Info Header */}
-      <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xl space-y-3">
+      <div className="bg-card border border-border/80 rounded-xl p-4 shadow-sm dark:shadow-none space-y-3">
         {!hasSaved ? (
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <input
@@ -541,7 +541,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
       {mode === 'test' ? (
         <ActiveRecallQuiz cards={activeCards} onFinish={() => setMode('browse')} />
       ) : activeCards.length === 0 ? (
-        <div className="text-center py-12 space-y-3 bg-card border border-border rounded-xl p-6">
+        <div className="text-center py-12 space-y-3 bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none">
           <h3 className="text-base font-bold text-foreground uppercase">All caught up! 🎉</h3>
           <p className="text-xs text-muted-foreground">No flashcards are due for review today according to your SM-2 schedule.</p>
           <button 
@@ -571,7 +571,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             onClick={handleToggleFlip}
             onTouchStart={touchGestures ? onTouchStart : undefined}
             onTouchEnd={touchGestures ? onTouchEnd : undefined}
-            className={`${touchGestures ? 'fios-swipe-card' : ''} w-full min-h-[280px] bg-card rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-border hover:border-emerald-400/50 shadow-2xl transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99]`}
+            className={`${touchGestures ? 'fios-swipe-card' : ''} w-full min-h-[280px] bg-card rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-border hover:border-emerald-400/50 shadow-sm dark:shadow-none transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99]`}
           >
             <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${isFlipped ? 'from-emerald-400/20' : 'from-cyan-400/20'} to-transparent rounded-tr-xl pointer-events-none`} />
 

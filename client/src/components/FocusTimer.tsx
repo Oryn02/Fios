@@ -56,7 +56,7 @@ export const FocusTimer: React.FC = () => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 shadow-2xl space-y-6 max-w-xl mx-auto font-sans text-foreground my-6">
+    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm dark:shadow-none space-y-6 max-w-xl mx-auto font-sans text-foreground my-6">
       <div className="flex items-center justify-center gap-2 bg-background border border-border rounded-xl p-1">
         {MODES.map((m) => (
           <button

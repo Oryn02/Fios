@@ -454,7 +454,7 @@ const SettingsTabInner: React.FC = () => {
       </header>
 
       {/* INSTALL APP SECTION */}
-      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
             <Smartphone className="w-4 h-4 accent-solid-text" /> Install Fios as an App
@@ -485,7 +485,7 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* CLASS REMINDERS */}
-      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
             <Bell className="w-4 h-4 accent-solid-text" /> Class Reminders
@@ -584,7 +584,7 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* 1. PROFILE */}
-      <form onSubmit={handleSaveProfile} className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-5">
+      <form onSubmit={handleSaveProfile} className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
             <User className="w-4 h-4 accent-solid-text" /> Profile Information
@@ -649,7 +649,7 @@ const SettingsTabInner: React.FC = () => {
       </form>
 
       {/* 2. WEEKLY STUDY TARGET */}
-      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
             <Target className="w-4 h-4 accent-solid-text" /> Weekly Study Goal Tracker
@@ -697,7 +697,7 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* ACCOUNT SECURITY */}
-      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-5">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-5">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
           <Lock className="w-4 h-4 accent-solid-text" /> Account Security
         </h2>
@@ -755,7 +755,7 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* 3. POMODORO DEFAULTS */}
-      <form onSubmit={handleSavePomodoro} className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-5">
+      <form onSubmit={handleSavePomodoro} className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
             <Timer className="w-4 h-4 accent-solid-text" /> Pomodoro Timer Defaults
@@ -779,7 +779,7 @@ const SettingsTabInner: React.FC = () => {
       </form>
 
       {/* APPEARANCE */}
-      <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-xl space-y-5">
+      <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-5">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-[var(--fios-text-muted)] flex items-center gap-2">
           <Palette className="w-4 h-4 accent-solid-text" /> Appearance
         </h2>
@@ -1081,7 +1081,7 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* GEMINI API KEY (BYO KEY & WALKTHROUGH) */}
-      <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-mono font-black uppercase tracking-widest text-[var(--fios-text-muted)] flex items-center gap-2">
             <KeyRound className="w-4 h-4 accent-solid-text" /> Gemini API Key (Bring Your Own Key)
@@ -1166,7 +1166,7 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* ABOUT, LEGAL & SUPPORT */}
-      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
@@ -1211,7 +1211,7 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* GitHub */}
-      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
           <GitBranch className="w-4 h-4 accent-solid-text" /> GitHub
         </h2>
@@ -1238,7 +1238,7 @@ const SettingsTabInner: React.FC = () => {
       <FeedbackForm />
 
       {/* PRIVACY & DATA RIGHTS */}
-      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
           <Shield className="w-4 h-4 accent-solid-text" /> Privacy & Data Security
         </h2>
@@ -1276,7 +1276,7 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* 4. TIMETABLE FEED */}
-      <section className="bg-card border border-border rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
           <Calendar className="w-4 h-4 accent-solid-text" /> Timetable Feed URL (iCal)
         </h2>
@@ -1297,7 +1297,7 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       {/* 5. SESSION */}
-      <section className="bg-card border border-border rounded-xl p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-xs font-mono font-black uppercase tracking-widest text-rose-400 flex items-center gap-2">
             <Shield className="w-4 h-4" /> Session Termination

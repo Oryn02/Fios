@@ -525,7 +525,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               className={`relative z-[70] touch-target shrink-0 rounded-md bg-[var(--fios-surface-2)] border transition-colors cursor-pointer self-center ${
                 navToggleOpen
                   ? 'accent-border accent-solid-text'
-                  : 'fios-border text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:accent-border'
+                  : 'fios-border text-muted-foreground hover:text-foreground hover:accent-border'
               }`}
               aria-label={navToggleOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={navToggleOpen}
@@ -576,7 +576,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               title="Command palette (⌘K / Ctrl+K)"
               aria-label="Open command palette (Control or Command K)"
               aria-keyshortcuts="Meta+K Control+K"
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] text-[10px] font-mono cursor-pointer"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground text-[10px] font-mono cursor-pointer"
             >
               <Command className="w-3.5 h-3.5" aria-hidden />
               <span>K</span>
@@ -587,7 +587,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               onClick={toggleTheme}
               title="Toggle theme"
               aria-label="Toggle theme"
-              className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] transition-colors cursor-pointer"
+              className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               <ThemeIcon className="w-4 h-4" />
             </button>
@@ -626,7 +626,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           <button
             type="button"
             onClick={openPalette}
-            className="touch-target p-2.5 rounded-xl border fios-border bg-[var(--fios-surface)]/95 text-[var(--fios-text-muted)] shadow-xl cursor-pointer active:opacity-80"
+            className="touch-target p-2.5 rounded-xl border fios-border bg-[var(--fios-surface)]/95 text-muted-foreground shadow-xl cursor-pointer active:opacity-80"
             aria-label="Open navigation (command palette)"
             title="Navigate (⌘K / Ctrl+K)"
           >
@@ -668,12 +668,12 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               >
                 <div className="flex items-center justify-between mb-4">
                   <FiosLogo size="sm" />
-                  <button type="button" onClick={() => setDrawerOpen(false)} className="touch-target p-2 cursor-pointer text-[var(--fios-text-muted)] active:bg-[var(--fios-surface-2)] rounded-lg" aria-label="Close menu">
+                  <button type="button" onClick={() => setDrawerOpen(false)} className="touch-target p-2 cursor-pointer text-muted-foreground active:bg-[var(--fios-surface-2)] rounded-lg" aria-label="Close menu">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
                 <nav className="space-y-1 overflow-y-auto flex-1 scroll-touch" aria-label="Primary">
-                  <p className="px-3 pb-1 text-[9px] font-mono text-[var(--fios-text-muted)]">Hold &amp; drag to reorder</p>
+                  <p className="px-3 pb-1 text-[9px] font-mono text-muted-foreground">Hold &amp; drag to reorder</p>
                   {orderedNav.map((item) => {
                     const Icon = item.icon;
                     const isActive = activeTab === item.id;
@@ -703,7 +703,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                         className={`w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
                           isDragging ? 'scale-[1.03] ring-2 ring-[var(--fios-accent-solid)]/50 shadow-lg z-10' : ''
                         } ${
-                          isActive ? 'accent-bg text-slate-950' : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
+                          isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent'
                         }`}
                       >
                         <Icon className="w-4 h-4" />
@@ -720,7 +720,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         {!hideChrome && sidebarOpen && (
           <aside id="fios-desktop-sidebar" className="w-60 border-r fios-border bg-[var(--fios-surface)]/40 p-4 hidden md:flex flex-col" aria-label="Sidebar">
             <div className="space-y-6">
-              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--fios-text-muted)] px-3">
+              <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-3">
                 Navigation
                 <span id="nav-reorder-hint" className="sr-only">Drag handles to reorder. Alt+Up or Alt+Down moves the focused item.</span>
               </div>
@@ -738,7 +738,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                       className={`flex items-center gap-1 rounded-lg ${dragId === item.id ? 'opacity-60' : ''}`}
                     >
                       <span
-                        className="p-1 cursor-grab text-[var(--fios-text-muted)] shrink-0"
+                        className="p-1 cursor-grab text-muted-foreground shrink-0"
                         title="Drag to reorder"
                         aria-hidden
                       >
@@ -756,8 +756,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                         aria-current={isActive ? 'page' : undefined}
                         className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-black italic uppercase tracking-wider transition-colors cursor-pointer fios-tab ${
                           isActive
-                            ? 'bg-[var(--fios-surface-2)] accent-solid-text border-l-2 accent-border shadow-md fios-tab-active'
-                            : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
+                            ? 'bg-accent text-accent-foreground border-l-2 accent-border shadow-md fios-tab-active'
+                            : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent'
                         }`}
                       >
                         <Icon className={`w-4 h-4 ${isActive ? 'accent-solid-text' : ''}`} />
@@ -793,7 +793,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               <button
                 type="button"
                 onClick={() => { setDrawerOpen(true); }}
-                className="touch-target flex flex-col items-center gap-0.5 min-w-[4.5rem] px-3 py-2 rounded-lg cursor-pointer text-[var(--fios-text-muted)] active:bg-[var(--fios-surface-2)]"
+                className="touch-target flex flex-col items-center gap-0.5 min-w-[4.5rem] px-3 py-2 rounded-lg cursor-pointer text-muted-foreground active:bg-[var(--fios-surface-2)]"
                 aria-label="Open menu"
               >
                 <Menu className="w-5 h-5" />
@@ -811,7 +811,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               <button
                 type="button"
                 onClick={() => navigate('settings')}
-                className="touch-target flex flex-col items-center gap-0.5 min-w-[4.5rem] px-3 py-2 rounded-lg cursor-pointer text-[var(--fios-text-muted)] active:bg-[var(--fios-surface-2)]"
+                className="touch-target flex flex-col items-center gap-0.5 min-w-[4.5rem] px-3 py-2 rounded-lg cursor-pointer text-muted-foreground active:bg-[var(--fios-surface-2)]"
                 aria-label="Settings"
               >
                 <Settings className="w-5 h-5" />
@@ -848,7 +848,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                   style={{ touchAction: mobileDragId ? 'none' : 'manipulation' }}
                   className={`touch-target flex flex-col items-center gap-0.5 min-w-[3.5rem] px-2 py-2 rounded-lg cursor-pointer active:bg-[var(--fios-surface-2)] transition-transform ${
                     isDragging ? 'scale-110 -translate-y-1 accent-solid-text shadow-lg z-10' : ''
-                  } ${isActive && !isDragging ? 'accent-solid-text' : isDragging ? '' : 'text-[var(--fios-text-muted)]'}`}
+                  } ${isActive && !isDragging ? 'accent-solid-text' : isDragging ? '' : 'text-muted-foreground'}`}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-[9px] font-bold uppercase tracking-wide">{item.label.split(' ')[0]}</span>
@@ -884,12 +884,12 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             >
               <div className="flex items-center justify-between mb-4">
                 <FiosLogo size="sm" />
-                <button type="button" onClick={() => setDrawerOpen(false)} className="touch-target p-2 cursor-pointer text-[var(--fios-text-muted)] active:bg-[var(--fios-surface-2)] rounded-lg" aria-label="Close menu">
+                <button type="button" onClick={() => setDrawerOpen(false)} className="touch-target p-2 cursor-pointer text-muted-foreground active:bg-[var(--fios-surface-2)] rounded-lg" aria-label="Close menu">
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <nav className="space-y-1 overflow-y-auto flex-1" aria-label="Primary">
-                <p className="px-3 pb-1 text-[9px] font-mono text-[var(--fios-text-muted)]">Hold &amp; drag to reorder</p>
+                <p className="px-3 pb-1 text-[9px] font-mono text-muted-foreground">Hold &amp; drag to reorder</p>
                 {orderedNav.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
@@ -919,7 +919,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                       className={`w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
                         isDragging ? 'scale-[1.03] ring-2 ring-[var(--fios-accent-solid)]/50 shadow-lg z-10' : ''
                       } ${
-                        isActive ? 'accent-bg text-slate-950' : 'text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
+                        isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent'
                       }`}
                     >
                       <Icon className="w-4 h-4" />

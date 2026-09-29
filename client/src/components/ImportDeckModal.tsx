@@ -86,7 +86,7 @@ export const ImportDeckModal: React.FC<Props> = ({ open, onClose, onImported }) 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg rounded-2xl border fios-border bg-[var(--fios-surface)] p-5 space-y-4 shadow-2xl"
+            className="w-full max-w-lg rounded-2xl border fios-border bg-[var(--fios-surface)] p-5 space-y-4 shadow-sm dark:shadow-none"
           >
             <div className="flex items-center justify-between">
               <div>

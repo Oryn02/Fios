@@ -326,7 +326,7 @@ const ScheduleTabInner: React.FC = () => {
       </header>
 
       {/* Sync Control Card */}
-      <div className="bg-card border border-border rounded-xl p-4 shadow-xl space-y-3">
+      <div className="bg-card border border-border rounded-xl p-4 shadow-sm dark:shadow-none space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {(['ical', 'manual'] as ScheduleMode[]).map((mode) => (
             <button
@@ -487,19 +487,19 @@ const ScheduleTabInner: React.FC = () => {
 
       {/* Timetable Events Container */}
       {events.length === 0 && (loading || refreshing) ? (
-        <div className="bg-card/50 border border-border rounded-xl p-12 text-center space-y-2">
+        <div className="bg-card/50 border border-border rounded-xl p-12 text-center space-y-2 shadow-sm dark:shadow-none">
           <RefreshCw className="w-6 h-6 text-muted-foreground mx-auto animate-spin" />
           <p className="text-xs font-bold text-muted-foreground uppercase">Loading timetable…</p>
         </div>
       ) : events.length === 0 && !loading ? (
-        <div className="bg-card/50 border border-border rounded-xl p-12 text-center space-y-2">
+        <div className="bg-card/50 border border-border rounded-xl p-12 text-center space-y-2 shadow-sm dark:shadow-none">
           <CalendarIcon className="w-8 h-8 text-muted-foreground mx-auto" />
           <p className="text-xs font-bold text-muted-foreground uppercase">No Timetable Synced</p>
         </div>
       ) : viewMode === 'day' ? (
         <div className="space-y-3">
           {singleDayTimeline.length === 0 ? (
-            <div className="bg-card border border-border rounded-xl p-10 text-center text-muted-foreground text-xs font-mono font-bold uppercase">
+            <div className="bg-card border border-border rounded-xl p-10 text-center text-muted-foreground text-xs font-mono font-bold uppercase shadow-sm dark:shadow-none">
               No classes scheduled for this day.
             </div>
           ) : (
@@ -533,7 +533,7 @@ const ScheduleTabInner: React.FC = () => {
                   data-mod-color={colorKey}
                   className={`bg-card border rounded-xl p-5 flex flex-col sm:flex-row items-start gap-6 transition-all ${classStateCardClass(state)} ${
                     state === 'next' ? 'ring-1 ring-[color-mix(in_srgb,var(--mod-solid)_45%,transparent)] scale-[1.01]' : ''
-                  }`}
+                  } shadow-sm dark:shadow-none`}
                 >
                   <div className={`w-32 shrink-0 font-mono text-sm font-black pt-0.5 ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>
                     {formatTimeRange(event.startDate, event.endDate)}
@@ -639,7 +639,7 @@ const ScheduleTabInner: React.FC = () => {
                         <div
                           key={event.id}
                           data-mod-color={colorKey}
-                          className={`bg-card border border-border/80 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 ${classStateCardClass(state)}`}
+                          className={`bg-card border border-border/80 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 ${classStateCardClass(state)} shadow-sm dark:shadow-none`}
                         >
                           <div className={`w-32 shrink-0 font-mono text-xs font-bold pt-0.5 ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>
                             {formatTimeRange(event.startDate, event.endDate)}
@@ -676,7 +676,7 @@ const ScheduleTabInner: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="fios-month-grid bg-card border border-border rounded-xl p-2.5 sm:p-6 space-y-2.5 sm:space-y-4 overflow-x-hidden w-full max-w-full">
+        <div className="fios-month-grid bg-card border border-border rounded-xl p-2.5 sm:p-6 space-y-2.5 sm:space-y-4 overflow-x-hidden w-full max-w-full shadow-sm dark:shadow-none">
           <div className="grid grid-cols-7 gap-0.5 sm:gap-2 text-center font-mono text-[10px] sm:text-[11px] font-black uppercase text-muted-foreground sm:text-muted-foreground pb-2 border-b border-border">
             {([
               ['M', 'Mon'],

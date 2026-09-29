@@ -139,7 +139,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
       </div>
 
       {questions.length === 0 ? (
-        <form onSubmit={handleGenerateQuiz} className="bg-card/90 border border-border rounded-2xl p-6 space-y-5 shadow-xl">
+        <form onSubmit={handleGenerateQuiz} className="bg-card/90 border border-border rounded-2xl p-6 space-y-5 shadow-sm dark:shadow-none">
           {/* File Upload Zone */}
           <div className="space-y-2">
             <label className="text-xs font-mono font-black uppercase text-foreground flex items-center gap-2">
@@ -234,7 +234,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
           )}
         </form>
       ) : quizFinished ? (
-        <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+        <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-6 shadow-sm dark:shadow-none">
           <span className="text-xs font-mono font-black uppercase accent-solid-text tracking-widest">Exam Completed</span>
           <h3 className="text-4xl font-black italic uppercase text-foreground">Your score: {score} / {questions.length}</h3>
           <p className="text-muted-foreground text-xs font-mono">({Math.round((score / questions.length) * 100)}% accuracy)</p>
@@ -250,7 +250,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
       ) : (
         <div className="space-y-4">
           {/* Save bar */}
-          <div className="bg-card border border-border rounded-xl p-3 flex flex-col sm:flex-row items-center gap-2">
+          <div className="bg-card border border-border rounded-xl p-3 flex flex-col sm:flex-row items-center gap-2 shadow-sm dark:shadow-none">
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -270,7 +270,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
           </div>
           {saveMsg && <p className="text-[11px] font-mono accent-solid-text font-bold">{saveMsg}</p>}
 
-          <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-2xl">
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm dark:shadow-none">
             <div className="flex items-center justify-between font-mono text-xs border-b border-border pb-3">
               <span className="accent-solid-text font-bold">Question {currentIndex + 1} of {questions.length}</span>
               <span className="text-muted-foreground">Score: {score}</span>
@@ -298,7 +298,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
             </div>
 
             {isSubmitted && (
-              <div className="p-4 bg-card/90 border border-border rounded-xl space-y-1 font-mono text-xs">
+              <div className="p-4 bg-card/90 border border-border rounded-xl space-y-1 font-mono text-xs shadow-sm dark:shadow-none">
                 <span className="font-bold accent-solid-text uppercase">Explanation:</span>
                 <p className="text-foreground">{currentQ.explanation}</p>
               </div>

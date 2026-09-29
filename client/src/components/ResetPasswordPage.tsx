@@ -80,7 +80,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
         initial={{ opacity: 0, scale: 0.94, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-        className="w-full max-w-md bg-card/95 backdrop-blur-xl border border-border rounded-2xl p-8 shadow-2xl space-y-5 relative z-10 overflow-hidden"
+        className="w-full max-w-md bg-card/95 backdrop-blur-xl border border-border rounded-2xl p-8 shadow-sm dark:shadow-none space-y-5 relative z-10 overflow-hidden"
       >
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-cyan-400 to-transparent" />
 

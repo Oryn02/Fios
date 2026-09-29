@@ -316,7 +316,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
     }
     if (id === 'dueCards') {
       return (
-        <div key={id} className="bg-card/60 border border-border/80 rounded-2xl p-6 space-y-3 shadow-xl">
+        <div key={id} className="bg-card/60 border border-border/80 rounded-2xl p-6 space-y-3 shadow-sm dark:shadow-none">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-1 flex items-center gap-1.5">
@@ -339,7 +339,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
     }
     if (id === 'calendar') {
       return (
-        <div key={id} className="bg-card/60 border border-border/80 rounded-2xl p-6 space-y-3 shadow-xl">
+        <div key={id} className="bg-card/60 border border-border/80 rounded-2xl p-6 space-y-3 shadow-sm dark:shadow-none">
           <div className="flex items-center justify-between border-b border-border/80 pb-3">
             <div>
               <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-0.5">Unified timeline</div>
@@ -385,13 +385,13 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
             <h1 className="text-3xl sm:text-4xl font-black italic tracking-tight text-[var(--fios-text)] break-words">
               {greeting}, <span className="accent-text">{preferredName}</span>.
             </h1>
-            <p className="text-[var(--fios-text-muted)] text-xs sm:text-sm font-medium mt-1">
+            <p className="text-muted-foreground text-xs sm:text-sm font-medium mt-1">
               Welcome back to <span className="text-[var(--fios-text)] font-bold">Fios</span> · Semester 1 · 2026/27
             </p>
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-xl px-4 py-2.5 flex items-center gap-4 self-start md:self-auto font-mono">
+        <div className="bg-card border border-border rounded-xl px-4 py-2.5 flex items-center gap-4 self-start md:self-auto font-mono shadow-sm dark:shadow-none">
           <div>
             <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Semester Progress</div>
             <div className="text-xs font-bold accent-solid-text">3% Completed</div>
@@ -406,7 +406,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
       <WeeklyGoalWidget variant="strip" />
 
       {/* 2. Focus Card */}
-      <div className="bg-card/90 border border-border rounded-2xl p-4 sm:p-6 relative overflow-hidden space-y-4 shadow-xl">
+      <div className="bg-card/90 border border-border rounded-2xl p-4 sm:p-6 relative overflow-hidden space-y-4 shadow-sm dark:shadow-none">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-transparent" />
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-[10px] font-black uppercase tracking-widest accent-solid-text flex items-center gap-2 font-mono min-w-0">
@@ -473,7 +473,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
 
       {/* 2B. Add Task Drawer */}
       {isAddingTask && (
-        <form onSubmit={handleAddTask} className="bg-card border fios-border rounded-2xl p-5 shadow-2xl space-y-3">
+        <form onSubmit={handleAddTask} className="bg-card border fios-border rounded-2xl p-5 shadow-sm dark:shadow-none space-y-3">
           <div className="flex items-center justify-between font-mono">
             <span className="text-xs font-black uppercase accent-solid-text flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5" /> Create new academic task
@@ -520,7 +520,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
 
       {/* 3. Timetable & Academic Tasks (Prioritized Above the Fold) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card/60 border border-border/80 rounded-2xl p-6 space-y-4 shadow-xl">
+        <div className="bg-card/60 border border-border/80 rounded-2xl p-6 space-y-4 shadow-sm dark:shadow-none">
           <div className="flex items-center justify-between border-b border-border/80 pb-3">
             <div>
               <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-0.5">Unified agenda</div>
@@ -542,7 +542,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
           />
         </div>
 
-        <div className="bg-card/60 border border-border/80 rounded-2xl p-6 space-y-4 flex flex-col justify-between shadow-xl">
+        <div className="bg-card/60 border border-border/80 rounded-2xl p-6 space-y-4 flex flex-col justify-between shadow-sm dark:shadow-none">
           <div className="space-y-3">
             <div className="flex items-center justify-between border-b border-border/80 pb-3">
               <div>
@@ -608,25 +608,25 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
       </div>
 
       {/* Modular widgets — toggle / reorder via Preferences */}
-      <div className="rounded-2xl border fios-border bg-[var(--fios-surface)]/40 p-4 space-y-3">
+      <div className="rounded-2xl border fios-border bg-card p-4 space-y-3 shadow-sm dark:shadow-none">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h3 className="text-xs font-black uppercase tracking-widest text-[var(--fios-text-muted)]">Dashboard widgets</h3>
+          <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Dashboard widgets</h3>
           <div className="flex flex-wrap gap-1.5">
             {(widgetOrder?.length ? widgetOrder : DEFAULT_WIDGET_ORDER).map((id) => (
               <div key={id} className="flex items-center gap-0.5 rounded-lg border fios-border bg-[var(--fios-surface-2)] px-1.5 py-1">
-                <button type="button" onClick={() => moveWidget(id, -1)} className="p-0.5 text-[var(--fios-text-muted)] cursor-pointer" aria-label={`Move ${id} up`}>
+                <button type="button" onClick={() => moveWidget(id, -1)} className="p-0.5 text-muted-foreground cursor-pointer" aria-label={`Move ${id} up`}>
                   <GripVertical className="w-3 h-3" />
                 </button>
                 <span className="text-[10px] font-mono font-bold text-[var(--fios-text)] px-1">{WIDGET_LABELS[id]}</span>
                 <button
                   type="button"
                   onClick={() => setWidgetVisible(id, widgetVisibility[id] === false)}
-                  className="p-0.5 cursor-pointer text-[var(--fios-text-muted)]"
+                  className="p-0.5 cursor-pointer text-muted-foreground"
                   aria-label={`Toggle ${id}`}
                 >
                   {widgetVisibility[id] === false ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3 accent-solid-text" />}
                 </button>
-                <button type="button" onClick={() => moveWidget(id, 1)} className="p-0.5 text-[var(--fios-text-muted)] cursor-pointer text-[10px] font-mono" aria-label={`Move ${id} down`}>
+                <button type="button" onClick={() => moveWidget(id, 1)} className="p-0.5 text-muted-foreground cursor-pointer text-[10px] font-mono" aria-label={`Move ${id} down`}>
                   ↓
                 </button>
               </div>
@@ -651,7 +651,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
       </div>
 
       {/* Saved Study Decks */}
-      <div className="bg-card/60 border border-border/80 rounded-2xl p-6 space-y-4 shadow-xl">
+      <div className="bg-card/60 border border-border/80 rounded-2xl p-6 space-y-4 shadow-sm dark:shadow-none">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-1 flex items-center gap-1.5">
@@ -701,21 +701,21 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
 
       {/* 7. Stats Footer (Hidden on mobile to avoid bottom nav overlap, visible on desktop) */}
       <div className="hidden md:grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
-        <div className="bg-card/80 border border-border rounded-xl p-4 flex items-center gap-3">
+        <div className="bg-card/80 border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm dark:shadow-none">
           <div className="p-2.5 rounded-lg bg-secondary/60 border border-border/50"><Clock className="w-4 h-4 accent-solid-text" /></div>
           <div>
             <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Active Tasks</div>
             <div className="text-sm font-black text-foreground">{loadingTasks ? '…' : `${pendingTaskCount} Tasks`}</div>
           </div>
         </div>
-        <div className="bg-card/80 border border-border rounded-xl p-4 flex items-center gap-3">
+        <div className="bg-card/80 border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm dark:shadow-none">
           <div className="p-2.5 rounded-lg bg-secondary/60 border border-border/50"><Layers className="w-4 h-4 accent-solid-text" /></div>
           <div>
             <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Saved Decks</div>
             <div className="text-sm font-black text-foreground">{savedDecks.length} Decks</div>
           </div>
         </div>
-        <div className="bg-card/80 border border-border rounded-xl p-4 flex items-center gap-3">
+        <div className="bg-card/80 border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm dark:shadow-none">
           <div className="p-2.5 rounded-lg bg-secondary/60 border border-border/50"><Zap className="w-4 h-4 accent-solid-text" /></div>
           <div>
             <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Focus Sessions</div>

@@ -131,7 +131,7 @@ export const ATUCalendarView: React.FC = () => {
             href="https://studenthub.atu.ie/GalwayMayo/getgoing"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3.5 py-2 bg-card border border-border text-xs font-mono font-bold text-foreground rounded-xl hover:border-border transition-colors inline-flex items-center gap-1.5"
+            className="px-3.5 py-2 bg-card border border-border text-xs font-mono font-bold text-foreground rounded-xl hover:border-border transition-colors inline-flex items-center gap-1.5 shadow-sm dark:shadow-none"
           >
             ATU Student Hub <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
           </a>
@@ -139,7 +139,7 @@ export const ATUCalendarView: React.FC = () => {
             href="https://studenthub.atu.ie/"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3.5 py-2 bg-card border border-border text-xs font-mono font-bold accent-solid-text rounded-xl hover:border-emerald-500/50 transition-colors inline-flex items-center gap-1.5"
+            className="px-3.5 py-2 bg-card border border-border text-xs font-mono font-bold accent-solid-text rounded-xl hover:border-emerald-500/50 transition-colors inline-flex items-center gap-1.5 shadow-sm dark:shadow-none"
           >
             <BookOpen className="w-3.5 h-3.5" /> ATU Galway-Mayo VLE <ExternalLink className="w-3.5 h-3.5" />
           </a>

@@ -32,7 +32,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
         exit={{ opacity: 0 }}
         role="dialog"
         aria-labelledby="tos-title"
-        className={`relative z-50 w-full max-w-2xl max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border shadow-2xl ${surface}`}
+        className={`relative z-50 w-full max-w-2xl max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border shadow-sm dark:shadow-none ${surface}`}
       >
         <div className={`sticky top-0 z-10 shrink-0 flex items-center justify-between gap-3 border-b px-5 py-3.5 sm:px-6 backdrop-blur-md ${landing ? 'border-border bg-card/95' : 'fios-border bg-[hsl(var(--background)/0.95)]'}`}>
           <div className="flex items-center gap-2.5 min-w-0">

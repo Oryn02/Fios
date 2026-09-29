@@ -50,7 +50,7 @@ export const ActiveRecallQuiz: React.FC<ActiveRecallQuizProps> = ({ cards, onFin
     const scorePercentage = Math.round((correctCount / total) * 100);
 
     return (
-      <div className="bg-card/90 border border-border rounded-2xl p-8 text-center space-y-6 animate-fadeIn font-sans">
+      <div className="bg-card/90 border border-border rounded-2xl p-8 text-center space-y-6 animate-fadeIn font-sans shadow-sm dark:shadow-none">
         <div className="inline-flex p-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
           <Trophy className="w-10 h-10" />
         </div>
@@ -119,7 +119,7 @@ export const ActiveRecallQuiz: React.FC<ActiveRecallQuizProps> = ({ cards, onFin
         />
       </div>
 
-      <div className="bg-card border border-border rounded-2xl p-8 min-h-[220px] flex flex-col justify-between space-y-6 relative overflow-hidden">
+      <div className="bg-card border border-border rounded-2xl p-8 min-h-[220px] flex flex-col justify-between space-y-6 relative overflow-hidden shadow-sm dark:shadow-none">
         <div className="space-y-2">
           <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
             {showAnswer ? 'Answer' : 'Question'}

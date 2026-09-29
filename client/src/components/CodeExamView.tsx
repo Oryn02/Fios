@@ -198,7 +198,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
       </div>
 
       {/* Generator controls */}
-      <div className="bg-card/90 border border-border rounded-2xl p-5 shadow-xl space-y-4">
+      <div className="bg-card/90 border border-border rounded-2xl p-5 shadow-sm dark:shadow-none space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="space-y-1.5">
             <label className="text-[10px] font-mono font-bold uppercase text-muted-foreground">Language</label>
@@ -308,7 +308,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
           >
             {/* Prompt + editor */}
             <div className="space-y-3">
-              <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
+              <div className="bg-card border border-border rounded-2xl p-4 space-y-2 shadow-sm dark:shadow-none">
                 <div className="flex items-center gap-2">
                   <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
                     {EXAM_ICON[challenge.examType]} {challenge.examType.replace('_', ' ')}
@@ -455,7 +455,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
                 key={exam.id}
                 whileHover={{ scale: 1.02 }}
                 onClick={() => openSaved(exam)}
-                className="p-4 bg-card/90 border border-border rounded-xl hover:border-emerald-500/40 transition-colors cursor-pointer space-y-2 group"
+                className="p-4 bg-card/90 border border-border rounded-xl hover:border-emerald-500/40 transition-colors cursor-pointer space-y-2 group shadow-sm dark:shadow-none"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">

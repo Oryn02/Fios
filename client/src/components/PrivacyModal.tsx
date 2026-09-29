@@ -43,7 +43,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
         role="dialog"
         aria-modal="true"
         aria-labelledby="privacy-title"
-        className={`relative z-50 w-full max-w-2xl max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border shadow-2xl ${surface}`}
+        className={`relative z-50 w-full max-w-2xl max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border shadow-sm dark:shadow-none ${surface}`}
       >
         <div className={`sticky top-0 z-10 shrink-0 flex items-center justify-between gap-3 border-b px-5 py-3.5 sm:px-6 ${borderCls} ${headerBg} backdrop-blur-md`}>
           <div className="flex items-center gap-2.5 min-w-0">
@@ -196,7 +196,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
           </section>
         </div>
 
-        <div className={`shrink-0 border-t px-5 py-3 sm:px-6 flex justify-end ${borderCls} ${headerBg}`}>
+        <div className={`shrink-0 border-t px-5 py-3 sm:px-6 flex justify-end ${borderCls} ${footerBg}`}>
           <button
             type="button"
             onClick={onClose}
