@@ -16,9 +16,10 @@ import { supabase } from '../lib/supabase';
 import { IS_DEMO } from '../lib/demo';
 import { getUserModules, type DBModule, moduleDisplayName } from '../lib/moduleService';
 import { getUserDecksWithCards } from '../lib/deckService';
-import { getTasks } from '../lib/taskService';
+import { getTasks, peekCachedTasks } from '../lib/taskService';
 import { getFocusSessions } from '../lib/focusService';
-import { getSavedCalendarUrl, fetchAndParseCalendar } from '../lib/calendarService';
+import { getCachedCalendarEvents } from '../lib/calendarService';
+import { peekUnifiedScheduleEvents, peekSavedCalendarUrl } from '../lib/scheduleService';
 
 interface QuickActionsProps {
   onNavigate: (tab: string, options?: { openTutor?: boolean }) => void;
@@ -153,9 +154,10 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
     (async () => {
       try {
         const need = new Set(smartWidgetMetrics?.length ? smartWidgetMetrics : ['dueCards', 'tasks']);
+        const wantTasks = need.has('tasks');
         const [decks, tasks, sessions] = await Promise.all([
           need.has('dueCards') ? getUserDecksWithCards().catch(() => []) : Promise.resolve([]),
-          (need.has('tasks') || need.has('upcoming') === false) ? getTasks().catch(() => []) : getTasks().catch(() => []),
+          wantTasks ? getTasks().catch(() => peekCachedTasks() || []) : Promise.resolve(peekCachedTasks() || []),
           need.has('streak') ? getFocusSessions().catch(() => []) : Promise.resolve([]),
         ]);
         if (cancelled) return;
@@ -181,11 +183,13 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
         }
         if (need.has('upcoming')) {
           try {
-            const url = await getSavedCalendarUrl();
-            if (url) {
-              const events = await fetchAndParseCalendar(url);
-              const now = Date.now();
-              next.upcoming = events.filter((e) => e.startDate.getTime() >= now).length;
+            const now = new Date();
+            const rangeEnd = new Date(now);
+            rangeEnd.setDate(rangeEnd.getDate() + 14);
+            const peeked = peekUnifiedScheduleEvents(now, rangeEnd);
+            const cached = peeked.events.length ? peeked.events : getCachedCalendarEvents();
+            if (cached.length || peekSavedCalendarUrl()) {
+              next.upcoming = cached.filter((e) => e.startDate.getTime() >= now.getTime()).length;
             } else {
               next.upcoming = 0;
             }

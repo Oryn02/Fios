@@ -20,7 +20,7 @@
     <meta name="apple-mobile-web-app-title" content="Fios" />
     <meta name="mobile-web-app-capable" content="yes" />
 
-    <title>Fios v3.6.6 — Your Academic Command Center</title>
+    <title>Fios v3.7.0 — Your Academic Command Center</title>
     <!-- Apply stored theme/accent before first paint to avoid auth/theme flashes -->
     <script>
       (function () {
@@ -70,9 +70,50 @@
         } catch (e) { /* ignore */ }
       })();
     </script>
+    <style>
+      /* PWA / cold boot: match shell before React paints — reduces white flash + layout pop-in */
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background: #07090e;
+        color: #f8fafc;
+      }
+      html[data-theme="light"], html[data-theme="light"] body {
+        background: #e4dfd4;
+        color: #1c1917;
+      }
+      #fios-boot-splash {
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        color: var(--fios-accent-solid, #34d399);
+        background: inherit;
+      }
+      #fios-boot-splash .dot {
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 9999px;
+        background: var(--fios-accent-solid, #34d399);
+        animation: fios-boot-pulse 1s ease-in-out infinite;
+      }
+      @keyframes fios-boot-pulse {
+        0%, 100% { opacity: 0.35; transform: scale(0.9); }
+        50% { opacity: 1; transform: scale(1); }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="fios-boot-splash" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span>
+        Loading Fios…
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

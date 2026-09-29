@@ -7,11 +7,11 @@ import {
 } from 'lucide-react';
 import { IS_DEMO } from '../lib/demo';
 import { CalendarEvent } from '../lib/calendarService';
-import { loadUnifiedScheduleEvents } from '../lib/scheduleService';
+import { loadUnifiedScheduleEvents, peekUnifiedScheduleEvents } from '../lib/scheduleService';
 import { isCardDue } from '../lib/spacedRepetition';
-import { getTasks, createTask, toggleTask, deleteTask } from '../lib/taskService';
+import { getTasks, createTask, toggleTask, deleteTask, peekCachedTasks } from '../lib/taskService';
 import { getUserDecksWithCards } from '../lib/deckService';
-import { getUserModules, type DBModule } from '../lib/moduleService';
+import { getUserModules, peekCachedModules, type DBModule } from '../lib/moduleService';
 import { toDatetimeLocalValue, fromDatetimeLocalValue } from '../lib/agendaService';
 import type { Task } from '../types/db';
 import { usePreferredName, useProfile } from '../context/ProfileContext';
@@ -37,6 +37,8 @@ interface OverviewTabProps {
   onNavigate?: (tab: string, payload?: FlightNavigatePayload) => void;
   /** Open SM-2 review for all due cards across decks (Review Queue). */
   onOpenReviewQueue?: () => void;
+  /** When false (keep-alive hidden), skip timers/refetch; when true again, soft-refresh. */
+  isActive?: boolean;
 }
 
 interface SavedDeck {
@@ -58,7 +60,7 @@ const WIDGET_LABELS: Record<WidgetId, string> = {
   calendar: 'iCal Agenda',
 };
 
-const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavigate, onOpenReviewQueue }) => {
+const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavigate, onOpenReviewQueue, isActive = true }) => {
   const rawPreferredName = usePreferredName();
   const { profile } = useProfile();
   const { widgetOrder, widgetVisibility, setWidgetOrder, setWidgetVisible } = usePreferences();
@@ -69,17 +71,42 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
     ? 'Student' 
     : rawPreferredName || profile?.preferred_name || profile?.full_name || 'Student';
 
+  const cachedTasks = peekCachedTasks();
+  const cachedModules = peekCachedModules();
+  const schedulePeek = (() => {
+    const now = new Date();
+    const rangeEnd = new Date(now);
+    rangeEnd.setDate(rangeEnd.getDate() + 21);
+    return peekUnifiedScheduleEvents(now, rangeEnd);
+  })();
+
   const [savedDecks, setSavedDecks] = useState<SavedDeck[]>([]);
   const [loadingDecks, setLoadingDecks] = useState(true);
   const [dueCardCount, setDueCardCount] = useState(0);
 
-  const [todayClasses, setTodayClasses] = useState<CalendarEvent[]>([]);
-  const [upcomingClasses, setUpcomingClasses] = useState<CalendarEvent[]>([]);
-  const [loadingClasses, setLoadingClasses] = useState(true);
+  const [todayClasses, setTodayClasses] = useState<CalendarEvent[]>(() => {
+    const now = new Date();
+    return schedulePeek.events
+      .filter(
+        (e) =>
+          e.startDate.getFullYear() === now.getFullYear() &&
+          e.startDate.getMonth() === now.getMonth() &&
+          e.startDate.getDate() === now.getDate()
+      )
+      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+  });
+  const [upcomingClasses, setUpcomingClasses] = useState<CalendarEvent[]>(() => {
+    const now = new Date();
+    return schedulePeek.events
+      .filter((e) => e.startDate.getTime() >= now.getTime())
+      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
+      .slice(0, 5);
+  });
+  const [loadingClasses, setLoadingClasses] = useState(() => schedulePeek.events.length === 0);
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loadingTasks, setLoadingTasks] = useState(true);
-  const [modules, setModules] = useState<DBModule[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => cachedTasks || []);
+  const [loadingTasks, setLoadingTasks] = useState(() => !cachedTasks);
+  const [modules, setModules] = useState<DBModule[]>(() => cachedModules || []);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskStart, setNewTaskStart] = useState('');
@@ -96,7 +123,8 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
 
   useEffect(() => {
     let cancelled = false;
-    setLoadingTasks(true);
+    // Soft refresh: keep cached tasks/classes visible while network updates.
+    if (!cachedTasks) setLoadingTasks(true);
     getTasks()
       .then((data) => {
         if (!cancelled) setTasks(data);
@@ -105,14 +133,18 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
       .finally(() => {
         if (!cancelled) setLoadingTasks(false);
       });
-    getUserModules().then(setModules).catch(() => {});
+    getUserModules()
+      .then((m) => {
+        if (!cancelled) setModules(m);
+      })
+      .catch(() => {});
 
     const fetchDecks = async () => {
       setLoadingDecks(true);
       try {
         const data = await getUserDecksWithCards();
+        if (cancelled) return;
         setSavedDecks((data || []).slice(0, 3) as SavedDeck[]);
-        const nowIso = new Date().toISOString();
         let due = 0;
         for (const deck of data || []) {
           for (const c of (deck as any).cards || []) {
@@ -123,17 +155,18 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
       } catch (err) {
         console.error('Failed to load decks:', err);
       } finally {
-        setLoadingDecks(false);
+        if (!cancelled) setLoadingDecks(false);
       }
     };
 
     const fetchSchedule = async () => {
-      setLoadingClasses(true);
+      if (schedulePeek.events.length === 0) setLoadingClasses(true);
       try {
         const now = new Date();
         const rangeEnd = new Date(now);
         rangeEnd.setDate(rangeEnd.getDate() + 21);
-        const { events } = await loadUnifiedScheduleEvents(now, rangeEnd);
+        const { events } = await loadUnifiedScheduleEvents(now, rangeEnd, { skipReconcile: schedulePeek.fromCache });
+        if (cancelled) return;
         const todayEvents = events.filter((e) =>
           e.startDate.getFullYear() === now.getFullYear() &&
           e.startDate.getMonth() === now.getMonth() &&
@@ -148,7 +181,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
       } catch (err) {
         console.error('Failed to load today classes:', err);
       } finally {
-        setLoadingClasses(false);
+        if (!cancelled) setLoadingClasses(false);
       }
     };
 
@@ -157,7 +190,21 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once SWR
   }, []);
+
+  // Soft refresh tasks/modules when returning to Overview (keep-alive).
+  useEffect(() => {
+    if (!isActive) return;
+    let cancelled = false;
+    getTasks()
+      .then((data) => { if (!cancelled) setTasks(data); })
+      .catch(() => {});
+    getUserModules()
+      .then((m) => { if (!cancelled) setModules(m); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isActive]);
 
   const handleAddTask = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();

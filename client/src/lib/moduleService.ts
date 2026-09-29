@@ -6,6 +6,7 @@ import {
   normalizeModuleColor,
   MOD_BADGE_CLASS,
 } from './moduleColors';
+import { clearEntityCache, dedupeAsync, peekEntityCache, writeEntityCache } from './entityCache';
 
 export interface DBModule {
   id: string;
@@ -19,6 +20,8 @@ export interface DBModule {
   created_at: string;
 }
 
+const MODULES_CACHE_KEY = 'fios_cache_modules';
+
 let demoModuleState: DBModule[] = [...demoModules];
 
 /** Rich module accent picker (CSS `data-mod-color` tokens; light + dark contrast). */
@@ -27,23 +30,44 @@ export const COLOR_OPTIONS: Record<string, { label: string; badge: string; borde
 
 export { MODULE_COLORS, normalizeModuleColor, MOD_BADGE_CLASS };
 
+/** Sync peek for instant paint (stale-while-revalidate). */
+export function peekCachedModules(): DBModule[] | null {
+  if (IS_DEMO) return [...demoModuleState];
+  const cached = peekEntityCache<DBModule[]>(MODULES_CACHE_KEY);
+  return cached ? [...cached] : null;
+}
+
+function setModulesCache(mods: DBModule[]): void {
+  if (IS_DEMO) return;
+  writeEntityCache(MODULES_CACHE_KEY, mods);
+}
+
 export async function getUserModules(): Promise<DBModule[]> {
   if (IS_DEMO) return [...demoModuleState];
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  return dedupeAsync('modules', async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return peekCachedModules() || [];
 
-  const { data, error } = await supabase
-    .from('modules')
-    .select('*')
-    .order('created_at', { ascending: true });
+      const { data, error } = await supabase
+        .from('modules')
+        .select('*')
+        .order('created_at', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching modules:', error);
-    return [];
-  }
+      if (error) {
+        console.error('Error fetching modules:', error);
+        return peekCachedModules() || [];
+      }
 
-  return data || [];
+      const mods = data || [];
+      setModulesCache(mods);
+      return mods;
+    } catch (err) {
+      console.error('Error fetching modules:', err);
+      return peekCachedModules() || [];
+    }
+  });
 }
 
 /** Escape a string for safe use inside a RegExp. */
@@ -182,6 +206,7 @@ export async function createModule(
     .single();
 
   if (error) throw error;
+  setModulesCache([...(peekCachedModules() || []).filter((m) => m.id !== data.id), data]);
   return data;
 }
 
@@ -253,6 +278,11 @@ export async function updateModule(
     await cascadeModuleCode(existing.code, nextCode);
   }
 
+  if (data) {
+    const prev = peekCachedModules() || [];
+    setModulesCache(prev.map((m) => (m.id === data.id ? data : m)));
+  }
+
   return data;
 }
 
@@ -267,6 +297,8 @@ export async function setModuleExamDate(moduleId: string, examDate: string | nul
   }
   const { error } = await supabase.from('modules').update({ exam_date: examDate }).eq('id', moduleId);
   if (error) throw error;
+  const prev = peekCachedModules() || [];
+  setModulesCache(prev.map((m) => (m.id === moduleId ? { ...m, exam_date: examDate } : m)));
 }
 
 export async function deleteModule(moduleId: string): Promise<void> {
@@ -281,4 +313,10 @@ export async function deleteModule(moduleId: string): Promise<void> {
     .eq('id', moduleId);
 
   if (error) throw error;
+  setModulesCache((peekCachedModules() || []).filter((m) => m.id !== moduleId));
+}
+
+/** Drop modules cache (e.g. after sign-out). */
+export function clearModulesCache(): void {
+  clearEntityCache(MODULES_CACHE_KEY);
 }

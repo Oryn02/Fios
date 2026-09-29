@@ -8,12 +8,12 @@ import {
 import { getUserDecksWithCards, renameDeck, buildDeckExport, downloadDeckJson, deckExportToShareCode } from '../lib/deckService';
 import {
   getUserModules, deleteModule, DBModule, normalizeModuleColor,
-  moduleDisplayName, moduleCourseCode, resolveModuleLabel,
+  moduleDisplayName, moduleCourseCode, resolveModuleLabel, peekCachedModules,
 } from '../lib/moduleService';
 import { MOD_BADGE_CLASS } from '../lib/moduleColors';
 import { getQuizzes, updateQuizTitle } from '../lib/mcqService';
 import { getCodeExams, updateCodeExamTitle } from '../lib/codeExamService';
-import { getTasks, toggleTask } from '../lib/taskService';
+import { getTasks, toggleTask, peekCachedTasks } from '../lib/taskService';
 import { getDocuments, deleteDocument, updateDocumentTitle } from '../lib/documentService';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO } from '../lib/demo';
@@ -30,6 +30,7 @@ interface ModulesViewProps {
   onOpenCodeExam?: (examId: string) => void;
   onOpenDocument?: (docId: string) => void;
   setActiveTab?: (tab: string) => void;
+  isActive?: boolean;
 }
 
 type EntityTab = 'decks' | 'quizzes' | 'code' | 'tasks' | 'documents';
@@ -54,14 +55,17 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   onOpenCodeExam,
   onOpenDocument,
   setActiveTab,
+  isActive = true,
 }) => {
-  const [modules, setModules] = useState<DBModule[]>([]);
+  const cachedMods = peekCachedModules();
+  const cachedTasksList = peekCachedTasks();
+  const [modules, setModules] = useState<DBModule[]>(() => cachedMods || []);
   const [decks, setDecks] = useState<any[]>([]);
   const [quizzes, setQuizzes] = useState<MCQQuiz[]>([]);
   const [codeExams, setCodeExams] = useState<CodeExam[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => cachedTasksList || []);
   const [documents, setDocuments] = useState<FiosDocument[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !cachedMods);
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [entityTab, setEntityTab] = useState<EntityTab>('decks');
 
@@ -72,8 +76,9 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   const [importOpen, setImportOpen] = useState(false);
   const entityTabStripRef = useRef<HTMLDivElement>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadData = useCallback(async (opts?: { soft?: boolean }) => {
+    const soft = opts?.soft || modules.length > 0 || tasks.length > 0;
+    if (!soft) setLoading(true);
     try {
       const [m, d, q, c, t, docsResult] = await Promise.all([
         getUserModules(),
@@ -97,9 +102,19 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [modules.length, tasks.length]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { void loadData({ soft: !!(cachedMods || cachedTasksList) }); }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount once
+
+  // Soft refresh when returning via keep-alive (no empty spinner).
+  const didMountRef = useRef(false);
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+    if (isActive) void loadData({ soft: true });
+  }, [isActive]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep the active entity tab visible when the strip is narrower than all tabs (mobile).
   useEffect(() => {

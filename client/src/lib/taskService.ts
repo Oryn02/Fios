@@ -1,8 +1,11 @@
 import { supabase } from './supabase';
 import type { Task } from '../types/db';
 import { IS_DEMO, demoTasks, DEMO_USER } from './demo';
+import { clearEntityCache, dedupeAsync, peekEntityCache, writeEntityCache } from './entityCache';
 
 let demoTaskState: Task[] = [...demoTasks];
+
+const TASKS_CACHE_KEY = 'fios_cache_tasks';
 
 export interface CreateTaskInput {
   title: string;
@@ -14,22 +17,43 @@ export interface CreateTaskInput {
   moduleCode?: string | null;
 }
 
+/** Sync peek for instant Overview / Modules / Tasks paint. */
+export function peekCachedTasks(): Task[] | null {
+  if (IS_DEMO) return [...demoTaskState];
+  const cached = peekEntityCache<Task[]>(TASKS_CACHE_KEY);
+  return cached ? [...cached] : null;
+}
+
+function setTasksCache(tasks: Task[]): void {
+  if (IS_DEMO) return;
+  writeEntityCache(TASKS_CACHE_KEY, tasks);
+}
+
 export async function getTasks(): Promise<Task[]> {
   if (IS_DEMO) return [...demoTaskState];
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  return dedupeAsync('tasks', async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return peekCachedTasks() || [];
 
-  const { data, error } = await supabase
-    .from('tasks')
-    .select('*')
-    .order('due_at', { ascending: true, nullsFirst: false });
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('due_at', { ascending: true, nullsFirst: false });
 
-  if (error) {
-    console.error('Error loading tasks:', error);
-    return [];
-  }
-  return (data as Task[]) || [];
+      if (error) {
+        console.error('Error loading tasks:', error);
+        return peekCachedTasks() || [];
+      }
+      const tasks = (data as Task[]) || [];
+      setTasksCache(tasks);
+      return tasks;
+    } catch (err) {
+      console.error('Error loading tasks:', err);
+      return peekCachedTasks() || [];
+    }
+  });
 }
 
 export async function createTask(
@@ -81,7 +105,9 @@ export async function createTask(
     .single();
 
   if (error) throw error;
-  return data as Task;
+  const task = data as Task;
+  setTasksCache([task, ...(peekCachedTasks() || []).filter((t) => t.id !== task.id)]);
+  return task;
 }
 
 export async function updateTask(
@@ -94,6 +120,8 @@ export async function updateTask(
   }
   const { error } = await supabase.from('tasks').update(patch).eq('id', id);
   if (error) throw error;
+  const prev = peekCachedTasks() || [];
+  setTasksCache(prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
 }
 
 export async function toggleTask(id: string, completed: boolean): Promise<void> {
@@ -107,6 +135,11 @@ export async function deleteTask(id: string): Promise<void> {
   }
   const { error } = await supabase.from('tasks').delete().eq('id', id);
   if (error) throw error;
+  setTasksCache((peekCachedTasks() || []).filter((t) => t.id !== id));
+}
+
+export function clearTasksCache(): void {
+  clearEntityCache(TASKS_CACHE_KEY);
 }
 
 export { DEMO_USER };

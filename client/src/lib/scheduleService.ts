@@ -167,6 +167,65 @@ export function expandManualEvents(
   return out.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 }
 
+export type UnifiedScheduleResult = {
+  events: CalendarEvent[];
+  mode: ScheduleMode;
+  institutionName: string;
+  /** True when result came from local cache / manual expand without a network refresh. */
+  fromCache?: boolean;
+};
+
+/**
+ * Synchronous local-first peek for instant Timetable / Overview paint.
+ * Prefer this for initial state; follow with `loadUnifiedScheduleEvents` to refresh.
+ */
+export function peekUnifiedScheduleEvents(
+  rangeStart: Date,
+  rangeEnd: Date
+): UnifiedScheduleResult {
+  const meta = loadScheduleMeta();
+  if (meta.mode === 'manual') {
+    return {
+      events: expandManualEvents(loadManualEvents(), rangeStart, rangeEnd),
+      mode: 'manual',
+      institutionName: meta.institutionName,
+      fromCache: true,
+    };
+  }
+
+  const cached = getCachedCalendarEvents();
+  if (cached.length) {
+    return {
+      events: cached,
+      mode: 'ical',
+      institutionName: meta.institutionName,
+      fromCache: true,
+    };
+  }
+
+  const manuals = expandManualEvents(loadManualEvents(), rangeStart, rangeEnd);
+  return {
+    events: manuals,
+    mode: 'ical',
+    institutionName: meta.institutionName,
+    fromCache: manuals.length > 0,
+  };
+}
+
+/** Local iCal URL without awaiting cloud reconcile (for first paint). */
+export function peekSavedCalendarUrl(): string {
+  try {
+    return loadLocalCalendarState().ical_url?.trim() || '';
+  } catch {
+    return '';
+  }
+}
+
+export type LoadScheduleOptions = {
+  /** Skip cloud↔local reconcile (caller already reconciled, or painting after peek). */
+  skipReconcile?: boolean;
+};
+
 /**
  * Unified schedule loader for Overview / Timetable / widgets.
  * Manual mode never requires iCal; iCal mode still works when a feed URL exists.
@@ -174,12 +233,15 @@ export function expandManualEvents(
  */
 export async function loadUnifiedScheduleEvents(
   rangeStart: Date,
-  rangeEnd: Date
-): Promise<{ events: CalendarEvent[]; mode: ScheduleMode; institutionName: string }> {
+  rangeEnd: Date,
+  opts?: LoadScheduleOptions
+): Promise<UnifiedScheduleResult> {
   // Best-effort cloud ↔ local reconcile (no-op when offline / unsigned-in).
-  try {
-    await reconcileCalendarState();
-  } catch { /* keep local */ }
+  if (!opts?.skipReconcile) {
+    try {
+      await reconcileCalendarState();
+    } catch { /* keep local */ }
+  }
 
   const meta = loadScheduleMeta();
   if (meta.mode === 'manual') {
@@ -187,20 +249,25 @@ export async function loadUnifiedScheduleEvents(
       events: expandManualEvents(loadManualEvents(), rangeStart, rangeEnd),
       mode: 'manual',
       institutionName: meta.institutionName,
+      fromCache: false,
     };
   }
 
   try {
-    const url = await getSavedCalendarUrl();
+    // Prefer local URL first to avoid a second reconcile inside getSavedCalendarUrl.
+    let url = peekSavedCalendarUrl();
+    if (!url) {
+      url = (await getSavedCalendarUrl()) || '';
+    }
     if (url) {
       const events = await fetchAndParseCalendar(url);
-      return { events, mode: 'ical', institutionName: meta.institutionName };
+      return { events, mode: 'ical', institutionName: meta.institutionName, fromCache: false };
     }
   } catch (err) {
     console.error('iCal schedule load failed:', err);
     const cached = getCachedCalendarEvents();
     if (cached.length) {
-      return { events: cached, mode: 'ical', institutionName: meta.institutionName };
+      return { events: cached, mode: 'ical', institutionName: meta.institutionName, fromCache: true };
     }
   }
 
@@ -209,6 +276,7 @@ export async function loadUnifiedScheduleEvents(
     events: expandManualEvents(loadManualEvents(), rangeStart, rangeEnd),
     mode: 'ical',
     institutionName: meta.institutionName,
+    fromCache: true,
   };
 }
 
