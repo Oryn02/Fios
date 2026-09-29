@@ -38,6 +38,8 @@ import { NetworkStatusBanner } from './components/NetworkStatusBanner';
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt';
 import { bootstrapClassReminders } from './lib/pushNotifications';
 import { getUserDecksWithCards } from './lib/deckService';
+import { sanitizeDeckTitle } from './lib/sanitizeDeckTitle';
+import { useKeyboardVisible } from './hooks/useKeyboardVisible';
 import { isCardDue } from './lib/spacedRepetition';
 import type { FlightNavigatePayload } from './components/RevisionFlightPlan';
 
@@ -83,6 +85,7 @@ const IDLE_MS = 24 * 60 * 60 * 1000;
 
 const Dashboard: React.FC = () => {
   const { requireAiAuth } = useAiAuth();
+  const keyboardVisible = useKeyboardVisible();
   const [activeTab, setActiveTab] = useState('overview');
   /** Keep Overview / Timetable / Modules mounted after first visit for instant return nav. */
   const [mountedHotTabs, setMountedHotTabs] = useState<Set<string>>(() => new Set(['overview']));
@@ -168,7 +171,7 @@ const Dashboard: React.FC = () => {
       setCards(cardsList);
       setSelectedDeck({
         cards: cardsList,
-        title: studyNotes.trim().slice(0, 35) + '…',
+        title: sanitizeDeckTitle(studyNotes.trim().slice(0, 48), 'Generated Flashcard Deck'),
         isSaved: false,
       });
     } catch (err: any) {
@@ -359,11 +362,14 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Shared bottom-right dock: Quick FAB (right) · Pomodoro · Brain Dump (left of duo).
-          Row-reverse keeps FAB nearest the corner; Brain Dump panel opens upward/left so it
-          sits alongside without covering the FAB or fighting mobile bottom nav. */}
+          Row-reverse keeps FAB nearest the corner; clears bottom nav via CSS calc offset.
+          Auto-hides when soft keyboard / text focus is active (mobile). */}
       <div
-        className="fios-fab-dock fixed z-[70] bottom-24 md:bottom-6 right-3 md:right-6 flex flex-row-reverse items-end gap-2.5 md:gap-3 safe-bottom pointer-events-none"
+        className={`fios-fab-dock fixed right-3 md:right-6 flex flex-row-reverse items-end gap-2.5 md:gap-3 pointer-events-none transition-all duration-200 ${
+          keyboardVisible ? 'fios-chrome-hidden' : ''
+        }`}
         aria-label="Floating study tools"
+        aria-hidden={keyboardVisible || undefined}
       >
         <QuickActions
           onNavigate={handleTabChange}
@@ -387,7 +393,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v3.7.3
+        Academic Suite · Study Lab · v3.7.4
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-white uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -532,7 +538,7 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v3.7.3 — Your Academic Command Center';
+    document.title = 'Fios v3.7.4 — Your Academic Command Center';
   }, []);
 
   useEffect(() => {
@@ -680,7 +686,7 @@ export function App() {
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v3.7.3…
+          Initializing Fios v3.7.4…
         </div>
       </div>
     );

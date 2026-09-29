@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { LogIn, UserPlus, ShieldAlert, X, Eye, EyeOff, ArrowLeft, Mail, HelpCircle } from 'lucide-react';
 import { FiosLogo } from './FiosLogo';
 import { getSupportEmail } from '../lib/supportConfig';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 type AuthPanel = 'auth' | 'forgot-password' | 'forgot-email';
 
@@ -24,6 +25,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   initialPanel = 'auth',
   initialError = null,
 }) => {
+  useBodyScrollLock(true);
   const [isSignUp, setIsSignUp] = useState(mode === 'signup');
   const [panel, setPanel] = useState<AuthPanel>(initialPanel);
   const [showPassword, setShowPassword] = useState(false);
@@ -125,7 +127,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       : 'Sign in to access your modules & study tools';
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#07090e]/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+    <div className="fixed inset-0 z-40 bg-[#07090e]/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="absolute inset-0" onClick={onClose} />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
@@ -135,7 +137,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 16 }}
         transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-        className="w-full max-w-md bg-[#0e131f]/95 backdrop-blur-xl border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-5 relative z-10 overflow-hidden"
+        className="w-full max-w-md bg-[#0e131f]/95 backdrop-blur-xl border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-5 relative z-50 overflow-hidden"
         style={{ willChange: 'transform, opacity' }}
       >
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-cyan-400 to-transparent" />
@@ -143,8 +145,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-slate-500 hover:text-slate-200 transition-colors p-1 rounded-lg hover:bg-slate-800/50 cursor-pointer"
-            aria-label="Close modal"
+            className="absolute top-3 right-3 touch-target text-slate-500 hover:text-slate-200 transition-colors rounded-lg hover:bg-slate-800/50 cursor-pointer"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>

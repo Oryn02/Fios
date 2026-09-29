@@ -15,6 +15,8 @@ import { Avatar } from './Avatar';
 import { CommandPalette, type CommandItem } from './CommandPalette';
 import { HolidayAmbience } from './HolidayAmbience';
 import { HolidayMotif } from './HolidayMotif';
+import { useKeyboardVisible } from '../hooks/useKeyboardVisible';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -35,7 +37,7 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Timetable', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.7.3', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.7.4', icon: Sparkles },
 ];
 
 /** True when the event target is a text-entry control (skip ⌘K / Ctrl+K while typing). */
@@ -87,6 +89,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true
   );
+  const keyboardVisible = useKeyboardVisible();
+  useBodyScrollLock(drawerOpen && !isDesktop, '[data-mobile-drawer-scroll]');
 
   const HOLD_MS = 420;
   const mobileHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -239,52 +243,6 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
   }, [isDesktop]);
 
   const navToggleOpen = isDesktop ? sidebarOpen : drawerOpen;
-
-  /** Lock background page scroll while the mobile drawer/overlay is open (iOS-safe). */
-  useEffect(() => {
-    if (!drawerOpen || isDesktop) return;
-
-    const html = document.documentElement;
-    const body = document.body;
-    const scrollY = window.scrollY;
-    const prev = {
-      htmlOverflow: html.style.overflow,
-      bodyOverflow: body.style.overflow,
-      bodyPosition: body.style.position,
-      bodyTop: body.style.top,
-      bodyLeft: body.style.left,
-      bodyRight: body.style.right,
-      bodyWidth: body.style.width,
-    };
-
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-    body.style.position = 'fixed';
-    body.style.top = `-${scrollY}px`;
-    body.style.left = '0';
-    body.style.right = '0';
-    body.style.width = '100%';
-
-    const onTouchMove = (e: TouchEvent) => {
-      const target = e.target as Element | null;
-      // Allow scrolling inside the drawer panel itself
-      if (target?.closest?.('[data-mobile-drawer-scroll]')) return;
-      e.preventDefault();
-    };
-    document.addEventListener('touchmove', onTouchMove, { passive: false });
-
-    return () => {
-      document.removeEventListener('touchmove', onTouchMove);
-      html.style.overflow = prev.htmlOverflow;
-      body.style.overflow = prev.bodyOverflow;
-      body.style.position = prev.bodyPosition;
-      body.style.top = prev.bodyTop;
-      body.style.left = prev.bodyLeft;
-      body.style.right = prev.bodyRight;
-      body.style.width = prev.bodyWidth;
-      window.scrollTo(0, scrollY);
-    };
-  }, [drawerOpen, isDesktop]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -558,13 +516,13 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       <HolidayAmbience />
       {/* Top HUD Bar — always visible unless Zen is hiding study chrome */}
       {!hideChrome && (
-        <header className="h-14 sm:h-16 border-b fios-border bg-[var(--fios-surface)]/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 fixed top-0 left-0 right-0 z-[60] safe-top">
+        <header className="h-14 sm:h-16 border-b fios-border bg-[var(--fios-surface)]/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 fixed top-0 left-0 right-0 z-50 safe-top">
           {/* Brand cluster: logo may shrink; version badge never hides / never shrinks away */}
           <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 overflow-visible self-center">
             <button
               type="button"
               onClick={toggleNavChrome}
-              className={`relative z-[70] inline-flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-md bg-[var(--fios-surface-2)] border transition-colors cursor-pointer self-center ${
+              className={`relative z-[70] touch-target shrink-0 rounded-md bg-[var(--fios-surface-2)] border transition-colors cursor-pointer self-center ${
                 navToggleOpen
                   ? 'accent-border accent-solid-text'
                   : 'fios-border text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] hover:accent-border'
@@ -573,7 +531,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               aria-expanded={navToggleOpen}
               aria-controls={isDesktop ? 'fios-desktop-sidebar' : 'fios-mobile-drawer'}
             >
-              {navToggleOpen ? <X className="w-3.5 h-3.5" strokeWidth={2.25} /> : <Menu className="w-3.5 h-3.5" strokeWidth={2.25} />}
+              {navToggleOpen ? <X className="w-4 h-4" strokeWidth={2.25} /> : <Menu className="w-4 h-4" strokeWidth={2.25} />}
             </button>
             <button
               type="button"
@@ -594,10 +552,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               data-fios-version-badge
               className="relative z-[65] inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 3.7.3"
+              aria-label="Fios version 3.7.4"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v3.7.3
+              v3.7.4
             </span>
             {zenMode && (
               <button
@@ -813,7 +771,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           </aside>
         )}
 
-        <main className={`flex-1 min-w-0 p-4 sm:p-8 max-w-7xl mx-auto w-full relative ${hideChrome ? 'pb-24 md:pb-8' : 'pb-24 md:pb-8'}`} id="main-content">
+        <main className={`flex-1 min-w-0 p-4 sm:p-8 max-w-7xl mx-auto w-full relative pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] md:pb-8`} id="main-content">
           {!hideChrome && (
             <div className="absolute top-10 left-10 w-96 h-96 rounded-full blur-[100px] pointer-events-none opacity-40" style={{ backgroundColor: 'color-mix(in srgb, var(--fios-accent-solid) 8%, transparent)' }} />
           )}
@@ -821,12 +779,13 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         </main>
       </div>
 
-      {/* Mobile bottom nav — keep a Settings escape even in Zen study mode */}
+      {/* Mobile bottom nav — keep a Settings escape even in Zen study mode; hide on keyboard */}
       {(!hideChrome || zenMode) && (
         <nav
-          className={`fios-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-1 pt-1 pb-1 safe-bottom overflow-x-auto ${hideChrome ? 'shadow-2xl' : ''} ${mobileDragId ? 'select-none' : ''}`}
+          className={`fios-bottom-nav md:hidden fixed bottom-0 left-0 right-0 bg-[var(--fios-surface)]/95 backdrop-blur-md border-t fios-border flex items-center justify-around px-1 pt-1 overflow-x-auto transition-all duration-200 ${hideChrome ? 'shadow-2xl' : ''} ${mobileDragId ? 'select-none' : ''} ${keyboardVisible ? 'fios-chrome-hidden' : ''}`}
           aria-label="Mobile shortcuts"
           aria-describedby="mobile-nav-reorder-hint"
+          aria-hidden={keyboardVisible || undefined}
         >
           <span id="mobile-nav-reorder-hint" className="sr-only">Long-press a tab, then drag left or right to reorder. Order is saved to your preferences.</span>
           {hideChrome ? (

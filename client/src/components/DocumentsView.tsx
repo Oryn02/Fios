@@ -18,6 +18,7 @@ import { useAiAuth } from '../context/AiAuthContext';
 import { toast } from '../lib/toast';
 import { GeminiLatencyHint } from './GeminiLatencyHint';
 import { friendlyGeminiError } from '../lib/geminiUx';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface ChatMessage { role: 'user' | 'assistant'; text: string; }
 
@@ -43,6 +44,7 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
   const [active, setActive] = useState<FiosDocument | null>(null);
 
   const [tutorOpen, setTutorOpen] = useState(false);
+  useBodyScrollLock(tutorOpen, '[data-modal-scroll]');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [question, setQuestion] = useState('');
   const [thinking, setThinking] = useState(false);
@@ -307,18 +309,20 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="…or paste your notes here to summarize."
-          className="w-full h-32 p-4 bg-[var(--fios-surface-2)] border fios-border rounded-xl text-[var(--fios-text)] placeholder:text-slate-500 focus:outline-none focus:accent-border font-mono text-xs"
+          className="w-full h-32 p-4 bg-[var(--fios-surface-2)] border fios-border rounded-xl text-[var(--fios-text)] placeholder:text-slate-500 focus:outline-none focus:accent-border font-mono text-base sm:text-xs"
         />
 
-        <motion.button
-          whileTap={{ scale: 0.99 }}
-          onClick={handleSummarize}
-          disabled={busy || !text.trim()}
-          className="w-full py-3 accent-bg text-slate-950 font-black italic uppercase text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
-        >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {busy ? 'Summarizing…' : 'Summarize & Save'}
-        </motion.button>
+        <div className="fios-sticky-action">
+          <motion.button
+            whileTap={{ scale: 0.99 }}
+            onClick={handleSummarize}
+            disabled={busy || !text.trim()}
+            className="fios-sticky-cta w-full py-3 min-h-11 accent-bg text-slate-950 font-black italic uppercase text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 touch-manipulation"
+          >
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {busy ? 'Summarizing…' : 'Summarize & Save'}
+          </motion.button>
+        </div>
         {error && (
           <div className="space-y-2">
             <div className="p-3 bg-rose-500/10 border-l-4 border-rose-500 text-rose-300 text-xs font-mono rounded-r-lg">{error}</div>
@@ -464,11 +468,11 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         {tutorOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[70] bg-black/60" onClick={() => setTutorOpen(false)} />
+              className="fixed inset-0 z-40 bg-black/60" onClick={() => setTutorOpen(false)} />
             <motion.aside
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed top-0 right-0 z-[71] h-dvh w-full sm:w-[420px] bg-[var(--fios-surface)] border-l fios-border shadow-2xl flex flex-col safe-bottom"
+              className="fixed top-0 right-0 z-50 h-dvh w-full sm:w-[420px] bg-[var(--fios-surface)] border-l fios-border shadow-2xl flex flex-col safe-bottom"
             >
               <div className="p-4 border-b fios-border flex items-center justify-between">
                 <div className="flex items-center gap-2">

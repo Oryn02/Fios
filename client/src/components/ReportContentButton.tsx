@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Flag, Loader2, X } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import {
   submitContentFlag,
   FLAG_REASONS,
@@ -29,6 +30,7 @@ export const ReportContentButton: React.FC<ReportContentButtonProps> = ({
   compact = true,
 }) => {
   const [open, setOpen] = useState(false);
+  useBodyScrollLock(open, '[data-modal-scroll]');
   const [reason, setReason] = useState<FlagReason>('other');
   const [details, setDetails] = useState('');
   const [busy, setBusy] = useState(false);
@@ -82,7 +84,7 @@ export const ReportContentButton: React.FC<ReportContentButtonProps> = ({
 
       {open && (
         <div
-          className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-3 bg-black/60 backdrop-blur-xs"
+          className="fixed inset-0 z-40 flex items-end sm:items-center justify-center p-3 bg-black/60 backdrop-blur-xs"
           onClick={() => !busy && setOpen(false)}
           role="presentation"
         >

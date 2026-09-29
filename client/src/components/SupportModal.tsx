@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, X, Copy, CheckCircle2, Send, Loader2 } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { getSupportEmail } from '../lib/supportConfig';
 import { apiUrl } from '../lib/apiBase';
 import { toast } from '../lib/toast';
@@ -14,6 +15,8 @@ interface SupportModalProps {
  * (POST /api/support → Resend/SendGrid when configured).
  */
 export const SupportModal: React.FC<SupportModalProps> = ({ onClose }) => {
+  useBodyScrollLock(true, '[data-modal-scroll]');
+
   const supportEmail = getSupportEmail();
   const [copied, setCopied] = useState(false);
   const [name, setName] = useState('');
@@ -85,7 +88,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+    <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="absolute inset-0" onClick={onClose} aria-hidden />
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 12 }}
@@ -93,22 +96,23 @@ export const SupportModal: React.FC<SupportModalProps> = ({ onClose }) => {
         exit={{ opacity: 0 }}
         role="dialog"
         aria-labelledby="support-title"
-        className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 space-y-5 shadow-2xl text-[var(--fios-text)]"
+        className="relative z-50 w-full max-w-lg max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl border fios-border bg-[var(--fios-surface)] shadow-2xl text-[var(--fios-text)]"
       >
-        <div className="flex items-center justify-between border-b fios-border pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border accent-solid-text">
+        <div className="sticky top-0 z-10 shrink-0 flex items-center justify-between border-b fios-border px-5 py-3.5 bg-[var(--fios-surface)]/95 backdrop-blur-md">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border accent-solid-text shrink-0">
               <Mail className="w-5 h-5" />
             </div>
-            <h3 id="support-title" className="text-sm font-black uppercase text-[var(--fios-text)]">
+            <h3 id="support-title" className="text-sm font-black uppercase text-[var(--fios-text)] truncate">
               Contact Support
             </h3>
           </div>
-          <button type="button" onClick={onClose} className="text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer p-1" aria-label="Close">
+          <button type="button" onClick={onClose} className="touch-target shrink-0 rounded-lg text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer" aria-label="Close">
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        <div data-modal-scroll className="flex-1 min-h-0 overflow-y-auto scroll-touch px-5 py-4 space-y-5">
         <p className="text-xs text-[var(--fios-text-muted)] leading-relaxed">
           Need help, found a bug, or have questions about Fios? Email us directly or send a message below —
           it is delivered to the support inbox without opening your mail client.
@@ -209,6 +213,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({ onClose }) => {
             </div>
           </form>
         )}
+        </div>
       </motion.div>
     </div>
   );

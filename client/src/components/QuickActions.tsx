@@ -20,6 +20,8 @@ import { getTasks, peekCachedTasks } from '../lib/taskService';
 import { getFocusSessions } from '../lib/focusService';
 import { getCachedCalendarEvents } from '../lib/calendarService';
 import { peekUnifiedScheduleEvents, peekSavedCalendarUrl } from '../lib/scheduleService';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { sanitizeDeckTitle } from '../lib/sanitizeDeckTitle';
 
 interface QuickActionsProps {
   onNavigate: (tab: string, options?: { openTutor?: boolean }) => void;
@@ -64,7 +66,7 @@ const QuickAddFlashcardModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
         if (!user) throw new Error('Authentication required.');
         const { data: deck, error: deckErr } = await supabase
           .from('decks')
-          .insert({ user_id: user.id, title: title.trim() || 'Quick Deck', module_code: moduleCode || null })
+          .insert({ user_id: user.id, title: sanitizeDeckTitle(title.trim() || 'Quick Deck'), module_code: moduleCode || null })
           .select().single();
         if (deckErr || !deck) throw new Error(deckErr?.message || 'Failed to create deck.');
         const { error: cardErr } = await supabase.from('cards').insert({ deck_id: deck.id, question: front.trim(), answer: back.trim() });
@@ -80,10 +82,10 @@ const QuickAddFlashcardModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
   };
 
   return (
-    <div className="fixed inset-0 z-[85] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+    <div className="fixed inset-0 z-40 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="absolute inset-0" onClick={onClose} />
       <motion.div initial={{ opacity: 0, scale: 0.95, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }}
-        className="relative z-10 w-full max-w-md rounded-2xl border fios-border-strong bg-[var(--fios-surface)] p-6 space-y-4 shadow-2xl fios-card">
+        className="relative z-50 w-full max-w-md rounded-2xl border fios-border-strong bg-[var(--fios-surface)] p-6 space-y-4 shadow-2xl fios-card">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-black text-[var(--fios-text)] flex items-center gap-2"><Layers className="w-4 h-4 accent-solid-text" /> Quick Add Flashcard</h3>
           <button type="button" onClick={onClose} className="text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer" aria-label="Close"><X className="w-5 h-5" /></button>
@@ -147,6 +149,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
   const [open, setOpen] = useState(false);
   const [showFlashcard, setShowFlashcard] = useState(false);
   const [metrics, setMetrics] = useState<Partial<Record<SmartMetricId, string | number>>>({});
+  useBodyScrollLock(open);
 
   useEffect(() => {
     if (!showSmartWidget || !smartWidgetShowMetrics) return;
@@ -268,13 +271,14 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, onOpenTu
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-xs"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs"
+            aria-hidden
           />
         )}
       </AnimatePresence>
 
-      {/* Dock child — parent FloatingDock owns fixed placement */}
-      <div className="relative z-[60] flex flex-col items-end gap-2 font-sans pointer-events-auto">
+      {/* Dock child — parent FloatingDock owns fixed placement; raise above backdrop when open */}
+      <div className={`relative flex flex-col items-end gap-2 font-sans pointer-events-auto ${open ? 'z-40' : 'z-30'}`}>
         <AnimatePresence>
           {open && (
             <motion.div

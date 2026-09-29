@@ -157,7 +157,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
               value={studyNotes}
               onChange={(e) => setStudyNotes(e.target.value)}
               placeholder="Parsed PDF content or pasted course notes will appear here…"
-              className="w-full h-44 p-4 bg-[#07090e] border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:accent-border font-mono text-xs sm:text-sm"
+              className="w-full h-44 p-4 bg-[#07090e] border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:accent-border font-mono text-base sm:text-sm"
             />
           </div>
 
@@ -171,7 +171,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
                   key={n}
                   type="button"
                   onClick={() => setQuestionCount(n)}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-black uppercase border cursor-pointer transition-colors ${
+                  className={`touch-target-row px-3 py-1.5 min-h-11 rounded-lg text-[10px] font-mono font-black uppercase border cursor-pointer transition-colors touch-manipulation ${
                     questionCount === n
                       ? 'accent-bg text-slate-950 border-transparent'
                       : 'bg-[#07090e] border-slate-800 text-slate-400 hover:text-slate-200'
@@ -183,14 +183,16 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
             </div>
           </div>
 
-          <motion.button
-            whileTap={{ scale: 0.99 }}
-            type="submit"
-            disabled={loading || !studyNotes.trim()}
-            className="w-full py-3.5 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
-          >
-            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating practice exam…</> : <><Sparkles className="w-4 h-4" /> Generate Practice Quiz ↵</>}
-          </motion.button>
+          <div className="fios-sticky-action">
+            <motion.button
+              whileTap={{ scale: 0.99 }}
+              type="submit"
+              disabled={loading || !studyNotes.trim()}
+              className="fios-sticky-cta w-full py-3.5 min-h-11 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 touch-manipulation"
+            >
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating practice exam…</> : <><Sparkles className="w-4 h-4" /> Generate Practice Quiz ↵</>}
+            </motion.button>
+          </div>
           {error && (
             <div className="space-y-2">
               <div className="p-4 bg-rose-500/10 border-l-4 border-rose-500 text-rose-300 text-xs font-mono font-bold uppercase">{error}</div>

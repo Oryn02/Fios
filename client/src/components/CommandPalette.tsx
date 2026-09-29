@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, CornerDownLeft } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export interface CommandItem {
   id: string;
@@ -29,6 +30,8 @@ function fuzzyScore(query: string, target: string): number {
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose, items }) => {
+  useBodyScrollLock(!!open);
+
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -85,7 +88,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose, i
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[80] flex items-start justify-center pt-[12vh] px-4">
+        <div className="fixed inset-0 z-40 flex items-start justify-center pt-[12vh] px-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -100,7 +103,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose, i
             initial={{ opacity: 0, y: -12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8 }}
-            className="relative z-10 w-full max-w-lg rounded-2xl border fios-border bg-[var(--fios-surface)] shadow-2xl overflow-hidden"
+            className="relative z-50 w-full max-w-lg rounded-2xl border fios-border bg-[var(--fios-surface)] shadow-2xl overflow-hidden"
           >
             <div className="flex items-center gap-2 px-4 py-3 border-b fios-border">
               <Search className="w-4 h-4 text-[var(--fios-text-muted)]" />

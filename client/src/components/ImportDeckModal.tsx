@@ -4,6 +4,7 @@
 import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Download, Loader2, Upload, X } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { saveDeckWithCards, parseDeckImport, type DeckExportPayload } from '../lib/deckService';
 import { toast } from '../lib/toast';
 import { IS_DEMO } from '../lib/demo';
@@ -15,6 +16,8 @@ interface Props {
 }
 
 export const ImportDeckModal: React.FC<Props> = ({ open, onClose, onImported }) => {
+  useBodyScrollLock(!!open, '[data-modal-scroll]');
+
   const [raw, setRaw] = useState('');
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -75,7 +78,7 @@ export const ImportDeckModal: React.FC<Props> = ({ open, onClose, onImported }) 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60"
+          className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/60"
           onClick={onClose}
         >
           <motion.div
@@ -94,7 +97,7 @@ export const ImportDeckModal: React.FC<Props> = ({ open, onClose, onImported }) 
                   <Download className="w-4 h-4 accent-solid-text" /> Import deck
                 </h3>
               </div>
-              <button type="button" onClick={onClose} className="p-1 text-[var(--fios-text-muted)] cursor-pointer">
+              <button type="button" onClick={onClose} className="touch-target shrink-0 rounded-lg text-[var(--fios-text-muted)] cursor-pointer" aria-label="Close">
                 <X className="w-4 h-4" />
               </button>
             </div>

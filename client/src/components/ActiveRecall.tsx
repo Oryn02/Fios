@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, X, Loader2, Timer, Sparkles, Check, AlertTriangle, XCircle, Folder } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { evaluateRecall, type RecallResult } from '../services/aiApi';
 import { getDocuments } from '../lib/documentService';
 import { saveRecallLog } from '../lib/activeRecallService';
@@ -30,6 +31,8 @@ function fmt(sec: number) {
 }
 
 export const ActiveRecall: React.FC<Props> = ({ modules, initialModule = '', onClose }) => {
+  useBodyScrollLock(true);
+
   const hasKey = useHasGeminiKey();
   const { requireAiAuth } = useAiAuth();
   const [showKeyModal, setShowKeyModal] = useState(false);
@@ -85,7 +88,7 @@ export const ActiveRecall: React.FC<Props> = ({ modules, initialModule = '', onC
   };
 
   return (
-    <div className="fixed inset-0 z-[85] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+    <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
       <div className="absolute inset-0" onClick={onClose} />
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }}

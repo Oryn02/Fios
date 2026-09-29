@@ -8,8 +8,9 @@ import {
   GripVertical, LayoutGrid, ChevronUp, ChevronDown, Zap, Bell, Brain
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { IS_DEMO, DEMO_USER, disableDemo, demoFocusSessions } from '../lib/demo';
+import { IS_DEMO, DEMO_USER, disableDemo } from '../lib/demo';
 import { getSavedCalendarUrl, saveCalendarUrl } from '../lib/calendarService';
+import { getWeeklyFocusMinutes } from '../lib/focusService';
 import { useProfile } from '../context/ProfileContext';
 import { useTheme } from '../context/ThemeContext';
 import {
@@ -103,7 +104,7 @@ const SettingsTabInner: React.FC = () => {
   // Weekly Study Goal State
   const [goalHours, setGoalHours] = useState(profile?.weekly_study_goal_hours ?? 10);
   const [goalSaved, setGoalSaved] = useState(false);
-  const [weeklyLoggedSeconds, setWeeklyLoggedSeconds] = useState(0);
+  const [weeklyLoggedMinutes, setWeeklyLoggedMinutes] = useState(0);
 
   // Gemini key management & walkthrough
   const [keyInput, setKeyInput] = useState('');
@@ -184,32 +185,11 @@ const SettingsTabInner: React.FC = () => {
     loadUserData();
   }, []);
 
-  // Fetch cumulative focus time logged since Monday of the current week
+  // Fetch cumulative focus time logged since Monday (work sessions only) — shared with WeeklyGoalWidget
   useEffect(() => {
-    async function fetchWeeklyStudyTime() {
-      if (IS_DEMO) {
-        const totalMins = demoFocusSessions.reduce((acc, s) => acc + (s.minutes || 0), 0);
-        setWeeklyLoggedSeconds(totalMins * 60);
-      } else {
-        const now = new Date();
-        const day = now.getDay();
-        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-        const startOfWeek = new Date(now.setDate(diff));
-        startOfWeek.setHours(0, 0, 0, 0);
-
-        const { data, error } = await supabase
-          .from('focus_sessions')
-          .select('minutes')
-          .gte('created_at', startOfWeek.toISOString());
-
-        if (!error && data) {
-          const totalMins = data.reduce((acc, session) => acc + (session.minutes || 0), 0);
-          setWeeklyLoggedSeconds(totalMins * 60);
-        }
-      }
-    }
-
-    fetchWeeklyStudyTime();
+    getWeeklyFocusMinutes()
+      .then(setWeeklyLoggedMinutes)
+      .catch(() => setWeeklyLoggedMinutes(0));
   }, []);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -347,7 +327,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '3.7.3',
+      version: '3.7.4',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -457,10 +437,11 @@ const SettingsTabInner: React.FC = () => {
     </div>
   );
 
-  // Cumulative progress metrics calculation
-  const actualHours = (weeklyLoggedSeconds / 3600).toFixed(1);
-  const percentage = Math.min(100, Math.round((Number(actualHours) / (goalHours || 1)) * 100));
-  const remaining = Math.max(0, goalHours - Number(actualHours)).toFixed(1);
+  // Cumulative progress metrics — same rounding as WeeklyGoalWidget
+  const doneHours = Math.round((weeklyLoggedMinutes / 60) * 10) / 10;
+  const actualHours = doneHours.toFixed(1);
+  const percentage = Math.min(100, goalHours > 0 ? Math.round((doneHours / goalHours) * 100) : 0);
+  const remaining = Math.max(0, Math.round((goalHours - doneHours) * 10) / 10).toFixed(1);
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto font-sans text-slate-100 pb-12">
@@ -1190,7 +1171,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-slate-400">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.7.3.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.7.4.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button

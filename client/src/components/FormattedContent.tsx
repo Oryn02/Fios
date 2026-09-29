@@ -66,10 +66,12 @@ export const FormattedContent: React.FC<FormattedContentProps> = ({ text = '' })
               // Avoid react-syntax-highlighter on mobile flashcards — it has pulled
               // "undefined is not a function" TypeErrors on some iOS Safari builds.
               return (
-                <pre className="rounded-lg overflow-x-auto border border-slate-800 text-xs font-mono text-left my-2 p-3 bg-[#07090e] text-slate-200 whitespace-pre-wrap">
-                  {lang ? <span className="block text-[10px] uppercase tracking-wider text-slate-500 mb-1">{lang}</span> : null}
-                  <code>{code}</code>
-                </pre>
+                <div className="fios-code-scroll rounded-lg border border-slate-800 text-xs font-mono text-left my-2 bg-[#07090e] text-slate-200">
+                  {lang ? <span className="block text-[10px] uppercase tracking-wider text-slate-500 px-3 pt-2">{lang}</span> : null}
+                  <pre className="fios-code-pre min-w-[500px] whitespace-pre p-3">
+                    <code>{code}</code>
+                  </pre>
+                </div>
               );
             },
             pre({ children }) {
