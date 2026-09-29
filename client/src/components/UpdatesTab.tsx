@@ -3,10 +3,21 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.1.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.2.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.7.2',
+      date: 'September 2026',
+      title: 'Richer Pomodoro soundscapes',
+      highlights: [
+        'Focus Timer / Pomodoro: existing ambient presets are softer and more natural — longer noise loops, pink noise, gentler filters, and smoother levels (less harsh hiss).',
+        'New soundscapes: Forest Canopy, Cafe Murmur, Fireplace, and Quiet Library — still generated in-browser with Web Audio (no large audio assets).',
+        'Mute, volume slider, and mobile AudioContext unlock behavior are unchanged.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.7.2.',
+      ],
+    },
     {
       version: 'v3.7.1',
       date: 'September 2026',
@@ -502,7 +513,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.7.1</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.7.2</p>
       </header>
 
       <div className="space-y-4">

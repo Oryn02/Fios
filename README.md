@@ -1,10 +1,10 @@
 # Fios — Your Academic Command Center
 
-[![Version](https://img.shields.io/badge/version-v3.7.1-059669)](https://github.com/Oryn02/Fios)
+[![Version](https://img.shields.io/badge/version-v3.7.2-059669)](https://github.com/Oryn02/Fios)
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v3.7.1**
+**Current version: v3.7.2**
 
 > Version numbers in Updates / README use coherent semver from the first published release as **v1.0.0** (reassigned by substance; SQL migration filenames on disk may still use older labels).
 
@@ -40,6 +40,13 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v3.7.2
+
+- Pomodoro soundscapes: softer, more natural procedural Web Audio presets (longer loops, pink noise, gentler filters/levels).
+- New ambient options: Forest Canopy, Cafe Murmur, Fireplace, Quiet Library — still zero audio asset files.
+- Mute / volume controls and mobile AudioContext unlock patterns unchanged.
+- Version alignment across packages and API `/health`.
 
 ### What’s new in v3.7.1
 
@@ -308,7 +315,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ### Signature features in depth
 - **Revision Flight Plan** (`client/src/lib/flightPlan.ts`) scores each module on exam proximity (`modules.exam_date`), due SM-2 cards (`cards.next_review`), and readiness, then surfaces the top 3 actions on the dashboard.
 - **Active Recall Evaluator** posts your free-recall text + related `documents` to `POST /api/active-recall`; Gemini returns per-concept statuses and an accuracy score saved to `active_recall_logs`.
-- **Pomodoro Soundscapes** (`client/src/lib/soundscapes.ts`) synthesize ambient audio live with the Web Audio API — no audio files shipped.
+- **Pomodoro Soundscapes** (`client/src/lib/soundscapes.ts`) synthesize ambient audio live with the Web Audio API — no audio files shipped (brown / soft white / rain / ocean / forest / cafe / fireplace / library / lofi / binaural).
 - **Universal gradient engine** — `user_profiles.accent_color` maps to CSS variables (`--fios-accent-from/via/to/solid`) consumed by `.accent-bg`, `.accent-text`, `.accent-ring`, and the `<FiosLogo />`.
 - **Light mode** remaps legacy dark tokens to a warm off-white / stone palette via `[data-theme="light"]`; System mode follows `prefers-color-scheme`.
 - **RAG study engine** — `POST /api/rag/query` + `POST /api/upload/pdf`; client helpers in `lib/ragClient.ts`.
@@ -329,7 +336,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v3.7.1) — Render Static Site root
+├── client/                 # React + Vite frontend (v3.7.2) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/
