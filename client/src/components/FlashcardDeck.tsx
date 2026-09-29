@@ -475,45 +475,45 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
           </div>
         )}
 
-        {/* Study Filter & Mode Controls */}
-        <div className="flex flex-col sm:flex-row items-center justify-between pt-2 border-t border-slate-800/60 gap-3">
-          <div className="flex items-center gap-1 bg-[#07090e] p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
+        {/* Study Filter & Mode Controls — equal-width segmented rows (no empty left gap) */}
+        <div className="flex flex-col sm:flex-row items-stretch justify-between pt-2 border-t border-slate-800/60 gap-3">
+          <div className="flex items-center gap-1 bg-[#07090e] p-1 rounded-xl border border-slate-800 w-full sm:flex-1 min-w-0">
             <button
               onClick={() => { setStudyFilter('due'); setCurrentIndex(0); }}
-              className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 studyFilter === 'due' ? 'bg-cyan-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Clock className="w-3.5 h-3.5" /> Due Today ({dueCards.length})
+              <Clock className="w-3.5 h-3.5 shrink-0" /> Due Today ({dueCards.length})
             </button>
             <button
               onClick={() => { setStudyFilter('all'); setCurrentIndex(0); }}
-              className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 studyFilter === 'all' ? 'bg-cyan-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Layers className="w-3.5 h-3.5" /> All ({cards.length})
+              <Layers className="w-3.5 h-3.5 shrink-0" /> All ({cards.length})
             </button>
           </div>
 
-          <div className="flex items-center gap-1 bg-[#07090e] p-1 rounded-xl border border-slate-800 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-1 bg-[#07090e] p-1 rounded-xl border border-slate-800 w-full sm:flex-1 min-w-0">
             <button
               onClick={() => setMode('browse')}
               title="Browse: flip freely. Grading still updates your SM-2 schedule when you rate after reveal."
-              className={`px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 mode === 'browse' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Eye className="w-3.5 h-3.5" /> Browse
+              <Eye className="w-3.5 h-3.5 shrink-0" /> Browse
             </button>
             <button
               onClick={() => setMode('test')}
               title="Active Recall: answer stays hidden until you tap Reveal, then self-grade."
-              className={`px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 mode === 'test' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Target className="w-3.5 h-3.5" /> Recall
+              <Target className="w-3.5 h-3.5 shrink-0" /> Recall
             </button>
           </div>
         </div>
