@@ -3,10 +3,21 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.6.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.7.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.7.7',
+      date: 'September 2026',
+      title: 'Mobile drawer — no horizontal pan / stretch',
+      highlights: [
+        'Mobile nav drawer uses fixed width (80% / max 300px) with layout containment so the slide transform cannot widen the page.',
+        'While the drawer is open, document overflow-x is locked and overscroll-behavior-x is none — opening or dragging the drawer no longer pulls or pans the main screen sideways.',
+        'Backdrop and drawer shell use overflow-x / touch pan-y constraints under the header strip.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.7.7.',
+      ],
+    },
     {
       version: 'v3.7.6',
       date: 'September 2026',
@@ -567,7 +578,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-foreground tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-muted-foreground">Current release · v3.7.6</p>
+        <p className="text-xs font-mono text-muted-foreground">Current release · v3.7.7</p>
       </header>
 
       <div className="space-y-4">
