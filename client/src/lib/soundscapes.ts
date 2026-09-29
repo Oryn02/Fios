@@ -1,10 +1,10 @@
 // ============================================================================
 // Web Audio soundscape engine for the Pomodoro timer.
 // Generates ambient audio entirely in-browser (no asset files):
-//  - white / pink / brown noise via buffer synthesis (long loops, soft-clipped)
-//  - rain, ocean, forest, cafe, fireplace, library (layered filters + LFOs)
-//  - lofi pad (soft detuned oscillators + gentle tremolo)
-//  - binaural alpha waves (two ears, ~10 Hz beat)
+//  - long stereo-decorrelated pink / brown / white noise beds (~22–30s)
+//  - dual-rate layering so composite loops drift for minutes before syncing
+//  - filter + gain modulation (not static hiss), sparse one-shot events
+//  - rain, ocean, forest, cafe, fireplace, library, lofi, binaural
 // A single shared engine persists regardless of widget expand/collapse.
 // ============================================================================
 
@@ -37,6 +37,13 @@ export const SOUNDSCAPES: { key: Soundscape; label: string }[] = [
 
 type NoiseKind = 'white' | 'pink' | 'brown';
 
+/** Primary bed length — long enough that seams are rare and soft. */
+const LOOP_A_SEC = 22;
+/** Secondary bed length — incommensurate with A so layers drift for minutes. */
+const LOOP_B_SEC = 29;
+
+type BufferKey = `${NoiseKind}:${number}:stereo`;
+
 class SoundscapeEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -45,7 +52,7 @@ class SoundscapeEngine {
   private timers: number[] = [];
   private current: Soundscape = 'off';
   private volume = 0.5;
-  private bufferCache = new Map<NoiseKind, AudioBuffer>();
+  private bufferCache = new Map<BufferKey, AudioBuffer>();
 
   private ensureCtx(): AudioContext {
     if (!this.ctx) {
@@ -90,67 +97,107 @@ class SoundscapeEngine {
   }
 
   private softClip(x: number): number {
-    // Gentle tanh-ish clip keeps peaks from sounding harsh/digital.
-    return Math.tanh(x * 1.2) * 0.95;
+    return Math.tanh(x * 1.15) * 0.96;
   }
 
-  private makeNoiseBuffer(kind: NoiseKind): AudioBuffer {
-    const cached = this.bufferCache.get(kind);
+  /** One sample of filtered noise; state lives in the caller arrays. */
+  private noiseSample(
+    kind: NoiseKind,
+    white: number,
+    brown: { last: number },
+    pink: { b0: number; b1: number; b2: number; b3: number; b4: number; b5: number; b6: number },
+  ): number {
+    if (kind === 'brown') {
+      brown.last = (brown.last + 0.02 * white) / 1.02;
+      return brown.last * 3.2;
+    }
+    if (kind === 'pink') {
+      // Paul Kellet approximate pink filter (natural, less hissy than white).
+      pink.b0 = 0.99886 * pink.b0 + white * 0.0555179;
+      pink.b1 = 0.99332 * pink.b1 + white * 0.0750759;
+      pink.b2 = 0.96900 * pink.b2 + white * 0.1538520;
+      pink.b3 = 0.86650 * pink.b3 + white * 0.3104856;
+      pink.b4 = 0.55000 * pink.b4 + white * 0.5329522;
+      pink.b5 = -0.7616 * pink.b5 - white * 0.0168980;
+      const sample =
+        (pink.b0 + pink.b1 + pink.b2 + pink.b3 + pink.b4 + pink.b5 + pink.b6 + white * 0.5362) * 0.11;
+      pink.b6 = white * 0.115926;
+      return sample;
+    }
+    return white;
+  }
+
+  /**
+   * Long stereo noise. L/R are independently filtered so the image feels wide
+   * and loop seams are hard to hear. No edge fades — those create a periodic
+   * amplitude dip that makes short loops obvious.
+   */
+  private makeStereoNoise(kind: NoiseKind, seconds: number): AudioBuffer {
+    const key: BufferKey = `${kind}:${seconds}:stereo`;
+    const cached = this.bufferCache.get(key);
     if (cached) return cached;
 
     const ctx = this.ensureCtx();
-    // Longer loops (~6s) make seams far less noticeable than 2s buffers.
-    const seconds = 6;
     const len = Math.floor(ctx.sampleRate * seconds);
-    const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
+    const buffer = ctx.createBuffer(2, len, ctx.sampleRate);
 
-    let last = 0;
-    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-
-    for (let i = 0; i < len; i++) {
-      const white = Math.random() * 2 - 1;
-      let sample = white;
-
-      if (kind === 'brown') {
-        last = (last + 0.02 * white) / 1.02;
-        sample = last * 3.2;
-      } else if (kind === 'pink') {
-        // Paul Kellet approximate pink filter (natural, less hissy than white).
-        b0 = 0.99886 * b0 + white * 0.0555179;
-        b1 = 0.99332 * b1 + white * 0.0750759;
-        b2 = 0.96900 * b2 + white * 0.1538520;
-        b3 = 0.86650 * b3 + white * 0.3104856;
-        b4 = 0.55000 * b4 + white * 0.5329522;
-        b5 = -0.7616 * b5 - white * 0.0168980;
-        sample = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
-        b6 = white * 0.115926;
+    for (let ch = 0; ch < 2; ch++) {
+      const data = buffer.getChannelData(ch);
+      const brown = { last: 0 };
+      const pink = { b0: 0, b1: 0, b2: 0, b3: 0, b4: 0, b5: 0, b6: 0 };
+      // Warm-up filter state so the buffer start isn't a transient click.
+      for (let w = 0; w < 2048; w++) {
+        this.noiseSample(kind, Math.random() * 2 - 1, brown, pink);
       }
-
-      // Soft fade at loop edges (~12 ms) to hide the seam.
-      const fade = Math.min(i, len - 1 - i, Math.floor(ctx.sampleRate * 0.012));
-      const edge = fade / Math.max(1, Math.floor(ctx.sampleRate * 0.012));
-      data[i] = this.softClip(sample) * edge;
+      for (let i = 0; i < len; i++) {
+        const white = Math.random() * 2 - 1;
+        data[i] = this.softClip(this.noiseSample(kind, white, brown, pink));
+      }
     }
 
-    this.bufferCache.set(kind, buffer);
+    this.bufferCache.set(key, buffer);
     return buffer;
   }
 
-  private loopNoise(kind: NoiseKind): AudioBufferSourceNode {
+  private loopNoise(
+    kind: NoiseKind,
+    seconds: number,
+    playbackRate = 1,
+  ): AudioBufferSourceNode {
     const ctx = this.ensureCtx();
     const src = ctx.createBufferSource();
-    src.buffer = this.makeNoiseBuffer(kind);
+    src.buffer = this.makeStereoNoise(kind, seconds);
     src.loop = true;
+    src.playbackRate.value = playbackRate;
     return src;
   }
 
-  private attack(g: GainNode, target: number, seconds = 0.22) {
+  private attack(g: GainNode, target: number, seconds = 0.35) {
     const ctx = this.ensureCtx();
     const t = ctx.currentTime;
     g.gain.cancelScheduledValues(t);
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(target, t + seconds);
+  }
+
+  /** Slow LFO → AudioParam (gain or filter frequency). */
+  private lfoTo(
+    param: AudioParam,
+    depth: number,
+    hz: number,
+    type: OscillatorType = 'sine',
+  ): OscillatorNode {
+    const ctx = this.ensureCtx();
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = hz;
+    const g = ctx.createGain();
+    g.gain.value = depth;
+    osc.connect(g).connect(param);
+    osc.start();
+    this.track(osc);
+    this.track(g);
+    return osc;
   }
 
   private track(node: AudioNode) { this.nodes.push(node); }
@@ -180,6 +227,21 @@ class SoundscapeEngine {
     return this.bus!;
   }
 
+  /** Dual drifting noise beds → shared filter chain (richer, less “tape loop”). */
+  private dualBed(
+    kind: NoiseKind,
+    connect: (src: AudioBufferSourceNode, layer: 0 | 1) => void,
+  ) {
+    const a = this.loopNoise(kind, LOOP_A_SEC, 1);
+    const b = this.loopNoise(kind, LOOP_B_SEC, 0.97);
+    connect(a, 0);
+    connect(b, 1);
+    a.start();
+    b.start();
+    this.track(a);
+    this.track(b);
+  }
+
   getCurrent(): Soundscape { return this.current; }
   getVolume(): number { return this.volume; }
 
@@ -200,336 +262,530 @@ class SoundscapeEngine {
     void this.unlock();
     const ctx = this.ensureCtx();
     const out = this.out();
-    // Reset bus after prior fade/stop.
     out.gain.cancelScheduledValues(ctx.currentTime);
     out.gain.setValueAtTime(1, ctx.currentTime);
 
     if (type === 'white') {
-      // Soft white: band-limited pink-leaning hiss, not raw full-spectrum static.
-      const src = this.loopNoise('white');
+      // Soft white: dual pink-leaning beds, band-limited, slow breath on gain + cutoff.
       const bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = 0.55;
+      bp.type = 'bandpass'; bp.frequency.value = 1600; bp.Q.value = 0.45;
       const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass'; lp.frequency.value = 5200; lp.Q.value = 0.7;
+      lp.type = 'lowpass'; lp.frequency.value = 4800; lp.Q.value = 0.7;
       const g = ctx.createGain();
-      this.attack(g, 0.16);
-      src.connect(bp).connect(lp).connect(g).connect(out);
-      src.start();
-      this.track(src); this.track(bp); this.track(lp); this.track(g);
+      this.attack(g, 0.14, 0.45);
+      this.lfoTo(g.gain, 0.018, 0.05);
+      this.lfoTo(lp.frequency, 400, 0.04);
+      this.dualBed('white', (src) => {
+        const pan = ctx.createStereoPanner();
+        pan.pan.value = src.playbackRate.value > 0.99 ? -0.15 : 0.15;
+        src.connect(pan).connect(bp);
+        this.track(pan);
+      });
+      bp.connect(lp).connect(g).connect(out);
+      this.track(bp); this.track(lp); this.track(g);
       return;
     }
 
     if (type === 'brown') {
-      const src = this.loopNoise('brown');
       const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass'; lp.frequency.value = 380; lp.Q.value = 0.6;
+      lp.type = 'lowpass'; lp.frequency.value = 320; lp.Q.value = 0.55;
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass'; hp.frequency.value = 28;
       const g = ctx.createGain();
-      this.attack(g, 0.42);
-      src.connect(lp).connect(g).connect(out);
-      src.start();
-      this.track(src); this.track(lp); this.track(g);
+      this.attack(g, 0.4, 0.5);
+      this.lfoTo(g.gain, 0.04, 0.035);
+      this.lfoTo(lp.frequency, 55, 0.028);
+      this.dualBed('brown', (src) => {
+        src.connect(hp);
+      });
+      hp.connect(lp).connect(g).connect(out);
+      this.track(lp); this.track(hp); this.track(g);
       return;
     }
 
     if (type === 'rain') {
-      // Distant bed + closer mid layer + gentle amplitude flutter.
-      const bed = this.loopNoise('pink');
-      const near = this.loopNoise('white');
-
-      const bedBp = ctx.createBiquadFilter();
-      bedBp.type = 'bandpass'; bedBp.frequency.value = 900; bedBp.Q.value = 0.45;
+      // Distant pink bed + closer mid spray + sparse droplet ticks.
       const bedLp = ctx.createBiquadFilter();
-      bedLp.type = 'lowpass'; bedLp.frequency.value = 3200;
+      bedLp.type = 'lowpass'; bedLp.frequency.value = 2800;
+      const bedBp = ctx.createBiquadFilter();
+      bedBp.type = 'bandpass'; bedBp.frequency.value = 850; bedBp.Q.value = 0.4;
       const bedG = ctx.createGain();
-      this.attack(bedG, 0.28);
+      this.attack(bedG, 0.26, 0.55);
+      this.lfoTo(bedG.gain, 0.05, 0.07);
+      this.lfoTo(bedLp.frequency, 350, 0.045);
 
       const nearHp = ctx.createBiquadFilter();
-      nearHp.type = 'highpass'; nearHp.frequency.value = 1400;
+      nearHp.type = 'highpass'; nearHp.frequency.value = 1600;
       const nearLp = ctx.createBiquadFilter();
-      nearLp.type = 'lowpass'; nearLp.frequency.value = 5400;
+      nearLp.type = 'lowpass'; nearLp.frequency.value = 6200;
       const nearG = ctx.createGain();
-      this.attack(nearG, 0.12);
+      this.attack(nearG, 0.1, 0.5);
+      this.lfoTo(nearG.gain, 0.035, 0.22);
+      this.lfoTo(nearHp.frequency, 200, 0.11);
 
-      const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.35;
-      const lfoGain = ctx.createGain(); lfoGain.gain.value = 0.045;
-      lfo.connect(lfoGain).connect(bedG.gain); lfo.start();
+      this.dualBed('pink', (src, layer) => {
+        const pan = ctx.createStereoPanner();
+        pan.pan.value = layer === 0 ? -0.25 : 0.25;
+        if (layer === 0) src.connect(pan).connect(bedBp);
+        else src.connect(pan).connect(nearHp);
+        this.track(pan);
+      });
+      // Extra mid spray layer at a third incommensurate rate.
+      const spray = this.loopNoise('white', LOOP_A_SEC, 1.04);
+      const sprayBp = ctx.createBiquadFilter();
+      sprayBp.type = 'bandpass'; sprayBp.frequency.value = 3200; sprayBp.Q.value = 0.7;
+      const sprayG = ctx.createGain();
+      this.attack(sprayG, 0.055, 0.6);
+      this.lfoTo(sprayG.gain, 0.02, 0.55);
+      spray.connect(sprayBp).connect(sprayG).connect(out);
+      spray.start();
+      this.track(spray); this.track(sprayBp); this.track(sprayG);
 
-      const lfo2 = ctx.createOscillator(); lfo2.type = 'sine'; lfo2.frequency.value = 0.9;
-      const lfo2Gain = ctx.createGain(); lfo2Gain.gain.value = 0.03;
-      lfo2.connect(lfo2Gain).connect(nearG.gain); lfo2.start();
+      bedBp.connect(bedLp).connect(bedG).connect(out);
+      nearHp.connect(nearLp).connect(nearG).connect(out);
+      this.track(bedBp); this.track(bedLp); this.track(bedG);
+      this.track(nearHp); this.track(nearLp); this.track(nearG);
 
-      bed.connect(bedBp).connect(bedLp).connect(bedG).connect(out);
-      near.connect(nearHp).connect(nearLp).connect(nearG).connect(out);
-      bed.start(); near.start();
-      this.track(bed); this.track(near); this.track(bedBp); this.track(bedLp);
-      this.track(nearHp); this.track(nearLp); this.track(bedG); this.track(nearG);
-      this.track(lfo); this.track(lfo2); this.track(lfoGain); this.track(lfo2Gain);
+      const drip = () => {
+        if (this.current !== 'rain') return;
+        const t0 = ctx.currentTime;
+        const len = Math.floor(ctx.sampleRate * (0.018 + Math.random() * 0.04));
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) {
+          const env = Math.sin((Math.PI * i) / len);
+          data[i] = (Math.random() * 2 - 1) * env;
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 2800 + Math.random() * 4200;
+        bp.Q.value = 2.5 + Math.random() * 2;
+        const g = ctx.createGain();
+        g.gain.value = 0.04 + Math.random() * 0.06;
+        const pan = ctx.createStereoPanner();
+        pan.pan.value = Math.random() * 1.6 - 0.8;
+        src.connect(bp).connect(g).connect(pan).connect(out);
+        src.onended = () => {
+          try { src.disconnect(); bp.disconnect(); g.disconnect(); pan.disconnect(); } catch { /* noop */ }
+        };
+        src.start(t0);
+        this.schedule(drip, 90 + Math.random() * 420);
+      };
+      this.schedule(drip, 400);
       return;
     }
 
     if (type === 'ocean') {
-      // Soft surf: brown bed + slow multi-phase swell LFOs.
-      const src = this.loopNoise('brown');
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass'; lp.frequency.value = 720; lp.Q.value = 0.7;
-      const hp = ctx.createBiquadFilter();
-      hp.type = 'highpass'; hp.frequency.value = 40;
-      const g = ctx.createGain();
-      this.attack(g, 0.32, 0.4);
+      // Deep brown surf + pink foam; swell modulates both gain and brightness.
+      const bodyLp = ctx.createBiquadFilter();
+      bodyLp.type = 'lowpass'; bodyLp.frequency.value = 680; bodyLp.Q.value = 0.65;
+      const bodyHp = ctx.createBiquadFilter();
+      bodyHp.type = 'highpass'; bodyHp.frequency.value = 35;
+      const bodyG = ctx.createGain();
+      this.attack(bodyG, 0.3, 0.7);
+      // Irregular multi-phase swell (not a single metronomic LFO).
+      this.lfoTo(bodyG.gain, 0.18, 0.055);
+      this.lfoTo(bodyG.gain, 0.1, 0.083, 'triangle');
+      this.lfoTo(bodyLp.frequency, 220, 0.055);
+      this.lfoTo(bodyLp.frequency, 90, 0.12);
 
-      const swell = ctx.createOscillator(); swell.type = 'sine'; swell.frequency.value = 0.08;
-      const swellG = ctx.createGain(); swellG.gain.value = 0.22;
-      swell.connect(swellG).connect(g.gain); swell.start();
-
-      const foam = this.loopNoise('pink');
       const foamBp = ctx.createBiquadFilter();
-      foamBp.type = 'bandpass'; foamBp.frequency.value = 1600; foamBp.Q.value = 0.6;
+      foamBp.type = 'bandpass'; foamBp.frequency.value = 1800; foamBp.Q.value = 0.55;
       const foamG = ctx.createGain();
-      this.attack(foamG, 0.08, 0.5);
-      const foamLfo = ctx.createOscillator(); foamLfo.type = 'sine'; foamLfo.frequency.value = 0.11;
-      const foamLfoG = ctx.createGain(); foamLfoG.gain.value = 0.06;
-      foamLfo.connect(foamLfoG).connect(foamG.gain); foamLfo.start();
+      this.attack(foamG, 0.07, 0.8);
+      this.lfoTo(foamG.gain, 0.055, 0.065);
+      this.lfoTo(foamBp.frequency, 500, 0.07);
 
-      src.connect(hp).connect(lp).connect(g).connect(out);
-      foam.connect(foamBp).connect(foamG).connect(out);
-      src.start(); foam.start();
-      this.track(src); this.track(lp); this.track(hp); this.track(g);
-      this.track(swell); this.track(swellG);
-      this.track(foam); this.track(foamBp); this.track(foamG); this.track(foamLfo); this.track(foamLfoG);
+      this.dualBed('brown', (src) => { src.connect(bodyHp); });
+      const foamA = this.loopNoise('pink', LOOP_A_SEC, 1.02);
+      const foamB = this.loopNoise('pink', LOOP_B_SEC, 0.94);
+      const foamPanA = ctx.createStereoPanner(); foamPanA.pan.value = -0.35;
+      const foamPanB = ctx.createStereoPanner(); foamPanB.pan.value = 0.35;
+      foamA.connect(foamPanA).connect(foamBp);
+      foamB.connect(foamPanB).connect(foamBp);
+      foamA.start(); foamB.start();
+      this.track(foamA); this.track(foamB); this.track(foamPanA); this.track(foamPanB);
+
+      bodyHp.connect(bodyLp).connect(bodyG).connect(out);
+      foamBp.connect(foamG).connect(out);
+      this.track(bodyHp); this.track(bodyLp); this.track(bodyG);
+      this.track(foamBp); this.track(foamG);
       return;
     }
 
     if (type === 'forest') {
-      // Wind through leaves + sparse soft bird chirps.
-      const wind = this.loopNoise('brown');
+      // Wind bed + leaf shimmer + distant insect band + varied bird phrases.
       const windLp = ctx.createBiquadFilter();
-      windLp.type = 'lowpass'; windLp.frequency.value = 520;
+      windLp.type = 'lowpass'; windLp.frequency.value = 480;
       const windG = ctx.createGain();
-      this.attack(windG, 0.28);
-      const windLfo = ctx.createOscillator(); windLfo.type = 'sine'; windLfo.frequency.value = 0.07;
-      const windLfoG = ctx.createGain(); windLfoG.gain.value = 0.1;
-      windLfo.connect(windLfoG).connect(windG.gain); windLfo.start();
+      this.attack(windG, 0.26, 0.6);
+      this.lfoTo(windG.gain, 0.09, 0.045);
+      this.lfoTo(windLp.frequency, 120, 0.06);
 
-      const leaves = this.loopNoise('pink');
-      const leavesBp = ctx.createBiquadFilter();
-      leavesBp.type = 'bandpass'; leavesBp.frequency.value = 2400; leavesBp.Q.value = 0.5;
-      const leavesG = ctx.createGain();
-      this.attack(leavesG, 0.07);
-      const leavesLfo = ctx.createOscillator(); leavesLfo.type = 'sine'; leavesLfo.frequency.value = 0.18;
-      const leavesLfoG = ctx.createGain(); leavesLfoG.gain.value = 0.035;
-      leavesLfo.connect(leavesLfoG).connect(leavesG.gain); leavesLfo.start();
+      const leafBp = ctx.createBiquadFilter();
+      leafBp.type = 'bandpass'; leafBp.frequency.value = 2600; leafBp.Q.value = 0.45;
+      const leafG = ctx.createGain();
+      this.attack(leafG, 0.065, 0.55);
+      this.lfoTo(leafG.gain, 0.04, 0.14);
+      this.lfoTo(leafBp.frequency, 400, 0.09);
 
-      wind.connect(windLp).connect(windG).connect(out);
-      leaves.connect(leavesBp).connect(leavesG).connect(out);
-      wind.start(); leaves.start();
-      this.track(wind); this.track(windLp); this.track(windG); this.track(windLfo); this.track(windLfoG);
-      this.track(leaves); this.track(leavesBp); this.track(leavesG); this.track(leavesLfo); this.track(leavesLfoG);
+      const insectBp = ctx.createBiquadFilter();
+      insectBp.type = 'bandpass'; insectBp.frequency.value = 5200; insectBp.Q.value = 1.1;
+      const insectG = ctx.createGain();
+      this.attack(insectG, 0.018, 0.8);
+      this.lfoTo(insectG.gain, 0.01, 0.31);
 
-      const chirp = () => {
+      this.dualBed('brown', (src) => { src.connect(windLp); });
+      const leaves = this.loopNoise('pink', LOOP_B_SEC, 1.01);
+      leaves.connect(leafBp).connect(leafG).connect(out);
+      leaves.start();
+      const insects = this.loopNoise('white', LOOP_A_SEC, 0.96);
+      insects.connect(insectBp).connect(insectG).connect(out);
+      insects.start();
+      this.track(leaves); this.track(insects);
+      windLp.connect(windG).connect(out);
+      this.track(windLp); this.track(windG);
+      this.track(leafBp); this.track(leafG);
+      this.track(insectBp); this.track(insectG);
+
+      const phrase = () => {
         if (this.current !== 'forest') return;
-        const t0 = ctx.currentTime + 0.02;
-        const freq = 1800 + Math.random() * 1400;
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, t0);
-        osc.frequency.exponentialRampToValueAtTime(freq * (0.85 + Math.random() * 0.35), t0 + 0.12);
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(0, t0);
-        g.gain.linearRampToValueAtTime(0.035 + Math.random() * 0.025, t0 + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.14);
-        const pan = ctx.createStereoPanner();
-        pan.pan.value = Math.random() * 1.4 - 0.7;
-        osc.connect(g).connect(pan).connect(out);
-        osc.onended = () => {
-          try { osc.disconnect(); g.disconnect(); pan.disconnect(); } catch { /* noop */ }
-        };
-        osc.start(t0);
-        osc.stop(t0 + 0.16);
-        this.schedule(chirp, 2200 + Math.random() * 5500);
+        const notes = 1 + Math.floor(Math.random() * 3);
+        let t0 = ctx.currentTime + 0.02;
+        const base = 1400 + Math.random() * 1800;
+        const panVal = Math.random() * 1.5 - 0.75;
+        for (let n = 0; n < notes; n++) {
+          const osc = ctx.createOscillator();
+          osc.type = Math.random() > 0.55 ? 'sine' : 'triangle';
+          const f = base * (0.9 + Math.random() * 0.35) * (n === 0 ? 1 : 0.92 + Math.random() * 0.2);
+          const dur = 0.07 + Math.random() * 0.11;
+          osc.frequency.setValueAtTime(f, t0);
+          osc.frequency.exponentialRampToValueAtTime(f * (0.88 + Math.random() * 0.2), t0 + dur);
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0, t0);
+          g.gain.linearRampToValueAtTime(0.028 + Math.random() * 0.022, t0 + 0.015);
+          g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+          const pan = ctx.createStereoPanner();
+          pan.pan.value = panVal + (Math.random() * 0.15 - 0.075);
+          // Soft high shelf via bandpass so chirps aren't pure sine beeps.
+          const bp = ctx.createBiquadFilter();
+          bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = 1.4;
+          osc.connect(bp).connect(g).connect(pan).connect(out);
+          osc.onended = () => {
+            try { osc.disconnect(); bp.disconnect(); g.disconnect(); pan.disconnect(); } catch { /* noop */ }
+          };
+          osc.start(t0);
+          osc.stop(t0 + dur + 0.02);
+          t0 += dur * (0.55 + Math.random() * 0.5);
+        }
+        this.schedule(phrase, 2800 + Math.random() * 7000);
       };
-      this.schedule(chirp, 1200 + Math.random() * 2000);
+      this.schedule(phrase, 1500 + Math.random() * 2500);
       return;
     }
 
     if (type === 'cafe') {
-      // Muffled room murmur + distant low rumble + rare soft clinks.
-      const murmur = this.loopNoise('pink');
+      // Formant-ish murmur beds + HVAC rumble + occasional cup/cutlery clinks.
       const murBp = ctx.createBiquadFilter();
-      murBp.type = 'bandpass'; murBp.frequency.value = 650; murBp.Q.value = 0.7;
+      murBp.type = 'bandpass'; murBp.frequency.value = 580; murBp.Q.value = 0.85;
       const murLp = ctx.createBiquadFilter();
-      murLp.type = 'lowpass'; murLp.frequency.value = 1800;
+      murLp.type = 'lowpass'; murLp.frequency.value = 1600;
       const murG = ctx.createGain();
-      this.attack(murG, 0.2);
-      const murLfo = ctx.createOscillator(); murLfo.type = 'sine'; murLfo.frequency.value = 0.22;
-      const murLfoG = ctx.createGain(); murLfoG.gain.value = 0.04;
-      murLfo.connect(murLfoG).connect(murG.gain); murLfo.start();
+      this.attack(murG, 0.18, 0.55);
+      this.lfoTo(murG.gain, 0.045, 0.13);
+      this.lfoTo(murBp.frequency, 90, 0.09);
 
-      const rumble = this.loopNoise('brown');
+      // Second formant band for “voices in a room” colour.
+      const mur2Bp = ctx.createBiquadFilter();
+      mur2Bp.type = 'bandpass'; mur2Bp.frequency.value = 1100; mur2Bp.Q.value = 1.1;
+      const mur2G = ctx.createGain();
+      this.attack(mur2G, 0.07, 0.6);
+      this.lfoTo(mur2G.gain, 0.025, 0.19);
+
       const rumLp = ctx.createBiquadFilter();
-      rumLp.type = 'lowpass'; rumLp.frequency.value = 160;
+      rumLp.type = 'lowpass'; rumLp.frequency.value = 140;
       const rumG = ctx.createGain();
-      this.attack(rumG, 0.14);
+      this.attack(rumG, 0.12, 0.5);
+      this.lfoTo(rumG.gain, 0.02, 0.04);
 
-      murmur.connect(murBp).connect(murLp).connect(murG).connect(out);
+      this.dualBed('pink', (src, layer) => {
+        if (layer === 0) src.connect(murBp);
+        else src.connect(mur2Bp);
+      });
+      const rumble = this.loopNoise('brown', LOOP_B_SEC, 0.98);
       rumble.connect(rumLp).connect(rumG).connect(out);
-      murmur.start(); rumble.start();
-      this.track(murmur); this.track(murBp); this.track(murLp); this.track(murG);
-      this.track(murLfo); this.track(murLfoG);
-      this.track(rumble); this.track(rumLp); this.track(rumG);
+      rumble.start();
+      this.track(rumble);
+
+      murBp.connect(murLp).connect(murG).connect(out);
+      mur2Bp.connect(mur2G).connect(out);
+      this.track(murBp); this.track(murLp); this.track(murG);
+      this.track(mur2Bp); this.track(mur2G);
+      this.track(rumLp); this.track(rumG);
 
       const clink = () => {
         if (this.current !== 'cafe') return;
         const t0 = ctx.currentTime + 0.01;
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        const f = 2400 + Math.random() * 1600;
-        osc.frequency.setValueAtTime(f, t0);
-        osc.frequency.exponentialRampToValueAtTime(f * 0.7, t0 + 0.18);
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(0, t0);
-        g.gain.linearRampToValueAtTime(0.028, t0 + 0.008);
-        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.22);
+        // Two partials for a more ceramic “cup” than a single sine.
+        const f0 = 2200 + Math.random() * 2000;
+        const mix = ctx.createGain();
+        mix.gain.setValueAtTime(0, t0);
+        mix.gain.linearRampToValueAtTime(0.032, t0 + 0.006);
+        mix.gain.exponentialRampToValueAtTime(0.001, t0 + 0.28);
         const pan = ctx.createStereoPanner();
-        pan.pan.value = Math.random() * 1.2 - 0.6;
-        osc.connect(g).connect(pan).connect(out);
-        osc.onended = () => {
-          try { osc.disconnect(); g.disconnect(); pan.disconnect(); } catch { /* noop */ }
+        pan.pan.value = Math.random() * 1.3 - 0.65;
+        const mk = (freq: number, level: number, type: OscillatorType) => {
+          const osc = ctx.createOscillator();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, t0);
+          osc.frequency.exponentialRampToValueAtTime(freq * 0.72, t0 + 0.22);
+          const g = ctx.createGain();
+          g.gain.value = level;
+          osc.connect(g).connect(mix);
+          osc.start(t0);
+          osc.stop(t0 + 0.3);
+          osc.onended = () => {
+            try { osc.disconnect(); g.disconnect(); } catch { /* noop */ }
+          };
         };
-        osc.start(t0);
-        osc.stop(t0 + 0.25);
-        this.schedule(clink, 4000 + Math.random() * 9000);
+        mk(f0, 0.7, 'sine');
+        mk(f0 * 1.48, 0.35, 'triangle');
+        mix.connect(pan).connect(out);
+        this.schedule(() => {
+          try { mix.disconnect(); pan.disconnect(); } catch { /* noop */ }
+        }, 350);
+        this.schedule(clink, 3500 + Math.random() * 10000);
       };
-      this.schedule(clink, 3000 + Math.random() * 4000);
+      this.schedule(clink, 2500 + Math.random() * 4000);
       return;
     }
 
     if (type === 'fireplace') {
-      // Low ember rumble + irregular crackle bursts.
-      const rumble = this.loopNoise('brown');
+      // Ember rumble + mid hiss + irregular multi-band crackles.
       const rumLp = ctx.createBiquadFilter();
-      rumLp.type = 'lowpass'; rumLp.frequency.value = 220;
+      rumLp.type = 'lowpass'; rumLp.frequency.value = 200;
       const rumG = ctx.createGain();
-      this.attack(rumG, 0.3);
-      const rumLfo = ctx.createOscillator(); rumLfo.type = 'sine'; rumLfo.frequency.value = 0.14;
-      const rumLfoG = ctx.createGain(); rumLfoG.gain.value = 0.06;
-      rumLfo.connect(rumLfoG).connect(rumG.gain); rumLfo.start();
+      this.attack(rumG, 0.28, 0.55);
+      this.lfoTo(rumG.gain, 0.055, 0.11);
+      this.lfoTo(rumLp.frequency, 40, 0.08);
 
-      rumble.connect(rumLp).connect(rumG).connect(out);
-      rumble.start();
-      this.track(rumble); this.track(rumLp); this.track(rumG); this.track(rumLfo); this.track(rumLfoG);
+      const hissBp = ctx.createBiquadFilter();
+      hissBp.type = 'bandpass'; hissBp.frequency.value = 2800; hissBp.Q.value = 0.5;
+      const hissG = ctx.createGain();
+      this.attack(hissG, 0.045, 0.5);
+      this.lfoTo(hissG.gain, 0.02, 0.27);
+
+      this.dualBed('brown', (src) => { src.connect(rumLp); });
+      const hiss = this.loopNoise('pink', LOOP_A_SEC, 1.03);
+      hiss.connect(hissBp).connect(hissG).connect(out);
+      hiss.start();
+      this.track(hiss);
+      rumLp.connect(rumG).connect(out);
+      this.track(rumLp); this.track(rumG);
+      this.track(hissBp); this.track(hissG);
 
       const crackle = () => {
         if (this.current !== 'fireplace') return;
         const t0 = ctx.currentTime;
-        const burst = ctx.createBufferSource();
-        // Short slice of pink noise as a crackle.
-        const sliceLen = Math.floor(ctx.sampleRate * (0.03 + Math.random() * 0.07));
+        const sliceLen = Math.floor(ctx.sampleRate * (0.025 + Math.random() * 0.09));
         const buf = ctx.createBuffer(1, sliceLen, ctx.sampleRate);
         const data = buf.getChannelData(0);
         for (let i = 0; i < sliceLen; i++) {
-          const env = Math.sin((Math.PI * i) / sliceLen);
+          // Slightly pink-weighted burst (integrate a bit) for woodier snap.
+          const env = Math.pow(Math.sin((Math.PI * i) / sliceLen), 0.7);
           data[i] = (Math.random() * 2 - 1) * env;
         }
+        const burst = ctx.createBufferSource();
         burst.buffer = buf;
         const bp = ctx.createBiquadFilter();
         bp.type = 'bandpass';
-        bp.frequency.value = 1200 + Math.random() * 2800;
-        bp.Q.value = 1.2 + Math.random();
+        bp.frequency.value = 900 + Math.random() * 3400;
+        bp.Q.value = 0.9 + Math.random() * 1.8;
         const g = ctx.createGain();
-        g.gain.value = 0.08 + Math.random() * 0.12;
+        g.gain.value = 0.07 + Math.random() * 0.14;
         const pan = ctx.createStereoPanner();
-        pan.pan.value = Math.random() * 1.0 - 0.5;
+        pan.pan.value = Math.random() * 1.1 - 0.55;
         burst.connect(bp).connect(g).connect(pan).connect(out);
         burst.onended = () => {
           try { burst.disconnect(); bp.disconnect(); g.disconnect(); pan.disconnect(); } catch { /* noop */ }
         };
         burst.start(t0);
-        this.schedule(crackle, 180 + Math.random() * 700);
+        // Occasional double-pop (embers), then resume irregular cadence.
+        const next = 160 + Math.random() * 900;
+        if (Math.random() < 0.28) {
+          this.schedule(() => {
+            if (this.current !== 'fireplace') return;
+            const t1 = ctx.currentTime;
+            const len2 = Math.floor(ctx.sampleRate * (0.02 + Math.random() * 0.05));
+            const buf2 = ctx.createBuffer(1, len2, ctx.sampleRate);
+            const d2 = buf2.getChannelData(0);
+            for (let i = 0; i < len2; i++) {
+              d2[i] = (Math.random() * 2 - 1) * Math.sin((Math.PI * i) / len2);
+            }
+            const b2 = ctx.createBufferSource();
+            b2.buffer = buf2;
+            const bp2 = ctx.createBiquadFilter();
+            bp2.type = 'bandpass';
+            bp2.frequency.value = 1400 + Math.random() * 2800;
+            bp2.Q.value = 1.2;
+            const g2 = ctx.createGain();
+            g2.gain.value = 0.05 + Math.random() * 0.08;
+            const pan2 = ctx.createStereoPanner();
+            pan2.pan.value = Math.random() * 1.0 - 0.5;
+            b2.connect(bp2).connect(g2).connect(pan2).connect(out);
+            b2.onended = () => {
+              try { b2.disconnect(); bp2.disconnect(); g2.disconnect(); pan2.disconnect(); } catch { /* noop */ }
+            };
+            b2.start(t1);
+          }, 35 + Math.random() * 80);
+        }
+        this.schedule(crackle, next);
       };
-      this.schedule(crackle, 200);
+      this.schedule(crackle, 180);
       return;
     }
 
     if (type === 'library') {
-      // Near-silent room tone + rare soft page rustles.
-      const room = this.loopNoise('pink');
+      // Soft HVAC room tone + very quiet air + rare page rustles.
       const roomLp = ctx.createBiquadFilter();
-      roomLp.type = 'lowpass'; roomLp.frequency.value = 900;
+      roomLp.type = 'lowpass'; roomLp.frequency.value = 780;
       const roomHp = ctx.createBiquadFilter();
-      roomHp.type = 'highpass'; roomHp.frequency.value = 80;
+      roomHp.type = 'highpass'; roomHp.frequency.value = 70;
       const roomG = ctx.createGain();
-      this.attack(roomG, 0.09, 0.5);
+      this.attack(roomG, 0.075, 0.7);
+      this.lfoTo(roomG.gain, 0.012, 0.03);
 
-      room.connect(roomHp).connect(roomLp).connect(roomG).connect(out);
-      room.start();
-      this.track(room); this.track(roomLp); this.track(roomHp); this.track(roomG);
+      // Gentle HVAC hum (two slow beats) under the noise bed.
+      const humMix = ctx.createGain();
+      this.attack(humMix, 0.025, 0.9);
+      [52, 104].forEach((f, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        const g = ctx.createGain();
+        g.gain.value = i === 0 ? 0.55 : 0.22;
+        osc.connect(g).connect(humMix);
+        osc.start();
+        this.track(osc); this.track(g);
+      });
+      humMix.connect(out);
+      this.track(humMix);
+
+      this.dualBed('pink', (src) => { src.connect(roomHp); });
+      roomHp.connect(roomLp).connect(roomG).connect(out);
+      this.track(roomHp); this.track(roomLp); this.track(roomG);
 
       const rustle = () => {
         if (this.current !== 'library') return;
         const t0 = ctx.currentTime;
-        const src = ctx.createBufferSource();
-        const sliceLen = Math.floor(ctx.sampleRate * (0.12 + Math.random() * 0.2));
+        const sliceLen = Math.floor(ctx.sampleRate * (0.15 + Math.random() * 0.35));
         const buf = ctx.createBuffer(1, sliceLen, ctx.sampleRate);
         const data = buf.getChannelData(0);
+        let last = 0;
         for (let i = 0; i < sliceLen; i++) {
+          const white = Math.random() * 2 - 1;
+          last = (last + 0.15 * white) / 1.15;
           const env = Math.sin((Math.PI * i) / sliceLen);
-          data[i] = (Math.random() * 2 - 1) * env * 0.5;
+          // Two soft amplitude lobes = page turn.
+          const lobe = 0.55 + 0.45 * Math.sin((Math.PI * 2 * i) / sliceLen);
+          data[i] = last * env * lobe * 0.7;
         }
+        const src = ctx.createBufferSource();
         src.buffer = buf;
         const bp = ctx.createBiquadFilter();
-        bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.8;
+        bp.type = 'bandpass'; bp.frequency.value = 1800 + Math.random() * 900; bp.Q.value = 0.7;
         const g = ctx.createGain();
-        g.gain.value = 0.045 + Math.random() * 0.03;
+        g.gain.value = 0.04 + Math.random() * 0.03;
+        const pan = ctx.createStereoPanner();
+        pan.pan.value = Math.random() * 0.8 - 0.4;
+        src.connect(bp).connect(g).connect(pan).connect(out);
+        src.onended = () => {
+          try { src.disconnect(); bp.disconnect(); g.disconnect(); pan.disconnect(); } catch { /* noop */ }
+        };
+        src.start(t0);
+        this.schedule(rustle, 8000 + Math.random() * 16000);
+      };
+      this.schedule(rustle, 6000 + Math.random() * 5000);
+      return;
+    }
+
+    if (type === 'lofi') {
+      // Warm detuned pad + soft vinyl dust + slow filter breathe.
+      const freqs = [174.61, 220, 261.63, 329.63, 392.0]; // F3 A3 C4 E4 G4
+      const mix = ctx.createGain();
+      this.attack(mix, 0.1, 0.7);
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = 1200; lp.Q.value = 0.55;
+      this.lfoTo(mix.gain, 0.028, 0.08);
+      this.lfoTo(lp.frequency, 280, 0.05);
+      mix.connect(lp).connect(out);
+      this.track(mix); this.track(lp);
+
+      freqs.forEach((f, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+        osc.frequency.value = f;
+        osc.detune.value = (i - 2) * 6 + (Math.random() * 2 - 1);
+        const og = ctx.createGain();
+        og.gain.value = (0.42 - i * 0.05) * (osc.type === 'triangle' ? 0.35 : 1);
+        osc.connect(og).connect(mix);
+        osc.start();
+        this.track(osc); this.track(og);
+      });
+
+      // Sparse vinyl-dust ticks (not a looped noise bed).
+      const dust = () => {
+        if (this.current !== 'lofi') return;
+        const t0 = ctx.currentTime;
+        const len = Math.floor(ctx.sampleRate * (0.004 + Math.random() * 0.012));
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass'; bp.frequency.value = 2500 + Math.random() * 4000; bp.Q.value = 0.8;
+        const g = ctx.createGain();
+        g.gain.value = 0.015 + Math.random() * 0.025;
         src.connect(bp).connect(g).connect(out);
         src.onended = () => {
           try { src.disconnect(); bp.disconnect(); g.disconnect(); } catch { /* noop */ }
         };
         src.start(t0);
-        this.schedule(rustle, 7000 + Math.random() * 12000);
+        this.schedule(dust, 200 + Math.random() * 900);
       };
-      this.schedule(rustle, 5000 + Math.random() * 4000);
-      return;
-    }
-
-    if (type === 'lofi') {
-      // Warm detuned pad with gentle lowpass + slow tremolo.
-      const freqs = [174.61, 220, 261.63, 329.63]; // F3 A3 C4 E4
-      const mix = ctx.createGain();
-      this.attack(mix, 0.11, 0.5);
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass'; lp.frequency.value = 1400; lp.Q.value = 0.6;
-      const trem = ctx.createOscillator(); trem.type = 'sine'; trem.frequency.value = 0.12;
-      const tremG = ctx.createGain(); tremG.gain.value = 0.035;
-      trem.connect(tremG).connect(mix.gain); trem.start();
-      mix.connect(lp).connect(out);
-      this.track(mix); this.track(lp); this.track(trem); this.track(tremG);
-
-      freqs.forEach((f, i) => {
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = f;
-        osc.detune.value = (i - 1.5) * 5;
-        const og = ctx.createGain();
-        og.gain.value = 0.45 - i * 0.05;
-        osc.connect(og).connect(mix);
-        osc.start();
-        this.track(osc); this.track(og);
-      });
+      this.schedule(dust, 500);
       return;
     }
 
     if (type === 'binaural') {
-      // ~10 Hz alpha beat: softer carriers, gentle attack.
+      // ~10 Hz alpha beat: softer carriers, gentle attack, tiny breath.
       const makeEar = (freq: number, pan: number) => {
-        const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = freq;
-        const panner = ctx.createStereoPanner(); panner.pan.value = pan;
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const panner = ctx.createStereoPanner();
+        panner.pan.value = pan;
         const g = ctx.createGain();
-        this.attack(g, 0.09, 0.6);
-        osc.connect(g).connect(panner).connect(out); osc.start();
+        this.attack(g, 0.085, 0.75);
+        this.lfoTo(g.gain, 0.008, 0.04);
+        osc.connect(g).connect(panner).connect(out);
+        osc.start();
         this.track(osc); this.track(g); this.track(panner);
       };
       makeEar(200, -1);
       makeEar(210, 1);
+      // Soft brown bed under carriers so it feels less like pure tones.
+      const bed = this.loopNoise('brown', LOOP_B_SEC, 1);
+      const bedLp = ctx.createBiquadFilter();
+      bedLp.type = 'lowpass'; bedLp.frequency.value = 180;
+      const bedG = ctx.createGain();
+      this.attack(bedG, 0.04, 0.9);
+      bed.connect(bedLp).connect(bedG).connect(out);
+      bed.start();
+      this.track(bed); this.track(bedLp); this.track(bedG);
       return;
     }
   }

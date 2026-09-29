@@ -3,10 +3,21 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.2.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.3.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.7.3',
+      date: 'September 2026',
+      title: 'Longer, more natural soundscapes',
+      highlights: [
+        'Focus Timer / Pomodoro: ambient engine rebuild — ~22–30s stereo noise beds, dual-rate drifting layers (composite loops sync on the order of minutes, not seconds), and no edge-fade “whoosh” every loop.',
+        'Richer textures on every preset (Soft White, Brown, Rain, Ocean, Forest Canopy, Cafe Murmur, Fireplace, Quiet Library, Lofi, Binaural): filter + gain modulation, wider stereo image, and more realistic one-shots (rain drips, bird phrases, cup clinks, ember pops, page rustles, vinyl dust).',
+        'Mute, volume slider, and mobile AudioContext unlock behavior are unchanged — same picker options.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.7.3.',
+      ],
+    },
     {
       version: 'v3.7.2',
       date: 'September 2026',
@@ -513,7 +524,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-white tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-slate-400">Current release · v3.7.2</p>
+        <p className="text-xs font-mono text-slate-400">Current release · v3.7.3</p>
       </header>
 
       <div className="space-y-4">
