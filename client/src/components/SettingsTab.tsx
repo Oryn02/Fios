@@ -536,7 +536,7 @@ const SettingsTabInner: React.FC = () => {
           </p>
         )}
         {pushSupport.supported && !pushSupport.pushCapable && (
-          <p className="text-xs text-muted-foreground bg-card/60 border border-border rounded-lg px-3 py-2 leading-relaxed">
+          <p className="text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-2 leading-relaxed">
             {pushSupport.message}
           </p>
         )}

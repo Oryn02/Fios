@@ -738,7 +738,7 @@ const ScheduleTabInner: React.FC = () => {
                     }}
                     aria-label={`${currentDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}${hasEvents ? `, ${dayEvents.length} class${dayEvents.length === 1 ? '' : 'es'}` : ''}`}
                     aria-current={isTodayCell ? 'date' : undefined}
-                    className={`fios-month-cell min-w-0 min-h-[3.75rem] sm:min-h-0 sm:h-24 bg-background border rounded-md sm:rounded-lg p-1 sm:p-2 flex flex-col items-stretch justify-between text-left cursor-pointer transition-colors hover:border-emerald-400/50 active:bg-card/80 overflow-hidden box-border ${
+                    className={`fios-month-cell min-w-0 min-h-[3.75rem] sm:min-h-0 sm:h-24 bg-background border rounded-md sm:rounded-lg p-1 sm:p-2 flex flex-col items-stretch justify-between text-left cursor-pointer transition-colors hover:border-emerald-400/50 active:bg-card overflow-hidden box-border ${
                       isSelectedCell
                         ? 'border-emerald-400 shadow-[inset_0_0_0_1px_rgba(52,211,153,0.45)] bg-emerald-950/25'
                         : isTodayCell

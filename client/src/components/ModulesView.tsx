@@ -310,7 +310,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
       {/* Module folders */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <button onClick={() => setSelectedModule(null)}
-          className={`p-4 rounded-xl border text-left transition-colors cursor-pointer ${selectedModule === null ? 'border-emerald-400 bg-emerald-500/10 shadow-lg shadow-emerald-500/10' : 'border-border bg-card/60 hover:border-border'}`}>
+          className={`p-4 rounded-xl border text-left transition-colors cursor-pointer ${selectedModule === null ? 'border-emerald-400 bg-emerald-500/10 shadow-lg shadow-emerald-500/10' : 'border-border bg-card hover:border-border shadow-sm dark:shadow-none'}`}>
           <div className="flex items-center justify-between text-xs font-mono font-bold uppercase tracking-wider text-foreground">
             <span>All Modules</span><Layers className="w-4 h-4 text-emerald-400" />
           </div>
@@ -330,7 +330,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
               whileHover={{ y: -2 }}
               onClick={() => setSelectedModule(mod.code)}
               data-mod-color={colorKey}
-              className={`p-4 rounded-xl border text-left transition-colors cursor-pointer relative group flex flex-col justify-between ${isSelected ? 'mod-border bg-card shadow-xl' : 'border-border bg-card/60 hover:border-border'}`}
+              className={`p-4 rounded-xl border text-left transition-colors cursor-pointer relative group flex flex-col justify-between ${isSelected ? 'mod-border bg-card shadow-sm dark:shadow-none' : 'border-border bg-card hover:border-border shadow-sm dark:shadow-none'}`}
             >
               <div>
                 <div className="flex items-center justify-between gap-2">
@@ -440,7 +440,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filtered.decks.map((deck) => (
                       <motion.div key={deck.id} whileHover={{ y: -2 }} onClick={() => onOpenFlashcards(deck.cards, deck.title, deck.module_code, true)}
-                        className="p-5 bg-card/90 border border-border rounded-xl space-y-3 hover:border-emerald-500/50 transition-colors group cursor-pointer shadow-sm dark:shadow-none">
+                        className="p-5 bg-card border border-border rounded-xl space-y-3 hover:border-emerald-500/50 transition-colors group cursor-pointer shadow-sm dark:shadow-none">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <Tag className="w-3 h-3 text-muted-foreground" />
@@ -522,7 +522,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                           if (onOpenQuiz) onOpenQuiz(quiz.id);
                           if (setActiveTab) setActiveTab('quiz');
                         }}
-                        className="p-5 bg-card/90 border border-border rounded-xl space-y-3 hover:border-emerald-500/50 transition-colors group cursor-pointer shadow-lg shadow-sm dark:shadow-none"
+                        className="p-5 bg-card border border-border rounded-xl space-y-3 hover:border-emerald-500/50 transition-colors group cursor-pointer shadow-sm dark:shadow-none"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{quiz.questions.length} Q</span>
@@ -569,7 +569,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                           if (onOpenCodeExam) onOpenCodeExam(exam.id);
                           if (setActiveTab) setActiveTab('code');
                         }}
-                        className="p-5 bg-card/90 border border-border rounded-xl space-y-3 hover:border-indigo-500/50 transition-colors group cursor-pointer shadow-lg shadow-sm dark:shadow-none"
+                        className="p-5 bg-card border border-border rounded-xl space-y-3 hover:border-indigo-500/50 transition-colors group cursor-pointer shadow-sm dark:shadow-none"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">{exam.language}</span>
@@ -652,7 +652,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                           if (onOpenDocument) onOpenDocument(doc.id);
                           if (setActiveTab) setActiveTab('documents');
                         }}
-                        className="p-5 bg-card/90 border border-border rounded-xl space-y-3 hover:border-rose-500/50 transition-colors group cursor-pointer shadow-lg shadow-sm dark:shadow-none"
+                        className="p-5 bg-card border border-border rounded-xl space-y-3 hover:border-rose-500/50 transition-colors group cursor-pointer shadow-sm dark:shadow-none"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-black font-mono uppercase px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
@@ -719,7 +719,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
 };
 
 const EmptyState: React.FC<{ label: string; onAction?: () => void; actionLabel?: string }> = ({ label, onAction, actionLabel }) => (
-  <div className="p-12 text-center bg-card/40 border border-border/80 rounded-2xl space-y-3 shadow-sm dark:shadow-none">
+  <div className="p-12 text-center bg-card border border-border/80 rounded-2xl space-y-3 shadow-sm dark:shadow-none">
     <Sparkles className="w-8 h-8 text-muted-foreground mx-auto" />
     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{label}</p>
     {onAction && actionLabel && (

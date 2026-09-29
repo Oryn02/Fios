@@ -139,7 +139,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
       </div>
 
       {questions.length === 0 ? (
-        <form onSubmit={handleGenerateQuiz} className="bg-card/90 border border-border rounded-2xl p-6 space-y-5 shadow-sm dark:shadow-none">
+        <form onSubmit={handleGenerateQuiz} className="bg-card border border-border rounded-2xl p-6 space-y-5 shadow-sm dark:shadow-none">
           {/* File Upload Zone */}
           <div className="space-y-2">
             <label className="text-xs font-mono font-black uppercase text-foreground flex items-center gap-2">
@@ -298,7 +298,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
             </div>
 
             {isSubmitted && (
-              <div className="p-4 bg-card/90 border border-border rounded-xl space-y-1 font-mono text-xs shadow-sm dark:shadow-none">
+              <div className="p-4 bg-card border border-border rounded-xl space-y-1 font-mono text-xs shadow-sm dark:shadow-none">
                 <span className="font-bold accent-solid-text uppercase">Explanation:</span>
                 <p className="text-foreground">{currentQ.explanation}</p>
               </div>

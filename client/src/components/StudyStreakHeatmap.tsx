@@ -241,7 +241,7 @@ export const StudyStreakHeatmap: React.FC = () => {
   return (
     // min-w-0: grid/flex parents default min-width:auto and expand to content width,
     // then DashboardLayout overflow-x-hidden clips the card — zero usable scroll on mobile.
-    <div className="bg-[var(--fios-surface)]/60 border fios-border rounded-2xl p-4 sm:p-6 space-y-4 shadow-sm dark:shadow-none min-w-0 w-full max-w-full overflow-hidden">
+    <div className="bg-[var(--fios-surface)] border fios-border rounded-2xl p-4 sm:p-6 space-y-4 shadow-sm dark:shadow-none min-w-0 w-full max-w-full overflow-hidden">
       <div className="flex items-center justify-between flex-wrap gap-3 border-b fios-border pb-3">
         <div className="min-w-0">
           <div className="text-[10px] font-black font-mono uppercase tracking-widest accent-solid-text mb-0.5 flex items-center gap-1.5">

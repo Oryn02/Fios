@@ -50,7 +50,7 @@ export const ActiveRecallQuiz: React.FC<ActiveRecallQuizProps> = ({ cards, onFin
     const scorePercentage = Math.round((correctCount / total) * 100);
 
     return (
-      <div className="bg-card/90 border border-border rounded-2xl p-8 text-center space-y-6 animate-fadeIn font-sans shadow-sm dark:shadow-none">
+      <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-6 animate-fadeIn font-sans shadow-sm dark:shadow-none">
         <div className="inline-flex p-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
           <Trophy className="w-10 h-10" />
         </div>

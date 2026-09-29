@@ -172,7 +172,7 @@ export const ATUCalendarView: React.FC = () => {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.03 }}
-            className="p-4 rounded-xl bg-card/90 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-border transition-colors"
+            className="p-4 rounded-xl bg-card border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-border transition-colors"
           >
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-lg bg-background border border-border accent-solid-text shrink-0">

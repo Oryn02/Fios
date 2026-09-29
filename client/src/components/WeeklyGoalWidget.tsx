@@ -67,7 +67,7 @@ export const WeeklyGoalWidget: React.FC<WeeklyGoalWidgetProps> = ({
             initial={{ opacity: 0, scale: 0.95, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="relative z-50 w-full max-w-sm rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 space-y-4"
+            className="relative z-50 w-full max-w-sm rounded-2xl border fios-border bg-[var(--fios-surface)] p-6 space-y-4 shadow-sm dark:shadow-none"
           >
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-[var(--fios-text)] flex items-center gap-2">
@@ -117,7 +117,7 @@ export const WeeklyGoalWidget: React.FC<WeeklyGoalWidgetProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, delay: 0.05 }}
           aria-label="Weekly study goal"
-          className="relative overflow-hidden rounded-2xl border fios-border bg-[var(--fios-surface)]/80 px-4 py-3.5 sm:px-5 sm:py-4"
+          className="relative overflow-hidden rounded-2xl border fios-border bg-[var(--fios-surface)] px-4 py-3.5 sm:px-5 sm:py-4 shadow-sm dark:shadow-none"
         >
           <div className="absolute inset-y-0 left-0 w-[3px] accent-bg opacity-90" aria-hidden />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
@@ -186,7 +186,7 @@ export const WeeklyGoalWidget: React.FC<WeeklyGoalWidgetProps> = ({
   }
 
   return (
-    <div className="rounded-xl border fios-border bg-[var(--fios-surface)] p-3.5 space-y-2 min-h-[100px] h-auto flex flex-col justify-between shrink-0 shadow-xl">
+    <div className="rounded-xl border fios-border bg-[var(--fios-surface)] p-3.5 space-y-2 min-h-[100px] h-auto flex flex-col justify-between shrink-0 shadow-sm dark:shadow-none">
       <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[var(--fios-text-muted)]">
         <span className="flex items-center gap-1.5">
           <Target className="w-3.5 h-3.5 accent-solid-text shrink-0" /> Weekly Study Goal

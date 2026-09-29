@@ -553,7 +553,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest text-muted-foreground bg-card/60 px-4 py-2.5 rounded-lg border border-border/80 font-mono">
+          <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest text-muted-foreground bg-card px-4 py-2.5 rounded-lg border border-border/80 font-mono">
             <span className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
               CARD <span className="text-foreground">{currentIndex + 1}</span> / {activeCards.length}
