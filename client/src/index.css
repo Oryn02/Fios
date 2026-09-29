@@ -167,6 +167,13 @@
   color: hsl(var(--foreground));
   border-color: hsl(var(--border));
 }
+/* Syntax blocks stay dark-locked in both themes for legibility */
+.fios-code-dark.fios-code-block,
+.fios-code-dark {
+  background-color: #07090e !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+}
 
 /* Form controls: light bg + dark text in Light Mode; readable in Dark Mode */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
@@ -586,10 +593,127 @@ input, select, textarea { font-size: 16px; }
 .min-h-dvh { min-height: 100vh; min-height: 100dvh; }
 .h-dvh { height: 100vh; height: 100dvh; }
 
+/* Header: grow with safe-area so 44px controls never spill past the navy strip */
+:root {
+  --fios-header-content: 3.75rem; /* 60px — room for 44px targets + 8px vertical pad */
+  --fios-header-offset: calc(var(--fios-header-content) + env(safe-area-inset-top, 0px));
+}
+@media (min-width: 640px) {
+  :root { --fios-header-content: 4.25rem; }
+}
+.fios-header {
+  box-sizing: border-box;
+  min-height: var(--fios-header-offset);
+  height: var(--fios-header-offset);
+  padding-top: env(safe-area-inset-top, 0px);
+  overflow: hidden;
+}
+.fios-header-spacer {
+  height: var(--fios-header-offset);
+  min-height: var(--fios-header-offset);
+}
+.fios-header-btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  padding: 0;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+/* Drawer reorder rows: long-press starts drag, never native text selection / callout */
+.fios-drawer-reorder-item,
+.fios-drawer-reorder-item * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Safari iOS: keep callout suppression (also set inline — bundlers may drop the property) */
+@supports (-webkit-touch-callout: none) {
+  .fios-drawer-reorder-item,
+  .fios-drawer-reorder-item * {
+    -webkit-touch-callout: none !important;
+  }
+}
+.fios-drawer-reorder-item {
+  /* Parent nav scrolls; row blocks browser long-press / double-tap gestures */
+  touch-action: manipulation;
+}
+.fios-drawer-reorder-item[aria-grabbed='true'] {
+  touch-action: none;
+}
+
 /* Bottom nav: home-indicator clearance (plan: env(safe-area)+6px, floor 12px) */
 .fios-bottom-nav {
   padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 6px);
   z-index: var(--fios-z-nav);
+}
+
+/*
+  Main scroll pad (mobile): clear bottom nav + floating widget stack so section
+  headers (e.g. Upcoming Work) never sit behind z-30 Pomodoro/FAB/Brain Dump.
+  Dock bottom ≈ 4.75rem; widgets ≈ 3.5rem; nav ≈ 4.5rem; +12px breathing room.
+*/
+.fios-main-pad {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 11.5rem);
+  scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 11.5rem);
+}
+@media (min-width: 768px) {
+  .fios-main-pad {
+    padding-bottom: 2rem;
+    scroll-padding-bottom: 0;
+  }
+}
+
+/* Alpha-transparent semantic chip (selected tags / toggles) — auto-readable in light+dark */
+.fios-chip-active {
+  background-color: color-mix(in srgb, var(--fios-accent-solid) 14%, transparent);
+  color: var(--fios-accent-solid);
+  border-color: color-mix(in srgb, var(--fios-accent-solid) 40%, transparent);
+}
+
+/* Code blocks stay dark in both themes (syntax legibility) */
+.fios-code-dark {
+  background-color: #07090e !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+}
+[data-theme="light"] .fios-code-dark,
+[data-theme="light"] .fios-code-dark [class*="text-slate"] {
+  color: #e2e8f0 !important;
+}
+[data-theme="light"] .fios-code-dark [class*="text-slate-500"] {
+  color: #94a3b8 !important;
+}
+
+/* Flashcard / Active Recall rating row: ≥12px above floating widget zone */
+.fios-rating-clearance {
+  margin-bottom: 0.75rem; /* 12px */
+  padding-bottom: 0.75rem;
+}
+
+/* Heatmap / h-scroll: edge-fade masks hint horizontal swipe */
+.fios-edge-fade {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 14px,
+    #000 calc(100% - 14px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 14px,
+    #000 calc(100% - 14px),
+    transparent 100%
+  );
 }
 
 /* Floating Pomodoro / FAB dock clearance above bottom nav on mobile */

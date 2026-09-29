@@ -322,12 +322,14 @@ export const StudyStreakHeatmap: React.FC = () => {
           {/*
             Fluid cell sizing on phones so the strip fits the card (no clip).
             fios-h-scroll only when measurement says we still overflow.
+            Edge-fade masks hint horizontal swipe on overflow strips.
             Cells use manipulation (tap) — not pan-x — so iOS/PWA registers presses.
           */}
-          <div
-            ref={scrollRef}
-            className={`${needsScroll ? 'fios-h-scroll overflow-x-auto' : 'overflow-x-hidden'} overflow-y-hidden max-w-full pb-1 -mx-0.5 px-0.5`}
-          >
+          <div className={needsScroll ? 'fios-edge-fade' : undefined}>
+            <div
+              ref={scrollRef}
+              className={`${needsScroll ? 'fios-h-scroll overflow-x-auto' : 'overflow-x-hidden'} overflow-y-hidden max-w-full pb-1 -mx-0.5 px-0.5`}
+            >
             <div className="inline-block align-top" style={{ minWidth: needsScroll ? undefined : '100%' }}>
               {/* Month labels — absolute text so “Sep” isn’t clipped to one cell width */}
               <div
@@ -399,6 +401,7 @@ export const StudyStreakHeatmap: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
           </div>
 
           {/* Tap detail panel — primary date readout on touch */}

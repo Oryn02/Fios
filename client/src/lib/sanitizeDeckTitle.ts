@@ -9,9 +9,13 @@ export function sanitizeDeckTitle(raw: string | null | undefined, fallback = 'Un
     // Strip fenced / heading / emphasis leftovers at edges
     .replace(/^[\s>#*_`~]+/, '')
     .replace(/[\s*_`~]+$/, '')
-    // Leading markdown list / thematic-break dashes
+    // PDF / slide export residue: "PAGE 12", "Page 3 of 40"
+    .replace(/\bPAGE\s+\d+(?:\s+of\s+\d+)?\b/gi, '')
+    // Leading / trailing dashes (incl. en/em)
     .replace(/^[-–—]{1,}\s*/, '')
-    .replace(/\s+[-–—]{2,}\s+/g, ' — ')
+    .replace(/\s+[-–—]{1,}$/g, '')
+    // Collapse mid-string double dashes
+    .replace(/\s*[-–—]{2,}\s*/g, ' — ')
     // Collapse leftover bullet markers mid-string
     .replace(/\s+[•·]\s+/g, ' · ')
     .replace(/\s{2,}/g, ' ')

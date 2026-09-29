@@ -37,8 +37,30 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Timetable', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.7.5', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.7.6', icon: Sparkles },
 ];
+
+/** Mobile drawer sections — Extended Tools & Settings regroup (v3.7.6). */
+const DRAWER_SECTIONS: { label: string; ids: readonly string[] }[] = [
+  { label: 'Core Hubs', ids: ['overview', 'flashcards', 'modules', 'schedule', 'atu-calendar'] },
+  { label: 'Academic Tools', ids: ['quiz', 'code', 'documents', 'tutor', 'grades', 'timer'] },
+  { label: 'System Preferences', ids: ['settings', 'updates'] },
+];
+
+function groupDrawerNav<T extends { id: string }>(ordered: T[]): { label: string; items: T[] }[] {
+  const known = new Set(DRAWER_SECTIONS.flatMap((s) => [...s.ids]));
+  const sections = DRAWER_SECTIONS.map((section) => ({
+    label: section.label,
+    items: ordered.filter((item) => (section.ids as readonly string[]).includes(item.id)),
+  })).filter((s) => s.items.length > 0);
+  const orphans = ordered.filter((item) => !known.has(item.id));
+  if (orphans.length) {
+    const academic = sections.find((s) => s.label === 'Academic Tools');
+    if (academic) academic.items.push(...orphans);
+    else sections.push({ label: 'Academic Tools', items: orphans });
+  }
+  return sections;
+}
 
 /** True when the event target is a text-entry control (skip ⌘K / Ctrl+K while typing). */
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -146,6 +168,27 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
     onChange();
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  /** Safari/iOS: ensure touch-callout survives CSS tooling that may drop the property. */
+  useEffect(() => {
+    const id = 'fios-drawer-reorder-touch';
+    if (document.getElementById(id)) return;
+    const style = document.createElement('style');
+    style.id = id;
+    style.textContent = `
+      .fios-drawer-reorder-item,
+      .fios-drawer-reorder-item * {
+        -webkit-user-select: none !important;
+        user-select: none !important;
+        -webkit-touch-callout: none !important;
+        -webkit-tap-highlight-color: transparent;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.getElementById(id)?.remove();
+    };
   }, []);
 
   /**
@@ -410,41 +453,37 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
     setMobileDragId(null);
   }, [clearMobileHold, setMobileNavSlots]);
 
-  const onDrawerPointerDown = useCallback((e: React.PointerEvent, id: string) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    drawerTouch.current = { id, startX: e.clientX, startY: e.clientY, armed: false };
+  const onDrawerPointerEnd = useCallback(() => {
     clearDrawerHold();
-    drawerHoldTimer.current = setTimeout(() => {
-      if (!drawerTouch.current || drawerTouch.current.id !== id) return;
-      drawerTouch.current.armed = true;
+    if (drawerTouch.current?.armed) {
+      const next = draftNavOrderRef.current;
+      if (next) setNavOrder(next);
       drawerSuppressClick.current = true;
-      const next = [...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)];
-      draftNavOrderRef.current = next;
-      setDraftNavOrder(next);
-      setDragId(id);
-      hapticTick();
-      try {
-        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-      } catch {
-        /* ignore */
-      }
-    }, HOLD_MS);
-  }, [HOLD_MS, clearDrawerHold, hapticTick, navOrder]);
+    }
+    drawerTouch.current = null;
+    draftNavOrderRef.current = null;
+    setDraftNavOrder(null);
+    setDragId(null);
+  }, [clearDrawerHold, setNavOrder]);
 
-  const onDrawerPointerMove = useCallback((e: React.PointerEvent) => {
+  const applyDrawerDragAt = useCallback((clientX: number, clientY: number) => {
     const t = drawerTouch.current;
     if (!t) return;
-    const dx = e.clientX - t.startX;
-    const dy = e.clientY - t.startY;
+    const dx = clientX - t.startX;
+    const dy = clientY - t.startY;
     if (!t.armed) {
       if (Math.hypot(dx, dy) > 12) clearDrawerHold();
       return;
     }
-    e.preventDefault();
+    try {
+      window.getSelection()?.removeAllRanges();
+    } catch {
+      /* ignore */
+    }
     let overId: string | null = null;
     for (const [slotId, el] of drawerNavElRefs.current) {
       const rect = el.getBoundingClientRect();
-      if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+      if (clientY >= rect.top && clientY <= rect.bottom) {
         overId = slotId;
         break;
       }
@@ -458,18 +497,63 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
     });
   }, [clearDrawerHold, navOrder, reorderList]);
 
-  const onDrawerPointerEnd = useCallback(() => {
+  const onDrawerPointerDown = useCallback((e: React.PointerEvent, id: string) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const pointerId = e.pointerId;
+    drawerTouch.current = { id, startX: e.clientX, startY: e.clientY, armed: false };
     clearDrawerHold();
-    if (drawerTouch.current?.armed) {
-      const next = draftNavOrderRef.current;
-      if (next) setNavOrder(next);
+
+    const onDocPointerMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      if (drawerTouch.current?.armed) ev.preventDefault();
+      applyDrawerDragAt(ev.clientX, ev.clientY);
+    };
+    const onDocTouchMove = (ev: TouchEvent) => {
+      const touch = ev.touches[0];
+      if (!touch) return;
+      if (drawerTouch.current?.armed) ev.preventDefault();
+      applyDrawerDragAt(touch.clientX, touch.clientY);
+    };
+    const teardown = () => {
+      document.removeEventListener('pointermove', onDocPointerMove);
+      document.removeEventListener('touchmove', onDocTouchMove);
+      document.removeEventListener('pointerup', onDocEnd);
+      document.removeEventListener('pointercancel', onDocEnd);
+      document.removeEventListener('touchend', onDocEnd);
+      document.removeEventListener('touchcancel', onDocEnd);
+    };
+    const onDocEnd = () => {
+      teardown();
+      onDrawerPointerEnd();
+    };
+    document.addEventListener('pointermove', onDocPointerMove, { passive: false });
+    document.addEventListener('touchmove', onDocTouchMove, { passive: false });
+    document.addEventListener('pointerup', onDocEnd);
+    document.addEventListener('pointercancel', onDocEnd);
+    document.addEventListener('touchend', onDocEnd);
+    document.addEventListener('touchcancel', onDocEnd);
+
+    drawerHoldTimer.current = setTimeout(() => {
+      if (!drawerTouch.current || drawerTouch.current.id !== id) return;
+      drawerTouch.current.armed = true;
       drawerSuppressClick.current = true;
-    }
-    drawerTouch.current = null;
-    draftNavOrderRef.current = null;
-    setDraftNavOrder(null);
-    setDragId(null);
-  }, [clearDrawerHold, setNavOrder]);
+      try {
+        window.getSelection()?.removeAllRanges();
+      } catch {
+        /* ignore */
+      }
+      const next = [...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)];
+      draftNavOrderRef.current = next;
+      setDraftNavOrder(next);
+      setDragId(id);
+      hapticTick();
+      try {
+        (e.currentTarget as HTMLElement).setPointerCapture?.(pointerId);
+      } catch {
+        /* ignore */
+      }
+    }, HOLD_MS);
+  }, [HOLD_MS, applyDrawerDragAt, clearDrawerHold, hapticTick, navOrder, onDrawerPointerEnd]);
 
   const commandItems: CommandItem[] = useMemo(() => [
     ...orderedNav.map((item) => ({
@@ -516,13 +600,13 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       <HolidayAmbience />
       {/* Top HUD Bar — always visible unless Zen is hiding study chrome */}
       {!hideChrome && (
-        <header className="h-14 sm:h-16 border-b fios-border fios-chrome-blur bg-[hsl(var(--background)/0.95)] backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 fixed top-0 left-0 right-0 z-50 safe-top">
+        <header className="fios-header border-b fios-border fios-chrome-blur bg-[hsl(var(--background)/0.95)] backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 fixed top-0 left-0 right-0 z-50 overflow-hidden">
           {/* Brand cluster: logo may shrink; version badge never hides / never shrinks away */}
-          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 overflow-visible self-center">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 self-center">
             <button
               type="button"
               onClick={toggleNavChrome}
-              className={`relative z-[70] touch-target shrink-0 rounded-md bg-[var(--fios-surface-2)] border transition-colors cursor-pointer self-center ${
+              className={`relative z-[70] fios-header-btn touch-target shrink-0 rounded-md bg-[var(--fios-surface-2)] border transition-colors cursor-pointer self-center select-none ${
                 navToggleOpen
                   ? 'accent-border accent-solid-text'
                   : 'fios-border text-muted-foreground hover:text-foreground hover:accent-border'
@@ -552,10 +636,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               data-fios-version-badge
               className="relative z-[65] inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 3.7.5"
+              aria-label="Fios version 3.7.6"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v3.7.5
+              v3.7.6
             </span>
             {zenMode && (
               <button
@@ -587,7 +671,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               onClick={toggleTheme}
               title="Toggle theme"
               aria-label="Toggle theme"
-              className="p-2 rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              className="fios-header-btn touch-target rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none"
             >
               <ThemeIcon className="w-4 h-4" />
             </button>
@@ -595,7 +679,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             <button
               type="button"
               onClick={() => navigate('settings')}
-              className="flex items-center gap-2.5 bg-[var(--fios-surface-2)] pl-1 pr-2.5 py-1 rounded-full border fios-border cursor-pointer"
+              className="flex items-center gap-2.5 bg-[var(--fios-surface-2)] pl-1 pr-2.5 py-1 rounded-full border fios-border cursor-pointer max-h-11 select-none"
               aria-label="Open settings"
             >
               <Avatar url={profile?.avatar_url} name={preferredName} size={26} />
@@ -609,7 +693,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               disabled={isLoggingOut}
               title="Sign Out"
               aria-label="Sign out"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-black tracking-wider transition-colors cursor-pointer"
+              className="fios-header-btn touch-target rounded-md bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-black tracking-wider transition-colors cursor-pointer select-none"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Logout</span>
@@ -618,7 +702,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
         </header>
       )}
       {/* Spacer for fixed header so content isn't under the bar (iOS-safe) */}
-      {!hideChrome && <div className="h-14 sm:h-16 shrink-0" aria-hidden />}
+      {!hideChrome && <div className="fios-header-spacer shrink-0" aria-hidden />}
 
       {/* Persistent Zen escape — always reachable when chrome is hidden */}
       {hideChrome && (
@@ -663,7 +747,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
                 transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-                className="fixed top-14 sm:top-16 left-0 bottom-0 z-50 w-[80vw] max-w-xs bg-[var(--fios-surface)] border-r fios-border p-4 flex flex-col safe-bottom"
+                className="fixed top-[var(--fios-header-offset)] left-0 bottom-0 z-50 w-[80vw] max-w-xs bg-[var(--fios-surface)] border-r fios-border p-4 flex flex-col safe-bottom"
                 aria-label="Mobile navigation"
               >
                 <div className="flex items-center justify-between mb-4">
@@ -672,45 +756,57 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                <nav className="space-y-1 overflow-y-auto flex-1 scroll-touch" aria-label="Primary">
-                  <p className="px-3 pb-1 text-[9px] font-mono text-muted-foreground">Hold &amp; drag to reorder</p>
-                  {orderedNav.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = activeTab === item.id;
-                    const isDragging = dragId === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        ref={(el) => {
-                          if (el) drawerNavElRefs.current.set(item.id, el);
-                          else drawerNavElRefs.current.delete(item.id);
-                        }}
-                        onClick={() => {
-                          if (drawerSuppressClick.current) {
-                            drawerSuppressClick.current = false;
-                            return;
-                          }
-                          navigate(item.id);
-                        }}
-                        onPointerDown={(e) => onDrawerPointerDown(e, item.id)}
-                        onPointerMove={onDrawerPointerMove}
-                        onPointerUp={onDrawerPointerEnd}
-                        onPointerCancel={onDrawerPointerEnd}
-                        aria-current={isActive ? 'page' : undefined}
-                        aria-grabbed={isDragging || undefined}
-                        style={{ touchAction: dragId ? 'none' : undefined }}
-                        className={`w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
-                          isDragging ? 'scale-[1.03] ring-2 ring-[var(--fios-accent-solid)]/50 shadow-lg z-10' : ''
-                        } ${
-                          isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent'
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                        {item.label}
-                      </button>
-                    );
-                  })}
+                <nav className="space-y-3 overflow-y-auto flex-1 scroll-touch select-none" aria-label="Extended tools and settings">
+                  <p className="px-3 pb-0.5 text-[9px] font-mono text-muted-foreground">Hold &amp; drag to reorder · Extended Tools &amp; Settings</p>
+                  {groupDrawerNav(orderedNav).map((section) => (
+                    <div key={section.label} className="space-y-1">
+                      <p className="px-3 pt-2 pb-1 text-[9px] font-black font-mono uppercase tracking-widest text-muted-foreground">
+                        {section.label}
+                      </p>
+                      {section.items.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = activeTab === item.id;
+                        const isDragging = dragId === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            ref={(el) => {
+                              if (el) {
+                                drawerNavElRefs.current.set(item.id, el);
+                                el.style.setProperty('-webkit-user-select', 'none');
+                                el.style.setProperty('-webkit-touch-callout', 'none');
+                                el.style.setProperty('user-select', 'none');
+                              } else {
+                                drawerNavElRefs.current.delete(item.id);
+                              }
+                            }}
+                            onClick={() => {
+                              if (drawerSuppressClick.current) {
+                                drawerSuppressClick.current = false;
+                                return;
+                              }
+                              navigate(item.id);
+                            }}
+                            onPointerDown={(e) => onDrawerPointerDown(e, item.id)}
+                            onContextMenu={(e) => e.preventDefault()}
+                            onDragStart={(e) => e.preventDefault()}
+                            aria-current={isActive ? 'page' : undefined}
+                            aria-grabbed={isDragging || undefined}
+                            style={{ touchAction: isDragging || dragId ? 'none' : 'manipulation' }}
+                            className={`fios-drawer-reorder-item select-none w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
+                              isDragging ? 'scale-[1.03] ring-2 ring-[var(--fios-accent-solid)]/50 shadow-lg z-10' : ''
+                            } ${
+                              isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent'
+                            }`}
+                          >
+                            <Icon className="w-4 h-4 shrink-0 pointer-events-none select-none" aria-hidden />
+                            <span className="pointer-events-none select-none" draggable={false}>{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </nav>
               </motion.aside>
             </>
@@ -771,7 +867,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           </aside>
         )}
 
-        <main className={`flex-1 min-w-0 p-4 sm:p-8 max-w-7xl mx-auto w-full relative pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] md:pb-8`} id="main-content">
+        <main className="flex-1 min-w-0 p-4 sm:p-8 max-w-7xl mx-auto w-full relative fios-main-pad md:pb-8" id="main-content">
           {!hideChrome && (
             <div className="absolute top-10 left-10 w-96 h-96 rounded-full blur-[100px] pointer-events-none opacity-40" style={{ backgroundColor: 'color-mix(in srgb, var(--fios-accent-solid) 8%, transparent)' }} />
           )}
@@ -888,45 +984,57 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <nav className="space-y-1 overflow-y-auto flex-1" aria-label="Primary">
-                <p className="px-3 pb-1 text-[9px] font-mono text-muted-foreground">Hold &amp; drag to reorder</p>
-                {orderedNav.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-                  const isDragging = dragId === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      ref={(el) => {
-                        if (el) drawerNavElRefs.current.set(item.id, el);
-                        else drawerNavElRefs.current.delete(item.id);
-                      }}
-                      onClick={() => {
-                        if (drawerSuppressClick.current) {
-                          drawerSuppressClick.current = false;
-                          return;
-                        }
-                        navigate(item.id);
-                      }}
-                      onPointerDown={(e) => onDrawerPointerDown(e, item.id)}
-                      onPointerMove={onDrawerPointerMove}
-                      onPointerUp={onDrawerPointerEnd}
-                      onPointerCancel={onDrawerPointerEnd}
-                      aria-current={isActive ? 'page' : undefined}
-                      aria-grabbed={isDragging || undefined}
-                      style={{ touchAction: dragId ? 'none' : undefined }}
-                      className={`w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
-                        isDragging ? 'scale-[1.03] ring-2 ring-[var(--fios-accent-solid)]/50 shadow-lg z-10' : ''
-                      } ${
-                        isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {item.label}
-                    </button>
-                  );
-                })}
+              <nav className="space-y-3 overflow-y-auto flex-1 scroll-touch select-none" aria-label="Extended tools and settings">
+                <p className="px-3 pb-0.5 text-[9px] font-mono text-muted-foreground">Hold &amp; drag to reorder · Extended Tools &amp; Settings</p>
+                {groupDrawerNav(orderedNav).map((section) => (
+                  <div key={section.label} className="space-y-1">
+                    <p className="px-3 pt-2 pb-1 text-[9px] font-black font-mono uppercase tracking-widest text-muted-foreground">
+                      {section.label}
+                    </p>
+                    {section.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeTab === item.id;
+                      const isDragging = dragId === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          ref={(el) => {
+                            if (el) {
+                              drawerNavElRefs.current.set(item.id, el);
+                              el.style.setProperty('-webkit-user-select', 'none');
+                              el.style.setProperty('-webkit-touch-callout', 'none');
+                              el.style.setProperty('user-select', 'none');
+                            } else {
+                              drawerNavElRefs.current.delete(item.id);
+                            }
+                          }}
+                          onClick={() => {
+                            if (drawerSuppressClick.current) {
+                              drawerSuppressClick.current = false;
+                              return;
+                            }
+                            navigate(item.id);
+                          }}
+                          onPointerDown={(e) => onDrawerPointerDown(e, item.id)}
+                          onContextMenu={(e) => e.preventDefault()}
+                          onDragStart={(e) => e.preventDefault()}
+                          aria-current={isActive ? 'page' : undefined}
+                          aria-grabbed={isDragging || undefined}
+                          style={{ touchAction: isDragging || dragId ? 'none' : 'manipulation' }}
+                          className={`fios-drawer-reorder-item select-none w-full touch-target-row flex items-center gap-3 px-4 py-3.5 rounded-lg text-xs font-black italic uppercase tracking-wider cursor-pointer active:opacity-90 transition-transform ${
+                            isDragging ? 'scale-[1.03] ring-2 ring-[var(--fios-accent-solid)]/50 shadow-lg z-10' : ''
+                          } ${
+                            isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4 shrink-0 pointer-events-none select-none" aria-hidden />
+                          <span className="pointer-events-none select-none" draggable={false}>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
               </nav>
             </motion.aside>
           </>

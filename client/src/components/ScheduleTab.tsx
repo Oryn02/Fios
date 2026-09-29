@@ -539,9 +539,9 @@ const ScheduleTabInner: React.FC = () => {
                     {formatTimeRange(event.startDate, event.endDate)}
                   </div>
 
-                  <div className="flex-1 space-y-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className={`text-base font-black tracking-wide truncate max-w-full min-w-0 ${muted ? 'text-muted-foreground line-through decoration-slate-600' : 'text-foreground'}`}>
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-start gap-2 flex-wrap min-w-0">
+                      <h3 className={`text-base font-black tracking-wide min-w-0 max-w-full flex-1 basis-[min(100%,12rem)] break-words [overflow-wrap:anywhere] ${muted ? 'text-muted-foreground line-through decoration-slate-600' : 'text-foreground'}`}>
                         {event.title}
                       </h3>
                       <span data-mod-color={colorKey} className={MOD_PILL_CLASS}>
@@ -644,9 +644,9 @@ const ScheduleTabInner: React.FC = () => {
                           <div className={`w-32 shrink-0 font-mono text-xs font-bold pt-0.5 ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>
                             {formatTimeRange(event.startDate, event.endDate)}
                           </div>
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className={`text-sm font-bold truncate max-w-[min(100%,18rem)] ${muted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{event.title}</h4>
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-start gap-2 flex-wrap min-w-0">
+                              <h4 className={`text-sm font-bold min-w-0 max-w-full flex-1 basis-[min(100%,12rem)] break-words [overflow-wrap:anywhere] ${muted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{event.title}</h4>
                               <span data-mod-color={colorKey} className={MOD_PILL_CLASS}>
                                 {event.title.split(/[\s·|—-]/)[0]?.slice(0, 10) || 'Class'}
                               </span>

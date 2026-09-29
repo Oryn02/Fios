@@ -3,10 +3,25 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.5.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.6.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.7.6',
+      date: 'September 2026',
+      title: 'Mobile UI polish — clearance & expanded plan gaps',
+      highlights: [
+        'Overview / main scroll pad clears floating Pomodoro + Brain Dump + FAB + bottom nav — Upcoming Work / Academic Tasks headers no longer clip under chrome.',
+        'Header controls sit inside the header strip (safe-area-aware height) while keeping ≥44px touch targets.',
+        'Timetable day cards wrap long module titles instead of clipping mid-word; drawer long-press reorder no longer triggers native text selection.',
+        'FAB hides “Start Pomodoro” when the floating Pomodoro widget is already enabled.',
+        'Mobile drawer regrouped: Core Hubs · Academic Tools · System Preferences (active route highlight retained).',
+        'Dashboard greeting truncates on narrow phones; secondary widgets compress into mobile pills; heatmap edge-fade swipe masks.',
+        'Alpha-transparent semantic chips/tags; sanitizeDeckTitle strips PAGE n; code blocks dark-locked in both themes; flashcard rating rows ≥12px above the floating zone.',
+        'Version alignment: packages, HTML title, Updates tab, README, and API `/health` report v3.7.6.',
+      ],
+    },
     {
       version: 'v3.7.5',
       date: 'September 2026',
@@ -552,7 +567,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-foreground tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-muted-foreground">Current release · v3.7.5</p>
+        <p className="text-xs font-mono text-muted-foreground">Current release · v3.7.6</p>
       </header>
 
       <div className="space-y-4">

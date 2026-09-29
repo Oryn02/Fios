@@ -482,7 +482,9 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             <button
               onClick={() => { setStudyFilter('due'); setCurrentIndex(0); }}
               className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                studyFilter === 'due' ? 'bg-cyan-400 text-slate-950 shadow font-black' : 'text-muted-foreground hover:text-foreground'
+                studyFilter === 'due'
+                  ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/40 font-black'
+                  : 'text-muted-foreground hover:text-foreground border border-transparent'
               }`}
             >
               <Clock className="w-3.5 h-3.5 shrink-0" /> Due Today ({dueCards.length})
@@ -490,7 +492,9 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             <button
               onClick={() => { setStudyFilter('all'); setCurrentIndex(0); }}
               className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                studyFilter === 'all' ? 'bg-cyan-400 text-slate-950 shadow font-black' : 'text-muted-foreground hover:text-foreground'
+                studyFilter === 'all'
+                  ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/40 font-black'
+                  : 'text-muted-foreground hover:text-foreground border border-transparent'
               }`}
             >
               <Layers className="w-3.5 h-3.5 shrink-0" /> All ({cards.length})
@@ -502,7 +506,9 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               onClick={() => setMode('browse')}
               title="Browse: flip freely. Grading still updates your SM-2 schedule when you rate after reveal."
               className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                mode === 'browse' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-muted-foreground hover:text-foreground'
+                mode === 'browse'
+                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 font-black'
+                  : 'text-muted-foreground hover:text-foreground border border-transparent'
               }`}
             >
               <Eye className="w-3.5 h-3.5 shrink-0" /> Browse
@@ -511,7 +517,9 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               onClick={() => setMode('test')}
               title="Active Recall: answer stays hidden until you tap Reveal, then self-grade."
               className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                mode === 'test' ? 'bg-emerald-400 text-slate-950 shadow font-black' : 'text-muted-foreground hover:text-foreground'
+                mode === 'test'
+                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 font-black'
+                  : 'text-muted-foreground hover:text-foreground border border-transparent'
               }`}
             >
               <Target className="w-3.5 h-3.5 shrink-0" /> Recall
@@ -632,7 +640,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
                   <HelpCircle className="w-3 h-3" />
                 </span>
               </div>
-              <div className="grid grid-cols-4 gap-2 font-mono">
+              <div className="grid grid-cols-4 gap-2 font-mono fios-rating-clearance">
                 <button
                   type="button"
                   onClick={() => { dismissSm2Onboard(); handleRating(1); }}

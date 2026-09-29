@@ -32,6 +32,8 @@ import { ReportContentButton } from './ReportContentButton';
 
 import type { FlightNavigatePayload } from './RevisionFlightPlan';
 
+type MobileSecondaryId = 'flightPlan' | 'examReadiness' | 'contribution' | 'countdown';
+
 interface OverviewTabProps {
   onOpenFlashcards: (deckCards?: any[], title?: string, moduleCode?: string, isSaved?: boolean) => void;
   onNavigate?: (tab: string, payload?: FlightNavigatePayload) => void;
@@ -111,6 +113,7 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskStart, setNewTaskStart] = useState('');
   const [newTaskDueAt, setNewTaskDueAt] = useState('');
+  const [mobileSecondary, setMobileSecondary] = useState<MobileSecondaryId>('flightPlan');
 
   const greeting = useMemo(
     () => greetingFor(new Date(), profile?.birthday),
@@ -270,6 +273,28 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
     return order.filter((id) => widgetVisibility[id] !== false);
   }, [widgetOrder, widgetVisibility]);
 
+  /** Desktop stack includes all; mobile compresses flightPlan + exam readiness into pills. */
+  const desktopWidgets = orderedWidgets;
+  const mobileStackWidgets = useMemo(
+    () => orderedWidgets.filter((id) => id !== 'flightPlan' && id !== 'heatmap'),
+    [orderedWidgets]
+  );
+
+  const mobileSecondaryTabs = useMemo(() => {
+    const tabs: { id: MobileSecondaryId; label: string }[] = [];
+    if (widgetVisibility.flightPlan !== false) tabs.push({ id: 'flightPlan', label: 'Flight Plan' });
+    if (widgetVisibility.heatmap !== false) tabs.push({ id: 'examReadiness', label: 'Exam Ready' });
+    tabs.push({ id: 'contribution', label: 'Heatmap' });
+    tabs.push({ id: 'countdown', label: 'Exams' });
+    return tabs;
+  }, [widgetVisibility]);
+
+  useEffect(() => {
+    if (!mobileSecondaryTabs.some((t) => t.id === mobileSecondary) && mobileSecondaryTabs[0]) {
+      setMobileSecondary(mobileSecondaryTabs[0].id);
+    }
+  }, [mobileSecondaryTabs, mobileSecondary]);
+
   const moveWidget = (id: WidgetId, dir: -1 | 1) => {
     const order = [...(widgetOrder?.length ? widgetOrder : DEFAULT_WIDGET_ORDER)];
     const i = order.indexOf(id);
@@ -382,8 +407,8 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
               {!holidayTheme && <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse shrink-0" />}
               <span className="truncate">Today · {todayLabel}</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black italic tracking-tight text-[var(--fios-text)] break-words">
-              {greeting}, <span className="accent-text">{preferredName}</span>.
+            <h1 className="text-2xl sm:text-3xl font-black italic tracking-tight text-[var(--fios-text)] truncate max-w-full">
+              <span className="block truncate">{greeting}, <span className="accent-text">{preferredName}</span>.</span>
             </h1>
             <p className="text-muted-foreground text-xs sm:text-sm font-medium mt-1">
               Welcome back to <span className="text-[var(--fios-text)] font-bold">Fios</span> · Semester 1 · 2026/27
@@ -633,15 +658,46 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
             ))}
           </div>
         </div>
-        <div className="space-y-6">
-          {orderedWidgets.map((id) => renderWidget(id))}
+
+        {/* Mobile: compress Flight Plan / Exam Ready / Contribution Heatmap / Exams into pills */}
+        <div className="md:hidden space-y-3">
+          <div className="flex gap-1.5 overflow-x-auto fios-h-scroll pb-0.5 -mx-0.5 px-0.5" role="tablist" aria-label="Secondary dashboard widgets">
+            {mobileSecondaryTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={mobileSecondary === tab.id}
+                onClick={() => setMobileSecondary(tab.id)}
+                className={`shrink-0 px-3 py-2 rounded-lg text-[10px] font-mono font-black uppercase tracking-wider border cursor-pointer touch-manipulation ${
+                  mobileSecondary === tab.id ? 'fios-chip-active' : 'fios-border text-[var(--fios-text-muted)]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div role="tabpanel">
+            {mobileSecondary === 'flightPlan' && renderWidget('flightPlan')}
+            {mobileSecondary === 'examReadiness' && renderWidget('heatmap')}
+            {mobileSecondary === 'contribution' && <StudyStreakHeatmap />}
+            {mobileSecondary === 'countdown' && <ExamCountdownWidget />}
+          </div>
+          <div className="space-y-6">
+            {mobileStackWidgets.map((id) => renderWidget(id))}
+          </div>
+        </div>
+
+        {/* Desktop: full stacked widgets */}
+        <div className="hidden md:block space-y-6">
+          {desktopWidgets.map((id) => renderWidget(id))}
         </div>
       </div>
 
-      {/* Study streak + exam countdown (below flight plan / widgets).
+      {/* Study streak + exam countdown — desktop only (mobile uses compressed pills above).
           min-w-0 on items: prevent CSS grid min-width:auto from expanding past the viewport
           and getting clipped by DashboardLayout overflow-x-hidden (broken mobile heatmap). */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
+      <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
         <div className="min-w-0 max-w-full">
           <StudyStreakHeatmap />
         </div>
