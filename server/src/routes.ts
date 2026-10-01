@@ -39,6 +39,9 @@ import vaultRoutes from './routes/vault.js';
 import lectureRoutes from './routes/lecture.js';
 import groundedChatRoutes from './routes/groundedChat.js';
 import vivaRoutes from './routes/viva.js';
+import examRoutes from './routes/exam.js';
+import syllabusRoutes from './routes/syllabus.js';
+import cognitiveRoutes from './routes/cognitive.js';
 
 const router = Router();
 
@@ -1035,5 +1038,8 @@ router.use('/vault', vaultRoutes);
 router.use('/lecture', lectureRoutes);
 router.use('/grounded-chat', groundedChatRoutes);
 router.use('/viva', vivaRoutes);
+router.use('/exam', examRoutes);
+router.use('/syllabus', syllabusRoutes);
+router.use('/cognitive', cognitiveRoutes);
 
 export default router;
