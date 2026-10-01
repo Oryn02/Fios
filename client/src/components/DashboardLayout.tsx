@@ -649,10 +649,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               data-fios-version-badge
               className="relative z-[65] inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 4.0.0"
+              aria-label="Fios version 4.1.0"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v4.0.0
+              v4.1.0
             </span>
             {zenMode && (
               <button
