@@ -941,7 +941,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             <>
               <button
                 type="button"
-                onClick={() => { setDrawerOpen(true); }}
+                onClick={() => { setProfileDrawerOpen(false); setDrawerOpen(true); }}
                 className="touch-target flex flex-col items-center gap-0.5 min-w-[4.5rem] px-3 py-2 rounded-lg cursor-pointer text-muted-foreground active:bg-[var(--fios-surface-2)]"
                 aria-label="Open menu"
               >

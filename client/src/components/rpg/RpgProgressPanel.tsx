@@ -131,13 +131,11 @@ export const RpgProgressPanel: React.FC<{ compact?: boolean }> = ({ compact }) =
   const xp = streak?.xp ?? 0;
 
   const applyOrReveal = async (t: RpgThemeUnlock) => {
+    const immersive = IMMERSIVE_THEMES.find((x) => x.id === t.immersiveId);
     const unlocked =
       rewardsIncludeTheme(rewards, t.key) ||
       rewards.includes(t.reward) ||
-      isThemeUnlockedByMetrics(
-        IMMERSIVE_THEMES.find((x) => x.id === t.immersiveId)!,
-        metrics
-      );
+      (immersive ? isThemeUnlockedByMetrics(immersive, metrics) : false);
     if (!unlocked) {
       toast(t.unlockHint, 'info');
       return;
@@ -262,13 +260,11 @@ export const RpgProgressPanel: React.FC<{ compact?: boolean }> = ({ compact }) =
           Immersive themes (study milestones)
         </p>
         {THEME_UNLOCKS.map((t) => {
+          const immersive = IMMERSIVE_THEMES.find((x) => x.id === t.immersiveId);
           const unlocked =
             rewardsIncludeTheme(rewards, t.key) ||
             rewards.includes(t.reward) ||
-            isThemeUnlockedByMetrics(
-              IMMERSIVE_THEMES.find((x) => x.id === t.immersiveId)!,
-              metrics
-            );
+            (immersive ? isThemeUnlockedByMetrics(immersive, metrics) : false);
           return (
             <button
               key={t.key}
