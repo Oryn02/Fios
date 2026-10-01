@@ -30,6 +30,15 @@ import socialRoutes from './routes/social.js';
 import mediaSaasRoutes from './routes/media.js';
 import quizLiveRoutes from './routes/quiz.js';
 import analyticsRoutes from './routes/analytics.js';
+import importRoutes from './routes/import.js';
+import clipperRoutes from './routes/clipper.js';
+import lmsRoutes from './routes/lms.js';
+import rpgRoutes from './routes/rpg.js';
+import mindmapRoutes from './routes/mindmap.js';
+import vaultRoutes from './routes/vault.js';
+import lectureRoutes from './routes/lecture.js';
+import groundedChatRoutes from './routes/groundedChat.js';
+import vivaRoutes from './routes/viva.js';
 
 const router = Router();
 
@@ -1017,5 +1026,14 @@ router.use('/social', socialRoutes);
 router.use('/media', mediaSaasRoutes);
 router.use('/quiz', quizLiveRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/import', importRoutes);
+router.use('/clipper', clipperRoutes);
+router.use('/lms', lmsRoutes);
+router.use('/rpg', rpgRoutes);
+router.use('/mindmap', mindmapRoutes);
+router.use('/vault', vaultRoutes);
+router.use('/lecture', lectureRoutes);
+router.use('/grounded-chat', groundedChatRoutes);
+router.use('/viva', vivaRoutes);
 
 export default router;

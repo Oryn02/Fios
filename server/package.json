@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "3.8.0",
+  "version": "3.9.0",
   "description": "Fios Express API (Render Web Service)",
   "main": "dist/index.js",
   "scripts": {
@@ -23,13 +23,18 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "jszip": "^3.10.2",
     "multer": "^2.4.0",
     "pdfjs-dist": "^5.4.296",
+    "socket.io": "^4.8.4",
+    "socket.js": "^0.1.4",
+    "sql.js": "^1.14.2",
     "ts-fsrs": "^5.4.2",
     "typescript": "^7.0.2",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@types/jszip": "^3.4.0",
     "@types/web-push": "^3.6.4",
     "nodemon": "^3.1.14",
     "tsx": "^4.23.15"
