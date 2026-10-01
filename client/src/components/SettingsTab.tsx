@@ -27,7 +27,7 @@ import {
   type SmartMetricId,
 } from '../context/PreferencesContext';
 import { AvatarPicker } from './Avatar';
-import { ACCENTS, type ThemeMode } from '../types/db';
+import { ACCENTS, LOCKED_ACCENTS, type AccentKey, type ThemeMode } from '../types/db';
 import { validateGeminiKey } from '../services/aiApi';
 import { TermsModal } from './TermsModal';
 import { PrivacyModal } from './PrivacyModal';
@@ -38,6 +38,10 @@ import { resetCookieConsent } from './CookieConsent';
 import { toast } from '../lib/toast';
 import { NAV_ITEMS } from './DashboardLayout';
 import { normalizeBirthday } from '../lib/holidays';
+import { LmsConnectPanel } from './lms/LmsConnectPanel';
+import { RpgProgressPanel, isAccentUnlocked } from './rpg/RpgProgressPanel';
+import { downloadModuleVault } from '../lib/vaultExport';
+import { getUserModules, moduleDisplayName } from '../lib/moduleService';
 import {
   AI_STUDIO_KEY_URL,
   AI_STUDIO_HOME_URL,
@@ -90,6 +94,20 @@ const SettingsTabInner: React.FC = () => {
   const [showSupport, setShowSupport] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [gistStatus, setGistStatus] = useState<string | null>(null);
+  const [vaultModule, setVaultModule] = useState('');
+  const [vaultBusy, setVaultBusy] = useState(false);
+  const [vaultModules, setVaultModules] = useState<{ code: string; label: string }[]>([]);
+
+  useEffect(() => {
+    void getUserModules().then((mods) => {
+      setVaultModules(
+        mods.map((m) => ({
+          code: m.code || m.id,
+          label: moduleDisplayName(m),
+        }))
+      );
+    }).catch(() => undefined);
+  }, []);
 
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -327,7 +345,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '3.8.0',
+      version: '3.9.0',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -1066,18 +1084,59 @@ const SettingsTabInner: React.FC = () => {
         <div className="space-y-2">
           <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Accent Gradient</span>
           <div className="flex flex-wrap gap-2">
-            {ACCENTS.map((a) => (
-              <button key={a.key} onClick={() => setAccent(a.key)}
+            {ACCENTS.map((a) => {
+              const locked = LOCKED_ACCENTS.has(a.key as AccentKey) && !isAccentUnlocked(a.key as AccentKey);
+              return (
+              <button
+                key={a.key}
+                type="button"
+                disabled={locked}
+                onClick={() => {
+                  if (locked) {
+                    toast('Unlock via RPG skill points first', 'info');
+                    return;
+                  }
+                  setAccent(a.key);
+                }}
                 className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition-transform cursor-pointer ${
                   accent === a.key ? 'ring-2 ring-white/60 scale-[1.03]' : 'opacity-80 hover:opacity-100'
-                } bg-[var(--fios-surface-2)] fios-border text-[var(--fios-text)]`}>
+                } ${locked ? 'opacity-40 cursor-not-allowed' : ''} bg-[var(--fios-surface-2)] fios-border text-[var(--fios-text)]`}
+              >
                 <span className="w-4 h-4 rounded-full" style={{ backgroundImage: `linear-gradient(120deg, ${a.from}, ${a.to})` }} />
                 {a.label}
+                {locked ? <Lock className="w-3 h-3 text-[var(--fios-text-muted)]" /> : null}
               </button>
-            ))}
+              );
+            })}
           </div>
-          <p className="text-[10px] text-[var(--fios-text-muted)]">The public landing page keeps Fios's signature emerald identity regardless of this choice.</p>
+          <p className="text-[10px] text-[var(--fios-text-muted)]">The public landing page keeps Fios's signature emerald identity regardless of this choice. Cyber & Dark Matter unlock via RPG.</p>
         </div>
+      </section>
+
+      <RpgProgressPanel />
+
+      <LmsConnectPanel />
+
+      <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-3">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-[var(--fios-text-muted)] flex items-center gap-2">
+          <Download className="w-4 h-4 accent-solid-text" /> Obsidian vault export
+        </h2>
+        <p className="text-xs text-[var(--fios-text-muted)]">
+          Export a module as a Markdown ZIP with wikilinks for Obsidian / Notion. Prefer Modules → Export vault when a module is selected.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            const code = window.prompt('Module code to export (e.g. COMP1234)');
+            if (!code?.trim()) return;
+            void downloadModuleVault(code.trim())
+              .then(() => toast('Vault ZIP downloaded', 'success'))
+              .catch((e: any) => toast(e?.message || 'Vault export failed', 'error'));
+          }}
+          className="px-4 py-2 accent-bg text-slate-950 text-xs font-black uppercase rounded-xl cursor-pointer inline-flex items-center gap-1.5"
+        >
+          <Download className="w-3.5 h-3.5" /> Export module vault
+        </button>
       </section>
 
       {/* FSRS opt-in (beta) — SM-2 remains default */}
@@ -1204,7 +1263,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-muted-foreground">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.8.0.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.9.0.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button

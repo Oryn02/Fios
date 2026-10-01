@@ -419,5 +419,245 @@ create policy viva_sessions_owner on public.viva_sessions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, update, delete on public.viva_sessions to authenticated;
 
+-- ----------------------------------------------------------------------------
+-- v3.9.0 pack finish: JOL, mock exams, focus buddy, syllabus events
+-- ----------------------------------------------------------------------------
+create table if not exists public.card_jol (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  card_id uuid not null references public.cards (id) on delete cascade,
+  predicted smallint not null check (predicted between 1 and 5),
+  actual_success boolean,
+  created_at timestamptz not null default now()
+);
+create index if not exists card_jol_user_idx on public.card_jol (user_id, created_at desc);
+create index if not exists card_jol_card_idx on public.card_jol (card_id);
+
+alter table public.card_jol enable row level security;
+drop policy if exists card_jol_owner on public.card_jol;
+create policy card_jol_owner on public.card_jol
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.card_jol to authenticated;
+
+create table if not exists public.mock_exams (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  module_code text,
+  title text not null default 'Mock Exam',
+  duration_min integer not null default 90,
+  questions jsonb not null default '[]'::jsonb,
+  answers jsonb,
+  grade_result jsonb,
+  status text not null default 'ready',
+  graded_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists mock_exams_user_idx on public.mock_exams (user_id, created_at desc);
+
+alter table public.mock_exams enable row level security;
+drop policy if exists mock_exams_owner on public.mock_exams;
+create policy mock_exams_owner on public.mock_exams
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.mock_exams to authenticated;
+
+create table if not exists public.focus_buddy_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  partner_id uuid references auth.users (id) on delete set null,
+  module_code text,
+  room_code text,
+  goal text,
+  duration_min integer not null default 50,
+  started_at timestamptz,
+  ended_at timestamptz,
+  checkin_note text,
+  meta jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists focus_buddy_user_idx on public.focus_buddy_sessions (user_id, created_at desc);
+
+alter table public.focus_buddy_sessions enable row level security;
+drop policy if exists focus_buddy_owner on public.focus_buddy_sessions;
+create policy focus_buddy_owner on public.focus_buddy_sessions
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.focus_buddy_sessions to authenticated;
+
+create table if not exists public.syllabus_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  module_code text,
+  title text not null,
+  event_type text not null default 'deadline',
+  event_date date,
+  event_time text,
+  description text,
+  source_excerpt text,
+  created_at timestamptz not null default now()
+);
+create index if not exists syllabus_events_user_idx on public.syllabus_events (user_id, event_date);
+
+alter table public.syllabus_events enable row level security;
+drop policy if exists syllabus_events_owner on public.syllabus_events;
+create policy syllabus_events_owner on public.syllabus_events
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.syllabus_events to authenticated;
+
 -- Notify PostgREST
+notify pgrst, 'reload schema';
+
+-- ============================================================================
+-- v3.9.0 continuation — cognitive science, graph, community, debates, macros
+-- ============================================================================
+
+-- Metacognitive JOL
+alter table public.cards add column if not exists jol_bucket text;
+alter table public.cards add column if not exists blind_spot boolean not null default false;
+alter table public.cards add column if not exists fail_streak integer not null default 0;
+alter table public.cards add column if not exists icon_hint text;
+alter table public.cards add column if not exists diagram_mermaid text;
+alter table public.cards add column if not exists audio_mnemonic text;
+alter table public.cards add column if not exists energy_tier text; -- high | moderate | fog
+
+create table if not exists public.card_jol_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  card_id uuid not null references public.cards (id) on delete cascade,
+  jol text not null check (jol in ('guessing', 'unsure', 'certain')),
+  rating integer,
+  created_at timestamptz not null default now()
+);
+create index if not exists card_jol_user_idx on public.card_jol_events (user_id, created_at desc);
+alter table public.card_jol_events enable row level security;
+drop policy if exists card_jol_owner on public.card_jol_events;
+create policy card_jol_owner on public.card_jol_events
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.card_jol_events to authenticated;
+
+-- Past paper matrices + knowledge graph (+ optional pgvector)
+create table if not exists public.past_paper_matrices (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  module_code text,
+  matrix jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+alter table public.past_paper_matrices enable row level security;
+drop policy if exists past_paper_owner on public.past_paper_matrices;
+create policy past_paper_owner on public.past_paper_matrices
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.past_paper_matrices to authenticated;
+
+create table if not exists public.knowledge_edges (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  source_card_id uuid references public.cards (id) on delete cascade,
+  target_card_id uuid references public.cards (id) on delete cascade,
+  score numeric,
+  reason text,
+  created_at timestamptz not null default now()
+);
+create index if not exists knowledge_edges_user_idx on public.knowledge_edges (user_id);
+alter table public.knowledge_edges enable row level security;
+drop policy if exists knowledge_edges_owner on public.knowledge_edges;
+create policy knowledge_edges_owner on public.knowledge_edges
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.knowledge_edges to authenticated;
+
+-- pgvector embeddings (optional — requires extension on project)
+create extension if not exists vector;
+alter table public.cards add column if not exists embedding vector(768);
+create table if not exists public.card_embeddings (
+  card_id uuid primary key references public.cards (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  embedding vector(768),
+  updated_at timestamptz not null default now()
+);
+alter table public.card_embeddings enable row level security;
+drop policy if exists card_embeddings_owner on public.card_embeddings;
+create policy card_embeddings_owner on public.card_embeddings
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.card_embeddings to authenticated;
+
+-- Debate rooms
+create table if not exists public.debate_rooms (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references auth.users (id) on delete cascade,
+  topic text not null,
+  module_code text,
+  material text,
+  status text not null default 'open',
+  created_at timestamptz not null default now()
+);
+create table if not exists public.debate_rounds (
+  id uuid primary key default gen_random_uuid(),
+  room_id uuid references public.debate_rooms (id) on delete cascade,
+  user_id uuid references auth.users (id) on delete cascade,
+  topic text,
+  side_a text,
+  side_b text,
+  score jsonb,
+  created_at timestamptz not null default now()
+);
+alter table public.debate_rooms enable row level security;
+alter table public.debate_rounds enable row level security;
+drop policy if exists debate_rooms_all on public.debate_rooms;
+create policy debate_rooms_all on public.debate_rooms for all using (auth.uid() is not null) with check (auth.uid() = owner_id);
+drop policy if exists debate_rounds_all on public.debate_rounds;
+create policy debate_rounds_all on public.debate_rounds for all using (auth.uid() is not null) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.debate_rooms to authenticated;
+grant select, insert, update, delete on public.debate_rounds to authenticated;
+
+-- Learning macros + peer review + community verified
+create table if not exists public.learning_macros (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  day date not null,
+  recall integer not null default 0,
+  synthesis integer not null default 0,
+  application integer not null default 0,
+  target_recall integer not null default 20,
+  target_synthesis integer not null default 5,
+  target_application integer not null default 5,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, day)
+);
+alter table public.learning_macros enable row level security;
+drop policy if exists learning_macros_owner on public.learning_macros;
+create policy learning_macros_owner on public.learning_macros
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.learning_macros to authenticated;
+
+alter table public.shared_resources add column if not exists community_verified boolean not null default false;
+alter table public.shared_resources add column if not exists directory_boost integer not null default 0;
+
+create table if not exists public.peer_card_reviews (
+  resource_id uuid not null references public.shared_resources (id) on delete cascade,
+  card_index integer not null default 0,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  verdict text not null check (verdict in ('approve', 'reject')),
+  updated_at timestamptz not null default now(),
+  primary key (resource_id, card_index, user_id)
+);
+alter table public.peer_card_reviews enable row level security;
+drop policy if exists peer_card_reviews_owner on public.peer_card_reviews;
+create policy peer_card_reviews_owner on public.peer_card_reviews
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists peer_card_reviews_select on public.peer_card_reviews;
+create policy peer_card_reviews_select on public.peer_card_reviews for select using (auth.uid() is not null);
+grant select, insert, update, delete on public.peer_card_reviews to authenticated;
+
+-- Mock exams persistence
+create table if not exists public.mock_exams (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  module_code text,
+  exam jsonb not null default '{}'::jsonb,
+  result jsonb,
+  created_at timestamptz not null default now()
+);
+alter table public.mock_exams enable row level security;
+drop policy if exists mock_exams_owner on public.mock_exams;
+create policy mock_exams_owner on public.mock_exams
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, update, delete on public.mock_exams to authenticated;
+
 notify pgrst, 'reload schema';

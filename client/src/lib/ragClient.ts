@@ -13,10 +13,12 @@ export interface RagQueryResult {
 /**
  * Index a document's content into Supabase `note_chunks` (~500-word passages).
  * Replaces prior chunks for the same document_id. Soft-fails if table/RLS missing.
+ * Optional `provenance` aligns page_number / paragraph_index with chunk rows when present.
  */
 export async function indexDocumentChunks(
   documentId: string,
-  content: string
+  content: string,
+  provenance?: Array<{ page?: number; paragraph?: number; text?: string; quote?: string } | null>
 ): Promise<{ indexed: number }> {
   if (IS_DEMO || !content?.trim()) return { indexed: 0 };
 
@@ -29,12 +31,20 @@ export async function indexDocumentChunks(
   // Clear previous index for this document, then insert fresh rows
   await supabase.from('note_chunks').delete().eq('document_id', documentId).eq('user_id', user.id);
 
-  const rows = pieces.map((contentText, chunk_index) => ({
-    user_id: user.id,
-    document_id: documentId,
-    chunk_index,
-    content: contentText,
-  }));
+  const rows = pieces.map((contentText, chunk_index) => {
+    const prov = provenance?.[chunk_index];
+    const row: Record<string, unknown> = {
+      user_id: user.id,
+      document_id: documentId,
+      chunk_index,
+      content: contentText,
+    };
+    if (prov && typeof prov.page === 'number') row.page_number = prov.page;
+    if (prov && typeof prov.paragraph === 'number') row.paragraph_index = prov.paragraph;
+    const quote = prov?.quote || prov?.text;
+    if (quote) row.source_quote = String(quote).slice(0, 2000);
+    return row;
+  });
 
   const { error } = await supabase.from('note_chunks').insert(rows);
   if (error) {

@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { ACCENTS, normalizeAccent, type AccentKey, type ThemeMode } from '../types/db';
+import { ACCENTS, normalizeAccent, LOCKED_ACCENTS, type AccentKey, type ThemeMode } from '../types/db';
 import { useProfile } from './ProfileContext';
 import {
   applyHolidayPaletteVars,
@@ -12,6 +12,19 @@ import {
   setAdminHolidayPreview,
   type HolidayPalette,
 } from '../lib/holidays';
+
+function isAccentRewardUnlocked(key: AccentKey): boolean {
+  if (!LOCKED_ACCENTS.has(key)) return true;
+  try {
+    const raw = localStorage.getItem('fios_unlocked_rewards');
+    if (!raw) return false;
+    const rewards = JSON.parse(raw);
+    if (!Array.isArray(rewards)) return false;
+    return rewards.includes(`theme:${key}`) || rewards.includes(key);
+  } catch {
+    return false;
+  }
+}
 
 type ResolvedTheme = 'dark' | 'light';
 
@@ -174,6 +187,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [updateProfile, systemPref]);
 
   const setAccent = useCallback((a: AccentKey) => {
+    if (LOCKED_ACCENTS.has(a) && !isAccentRewardUnlocked(a)) {
+      console.warn('[theme] Accent locked until RPG unlock:', a);
+      return;
+    }
     setAdminHolidayPreview(null);
     markHolidayManualOverride();
     setHolidayTheme(null);

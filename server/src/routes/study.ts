@@ -505,4 +505,42 @@ router.post('/dual-code', requireUser, async (req: AuthedRequest, res: Response)
   }
 });
 
+/** GET /api/study/due-preview — IDE / widgets due list */
+router.get('/due-preview', requireUser, async (req: AuthedRequest, res: Response) => {
+  try {
+    const db = getSupabaseAsUser(req.accessToken || '') || getSupabaseAdmin();
+    if (!db) {
+      res.status(503).json({ error: 'Database not configured' });
+      return;
+    }
+    const { data, error } = await db
+      .from('cards')
+      .select('id, question, answer, next_review, scheduler, deck_id, decks(title)')
+      .order('next_review', { ascending: true })
+      .limit(80);
+    if (error) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+    const now = Date.now();
+    const due = (data || []).filter((c: any) => {
+      const t = c.next_review ? new Date(c.next_review).getTime() : 0;
+      return t <= now;
+    });
+    res.json({
+      cards: due.slice(0, 40).map((c: any) => ({
+        id: c.id,
+        question: c.question,
+        answer: c.answer,
+        scheduler: c.scheduler,
+        deckTitle: c.decks?.title,
+        deck_id: c.deck_id,
+      })),
+      count: due.length,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Due preview failed' });
+  }
+});
+
 export default router;

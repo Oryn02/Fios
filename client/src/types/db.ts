@@ -15,7 +15,9 @@ export type AccentKey =
   | 'sunset-amber'
   | 'slate-teal'
   | 'rose-quartz'
-  | 'neon-violet';
+  | 'neon-violet'
+  | 'cyber'
+  | 'dark-matter';
 export type ThemeMode = 'dark' | 'light' | 'system';
 
 export interface UserProfile {
@@ -74,7 +76,13 @@ export const ACCENTS: AccentDef[] = [
   { key: 'rose-quartz', label: 'Rose Quartz', from: '#fda4af', via: '#fb7185', to: '#e11d48', solid: '#fb7185' },
   { key: 'violet', label: 'Cyber Violet', from: '#c084fc', via: '#a78bfa', to: '#6366f1', solid: '#a78bfa' },
   { key: 'neon-violet', label: 'Neon Violet', from: '#e9d5ff', via: '#c084fc', to: '#7c3aed', solid: '#c084fc' },
+  /** RPG unlock themes (v3.9+) — locked until skill unlocks grant them. */
+  { key: 'cyber', label: 'Cyber Grid', from: '#22d3ee', via: '#06b6d4', to: '#0891b2', solid: '#22d3ee' },
+  { key: 'dark-matter', label: 'Dark Matter', from: '#94a3b8', via: '#475569', to: '#0f172a', solid: '#64748b' },
 ];
+
+/** Accents that require an RPG unlock before selection. */
+export const LOCKED_ACCENTS = new Set<AccentKey>(['cyber', 'dark-matter']);
 
 export const ACCENT_KEYS = new Set(ACCENTS.map((a) => a.key));
 
@@ -161,6 +169,15 @@ export interface Card {
   scheduler?: CardScheduler;
   fsrs_state?: Record<string, unknown> | null;
   created_at?: string;
+  source_page?: number | null;
+  source_paragraph?: number | null;
+  source_quote?: string | null;
+  source_document_id?: string | null;
+  card_type?: 'basic' | 'code' | string;
+  code_language?: string | null;
+  starter_code?: string | null;
+  expected_output?: string | null;
+  solution_code?: string | null;
 }
 
 export interface ModuleExam {
@@ -180,6 +197,11 @@ export interface UserStreak {
   xp: number;
   last_study_date: string | null;
   updated_at?: string;
+  skill_points?: number;
+  unlocked_rewards?: string[] | unknown;
+  streak_freeze_until?: string | null;
+  lobby_border?: string;
+  active_theme_unlock?: string | null;
 }
 
 export interface Friendship {
@@ -202,6 +224,11 @@ export interface SharedResource {
   visibility: 'private' | 'friends' | 'group' | 'course_bank';
   group_id?: string | null;
   created_at?: string;
+  upvote_count?: number;
+  downvote_count?: number;
+  view_count?: number;
+  clone_count?: number;
+  user_vote?: number | null;
 }
 
 export interface Deck {

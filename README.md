@@ -1,10 +1,10 @@
 # Fios — Your Academic Command Center
 
-[![Version](https://img.shields.io/badge/version-v3.8.0-059669)](https://github.com/Oryn02/Fios)
+[![Version](https://img.shields.io/badge/version-v3.9.0-059669)](https://github.com/Oryn02/Fios)
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v3.8.0**
+**Current version: v3.9.0**
 
 
 > Version numbers in Updates / README use coherent semver from the first published release as **v1.0.0** (reassigned by substance; SQL migration filenames on disk may still use older labels).
@@ -47,13 +47,13 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
 
-### What’s new in v3.8.0
+### What’s new in v3.9.0
 
 - Optional FSRS (beta) spaced repetition with server `/api/study/review`; SM-2 remains the default client path.
 - Study Network tab: friends, course bank, classroom analytics.
 - Mock oral exam, diagram occlusion, audio recap, Anki `.apkg` export, daily due queue.
 - Live multiplayer quiz lobby (invite codes) without changing solo Exam Mode generation.
-- Paste-ready SQL: `supabase/v3.8.0-master-saas.sql` (+ `supabase/migrations/20261001_fios_master_saas.sql`).
+- Paste-ready SQL: `supabase/v3.9.0-master-saas.sql` (+ `supabase/migrations/20261001_fios_master_saas.sql`).
 - Version alignment across packages and API `/health`.
 
 ### What’s new in v3.7.7

@@ -3,10 +3,34 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.8.0.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.9.0.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.9.0',
+      date: 'October 2026',
+      title: 'Citations → clipper → voice recall → mock exams (features 1–30)',
+      highlights: [
+        '1–4 Citations & View Source — cards link to PDF page + quote; SourceViewer side-by-side.',
+        '5–7 Universal importers — Fios JSON, CSV, Quizlet, Notion, RemNote, Anki .apkg.',
+        '8–9 Offline Daily Queue — IndexedDB cache + /api/study/offline-sync flush.',
+        '10–12 Interactive code cards + Judge0/local JS runner; STEM cloze from lecture.',
+        '13–15 LMS connect (Canvas/Moodle/Blackboard), weekly prep, Obsidian vault export.',
+        '16–18 Roguelike RPG XP/unlocks, Course Bank vote/clone, Socratic Tutor Me + mnemonics.',
+        '19–21 AI mind maps, Lofi Pomodoro lounges (socket.io), live lecture → cloze/Q&A.',
+        '22–24 Grounded doc chat + viva coach; Feynman / elaborative / dual-coding hooks on cards.',
+        '25 Hands-free Voice Active Recall — Web Speech STT/TTS + POST /api/study/voice-grade → FSRS.',
+        '26 Full-length AI Mock Exam — /api/exam/mock-generate + mock-grade Diagnostic Scorecard.',
+        '27 Body Doubling — module match, 50m silent timer, goals, end check-in chat only.',
+        '28 Syllabus Parser — Gemini deadlines → .ics download + calendar hints.',
+        '29 Smart PDF Highlight toolbar — Flashcard / Explain / Quiz / Add to Notes.',
+        '30 PWA shortcuts (streak/review) + iOS limits in client/public/WIDGETS.md; ?tab=&review=1.',
+        'Browser clipper MV3 (extensions/fios-clipper). Interleaved practice + JOL metacognition.',
+        'SQL: supabase/v3.9.0-citations-clipper-offline.sql (card_jol, mock_exams, focus_buddy, syllabus_events…).',
+        'Version alignment: packages, HTML title, Updates, /health, footer → v3.9.0.',
+      ],
+    },
     {
       version: 'v3.8.0',
       date: 'October 2026',
@@ -593,7 +617,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-foreground tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-muted-foreground">Current release · v3.8.0</p>
+        <p className="text-xs font-mono text-muted-foreground">Current release · v3.9.0</p>
       </header>
 
       <div className="space-y-4">

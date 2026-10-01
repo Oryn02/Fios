@@ -30,6 +30,20 @@ export interface DeckExportPayload {
 
 let demoDeckState: SavedDeck[] = [...(demoDecks as SavedDeck[])];
 
+function mapCardFields(c: any) {
+  return {
+    source_page: c.source_page ?? null,
+    source_paragraph: c.source_paragraph ?? null,
+    source_quote: c.source_quote ?? null,
+    source_document_id: c.source_document_id ?? null,
+    card_type: c.card_type || 'basic',
+    code_language: c.code_language ?? null,
+    starter_code: c.starter_code ?? null,
+    expected_output: c.expected_output ?? null,
+    solution_code: c.solution_code ?? null,
+  };
+}
+
 export async function saveDeckWithCards(
   title: string,
   cards: Flashcard[],
@@ -53,6 +67,7 @@ export async function saveDeckWithCards(
         next_review: (c as any).next_review || new Date().toISOString(),
         scheduler: (c as any).scheduler || 'sm2',
         fsrs_state: (c as any).fsrs_state || null,
+        ...mapCardFields(c),
       })),
     };
     demoDeckState = [deck, ...demoDeckState];
@@ -88,6 +103,7 @@ export async function saveDeckWithCards(
     next_review: (c as any).next_review || new Date().toISOString(),
     scheduler: (c as any).scheduler || 'sm2',
     fsrs_state: (c as any).fsrs_state || null,
+    ...mapCardFields(c),
   }));
 
   const { error: cardsError } = await supabase
@@ -121,6 +137,9 @@ export async function getUserDecksWithCards() {
       interval: c.interval ?? 0,
       repetitions: c.repetitions ?? 0,
       next_review: c.next_review || new Date().toISOString(),
+      scheduler: c.scheduler || 'sm2',
+      fsrs_state: c.fsrs_state || null,
+      ...mapCardFields(c),
     })),
   }));
 }

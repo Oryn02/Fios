@@ -14,12 +14,21 @@ import {
 } from '../lib/deckService';
 import { InlineEditableTitle } from './InlineEditableTitle';
 import { ReportContentButton } from './ReportContentButton';
-import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle, Download, Share2 } from 'lucide-react';
+import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle, Download, Share2, BookOpen, Brain, MessageCircle } from 'lucide-react';
 import { toast } from '../lib/toast';
 import { sanitizeDeckTitle } from '../lib/sanitizeDeckTitle';
-import { fsrsReview } from '../services/studyApi';
+import { fsrsReview, studyElaborate, studyFeynman, studyDualCode, saveJol } from '../services/studyApi';
 import { AnkiExportButton } from './study/AnkiExportButton';
 import { ShareModal } from './social/ShareModal';
+import { SourceViewer } from './citations/SourceViewer';
+import { CodeCardRunner } from './codeCards/CodeCardRunner';
+import { SocraticTutorModal } from './tutor/SocraticTutorModal';
+import { MnemonicModal } from './tutor/MnemonicModal';
+import {
+  enqueuePendingReview,
+  ensureDailyQueueFlushHook,
+  flushPendingReviews,
+} from '../lib/offline/dailyQueueCache';
 
 const SM2_ONBOARD_KEY = 'fios_sm2_onboarded';
 const FSRS_PREF_KEY = 'fios_fsrs_opt_in';
@@ -70,6 +79,19 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     }
   });
   const [shareOpen, setShareOpen] = useState(false);
+  const [sourceOpen, setSourceOpen] = useState(false);
+  const [tutorOpen, setTutorOpen] = useState(false);
+  const [mnemonicOpen, setMnemonicOpen] = useState(false);
+  const [jolPredicted, setJolPredicted] = useState<number | null>(null);
+  const [hardFailStreak, setHardFailStreak] = useState(0);
+  const [elaborateHint, setElaborateHint] = useState<string | null>(null);
+  const [feynmanHint, setFeynmanHint] = useState<string | null>(null);
+  const [dualHint, setDualHint] = useState<string | null>(null);
+  const [studyBusy, setStudyBusy] = useState(false);
+
+  useEffect(() => {
+    ensureDailyQueueFlushHook();
+  }, []);
 
   const dismissSm2Onboard = useCallback(() => {
     try {
@@ -94,12 +116,24 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
         if (!error && cardData && cardData.length > 0) {
           const mapped = cardData.map((c: any) => ({
             id: c.id,
+            deck_id: c.deck_id,
             front: c.question,
             back: c.answer,
             ease_factor: c.ease_factor ?? 2.5,
             interval: c.interval ?? 0,
             repetitions: c.repetitions ?? 0,
             next_review: c.next_review || new Date().toISOString(),
+            scheduler: c.scheduler || 'sm2',
+            fsrs_state: c.fsrs_state || null,
+            source_page: c.source_page ?? null,
+            source_paragraph: c.source_paragraph ?? null,
+            source_quote: c.source_quote ?? null,
+            source_document_id: c.source_document_id ?? null,
+            card_type: c.card_type || 'basic',
+            code_language: c.code_language ?? null,
+            starter_code: c.starter_code ?? null,
+            expected_output: c.expected_output ?? null,
+            solution_code: c.solution_code ?? null,
           }));
           setCards(mapped);
         }
@@ -122,8 +156,39 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
   }, [isSaved]);
 
   // SM-2 due filter — local calendar day (see isCardDue)
+  // Interleaved practice: rotate by deck_id so same-deck cards are spaced apart.
   const dueCards = (Array.isArray(cards) ? cards : []).filter((c: any) => isCardDue(c?.next_review));
-  const activeCards = studyFilter === 'due' ? dueCards : (Array.isArray(cards) ? cards : []);
+  const sourceCards = studyFilter === 'due' ? dueCards : (Array.isArray(cards) ? cards : []);
+  const activeCards = (() => {
+    const byDeck = new Map<string, any[]>();
+    for (const c of sourceCards) {
+      const key = String((c as any).deck_id || (c as any).module_code || 'default');
+      const arr = byDeck.get(key) || [];
+      arr.push(c);
+      byDeck.set(key, arr);
+    }
+    if (byDeck.size <= 1) return sourceCards;
+    const queues = [...byDeck.values()];
+    const out: any[] = [];
+    let left = sourceCards.length;
+    while (left > 0) {
+      for (const q of queues) {
+        if (q.length) {
+          out.push(q.shift());
+          left -= 1;
+        }
+      }
+    }
+    return out;
+  })();
+
+  // Reset JOL / hints when card changes
+  useEffect(() => {
+    setJolPredicted(null);
+    setElaborateHint(null);
+    setFeynmanHint(null);
+    setDualHint(null);
+  }, [currentIndex]);
 
   const handleNext = useCallback(() => {
     setIsFlipped(false);
@@ -167,6 +232,9 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
   const currentCard = activeCards[currentIndex] || activeCards[0] || cards[0];
   const questionText = currentCard?.front || (currentCard as any)?.question || '';
   const answerText = currentCard?.back || (currentCard as any)?.answer || '';
+  const isCodeCard = (currentCard as any)?.card_type === 'code';
+  const hasSource =
+    Boolean((currentCard as any)?.source_page) || Boolean((currentCard as any)?.source_quote);
 
   const sm2Base = currentCard
     ? {
@@ -188,8 +256,52 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     if (!currentCard) return;
     const labels: Record<number, string> = { 1: 'Again', 2: 'Hard', 3: 'Good', 4: 'Easy' };
     const useFsrs = preferFsrs(currentCard) && Boolean((currentCard as any)?.id);
+    const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+    const cardId = (currentCard as any)?.id as string | undefined;
+
+    if (jolPredicted != null && cardId) {
+      try {
+        await saveJol({
+          cardId,
+          predicted: jolPredicted as 1 | 2 | 3 | 4 | 5,
+          actualSuccess: rating >= 3,
+        });
+      } catch {
+        /* optional */
+      }
+    }
+
+    const nextHard = rating <= 2 ? hardFailStreak + 1 : 0;
+    setHardFailStreak(nextHard);
+    if (rating === 2 || nextHard >= 2) {
+      try {
+        const elab = await studyElaborate({
+          front: questionText,
+          back: answerText,
+        });
+        const hint = [elab.why, elab.connection, elab.prompt].filter(Boolean).join(' · ');
+        if (hint) setElaborateHint(hint);
+      } catch {
+        /* optional */
+      }
+    }
 
     if (useFsrs) {
+      if (offline && cardId) {
+        try {
+          await enqueuePendingReview({
+            cardId,
+            rating: rating as 1 | 2 | 3 | 4,
+            createdAt: new Date().toISOString(),
+          });
+          recordFlashcardReview();
+          toast(`Rated ${labels[rating] || rating} (queued offline)`, 'info');
+          handleNext();
+          return;
+        } catch (e) {
+          console.error(e);
+        }
+      }
       try {
         const result = await fsrsReview((currentCard as any).id, rating as 1 | 2 | 3 | 4);
         const cardIndexInAll = cards.findIndex(c => (c as any).id ? (c as any).id === (currentCard as any).id : c === currentCard);
@@ -206,6 +318,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
           setCards(updatedCards);
         }
         recordFlashcardReview();
+        void flushPendingReviews();
         toast(`Rated ${labels[rating] || rating} (FSRS)`, rating >= 3 ? 'success' : 'info');
         handleNext();
         return;
@@ -238,7 +351,31 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
       setCards(updatedCards);
     }
 
-    if ((currentCard as any)?.id) {
+    if (cardId) {
+      if (offline) {
+        try {
+          await enqueuePendingReview({
+            cardId,
+            rating: rating as 1 | 2 | 3 | 4,
+            sm2: {
+              ease_factor: updatedStats.easeFactor,
+              interval: updatedStats.interval,
+              repetitions: updatedStats.repetitions,
+              next_review: updatedStats.nextReview,
+            },
+            createdAt: new Date().toISOString(),
+          });
+          recordFlashcardReview();
+          toast(`Rated ${labels[rating] || rating} (queued offline)`, 'info');
+          handleNext();
+          return;
+        } catch (e) {
+          console.error(e);
+          toast('Could not queue offline review', 'error');
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from('cards')
         .update({
@@ -247,7 +384,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
           repetitions: updatedStats.repetitions,
           next_review: updatedStats.nextReview,
         })
-        .eq('id', (currentCard as any).id);
+        .eq('id', cardId);
 
       if (error) {
         console.error("Failed to update card in Supabase:", error.message);
@@ -257,9 +394,10 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
     }
 
     recordFlashcardReview();
+    void flushPendingReviews();
     toast(`Rated ${labels[rating] || rating}`, rating >= 3 ? 'success' : 'info');
     handleNext();
-  }, [cards, currentCard, handleNext]);
+  }, [cards, currentCard, handleNext, jolPredicted, hardFailStreak, questionText, answerText]);
 
   const handleExportJson = useCallback(() => {
     const payload = buildDeckExport(deckTitle, cards, selectedModuleCode || null);
@@ -635,10 +773,10 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
 
           {/* Flashcard Tile — touch/mobile: swipe right=Easy, left=Hard when flipped. Desktop: tap only. */}
           <div
-            onClick={handleToggleFlip}
-            onTouchStart={touchGestures ? onTouchStart : undefined}
-            onTouchEnd={touchGestures ? onTouchEnd : undefined}
-            className={`${touchGestures ? 'fios-swipe-card' : ''} w-full min-h-[280px] bg-card rounded-xl p-6 flex flex-col justify-between text-center cursor-pointer border border-border hover:border-emerald-400/50 shadow-sm dark:shadow-none transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99]`}
+            onClick={isCodeCard && isFlipped ? undefined : handleToggleFlip}
+            onTouchStart={touchGestures && !(isCodeCard && isFlipped) ? onTouchStart : undefined}
+            onTouchEnd={touchGestures && !(isCodeCard && isFlipped) ? onTouchEnd : undefined}
+            className={`${touchGestures ? 'fios-swipe-card' : ''} w-full min-h-[280px] bg-card rounded-xl p-6 flex flex-col justify-between text-center ${isCodeCard && isFlipped ? 'cursor-default' : 'cursor-pointer'} border border-border hover:border-emerald-400/50 shadow-sm dark:shadow-none transition-all duration-200 group relative overflow-hidden select-none active:scale-[0.99]`}
           >
             <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${isFlipped ? 'from-emerald-400/20' : 'from-cyan-400/20'} to-transparent rounded-tr-xl pointer-events-none`} />
 
@@ -646,24 +784,148 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded border ${
                 isFlipped ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30' : 'bg-cyan-400/10 text-cyan-400 border-cyan-400/30'
               }`}>
-                {isFlipped ? 'ANSWER' : 'QUESTION'}
+                {isFlipped ? (isCodeCard ? 'CODE LAB' : 'ANSWER') : 'QUESTION'}
               </span>
               <span className="text-[11px] text-muted-foreground uppercase tracking-wider group-hover:text-foreground transition-colors">
-                TAP TO FLIP
+                {isCodeCard && isFlipped ? 'RUN BELOW' : 'TAP TO FLIP'}
               </span>
             </div>
 
-            <div className="my-auto px-2 z-10 text-left sm:text-center">
-              <FormattedContent text={isFlipped ? answerText : questionText} />
+            <div className="my-auto px-2 z-10 text-left sm:text-center w-full">
+              {isFlipped && isCodeCard ? (
+                <CodeCardRunner
+                  language={(currentCard as any).code_language}
+                  starterCode={(currentCard as any).starter_code || answerText}
+                  expectedOutput={(currentCard as any).expected_output}
+                  prompt={questionText}
+                />
+              ) : (
+                <FormattedContent text={isFlipped ? answerText : questionText} />
+              )}
             </div>
 
-            <div className="w-full flex justify-center z-10 font-mono pt-2">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest group-hover:text-muted-foreground transition-colors">
-                {touchGestures
-                  ? 'Tap to flip · swipe right Easy / left Hard when flipped'
-                  : 'Click or tap to flip'}
-              </span>
+            <div className="w-full flex flex-wrap justify-center gap-2 z-10 font-mono pt-2">
+              {hasSource && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSourceOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border fios-border text-[10px] font-bold uppercase text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
+                >
+                  <BookOpen className="w-3 h-3 accent-solid-text" /> View Source
+                </button>
+              )}
+              {isFlipped && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTutorOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border fios-border text-[10px] font-bold uppercase text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
+                  >
+                    <MessageCircle className="w-3 h-3 accent-solid-text" /> Tutor Me
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMnemonicOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border fios-border text-[10px] font-bold uppercase text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
+                    aria-label="Mnemonic"
+                    title="Memory palace mnemonic"
+                  >
+                    <Brain className="w-3 h-3 accent-solid-text" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={studyBusy}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setStudyBusy(true);
+                      try {
+                        const r = await studyFeynman({
+                          topic: questionText,
+                          explanation: answerText,
+                        });
+                        setFeynmanHint(
+                          r.studentReply || r.feedback || 'Keep teaching — probe the edge cases.'
+                        );
+                      } catch (err) {
+                        toast(err instanceof Error ? err.message : 'Feynman failed', 'error');
+                      } finally {
+                        setStudyBusy(false);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border fios-border text-[10px] font-bold uppercase text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
+                    title="Feynman / Protégé — teach a confused first-year"
+                  >
+                    Teach
+                  </button>
+                  <button
+                    type="button"
+                    disabled={studyBusy}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setStudyBusy(true);
+                      try {
+                        const r = await studyDualCode({
+                          front: questionText,
+                          back: answerText,
+                        });
+                        setDualHint(
+                          [r.iconHint && `Icon: ${r.iconHint}`, r.audioScript]
+                            .filter(Boolean)
+                            .join(' · ')
+                        );
+                      } catch (err) {
+                        toast(err instanceof Error ? err.message : 'Dual-code failed', 'error');
+                      } finally {
+                        setStudyBusy(false);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border fios-border text-[10px] font-bold uppercase text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
+                    title="Dual-coding micro-asset"
+                  >
+                    Dual
+                  </button>
+                </>
+              )}
+              {!isFlipped && (
+                <div
+                  className="flex items-center gap-1 w-full justify-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="text-[9px] font-mono uppercase text-muted-foreground">JOL</span>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setJolPredicted(n)}
+                      className={`w-6 h-6 rounded text-[10px] font-bold border cursor-pointer ${
+                        jolPredicted === n
+                          ? 'accent-bg text-slate-950 border-transparent'
+                          : 'border-border text-muted-foreground'
+                      }`}
+                      title="Judgment of Learning — how sure are you before flipping?"
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+            {(elaborateHint || feynmanHint || dualHint) && (
+              <div className="z-10 text-[10px] text-left space-y-1 px-1 pt-1 text-[var(--fios-text-muted)]">
+                {elaborateHint && <p><span className="font-bold uppercase">Elaborate:</span> {elaborateHint}</p>}
+                {feynmanHint && <p><span className="font-bold uppercase">Feynman:</span> {feynmanHint}</p>}
+                {dualHint && <p><span className="font-bold uppercase">Dual:</span> {dualHint}</p>}
+              </div>
+            )}
           </div>
 
           {/* SM-2 Spaced Repetition Rating Buttons */}
@@ -758,6 +1020,25 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
         resourceId={savedDeckId}
         moduleCode={selectedModuleCode || undefined}
         payload={{ cardCount: cards.length }}
+      />
+      {sourceOpen && currentCard && (
+        <SourceViewer
+          page={Number((currentCard as any).source_page) || 1}
+          quote={(currentCard as any).source_quote}
+          onClose={() => setSourceOpen(false)}
+        />
+      )}
+      <SocraticTutorModal
+        open={tutorOpen}
+        onClose={() => setTutorOpen(false)}
+        cardFront={questionText}
+        cardBack={answerText}
+      />
+      <MnemonicModal
+        open={mnemonicOpen}
+        onClose={() => setMnemonicOpen(false)}
+        cardFront={questionText}
+        cardBack={answerText}
       />
     </div>
   );

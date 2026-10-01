@@ -2,8 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fs from 'node:fs';
-import path from 'node:path';
 import http from 'node:http';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import routes from './routes.js';
 import { attachLounge } from './loungeSocket.js';
@@ -137,7 +137,7 @@ const PORT = Number(process.env.PORT) || 5000;
 const httpServer = http.createServer(app);
 attachLounge(httpServer);
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`Fios listening on http://0.0.0.0:${PORT} (v${FIOS_VERSION}, lounge socket at /lounge)`);
+  console.log(`Fios listening on http://0.0.0.0:${PORT} (v${FIOS_VERSION}, lounge socket attached)`);
 });
 
 export default app;

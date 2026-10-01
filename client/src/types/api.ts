@@ -10,6 +10,20 @@ export interface Flashcard {
   interval?: number;
   repetitions?: number;
   next_review?: string | null;
+  /** Source-grounded citation fields (v3.9+). */
+  source_page?: number | null;
+  source_paragraph?: number | null;
+  source_quote?: string | null;
+  source_document_id?: string | null;
+  /** basic (default) | code */
+  card_type?: 'basic' | 'code' | string;
+  code_language?: string | null;
+  starter_code?: string | null;
+  expected_output?: string | null;
+  solution_code?: string | null;
+  scheduler?: 'sm2' | 'fsrs' | string;
+  fsrs_state?: Record<string, unknown> | null;
+  deck_id?: string;
 }
 
 export interface FlashcardResponse {

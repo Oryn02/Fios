@@ -42,6 +42,8 @@ import vivaRoutes from './routes/viva.js';
 import examRoutes from './routes/exam.js';
 import syllabusRoutes from './routes/syllabus.js';
 import cognitiveRoutes from './routes/cognitive.js';
+import advancedRoutes from './routes/advanced.js';
+import communityRoutes from './routes/community.js';
 
 const router = Router();
 
@@ -1041,5 +1043,7 @@ router.use('/viva', vivaRoutes);
 router.use('/exam', examRoutes);
 router.use('/syllabus', syllabusRoutes);
 router.use('/cognitive', cognitiveRoutes);
+router.use('/advanced', advancedRoutes);
+router.use('/community', communityRoutes);
 
 export default router;

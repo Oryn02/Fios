@@ -25,6 +25,8 @@ import { StudyStreakHeatmap } from './StudyStreakHeatmap';
 import { ExamCountdownWidget } from './ExamCountdownWidget';
 import { WeeklyGoalWidget } from './WeeklyGoalWidget';
 import { DailyQueue } from './study/DailyQueue';
+import { StudyLabExtras } from './study/StudyLabExtras';
+import { RpgProgressPanel } from './rpg/RpgProgressPanel';
 import { toast } from '../lib/toast';
 import { overviewGreeting } from '../lib/holidays';
 import { useTheme } from '../context/ThemeContext';
@@ -704,7 +706,13 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         </div>
         <div className="min-w-0 max-w-full space-y-6">
           <ExamCountdownWidget />
+          <RpgProgressPanel compact />
           <DailyQueue onOpenDeck={() => onOpenFlashcards()} />
+          <StudyLabExtras
+            onDeckReady={(deck) =>
+              onOpenFlashcards(deck.cards, deck.title, undefined, false)
+            }
+          />
         </div>
       </div>
 

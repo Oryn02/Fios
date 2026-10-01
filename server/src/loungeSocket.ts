@@ -3,14 +3,18 @@ import { Server, type Socket } from 'socket.io';
 
 const WORK_MS = 25 * 60 * 1000;
 const BREAK_MS = 5 * 60 * 1000;
+/** Body Doubling silent focus block */
+const BUDDY_FOCUS_MS = 50 * 60 * 1000;
 
 type TimerPhase = 'idle' | 'work' | 'break';
+type BuddyPhase = 'waiting' | 'focus' | 'checkin';
 
 type RoomMember = {
   socketId: string;
   userId?: string;
   displayName: string;
   studyingTopic?: string;
+  goal?: string;
 };
 
 type RoomState = {
@@ -23,7 +27,17 @@ type RoomState = {
   members: Map<string, RoomMember>;
 };
 
+type BuddyRoom = {
+  code: string;
+  moduleCode: string;
+  phase: BuddyPhase;
+  endsAt: number | null;
+  startedAt: number | null;
+  members: Map<string, RoomMember>;
+};
+
 const rooms = new Map<string, RoomState>();
+const buddyRooms = new Map<string, BuddyRoom>();
 
 function publicState(room: RoomState) {
   return {
@@ -40,6 +54,24 @@ function publicState(room: RoomState) {
       userId: m.userId,
       displayName: m.displayName,
       studyingTopic: m.studyingTopic,
+    })),
+  };
+}
+
+function publicBuddy(room: BuddyRoom) {
+  return {
+    code: room.code,
+    moduleCode: room.moduleCode,
+    phase: room.phase,
+    endsAt: room.endsAt,
+    startedAt: room.startedAt,
+    remainingMs:
+      room.endsAt != null ? Math.max(0, room.endsAt - Date.now()) : null,
+    members: [...room.members.values()].map((m) => ({
+      socketId: m.socketId,
+      userId: m.userId,
+      displayName: m.displayName,
+      goal: m.goal,
     })),
   };
 }
@@ -78,9 +110,21 @@ function tickRoom(io: Server, room: RoomState) {
   io.to(room.code).emit('lounge:state', publicState(room));
 }
 
+function tickBuddy(io: Server, room: BuddyRoom) {
+  if (room.phase !== 'focus' || room.endsAt == null) return;
+  if (Date.now() < room.endsAt) return;
+  room.phase = 'checkin';
+  room.endsAt = null;
+  io.to(room.code).emit('buddy:state', publicBuddy(room));
+  io.to(room.code).emit('buddy:checkin', {
+    message: 'Focus block complete — share how it went (chat unlocked).',
+  });
+}
+
 /**
- * Attach Socket.io lounge server to an HTTP server.
- * Rooms: join/leave, shared Pomodoro timer, chat (blocked during work), presence.
+ * Attach Socket.io lounge + focus-buddy server to an HTTP server.
+ * Lounge: join/leave, shared Pomodoro, chat (blocked during work), presence.
+ * Buddy: match by moduleCode, 50m silent timer, goals, end check-in chat only.
  */
 export function attachLounge(httpServer: HttpServer): Server {
   const io = new Server(httpServer, {
@@ -88,11 +132,17 @@ export function attachLounge(httpServer: HttpServer): Server {
     cors: { origin: true, methods: ['GET', 'POST'] },
   });
 
-  // Soft timer ticker
   const interval = setInterval(() => {
     for (const room of rooms.values()) {
       try {
         tickRoom(io, room);
+      } catch {
+        /* ignore */
+      }
+    }
+    for (const room of buddyRooms.values()) {
+      try {
+        tickBuddy(io, room);
       } catch {
         /* ignore */
       }
@@ -102,6 +152,7 @@ export function attachLounge(httpServer: HttpServer): Server {
 
   io.on('connection', (socket: Socket) => {
     let joinedCode: string | null = null;
+    let buddyRoom: string | null = null;
 
     socket.on(
       'lounge:join',
@@ -148,6 +199,124 @@ export function attachLounge(httpServer: HttpServer): Server {
       }
     );
 
+    // ---- Body Doubling / Focus Buddy (50m silent, goals, end check-in chat) ----
+    socket.on(
+      'buddy:find',
+      (payload: {
+        moduleCode?: string;
+        displayName?: string;
+        userId?: string;
+        goal?: string;
+      }) => {
+        try {
+          const moduleCode = String(payload?.moduleCode || 'GENERAL')
+            .trim()
+            .toUpperCase()
+            .slice(0, 24) || 'GENERAL';
+          const displayName = String(payload?.displayName || 'Student').slice(0, 40);
+          const userId = payload?.userId ? String(payload.userId) : undefined;
+          const goal = payload?.goal ? String(payload.goal).slice(0, 200) : undefined;
+
+          // Leave prior buddy room
+          if (buddyRoom) {
+            leaveBuddy(io, socket, buddyRoom);
+            buddyRoom = null;
+          }
+
+          // Match waiting queue for this module
+          let room = [...buddyRooms.values()].find(
+            (r) =>
+              r.moduleCode === moduleCode &&
+              r.phase === 'waiting' &&
+              r.members.size < 2
+          );
+          if (!room) {
+            const code = `BD-${moduleCode.slice(0, 8)}-${Math.random().toString(36).slice(2, 6)}`.toUpperCase();
+            room = {
+              code,
+              moduleCode,
+              phase: 'waiting',
+              endsAt: null,
+              startedAt: null,
+              members: new Map(),
+            };
+            buddyRooms.set(code, room);
+          }
+
+          room.members.set(socket.id, {
+            socketId: socket.id,
+            userId,
+            displayName,
+            goal,
+          });
+          socket.join(room.code);
+          buddyRoom = room.code;
+
+          if (room.members.size >= 2) {
+            room.phase = 'focus';
+            room.startedAt = Date.now();
+            room.endsAt = Date.now() + BUDDY_FOCUS_MS;
+          }
+
+          io.to(room.code).emit('buddy:state', publicBuddy(room));
+          socket.emit('buddy:matched', publicBuddy(room));
+        } catch (err) {
+          socket.emit('buddy:error', {
+            error: err instanceof Error ? err.message : 'Buddy match failed',
+          });
+        }
+      }
+    );
+
+    socket.on('buddy:goal', (payload: { goal?: string }) => {
+      if (!buddyRoom) return;
+      const room = buddyRooms.get(buddyRoom);
+      if (!room) return;
+      const member = room.members.get(socket.id);
+      if (!member) return;
+      member.goal = String(payload?.goal || '').slice(0, 200);
+      io.to(buddyRoom).emit('buddy:state', publicBuddy(room));
+    });
+
+    socket.on('buddy:leave', () => {
+      if (buddyRoom) {
+        leaveBuddy(io, socket, buddyRoom);
+        buddyRoom = null;
+      }
+    });
+
+    socket.on('buddy:chat', (payload: { text?: string }) => {
+      if (!buddyRoom) return;
+      const room = buddyRooms.get(buddyRoom);
+      if (!room) return;
+      // Chat only during check-in (after focus) or waiting
+      if (room.phase === 'focus') {
+        socket.emit('buddy:error', {
+          error: 'Silent focus — chat unlocks at the end check-in',
+          code: 'BUDDY_SILENT',
+        });
+        return;
+      }
+      const text = String(payload?.text || '').trim().slice(0, 500);
+      if (!text) return;
+      const member = room.members.get(socket.id);
+      io.to(buddyRoom).emit('buddy:chat', {
+        text,
+        at: new Date().toISOString(),
+        from: {
+          socketId: socket.id,
+          displayName: member?.displayName || 'Student',
+          userId: member?.userId,
+        },
+      });
+    });
+
+    socket.on('buddy:sync', () => {
+      if (!buddyRoom) return;
+      const room = buddyRooms.get(buddyRoom);
+      if (room) socket.emit('buddy:state', publicBuddy(room));
+    });
+
     socket.on('lounge:leave', () => {
       if (joinedCode) {
         leaveRoom(io, socket, joinedCode);
@@ -177,7 +346,6 @@ export function attachLounge(httpServer: HttpServer): Server {
       if (!joinedCode) return;
       const room = rooms.get(joinedCode);
       if (!room) return;
-      // Any member can start; host preferred but soft
       const phase = payload?.phase === 'break' ? 'break' : 'work';
       room.phase = phase;
       room.startedAt = Date.now();
@@ -247,6 +415,10 @@ export function attachLounge(httpServer: HttpServer): Server {
         leaveRoom(io, socket, joinedCode);
         joinedCode = null;
       }
+      if (buddyRoom) {
+        leaveBuddy(io, socket, buddyRoom);
+        buddyRoom = null;
+      }
     });
   });
 
@@ -267,6 +439,18 @@ function leaveRoom(io: Server, socket: Socket, code: string) {
     if (next) room.hostId = next.socketId;
   }
   io.to(code).emit('lounge:state', publicState(room));
+}
+
+function leaveBuddy(io: Server, socket: Socket, code: string) {
+  const room = buddyRooms.get(code);
+  if (!room) return;
+  room.members.delete(socket.id);
+  socket.leave(code);
+  if (room.members.size === 0) {
+    buddyRooms.delete(code);
+    return;
+  }
+  io.to(code).emit('buddy:state', publicBuddy(room));
 }
 
 export default attachLounge;

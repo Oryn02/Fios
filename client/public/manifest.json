@@ -37,5 +37,21 @@
       "type": "image/svg+xml",
       "purpose": "any"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Review due cards",
+      "short_name": "Review",
+      "description": "Open flashcards due for review",
+      "url": "/?tab=flashcards&review=1",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Study streak",
+      "short_name": "Streak",
+      "description": "Open overview streak & daily queue",
+      "url": "/?tab=overview&streak=1",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }
