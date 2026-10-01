@@ -8,14 +8,24 @@ import {
   summarySchema,
   recallSchema,
   mediaNotesSchema,
+  oralExamSchema,
+  occlusionMaskSchema,
 } from './schemas.js';
 
 dotenv.config();
 
 const serverApiKey = process.env.GEMINI_API_KEY;
 
-/** Primary Gemini model used for structured study generation. */
-const MODEL_NAME = 'gemini-3.8-flash';
+/** Primary Gemini Flash model (override with GEMINI_FLASH_MODEL). */
+export const GEMINI_FLASH_MODEL =
+  String(process.env.GEMINI_FLASH_MODEL || '').trim() || 'gemini-3.8-flash';
+
+/** Gemini Pro fallback for harder tasks (override with GEMINI_PRO_MODEL). */
+export const GEMINI_PRO_MODEL =
+  String(process.env.GEMINI_PRO_MODEL || '').trim() || 'gemini-3.1-pro';
+
+/** @deprecated Prefer GEMINI_FLASH_MODEL — kept for internal callers. */
+const MODEL_NAME = GEMINI_FLASH_MODEL;
 
 /**
  * Resolve a Gemini client. Prefers a per-request (BYO) key supplied by the
@@ -30,8 +40,60 @@ function getClient(userApiKey?: string): GoogleGenAI {
   return new GoogleGenAI({ apiKey });
 }
 
+/** True when the request will bill against the server GEMINI_API_KEY. */
+export function isPlatformKey(userApiKey?: string): boolean {
+  const byo = (userApiKey && userApiKey.trim()) || '';
+  return !byo && Boolean(serverApiKey);
+}
+
 function cleanJsonResponse(rawText: string): string {
   return rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+}
+
+function extractText(response: unknown): string {
+  const r = response as { text?: unknown; candidates?: unknown };
+  if (typeof r?.text === 'string') return r.text;
+  if (Array.isArray(r?.candidates)) {
+    return (r.candidates as any[])
+      .flatMap((c) => c?.content?.parts || [])
+      .map((p) => p?.text || '')
+      .join('');
+  }
+  return '';
+}
+
+/**
+ * Generate with Flash, falling back to Pro on model/rate failures.
+ */
+export async function generateWithFallback(
+  opts: {
+    contents: string | unknown;
+    config?: Record<string, unknown>;
+    apiKey?: string;
+    preferPro?: boolean;
+  }
+): Promise<{ text: string; model: string }> {
+  const ai = getClient(opts.apiKey);
+  const primary = opts.preferPro ? GEMINI_PRO_MODEL : GEMINI_FLASH_MODEL;
+  const secondary = opts.preferPro ? GEMINI_FLASH_MODEL : GEMINI_PRO_MODEL;
+  const models = [primary, secondary];
+  let lastErr: unknown;
+  for (const model of models) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: opts.contents as any,
+        config: opts.config as any,
+      });
+      const text = extractText(response);
+      if (!text.trim()) throw new Error('No text returned from Gemini model.');
+      return { text, model };
+    } catch (err) {
+      lastErr = err;
+      console.warn(`Gemini model ${model} failed, trying fallback…`, err);
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr || 'Gemini request failed'));
 }
 
 /** Count whitespace-separated words in a string. */
@@ -513,4 +575,156 @@ export async function ragRetrieve(
     chunks: result.map((r) => r.chunk),
     scores: result.map((r) => Math.round(r.score * 10000) / 10000),
   };
+}
+
+export type OralExamTurn = {
+  question: string;
+  rubricHint: string;
+  followUp?: string;
+  score: number;
+  feedback: string;
+  model: string;
+};
+
+/**
+ * Mock oral examiner turn. Prefer Pro for deeper probing when requested.
+ */
+export async function runOralExamTurn(
+  opts: {
+    material: string;
+    history?: { role: 'examiner' | 'student'; text: string }[];
+    studentAnswer?: string;
+    apiKey?: string;
+    preferPro?: boolean;
+  }
+): Promise<OralExamTurn> {
+  const history = opts.history || [];
+  const transcript = history
+    .map((h) => `${h.role === 'examiner' ? 'Examiner' : 'Student'}: ${h.text}`)
+    .join('\n');
+  const prompt = `You are a fair but rigorous oral examiner.
+Study material:
+${opts.material.slice(0, 24000)}
+
+Prior dialogue:
+${transcript || '(none — ask an opening question)'}
+
+${opts.studentAnswer ? `Student's latest answer:\n${opts.studentAnswer}\n\nScore it briefly, then ask the next question.` : 'Ask a strong opening oral exam question.'}`;
+
+  const { text, model } = await generateWithFallback({
+    contents: prompt,
+    apiKey: opts.apiKey,
+    preferPro: opts.preferPro ?? true,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: oralExamSchema,
+      systemInstruction:
+        'You run viva-style oral exams. Questions should be clear for speaking aloud. Feedback is concise and constructive.',
+    },
+  });
+  const parsed = JSON.parse(cleanJsonResponse(text));
+  return {
+    question: String(parsed.question || ''),
+    rubricHint: String(parsed.rubricHint || ''),
+    followUp: String(parsed.followUp || ''),
+    score: Number(parsed.score) || 0,
+    feedback: String(parsed.feedback || ''),
+    model,
+  };
+}
+
+export type OcclusionRegion = {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+/**
+ * Propose diagram occlusion masks from an image (base64) + optional hint text.
+ */
+export async function generateOcclusionMasks(
+  opts: {
+    imageBase64: string;
+    mimeType?: string;
+    hint?: string;
+    apiKey?: string;
+  }
+): Promise<{ regions: OcclusionRegion[]; model: string }> {
+  const mime = opts.mimeType || 'image/png';
+  const ai = getClient(opts.apiKey);
+  const contents = [
+    {
+      role: 'user',
+      parts: [
+        {
+          inlineData: {
+            mimeType: mime,
+            data: opts.imageBase64.replace(/^data:[^;]+;base64,/, ''),
+          },
+        },
+        {
+          text: `Identify key labeled regions in this study diagram for occlusion flashcards.
+Return bounding boxes as percentages (0-100) of image width/height.
+${opts.hint ? `Focus: ${opts.hint}` : 'Cover the main labeled parts a student should recall.'}`,
+        },
+      ],
+    },
+  ];
+
+  let lastErr: unknown;
+  for (const model of [GEMINI_FLASH_MODEL, GEMINI_PRO_MODEL]) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: contents as any,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: occlusionMaskSchema,
+          systemInstruction:
+            'You create diagram occlusion study regions. Boxes must stay within 0-100 and not cover the entire image.',
+        },
+      });
+      const raw = extractText(response);
+      if (!raw.trim()) throw new Error('No text returned from Gemini model.');
+      const parsed = JSON.parse(cleanJsonResponse(raw));
+      const regions: OcclusionRegion[] = Array.isArray(parsed?.regions)
+        ? parsed.regions.map((r: any, i: number) => ({
+            id: String(r.id || `r${i + 1}`),
+            label: String(r.label || 'Region'),
+            x: Math.min(100, Math.max(0, Number(r.x) || 0)),
+            y: Math.min(100, Math.max(0, Number(r.y) || 0)),
+            w: Math.min(100, Math.max(1, Number(r.w) || 10)),
+            h: Math.min(100, Math.max(1, Number(r.h) || 10)),
+          }))
+        : [];
+      return { regions, model };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr || 'Occlusion failed'));
+}
+
+/**
+ * Lightweight SaaS generate helper for /api/ai/generate (does not replace flashcards route).
+ */
+export async function saasGenerate(
+  opts: {
+    prompt: string;
+    system?: string;
+    apiKey?: string;
+    preferPro?: boolean;
+  }
+): Promise<{ text: string; model: string }> {
+  return generateWithFallback({
+    contents: opts.prompt,
+    apiKey: opts.apiKey,
+    preferPro: opts.preferPro,
+    config: {
+      systemInstruction: opts.system || 'You are a helpful Fios study assistant.',
+    },
+  });
 }

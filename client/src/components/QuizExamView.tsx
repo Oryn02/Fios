@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { HelpCircle, CheckCircle2, XCircle, RotateCcw, ArrowRight, Sparkles, Save, Folder, Trash2, Loader2, FileText } from 'lucide-react';
+import { HelpCircle, CheckCircle2, XCircle, RotateCcw, ArrowRight, Sparkles, Save, Folder, Trash2, Loader2, FileText, Radio } from 'lucide-react';
 import { generateQuiz } from '../services/quizApi';
 import { getQuizzes, saveQuiz, deleteQuiz, updateQuizTitle } from '../lib/mcqService';
 import { getUserModules, type DBModule, moduleDisplayName, resolveModuleLabel } from '../lib/moduleService';
@@ -11,6 +11,7 @@ import { useAiAuth } from '../context/AiAuthContext';
 import { toast } from '../lib/toast';
 import { GeminiLatencyHint } from './GeminiLatencyHint';
 import { friendlyGeminiError } from '../lib/geminiUx';
+import { MultiplayerLobby } from './quiz/MultiplayerLobby';
 
 interface QuizExamViewProps {
   initialQuizId?: string | null;
@@ -35,6 +36,7 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
   const [score, setScore] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [quizFinished, setQuizFinished] = useState(false);
+  const [showLive, setShowLive] = useState(false);
 
   const loadSaved = useCallback(async () => {
     const q = await getQuizzes();
@@ -242,10 +244,24 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
             <button onClick={resetTaking} className="px-6 py-3 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl inline-flex items-center gap-2 cursor-pointer transition-colors">
               <RotateCcw className="w-4 h-4" /> Retake
             </button>
+            <button
+              type="button"
+              onClick={() => setShowLive(true)}
+              className="px-6 py-3 bg-secondary hover:bg-muted text-foreground font-black italic uppercase text-xs rounded-xl inline-flex items-center gap-2 cursor-pointer transition-colors border border-border"
+            >
+              <Radio className="w-4 h-4" /> Host live quiz
+            </button>
             <button onClick={() => setQuestions([])} className="px-6 py-3 bg-secondary hover:bg-muted text-foreground font-black italic uppercase text-xs rounded-xl inline-flex items-center gap-2 cursor-pointer transition-colors border border-border">
               New Exam
             </button>
           </div>
+          {showLive && (
+            <MultiplayerLobby
+              seedQuestions={questions}
+              seedTitle={title || 'Live quiz'}
+              onClose={() => setShowLive(false)}
+            />
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -267,7 +283,21 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
             <button onClick={handleSaveQuiz} className="w-full sm:w-auto px-4 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
               <Save className="w-3.5 h-3.5" /> Save
             </button>
+            <button
+              type="button"
+              onClick={() => setShowLive(true)}
+              className="w-full sm:w-auto px-4 py-2 border border-border text-foreground font-black italic uppercase text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+            >
+              <Radio className="w-3.5 h-3.5" /> Live
+            </button>
           </div>
+          {showLive && (
+            <MultiplayerLobby
+              seedQuestions={questions}
+              seedTitle={title || 'Live quiz'}
+              onClose={() => setShowLive(false)}
+            />
+          )}
           {saveMsg && <p className="text-[11px] font-mono accent-solid-text font-bold">{saveMsg}</p>}
 
           <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm dark:shadow-none">

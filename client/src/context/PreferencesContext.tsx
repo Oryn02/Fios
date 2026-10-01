@@ -31,7 +31,7 @@ export type SmartMetricId = 'dueCards' | 'tasks' | 'streak' | 'timer' | 'upcomin
 export const DEFAULT_WIDGET_ORDER: WidgetId[] = ['flightPlan', 'heatmap', 'dueCards', 'calendar'];
 export const DEFAULT_MOBILE_NAV = ['overview', 'modules', 'code', 'documents', 'tutor'];
 export const DEFAULT_NAV_ORDER = [
-  'overview', 'flashcards', 'modules', 'quiz', 'code', 'documents', 'tutor',
+  'overview', 'flashcards', 'modules', 'quiz', 'code', 'documents', 'tutor', 'social',
   'atu-calendar', 'grades', 'timer', 'schedule', 'settings', 'updates',
 ];
 

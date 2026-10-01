@@ -327,7 +327,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '3.7.7',
+      version: '3.8.0',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -1080,6 +1080,39 @@ const SettingsTabInner: React.FC = () => {
         </div>
       </section>
 
+      {/* FSRS opt-in (beta) — SM-2 remains default */}
+      <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-3">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-[var(--fios-text-muted)]">
+          Spaced repetition
+        </h2>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-1 accent-[var(--fios-accent-solid)]"
+            defaultChecked={(() => {
+              try {
+                return localStorage.getItem('fios_fsrs_opt_in') === '1';
+              } catch {
+                return false;
+              }
+            })()}
+            onChange={(e) => {
+              try {
+                localStorage.setItem('fios_fsrs_opt_in', e.target.checked ? '1' : '0');
+              } catch {
+                /* ignore */
+              }
+            }}
+          />
+          <span>
+            <span className="text-sm font-bold text-[var(--fios-text)]">FSRS scheduler (beta)</span>
+            <p className="text-xs text-[var(--fios-text-muted)] mt-1">
+              When enabled, saved-card ratings use the server FSRS path. New decks still default to SM-2 until you opt in.
+            </p>
+          </span>
+        </label>
+      </section>
+
       {/* GEMINI API KEY (BYO KEY & WALKTHROUGH) */}
       <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <div className="flex items-center justify-between">
@@ -1171,7 +1204,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-muted-foreground">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.7.7.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.8.0.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button

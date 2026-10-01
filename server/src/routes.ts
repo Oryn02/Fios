@@ -24,6 +24,12 @@ import {
   sendTestPush,
   type PushSubscriptionJSON,
 } from './pushService.js';
+import aiRoutes from './routes/ai.js';
+import studyRoutes from './routes/study.js';
+import socialRoutes from './routes/social.js';
+import mediaSaasRoutes from './routes/media.js';
+import quizLiveRoutes from './routes/quiz.js';
+import analyticsRoutes from './routes/analytics.js';
 
 const router = Router();
 
@@ -1001,5 +1007,15 @@ router.post('/push/test', async (req: Request, res: Response) => {
     return res.status(status).json({ error: error?.message || 'Failed to send test push' });
   }
 });
+
+// ---------------------------------------------------------------------------
+// Master SaaS modular routers (additive — legacy handlers above stay intact)
+// ---------------------------------------------------------------------------
+router.use('/ai', aiRoutes);
+router.use('/study', studyRoutes);
+router.use('/social', socialRoutes);
+router.use('/media', mediaSaasRoutes);
+router.use('/quiz', quizLiveRoutes);
+router.use('/analytics', analyticsRoutes);
 
 export default router;

@@ -72,6 +72,22 @@ export async function getStudyActivity(weeks = 52): Promise<DayActivity[]> {
   const sessions = await getFocusSessions(start.toISOString());
   const reviews = loadReviewDays();
 
+  // Prefer DB card_reviews when available (FSRS / logged reviews)
+  try {
+    const { supabase } = await import('./supabase');
+    const { data } = await supabase
+      .from('card_reviews')
+      .select('created_at')
+      .gte('created_at', start.toISOString())
+      .limit(2000);
+    for (const row of data || []) {
+      const key = dayKey(new Date(row.created_at));
+      reviews[key] = (reviews[key] || 0) + 1;
+    }
+  } catch {
+    /* fall back to localStorage only */
+  }
+
   const byDay = new Map<string, { minutes: number; reviews: number }>();
 
   for (let i = 0; i < weeks * 7; i++) {

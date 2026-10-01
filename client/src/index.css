@@ -628,7 +628,7 @@ input, select, textarea { font-size: 16px; }
 }
 
 /*
-  Drawer open / body scroll lock: block sideways document pan & rubber-band (v3.7.7).
+  Drawer open / body scroll lock: block sideways document pan & rubber-band (v3.8.0).
   Inline styles in useBodyScrollLock mirror these; class is the CSS fallback.
 */
 html.fios-scroll-locked,

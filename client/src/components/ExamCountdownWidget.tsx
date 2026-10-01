@@ -4,6 +4,7 @@ import { getUserModules, type DBModule, moduleDisplayName } from '../lib/moduleS
 import { getTasks } from '../lib/taskService';
 import { parseExamDate } from '../lib/agendaService';
 import type { Task } from '../types/db';
+import { supabase } from '../lib/supabase';
 
 interface CountdownItem {
   id: string;
@@ -13,11 +14,31 @@ interface CountdownItem {
   moduleCode?: string | null;
 }
 
-function buildItems(modules: DBModule[], tasks: Task[]): CountdownItem[] {
+function buildItems(
+  modules: DBModule[],
+  tasks: Task[],
+  moduleExams: { id: string; module_id: string; title: string; exam_at: string }[]
+): CountdownItem[] {
   const now = Date.now();
   const items: CountdownItem[] = [];
+  const modulesWithExtra = new Set(moduleExams.map((e) => e.module_id));
+
+  for (const e of moduleExams) {
+    const at = new Date(e.exam_at);
+    if (Number.isNaN(at.getTime()) || at.getTime() < now - 3600000) continue;
+    const mod = modules.find((m) => m.id === e.module_id);
+    items.push({
+      id: `mex-${e.id}`,
+      label: `${e.title || 'Exam'}${mod ? ` · ${moduleDisplayName(mod)}` : ''}`,
+      kind: 'exam',
+      at,
+      moduleCode: mod?.code,
+    });
+  }
 
   for (const m of modules) {
+    // Prefer module_exams when present for this module
+    if (modulesWithExtra.has(m.id)) continue;
     const at = parseExamDate(m.exam_date);
     if (!at || at.getTime() < now - 3600000) continue;
     items.push({
@@ -60,17 +81,36 @@ function partsUntil(target: Date, now: Date) {
 export const ExamCountdownWidget: React.FC = () => {
   const [modules, setModules] = useState<DBModule[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [moduleExams, setModuleExams] = useState<
+    { id: string; module_id: string; title: string; exam_at: string }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
     let cancelled = false;
     const load = () => {
-      Promise.all([getUserModules(), getTasks()])
-        .then(([m, t]) => {
+      Promise.all([
+        getUserModules(),
+        getTasks(),
+        (async () => {
+          try {
+            const { data, error } = await supabase
+              .from('module_exams')
+              .select('id, module_id, title, exam_at')
+              .order('exam_at', { ascending: true });
+            if (error) return [];
+            return data || [];
+          } catch {
+            return [];
+          }
+        })(),
+      ])
+        .then(([m, t, exams]) => {
           if (!cancelled) {
             setModules(m);
             setTasks(t);
+            setModuleExams(exams as any);
           }
         })
         .finally(() => { if (!cancelled) setLoading(false); });
@@ -91,7 +131,10 @@ export const ExamCountdownWidget: React.FC = () => {
     return () => window.clearInterval(id);
   }, []);
 
-  const upcoming = useMemo(() => buildItems(modules, tasks), [modules, tasks]);
+  const upcoming = useMemo(
+    () => buildItems(modules, tasks, moduleExams),
+    [modules, tasks, moduleExams]
+  );
   const next = upcoming[0];
   const countdown = next ? partsUntil(next.at, now) : null;
 
