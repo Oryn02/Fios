@@ -41,7 +41,6 @@ import { normalizeBirthday } from '../lib/holidays';
 import { LmsConnectPanel } from './lms/LmsConnectPanel';
 import { RpgProgressPanel, isAccentUnlocked } from './rpg/RpgProgressPanel';
 import { downloadModuleVault } from '../lib/vaultExport';
-import { getUserModules, moduleDisplayName } from '../lib/moduleService';
 import {
   AI_STUDIO_KEY_URL,
   AI_STUDIO_HOME_URL,
@@ -94,20 +93,6 @@ const SettingsTabInner: React.FC = () => {
   const [showSupport, setShowSupport] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [gistStatus, setGistStatus] = useState<string | null>(null);
-  const [vaultModule, setVaultModule] = useState('');
-  const [vaultBusy, setVaultBusy] = useState(false);
-  const [vaultModules, setVaultModules] = useState<{ code: string; label: string }[]>([]);
-
-  useEffect(() => {
-    void getUserModules().then((mods) => {
-      setVaultModules(
-        mods.map((m) => ({
-          code: m.code || m.id,
-          label: moduleDisplayName(m),
-        }))
-      );
-    }).catch(() => undefined);
-  }, []);
 
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -1263,7 +1248,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-muted-foreground">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.9.0.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v4.0.0.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button

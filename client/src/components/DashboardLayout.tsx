@@ -38,10 +38,10 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Timetable', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.9.0', icon: Sparkles },
+  { id: 'updates', label: 'Updates v4.0.0', icon: Sparkles },
 ];
 
-/** Mobile drawer sections — Extended Tools & Settings regroup (v3.8.0). */
+/** Mobile drawer sections — Extended Tools & Settings regroup (v4.0.0). */
 const DRAWER_SECTIONS: { label: string; ids: readonly string[] }[] = [
   { label: 'Core Hubs', ids: ['overview', 'flashcards', 'modules', 'schedule', 'atu-calendar'] },
   { label: 'Academic Tools', ids: ['quiz', 'code', 'documents', 'tutor', 'social', 'grades', 'timer'] },
@@ -637,10 +637,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               data-fios-version-badge
               className="relative z-[65] inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 3.9.0"
+              aria-label="Fios version 4.0.0"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v3.9.0
+              v4.0.0
             </span>
             {zenMode && (
               <button

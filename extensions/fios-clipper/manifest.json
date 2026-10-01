@@ -3,7 +3,11 @@
   "name": "Fios Web Clipper",
   "version": "3.9.0",
   "description": "Clip Canvas, Moodle, Wikipedia, or any page into a Fios flashcard deck or audio recap.",
-  "permissions": ["activeTab", "storage", "scripting"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
   "host_permissions": [
     "https://fios-web.onrender.com/*",
     "https://*.onrender.com/*",
@@ -33,8 +37,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content/content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/content.js"
+      ],
       "run_at": "document_idle"
     }
   ],

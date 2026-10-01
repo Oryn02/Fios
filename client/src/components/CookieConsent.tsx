@@ -2,34 +2,91 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cookie } from 'lucide-react';
 
-const STORAGE_KEY = 'fios_cookie_consent';
+export const CONSENT_KEY = 'fios_cookie_consent';
+
+export type ConsentPrefs = {
+  accepted: boolean;
+  essential: true;
+  /** Theme/nav/widget preference persistence beyond bare essentials */
+  preferences: boolean;
+  at: string;
+};
+
+export function readConsent(): ConsentPrefs | null {
+  try {
+    const raw = localStorage.getItem(CONSENT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<ConsentPrefs>;
+    return {
+      accepted: Boolean(parsed.accepted),
+      essential: true,
+      preferences: parsed.preferences !== false,
+      at: typeof parsed.at === 'string' ? parsed.at : new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** True when user has allowed preference-category local persistence. Essential always allowed. */
+export function preferencesAllowed(): boolean {
+  const c = readConsent();
+  if (!c) return true; // pre-banner: keep app functional with existing prefs
+  return c.preferences !== false;
+}
 
 export function resetCookieConsent() {
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(CONSENT_KEY);
   window.dispatchEvent(new Event('fios-cookie-reset'));
 }
 
-/** Open shared Privacy Policy from the consent banner (Landing/Settings listen). */
 export function openPrivacyFromConsent() {
   window.dispatchEvent(new Event('fios-open-privacy'));
 }
 
+export function openCookiePolicyFromConsent() {
+  window.dispatchEvent(new Event('fios-open-cookies'));
+}
+
+function writeConsent(prefs: Omit<ConsentPrefs, 'at' | 'essential'>) {
+  const payload: ConsentPrefs = {
+    accepted: true,
+    essential: true,
+    preferences: prefs.preferences,
+    at: new Date().toISOString(),
+  };
+  localStorage.setItem(CONSENT_KEY, JSON.stringify(payload));
+  window.dispatchEvent(new Event('fios-cookie-updated'));
+}
+
 export const CookieConsent: React.FC = () => {
   const [visible, setVisible] = useState(false);
+  const [showPrefs, setShowPrefs] = useState(false);
+  const [prefToggle, setPrefToggle] = useState(true);
 
   useEffect(() => {
-    const check = () => setVisible(!localStorage.getItem(STORAGE_KEY));
+    const check = () => setVisible(!localStorage.getItem(CONSENT_KEY));
     check();
     window.addEventListener('fios-cookie-reset', check);
     return () => window.removeEventListener('fios-cookie-reset', check);
   }, []);
 
-  const accept = () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ accepted: true, essential: true, at: new Date().toISOString() })
-    );
+  const acceptEssentialOnly = () => {
+    writeConsent({ accepted: true, preferences: false });
     setVisible(false);
+    setShowPrefs(false);
+  };
+
+  const acceptAll = () => {
+    writeConsent({ accepted: true, preferences: true });
+    setVisible(false);
+    setShowPrefs(false);
+  };
+
+  const saveCustom = () => {
+    writeConsent({ accepted: true, preferences: prefToggle });
+    setVisible(false);
+    setShowPrefs(false);
   };
 
   return (
@@ -51,24 +108,74 @@ export const CookieConsent: React.FC = () => {
               <p className="text-xs font-bold text-[var(--fios-text)]">Cookies & local storage</p>
               <p className="text-[11px] text-[var(--fios-text-muted)] leading-relaxed">
                 Fios uses <strong className="text-[var(--fios-text)]">essential</strong> browser storage for sign-in,
-                preferences, offline study caches, and PWA install state. We do not sell data or run third-party ad
-                trackers or analytics SDKs. Optional feedback, support messages, AI uploads, and Class Reminders are
-                described in our Privacy Policy.
+                security, offline study caches, and PWA install state so the app keeps working. Optional{' '}
+                <strong className="text-[var(--fios-text)]">preferences</strong> storage remembers theme, nav layout, and
+                similar UI choices. We do not sell data or run third-party ad trackers / analytics SDKs. Your Gemini API
+                key is never stored in a cookie.
               </p>
+
+              {showPrefs && (
+                <label className="flex items-start gap-2 text-[11px] text-[var(--fios-text-muted)] border fios-border rounded-lg p-2 bg-[var(--fios-surface-2)]">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={prefToggle}
+                    onChange={(e) => setPrefToggle(e.target.checked)}
+                  />
+                  <span>
+                    <strong className="text-[var(--fios-text)]">Preferences</strong> — save theme, accent, widget order,
+                    and nav slots locally (and sync to your profile when signed in). Essential storage stays on.
+                  </span>
+                </label>
+              )}
+
               <div className="flex flex-wrap items-center gap-2">
+                {!showPrefs ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={acceptAll}
+                      className="touch-target-row px-4 py-2.5 min-h-11 accent-bg text-slate-950 text-[11px] font-black uppercase rounded-lg cursor-pointer active:opacity-90"
+                    >
+                      Accept all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={acceptEssentialOnly}
+                      className="touch-target-row px-3 py-2.5 min-h-11 text-[11px] font-mono font-bold uppercase border fios-border rounded-lg text-[var(--fios-text)] cursor-pointer"
+                    >
+                      Essential only
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPrefs(true)}
+                      className="touch-target-row px-3 py-2.5 min-h-11 text-[11px] font-mono font-bold uppercase accent-solid-text cursor-pointer underline"
+                    >
+                      Preferences
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={saveCustom}
+                    className="touch-target-row px-4 py-2.5 min-h-11 accent-bg text-slate-950 text-[11px] font-black uppercase rounded-lg cursor-pointer"
+                  >
+                    Save choices
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={accept}
-                  className="touch-target-row px-4 py-2.5 min-h-11 accent-bg text-slate-950 text-[11px] font-black uppercase rounded-lg cursor-pointer active:opacity-90"
+                  onClick={openCookiePolicyFromConsent}
+                  className="touch-target-row px-3 py-2.5 min-h-11 text-[11px] font-mono font-bold uppercase accent-solid-text cursor-pointer underline"
                 >
-                  Accept essential
+                  Cookie Policy
                 </button>
                 <button
                   type="button"
                   onClick={openPrivacyFromConsent}
-                  className="touch-target-row px-3 py-2.5 min-h-11 text-[11px] font-mono font-bold uppercase accent-solid-text cursor-pointer underline active:opacity-80"
+                  className="touch-target-row px-3 py-2.5 min-h-11 text-[11px] font-mono font-bold uppercase accent-solid-text cursor-pointer underline"
                 >
-                  Privacy Policy
+                  Privacy
                 </button>
               </div>
             </div>

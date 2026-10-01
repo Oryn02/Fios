@@ -526,10 +526,10 @@ create table if not exists public.card_jol_events (
   rating integer,
   created_at timestamptz not null default now()
 );
-create index if not exists card_jol_user_idx on public.card_jol_events (user_id, created_at desc);
+create index if not exists card_jol_events_user_idx on public.card_jol_events (user_id, created_at desc);
 alter table public.card_jol_events enable row level security;
-drop policy if exists card_jol_owner on public.card_jol_events;
-create policy card_jol_owner on public.card_jol_events
+drop policy if exists card_jol_events_owner on public.card_jol_events;
+create policy card_jol_events_owner on public.card_jol_events
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 grant select, insert, update, delete on public.card_jol_events to authenticated;
 

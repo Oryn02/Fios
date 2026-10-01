@@ -17,86 +17,87 @@ interface LandingPageProps {
 
 const features = [
   {
-    icon: Calendar,
-    title: 'Timetable & unified agenda',
-    body: 'Sync any college iCal feed or build a manual timetable. Classes and timed tasks interleave on one agenda with Next Up and finished-class mute.',
-  },
-  {
     icon: Layers,
-    title: 'SM-2 flashcards',
-    body: 'AI decks scheduled with corrected Hard/Easy intervals, local-day due dates, and touch swipe Easy/Hard on mobile.',
-  },
-  {
-    icon: Bot,
-    title: 'AI Tutor',
-    body: 'Full-screen chat grounded in your notes when you want RAG. Bring your own Gemini key — your quota, your data.',
-  },
-  {
-    icon: FileText,
-    title: 'Smart Notes',
-    body: 'Upload PDFs and lecture text for summaries, glossaries, revision history, and Ask AI from the same hub.',
-  },
-  {
-    icon: Code2,
-    title: 'Code Lab',
-    body: 'Monaco-powered bug-fix, output prediction, and logic challenges with optional custom prompts and AI grading.',
-  },
-  {
-    icon: HelpCircle,
-    title: 'Exam Mode & Active Recall',
-    body: 'MCQ practice exams with explanations, plus blurting-style recall with Reveal-before-grade and accuracy reports.',
+    title: 'Source-grounded study',
+    body: 'Flashcards, summaries, and quizzes can cite PDF page + paragraph. Open View Source for a side-by-side quote highlight.',
   },
   {
     icon: BookOpen,
-    title: 'Study hubs & modules',
-    body: 'Overview flight plan, readiness heatmap, grade predictor, focus timer, and module folders — customize what sits in your nav.',
-  },
-  {
-    icon: Palette,
-    title: 'Themes & accents',
-    body: 'Dark, Light, or System with emerald-teal accents (and more), Low-Power mode, Zen focus, and OpenDyslexic.',
+    title: 'Importers & web clipper',
+    body: 'Bring Quizlet, Notion, CSV, RemNote, or Anki .apkg in one flow — or clip the open web / YouTube transcript into a Fios deck.',
   },
   {
     icon: Smartphone,
-    title: 'Installable PWA',
-    body: 'Add Fios to your home screen. Offline mutation queue covers common writes until you reconnect.',
+    title: 'Offline-first PWA',
+    body: 'Daily Queue caches in IndexedDB; review offline and sync streaks when you reconnect. Install to your home screen.',
+  },
+  {
+    icon: Code2,
+    title: 'STEM code cards & Lab',
+    body: 'Run Java / C++ / C# / JS against expected output, plus Monaco Code Lab challenges — one coherent sandbox path.',
+  },
+  {
+    icon: Bot,
+    title: 'Cognitive engines',
+    body: 'Socratic Tutor Me, Feynman teach-back, elaborative interrogation, interleaved practice, and metacognitive JOL prompts.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Course Bank & community',
+    body: 'Share decks, upvote, clone to your library, peer-review swipe for Community Verified, and climb creator view/clone metrics.',
+  },
+  {
+    icon: Timer,
+    title: 'Focus lounges & body double',
+    body: 'Shared Lofi Pomodoro rooms, silent 50-minute body-doubling, and BPM-aware audio that soft-fades into breaks.',
+  },
+  {
+    icon: Calendar,
+    title: 'Timetable → exams',
+    body: 'iCal sync, syllabus parser to .ics, mock exams with diagnostic scorecards, and cram-sheet export before finals.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Privacy-first BYO Gemini',
+    body: 'Your Gemini key powers AI on your quota. Essential cookies keep the app working; preferences are opt-in. No ad trackers.',
   },
 ];
 
 const walkthrough = [
   {
     id: 'flashcards',
-    label: 'Notes → Flashcards',
+    label: 'PDF → Cited cards',
     lines: [
-      '# Paste lecture notes',
-      'Photosynthesis converts light…',
+      '# Upload a lecture PDF',
+      '--- Page 4 --- Chloroplasts…',
       '',
-      '→ 8 SM-2 flashcards generated',
-      'Q: Where does it occur?',
-      'A: In the chloroplasts.',
+      '→ Flashcards with sourcePage + quote',
+      'View Source · side-by-side highlight',
+      '✓ SM-2 default · FSRS optional',
     ],
   },
   {
     id: 'agenda',
-    label: 'Timetable → Agenda',
+    label: 'Syllabus → Calendar',
     lines: [
-      '# Sync iCal or add manual classes',
-      'COMP5012 · Lab · 10:00–12:00',
-      'Task · Pointers exercise · due 14:00',
+      '# Paste syllabus text',
+      'Exam · 12 May · 40%',
       '',
-      '→ Unified agenda (classes + tasks)',
-      '✓ Next Up highlighted · finished muted',
+      '→ Deadlines + FSRS prep blocks',
+      'Download .ics · schedule reviews',
+      '✓ Unified agenda with classes',
     ],
   },
   {
     id: 'tutor',
-    label: 'Notes → AI Tutor',
+    label: 'Hard card → Tutor Me',
     lines: [
-      '# Open Tutor with your Gemini key',
-      'Ask: Explain recursion with a stack trace…',
+      '# Rate Hard on a card',
+      'Tutor Me · leading questions only',
       '',
-      '→ Optional RAG from uploaded chunks',
-      '✓ Grounded answer in your lecture notes',
+      '→ Socratic Gemini Flash',
+      'Never dumps the final answer',
+      '✓ Optional mnemonic / elaborate',
     ],
   },
 ];
@@ -104,51 +105,47 @@ const walkthrough = [
 const faqs = [
   {
     q: 'Is Fios completely free to use?',
-    a: 'Yes. Fios is free for personal academic use. Sign up, manage modules, run focus sessions, and study with flashcards at no cost. AI features use your own free Google Gemini API key (BYO-Key).',
+    a: 'Yes for personal academic use. Core study hubs, offline queue, and Course Bank tools are free. AI features use your own Google Gemini API key (BYO) — your quota, your billing with Google.',
   },
   {
-    q: 'How do I create an account?',
-    a: 'Open Fios and choose Sign up. Register with email/password through Supabase Auth, or continue with GitHub OAuth when enabled. After sign-in you land in the dashboard ready for modules and notes.',
+    q: 'How does Bring Your Own Key (BYO Gemini) work?',
+    a: 'Paste your key in Settings. It is stored on your profile under Row Level Security (never in a cookie) and sent only with your AI requests. Remove or replace it anytime.',
   },
   {
-    q: 'How does Bring Your Own Key (BYO-Key) work?',
-    a: 'Paste your free Google Gemini API key in Settings. It is stored on your profile under RLS and sent only with your own requests. Test, replace, or remove it anytime.',
+    q: 'Does Fios work offline?',
+    a: 'Yes. The installable PWA caches the shell; Daily Queue and many mutations queue in IndexedDB and sync when you are back online. Calendar offline patterns are preserved.',
   },
   {
-    q: 'How do I sync my college timetable (iCal)?',
-    a: 'In Timetable or Settings, paste an HTTPS iCal feed URL and save. Fios fetches it through the API proxy so the browser never hits CORS-blocked campus hosts. Events appear on Overview and calendar views after a successful sync.',
+    q: 'What can I import?',
+    a: 'Fios JSON / share codes, CSV/TSV, Quizlet links or text exports, Notion markdown, RemNote, and Anki .apkg. The browser clipper can also send page selections into a new deck.',
   },
   {
-    q: 'What are the core study hubs?',
-    a: 'Overview (flight plan, heatmap, tasks, agenda), Flashcards (SM-2), Modules, Exam Mode (MCQ), Code Lab, Smart Notes, AI Tutor, Grades, Focus Timer / Pomodoro, Timetable / ATU Calendar, plus Settings and Updates. Customize mobile bottom nav and desktop sidebar order in Settings.',
+    q: 'Can I connect Canvas, Moodle, or Blackboard?',
+    a: 'Yes — Settings → LMS. You provide a base URL and personal access token; Fios pulls syllabus/materials best-effort and can build a weekly prep schedule. Tokens stay in your connection row under RLS.',
   },
   {
-    q: 'How does the AI Tutor use my notes?',
-    a: 'Open the Tutor tab (or Smart Notes → Ask AI) after adding a Gemini key. Optional RAG grounding pulls from uploaded note chunks when available, so answers stay closer to your lecture material.',
+    q: 'What is Course Bank?',
+    a: 'A free community library of shared decks. Upvote/downvote, Clone to My Library (deep copy), and optional peer-review swipes for a Community Verified badge. Public sharing is always your choice.',
   },
   {
-    q: 'What is the unified agenda?',
-    a: 'Classes from your timetable and timed tasks share one timeline, grouped by calendar day (Today / Tomorrow / weekday). Tasks appear by due date so deadlines land on the right day beside lectures.',
+    q: 'Are lecture recordings stored?',
+    a: 'Live lecture / audio features send audio you capture to Gemini (via your key) for transcription. Resulting notes/decks live in your private rows. See Privacy Policy for retention and AI processing details.',
+  },
+  {
+    q: 'Cookies & local storage — what do you use?',
+    a: 'Essential storage for sign-in, offline queues, and PWA caches so the app works. Optional Preferences storage for theme/nav. No ad or analytics SDKs. Open Cookie Policy in the footer for the full inventory.',
   },
   {
     q: 'Are my notes private? (GDPR)',
-    a: 'Study data lives in your private Supabase schema with Row Level Security. See Privacy Policy and Terms in the footer — and Export My Data in Settings after sign-in.',
+    a: 'Study data sits in your private Supabase schema with RLS. Export My Data is in Settings; erasure requests go to the operator email in Privacy Policy. Cookie Policy and Terms link from the footer.',
   },
   {
-    q: 'Can I install Fios as an app (PWA)?',
-    a: 'Yes. Use Install in Settings or your browser’s “Add to Home Screen”. Offline mutation queue covers common writes when you reconnect.',
+    q: 'Can I install Fios or use lock-screen shortcuts?',
+    a: 'Yes — Add to Home Screen / Install. PWA shortcuts can jump to streak or review. iOS limits true lock-screen widgets; see in-app Widgets notes.',
   },
   {
-    q: 'Can I get reminders before class starts?',
-    a: 'Yes. In Settings → Class Reminders, enable browser notifications and choose a lead time (5, 10, 15, or 30 minutes). Fios checks your synced timetable / manual schedule and alerts you before the next class, including the room when your timetable has one. Optional server Web Push needs VAPID keys on the host; local reminders still work while the app is open.',
-  },
-  {
-    q: 'Can the AI Tutor read PDFs and photos?',
-    a: 'Yes. In AI Tutor you can upload PDFs, TXT, and images/photos (including mobile camera/gallery). Text is extracted or sent via Gemini Vision using your own API key so you can ask about slides and diagrams.',
-  },
-  {
-    q: 'Can I use Fios on multiple devices?',
-    a: 'Yes. Account data syncs via Supabase. Theme, accent, nav slots, and widget toggles persist locally and to your profile prefs when available.',
+    q: 'How do I create an account?',
+    a: 'Sign up with email/password via Supabase Auth, or GitHub OAuth when enabled. After sign-in you land in Overview ready for modules and notes.',
   },
 ];
 
@@ -475,7 +472,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <span key={b} className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono text-slate-400">{b}</span>
             ))}
           </div>
-          <p className="text-[11px] text-slate-600">Fios v3.9.0 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
+          <p className="text-[11px] text-slate-600">Fios v4.0.0 · Built as an AI test app with Google Gemini & Cursor Agent Mode.</p>
         </div>
       </footer>
 
