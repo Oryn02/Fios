@@ -30,7 +30,12 @@ export function summarizeText(text: string): Promise<SummaryResult> {
 }
 
 export function askTutor(question: string, context: string): Promise<{ answer: string }> {
-  return postJson<{ answer: string }>('/api/tutor', { question, context });
+  return postJson<{ answer: string }>('/api/tutor', { question, context }).then((res) => {
+    void import('../lib/studyMilestones')
+      .then(({ recordTutorChat }) => recordTutorChat())
+      .catch(() => {});
+    return res;
+  });
 }
 
 export interface RecallResult {

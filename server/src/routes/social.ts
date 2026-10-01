@@ -15,12 +15,105 @@ function inviteCode(len = 8): string {
   return out;
 }
 
-/** POST /api/social/friends/request */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function resolveAddresseeId(input: {
+  addresseeId?: string;
+  userId?: string;
+  email?: string;
+  username?: string;
+}): Promise<string | null> {
+  const direct = String(input.addresseeId || input.userId || '').trim();
+  if (direct && UUID_RE.test(direct)) return direct;
+
+  const email = String(input.email || '').trim().toLowerCase();
+  const username = String(input.username || '').trim();
+
+  // If only a free-form id was sent (non-UUID), treat as username/email
+  const maybeHandle = !direct
+    ? ''
+    : direct.includes('@')
+      ? ''
+      : direct;
+  const emailCandidate = email || (direct.includes('@') ? direct.toLowerCase() : '');
+  const usernameCandidate = username || maybeHandle;
+
+  const admin = getSupabaseAdmin();
+  if (!admin) return null;
+
+  if (emailCandidate) {
+    try {
+      const byEmail = await (admin.auth.admin as any).getUserByEmail?.(emailCandidate);
+      const id = byEmail?.data?.user?.id || byEmail?.user?.id;
+      if (id) return String(id);
+    } catch {
+      /* fall through to listUsers */
+    }
+    try {
+      let page = 1;
+      const perPage = 200;
+      while (page <= 10) {
+        const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+        if (error) break;
+        const hit = (data?.users || []).find(
+          (u) => String(u.email || '').toLowerCase() === emailCandidate
+        );
+        if (hit?.id) return hit.id;
+        if (!data?.users?.length || data.users.length < perPage) break;
+        page += 1;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  if (usernameCandidate) {
+    const needle = usernameCandidate;
+    const { data: byPreferred } = await admin
+      .from('user_profiles')
+      .select('id')
+      .ilike('preferred_name', needle)
+      .limit(1)
+      .maybeSingle();
+    if (byPreferred?.id) return String(byPreferred.id);
+
+    const { data: byFull } = await admin
+      .from('user_profiles')
+      .select('id')
+      .ilike('full_name', needle)
+      .limit(1)
+      .maybeSingle();
+    if (byFull?.id) return String(byFull.id);
+  }
+
+  return null;
+}
+
+/** POST /api/social/friends/request — body: { email?, addresseeId?, username? } */
 router.post('/friends/request', requireUser, async (req: AuthedRequest, res: Response) => {
   try {
-    const addresseeId = String(req.body?.addresseeId || req.body?.userId || '').trim();
-    if (!addresseeId || addresseeId === req.userId) {
-      res.status(400).json({ error: 'Valid addresseeId required' });
+    const hasInput = Boolean(
+      String(req.body?.addresseeId || '').trim() ||
+        String(req.body?.userId || '').trim() ||
+        String(req.body?.email || '').trim() ||
+        String(req.body?.username || '').trim()
+    );
+    if (!hasInput) {
+      res.status(400).json({ error: 'email, username, or addresseeId required' });
+      return;
+    }
+    const addresseeId = await resolveAddresseeId({
+      addresseeId: req.body?.addresseeId,
+      userId: req.body?.userId,
+      email: req.body?.email,
+      username: req.body?.username,
+    });
+    if (!addresseeId) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    if (addresseeId === req.userId) {
+      res.status(400).json({ error: 'Cannot friend yourself' });
       return;
     }
     const db = dbFor(req);

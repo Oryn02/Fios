@@ -353,4 +353,70 @@ export function supportInboxStatus(): { mode: 'resend-only'; email: string; note
   };
 }
 
+/**
+ * Grant an RPG unlock reward to a user (self or other).
+ * Prefers admin_grant_rpg_reward RPC; falls back to local+own-row upsert for self.
+ */
+export async function grantRpgThemeUnlock(opts: {
+  userId: string;
+  reward: string;
+  accentKey?: string;
+  applyAccent?: boolean;
+  isSelf?: boolean;
+}): Promise<{ ok: boolean; unlocked_rewards?: string[]; error?: string }> {
+  const { userId, reward, accentKey, applyAccent, isSelf } = opts;
+  const { data, error } = await supabase.rpc('admin_grant_rpg_reward', {
+    p_user_id: userId,
+    p_reward: reward,
+    p_apply_accent: applyAccent && accentKey ? accentKey : null,
+  });
+  if (!error && data) {
+    const rewards = Array.isArray((data as any).unlocked_rewards)
+      ? (data as any).unlocked_rewards.map(String)
+      : [];
+    if (isSelf) {
+      try {
+        localStorage.setItem('fios_unlocked_rewards', JSON.stringify(rewards.length ? rewards : [...(JSON.parse(localStorage.getItem('fios_unlocked_rewards') || '[]') as string[]), reward]));
+      } catch {
+        try {
+          const prev = JSON.parse(localStorage.getItem('fios_unlocked_rewards') || '[]');
+          const next = Array.isArray(prev) ? [...prev.map(String), reward] : [reward];
+          localStorage.setItem('fios_unlocked_rewards', JSON.stringify([...new Set(next)]));
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    logAdminAction('rpg_theme_grant', `${userId.slice(0, 8)}:${reward}`);
+    return { ok: true, unlocked_rewards: rewards };
+  }
+
+  // Self fallback when RPC missing
+  if (isSelf) {
+    try {
+      const prevRaw = localStorage.getItem('fios_unlocked_rewards');
+      const prev = prevRaw ? JSON.parse(prevRaw) : [];
+      const next = Array.isArray(prev) ? [...prev.map(String)] : [];
+      if (!next.includes(reward)) next.push(reward);
+      localStorage.setItem('fios_unlocked_rewards', JSON.stringify(next));
+      await supabase.from('user_streaks').upsert({
+        user_id: userId,
+        unlocked_rewards: next,
+        updated_at: new Date().toISOString(),
+      } as any);
+      logAdminAction('rpg_theme_grant_self_fallback', reward);
+      return { ok: true, unlocked_rewards: next };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : 'Self grant failed' };
+    }
+  }
+
+  return {
+    ok: false,
+    error:
+      error?.message ||
+      'Grant RPC unavailable — run supabase/v4.1.0-admin-rpg-theme-grant.sql then reload PostgREST.',
+  };
+}
+
 export { apiUrl };

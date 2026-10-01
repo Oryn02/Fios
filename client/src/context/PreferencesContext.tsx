@@ -30,9 +30,11 @@ export type SmartActionId =
 export type SmartMetricId = 'dueCards' | 'tasks' | 'streak' | 'timer' | 'upcoming';
 
 export const DEFAULT_WIDGET_ORDER: WidgetId[] = ['flightPlan', 'heatmap', 'dueCards', 'calendar'];
-export const DEFAULT_MOBILE_NAV = ['overview', 'modules', 'code', 'documents', 'tutor'];
+export const DEFAULT_MOBILE_NAV = ['overview', 'agenda', 'modules', 'studio'];
+/** Fixed 4-pillar bottom nav — order is intentional; Settings UI should not offer reorder for these. */
+export const PILLAR_NAV_IDS = ['overview', 'agenda', 'modules', 'studio'] as const;
 export const DEFAULT_NAV_ORDER = [
-  'overview', 'flashcards', 'modules', 'quiz', 'code', 'documents', 'tutor', 'social',
+  'overview', 'agenda', 'modules', 'studio', 'flashcards', 'quiz', 'code', 'documents', 'tutor', 'social',
   'atu-calendar', 'grades', 'timer', 'schedule', 'settings', 'updates',
 ];
 
@@ -52,7 +54,7 @@ export const SMART_ACTION_LABELS: Record<SmartActionId, string> = {
   flashcard: 'Quick Add Flashcard',
   note: 'New Quick Note',
   pomodoro: 'Start Pomodoro',
-  tutor: 'Ask AI Tutor',
+  tutor: 'Ask Tutor',
   tasks: 'Open Tasks',
   schedule: 'College Timetable',
   quiz: 'Exam Mode',

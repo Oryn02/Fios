@@ -15,13 +15,14 @@ import { MultiplayerLobby } from './quiz/MultiplayerLobby';
 
 interface QuizExamViewProps {
   initialQuizId?: string | null;
+  initialModuleCode?: string;
 }
 
-export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => {
+export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId, initialModuleCode }) => {
   const { requireAiAuth } = useAiAuth();
   const [studyNotes, setStudyNotes] = useState('');
   const [title, setTitle] = useState('');
-  const [moduleCode, setModuleCode] = useState('');
+  const [moduleCode, setModuleCode] = useState(initialModuleCode || '');
   const [modules, setModules] = useState<DBModule[]>([]);
   const [questions, setQuestions] = useState<MCQQuestion[]>([]);
   const [questionCount, setQuestionCount] = useState<5 | 10 | 20 | 40>(5);
@@ -159,7 +160,8 @@ export const QuizExamView: React.FC<QuizExamViewProps> = ({ initialQuizId }) => 
               value={studyNotes}
               onChange={(e) => setStudyNotes(e.target.value)}
               placeholder="Parsed PDF content or pasted course notes will appear here…"
-            className="w-full h-44 p-4 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:accent-border font-mono text-base sm:text-sm"
+              rows={4}
+            className="w-full min-h-[6rem] p-4 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:accent-border font-mono text-base sm:text-sm resize-y field-sizing-content"
             />
           </div>
 

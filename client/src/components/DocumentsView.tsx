@@ -30,6 +30,7 @@ interface ChatMessage { role: 'user' | 'assistant'; text: string; }
 interface DocumentsInnerProps {
   initialDocId?: string | null;
   autoOpenTutor?: boolean;
+  initialModuleCode?: string;
 }
 
 interface SummaryRevision {
@@ -37,11 +38,11 @@ interface SummaryRevision {
   summary: string;
 }
 
-const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenTutor }) => {
+const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenTutor, initialModuleCode }) => {
   const { requireAiAuth } = useAiAuth();
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
-  const [moduleCode, setModuleCode] = useState('');
+  const [moduleCode, setModuleCode] = useState(initialModuleCode || '');
   const [modules, setModules] = useState<DBModule[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -323,7 +324,8 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="…or paste your notes here to summarize."
-                  className="w-full h-32 p-4 bg-[var(--fios-surface-2)] border fios-border rounded-xl text-[var(--fios-text)] placeholder:text-muted-foreground focus:outline-none focus:accent-border font-mono text-base sm:text-xs"
+          rows={4}
+          className="w-full min-h-[6rem] p-4 bg-[var(--fios-surface-2)] border fios-border rounded-xl text-[var(--fios-text)] placeholder:text-muted-foreground focus:outline-none focus:accent-border font-mono text-base sm:text-xs resize-y field-sizing-content"
         />
 
         <div className="fios-sticky-action">
@@ -578,9 +580,17 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
   );
 };
 
-export const DocumentsView: React.FC<{ initialDocId?: string | null; autoOpenTutor?: boolean }> = ({ initialDocId, autoOpenTutor }) => (
+export const DocumentsView: React.FC<{
+  initialDocId?: string | null;
+  autoOpenTutor?: boolean;
+  initialModuleCode?: string;
+}> = ({ initialDocId, autoOpenTutor, initialModuleCode }) => (
   <GeminiGate feature="Smart Notes & AI Tutor">
-    <DocumentsInner initialDocId={initialDocId} autoOpenTutor={autoOpenTutor} />
+    <DocumentsInner
+      initialDocId={initialDocId}
+      autoOpenTutor={autoOpenTutor}
+      initialModuleCode={initialModuleCode}
+    />
   </GeminiGate>
 );
 

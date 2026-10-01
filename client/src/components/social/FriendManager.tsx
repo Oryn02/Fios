@@ -5,7 +5,7 @@ import { toast } from '../../lib/toast';
 
 export const FriendManager: React.FC = () => {
   const [friendships, setFriendships] = useState<any[]>([]);
-  const [userId, setUserId] = useState('');
+  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
@@ -26,12 +26,13 @@ export const FriendManager: React.FC = () => {
   }, [reload]);
 
   const send = async () => {
-    if (!userId.trim()) return;
+    const value = query.trim();
+    if (!value) return;
     setBusy(true);
     try {
-      await requestFriend(userId.trim());
+      await requestFriend(value);
       toast('Friend request sent', 'success');
-      setUserId('');
+      setQuery('');
       await reload();
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Request failed', 'error');
@@ -57,16 +58,23 @@ export const FriendManager: React.FC = () => {
       </h3>
       <div className="flex gap-2">
         <input
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          placeholder="Friend user UUID"
-          className="flex-1 p-2.5 bg-[var(--fios-surface-2)] border fios-border rounded-lg text-xs font-mono text-[var(--fios-text)] focus:outline-none focus:accent-border"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Friend email or username"
+          autoComplete="email"
+          className="flex-1 min-h-11 p-2.5 bg-[var(--fios-surface-2)] border fios-border rounded-lg text-xs font-mono text-[var(--fios-text)] focus:outline-none focus:accent-border"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              void send();
+            }
+          }}
         />
         <button
           type="button"
-          disabled={busy || !userId.trim()}
+          disabled={busy || !query.trim()}
           onClick={() => void send()}
-          className="px-3 py-2 accent-bg text-slate-950 text-xs font-black uppercase rounded-lg cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
+          className="min-h-11 px-3 py-2 accent-bg text-slate-950 text-xs font-black uppercase rounded-lg cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
         >
           {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
           Add

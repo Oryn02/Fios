@@ -60,6 +60,15 @@ import {
   type ReminderLeadMinutes,
 } from '../lib/pushNotifications';
 
+type SettingsPane = 'account' | 'layout' | 'study' | 'integrations';
+
+const SETTINGS_TABS: { id: SettingsPane; label: string }[] = [
+  { id: 'account', label: 'Account' },
+  { id: 'layout', label: 'Layout & Theme' },
+  { id: 'study', label: 'Study Preferences' },
+  { id: 'integrations', label: 'Integrations' },
+];
+
 const SettingsTabInner: React.FC = () => {
   const { profile, updateProfile } = useProfile();
   const { theme, setTheme, accent, setAccent } = useTheme();
@@ -76,6 +85,8 @@ const SettingsTabInner: React.FC = () => {
     smartWidgetShowMetrics, setSmartWidgetShowMetrics,
   } = usePreferences();
   const isAdmin = useIsAdmin();
+
+  const [settingsPane, setSettingsPane] = useState<SettingsPane>('account');
 
   // User & Feed State
   const [email, setEmail] = useState('Loading…');
@@ -463,6 +474,34 @@ const SettingsTabInner: React.FC = () => {
         <p className="text-xs text-muted-foreground font-medium">Manage your Fios profile, focus timer defaults, and connected feeds.</p>
       </header>
 
+      <div
+        className="flex gap-1.5 overflow-x-auto fios-h-scroll pb-0.5 -mx-1 px-1"
+        role="tablist"
+        aria-label="Settings sections"
+      >
+        {SETTINGS_TABS.map((tab) => {
+          const active = settingsPane === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setSettingsPane(tab.id)}
+              className={`shrink-0 min-h-11 px-3.5 py-2 rounded-xl border text-xs font-black uppercase tracking-wide cursor-pointer touch-manipulation ${
+                active
+                  ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]'
+                  : 'fios-border text-[var(--fios-text-muted)]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {settingsPane === 'account' && (
+      <>
       {/* INSTALL APP SECTION */}
       <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <div className="flex items-center justify-between">
@@ -493,7 +532,11 @@ const SettingsTabInner: React.FC = () => {
           <p className="text-muted-foreground">3. Scroll down and select <strong className="text-foreground">"Add to Home Screen"</strong>.</p>
         </div>
       </section>
+      </>
+      )}
 
+      {settingsPane === 'integrations' && (
+      <>
       {/* CLASS REMINDERS */}
       <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <div className="flex items-center justify-between gap-3">
@@ -592,7 +635,11 @@ const SettingsTabInner: React.FC = () => {
           Send test notification
         </button>
       </section>
+      </>
+      )}
 
+      {settingsPane === 'account' && (
+      <>
       {/* 1. PROFILE */}
       <form onSubmit={handleSaveProfile} className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-5">
         <div className="flex items-center justify-between">
@@ -657,7 +704,11 @@ const SettingsTabInner: React.FC = () => {
           </motion.button>
         </div>
       </form>
+      </>
+      )}
 
+      {settingsPane === 'study' && (
+      <>
       {/* 2. WEEKLY STUDY TARGET */}
       <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <div className="flex items-center justify-between">
@@ -705,7 +756,11 @@ const SettingsTabInner: React.FC = () => {
           </button>
         </form>
       </section>
+      </>
+      )}
 
+      {settingsPane === 'account' && (
+      <>
       {/* ACCOUNT SECURITY */}
       <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-5">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
@@ -763,7 +818,11 @@ const SettingsTabInner: React.FC = () => {
           </form>
         </div>
       </section>
+      </>
+      )}
 
+      {settingsPane === 'study' && (
+      <>
       {/* 3. POMODORO DEFAULTS */}
       <form onSubmit={handleSavePomodoro} className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-5">
         <div className="flex items-center justify-between">
@@ -787,7 +846,11 @@ const SettingsTabInner: React.FC = () => {
           </motion.button>
         </div>
       </form>
+      </>
+      )}
 
+      {settingsPane === 'layout' && (
+      <>
       {/* APPEARANCE */}
       <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-5">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-[var(--fios-text-muted)] flex items-center gap-2">
@@ -803,7 +866,7 @@ const SettingsTabInner: React.FC = () => {
               { id: 'system' as ThemeMode, label: 'System', Icon: Monitor },
             ]).map(({ id, label, Icon }) => (
               <button key={id} type="button" onClick={() => setTheme(id)}
-                className={`px-4 py-2 rounded-lg text-xs font-black uppercase flex items-center gap-1.5 border transition-colors cursor-pointer ${
+                className={`min-h-11 px-4 py-2 rounded-lg text-xs font-black uppercase flex items-center gap-1.5 border transition-colors cursor-pointer ${
                   theme === id ? 'fios-chip-active' : 'bg-[var(--fios-surface-2)] fios-border text-[var(--fios-text-muted)]'
                 }`}>
                 <Icon className="w-3.5 h-3.5" /> {label}
@@ -816,21 +879,21 @@ const SettingsTabInner: React.FC = () => {
           <button
             type="button"
             onClick={() => setLowPower(!lowPower)}
-            className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${lowPower ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+            className={`min-h-11 px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${lowPower ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
           >
             <BatteryLow className="w-3.5 h-3.5" /> Low-Power {lowPower ? 'On' : 'Off'}
           </button>
           <button
             type="button"
             onClick={() => setOpenDyslexic(!openDyslexic)}
-            className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${openDyslexic ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+            className={`min-h-11 px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${openDyslexic ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
           >
             <Type className="w-3.5 h-3.5" /> OpenDyslexic {openDyslexic ? 'On' : 'Off'}
           </button>
           <button
             type="button"
             onClick={() => setZenMode(!zenMode)}
-            className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${zenMode ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+            className={`min-h-11 px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${zenMode ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
           >
             <Focus className="w-3.5 h-3.5" /> Zen mode {zenMode ? 'On' : 'Off'}
           </button>
@@ -846,143 +909,20 @@ const SettingsTabInner: React.FC = () => {
             <LayoutGrid className="w-3.5 h-3.5" /> Floating widgets
           </span>
           <p className="text-[10px] text-[var(--fios-text-muted)] leading-snug">
-            Desktop defaults Pomodoro, Smart Quick, and Brain Dump On. Mobile defaults all Off until you toggle here —
+            Desktop defaults the Pomodoro widget On. Mobile defaults Off until you toggle here —
             then your choice is saved for that device size (desktop and mobile are independent).
+            Smart Quick and Brain Dump live under Study Preferences.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setShowPomodoroWidget(!showPomodoroWidget)}
-              className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${showPomodoroWidget ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+              className={`min-h-11 px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${showPomodoroWidget ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
             >
               <Timer className="w-3.5 h-3.5" /> Pomodoro Widget {showPomodoroWidget ? 'On' : 'Off'}
             </button>
-            <button
-              type="button"
-              onClick={() => setShowSmartWidget(!showSmartWidget)}
-              className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${showSmartWidget ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
-            >
-              <Zap className="w-3.5 h-3.5" /> Smart Quick Widget {showSmartWidget ? 'On' : 'Off'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowBrainDumpInbox(!showBrainDumpInbox)}
-              className={`px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer sm:col-span-2 ${showBrainDumpInbox ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
-            >
-              <Brain className="w-3.5 h-3.5" /> Brain Dump Inbox {showBrainDumpInbox ? 'On' : 'Off'}
-            </button>
           </div>
         </div>
-
-        {showSmartWidget && (
-          <div className="space-y-3 rounded-xl border fios-border-strong bg-[var(--fios-surface-2)]/50 p-4">
-            <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Smart Quick Widget layout</span>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setSmartWidgetCompact(!smartWidgetCompact)}
-                className={`px-3 py-2 rounded-lg border text-[10px] font-bold uppercase cursor-pointer ${smartWidgetCompact ? 'fios-chip-active' : 'fios-border text-[var(--fios-text-muted)]'}`}
-              >
-                Compact FAB {smartWidgetCompact ? 'On' : 'Off'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setSmartWidgetShowMetrics(!smartWidgetShowMetrics)}
-                className={`px-3 py-2 rounded-lg border text-[10px] font-bold uppercase cursor-pointer ${smartWidgetShowMetrics ? 'fios-chip-active' : 'fios-border text-[var(--fios-text-muted)]'}`}
-              >
-                Metrics chip {smartWidgetShowMetrics ? 'On' : 'Off'}
-              </button>
-            </div>
-
-            {smartWidgetShowMetrics && (
-              <div className="space-y-1.5">
-                <span className="text-[10px] font-mono text-[var(--fios-text-muted)] uppercase">Metrics (toggle + reorder)</span>
-                {ALL_SMART_METRICS.map((id) => {
-                  const on = smartWidgetMetrics.includes(id);
-                  const idx = smartWidgetMetrics.indexOf(id);
-                  return (
-                    <div key={id} className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (on) setSmartWidgetMetrics(smartWidgetMetrics.filter((m) => m !== id));
-                          else setSmartWidgetMetrics([...smartWidgetMetrics, id]);
-                        }}
-                        className={`flex-1 px-3 py-2 rounded-lg border text-xs font-bold text-left cursor-pointer ${on ? 'accent-border accent-solid-text bg-[var(--fios-surface)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
-                      >
-                        {SMART_METRIC_LABELS[id]}
-                      </button>
-                      {on && (
-                        <>
-                          <button type="button" disabled={idx <= 0} onClick={() => {
-                            const next = [...smartWidgetMetrics];
-                            [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-                            setSmartWidgetMetrics(next);
-                          }} className="p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move metric up">
-                            <ChevronUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button type="button" disabled={idx < 0 || idx >= smartWidgetMetrics.length - 1} onClick={() => {
-                            const next = [...smartWidgetMetrics];
-                            [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-                            setSmartWidgetMetrics(next);
-                          }} className="p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move metric down">
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-                <button type="button" onClick={() => setSmartWidgetMetrics([...DEFAULT_SMART_METRICS])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
-                  Reset metrics
-                </button>
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-mono text-[var(--fios-text-muted)] uppercase">Shortcuts (order = menu order)</span>
-              {ALL_SMART_ACTIONS.map((id) => {
-                const on = smartWidgetActions.includes(id);
-                const idx = smartWidgetActions.indexOf(id);
-                return (
-                  <div key={id} className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (on) setSmartWidgetActions(smartWidgetActions.filter((a) => a !== id));
-                        else setSmartWidgetActions([...smartWidgetActions, id]);
-                      }}
-                      className={`flex-1 px-3 py-2 rounded-lg border text-xs font-bold text-left cursor-pointer ${on ? 'accent-border accent-solid-text bg-[var(--fios-surface)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
-                    >
-                      {SMART_ACTION_LABELS[id]}
-                    </button>
-                    {on && (
-                      <>
-                        <button type="button" disabled={idx <= 0} onClick={() => {
-                          const next = [...smartWidgetActions];
-                          [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-                          setSmartWidgetActions(next);
-                        }} className="p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move up">
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button type="button" disabled={idx < 0 || idx >= smartWidgetActions.length - 1} onClick={() => {
-                          const next = [...smartWidgetActions];
-                          [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-                          setSmartWidgetActions(next);
-                        }} className="p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move down">
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-              <button type="button" onClick={() => setSmartWidgetActions([...DEFAULT_SMART_ACTIONS])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
-                Reset Smart actions
-              </button>
-            </div>
-          </div>
-        )}
 
         <div className="space-y-2">
           <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Mobile bottom nav (add / hide / reorder · max 5)</span>
@@ -1106,7 +1046,11 @@ const SettingsTabInner: React.FC = () => {
       </section>
 
       <RpgProgressPanel />
+      </>
+      )}
 
+      {settingsPane === 'integrations' && (
+      <>
       <LmsConnectPanel />
 
       <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-3">
@@ -1129,6 +1073,146 @@ const SettingsTabInner: React.FC = () => {
         >
           <Download className="w-3.5 h-3.5" /> Export module vault
         </button>
+      </section>
+      </>
+      )}
+
+      {settingsPane === 'study' && (
+      <>
+      {/* Smart Quick + Brain Dump */}
+      <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
+        <h2 className="text-xs font-mono font-black uppercase tracking-widest text-[var(--fios-text-muted)] flex items-center gap-2">
+          <Zap className="w-4 h-4 accent-solid-text" /> Smart Quick & Brain Dump
+        </h2>
+        <p className="text-[10px] text-[var(--fios-text-muted)] leading-snug">
+          Desktop defaults these On. Mobile defaults Off until you toggle here — choices save per device size.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setShowSmartWidget(!showSmartWidget)}
+            className={`min-h-11 px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${showSmartWidget ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+          >
+            <Zap className="w-3.5 h-3.5" /> Smart Quick Widget {showSmartWidget ? 'On' : 'Off'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowBrainDumpInbox(!showBrainDumpInbox)}
+            className={`min-h-11 px-3 py-2.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer ${showBrainDumpInbox ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+          >
+            <Brain className="w-3.5 h-3.5" /> Brain Dump Inbox {showBrainDumpInbox ? 'On' : 'Off'}
+          </button>
+        </div>
+
+        {showSmartWidget && (
+          <div className="space-y-3 rounded-xl border fios-border-strong bg-[var(--fios-surface-2)]/50 p-4">
+            <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Smart Quick Widget layout</span>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setSmartWidgetCompact(!smartWidgetCompact)}
+                className={`min-h-11 px-3 py-2 rounded-lg border text-[10px] font-bold uppercase cursor-pointer ${smartWidgetCompact ? 'fios-chip-active' : 'fios-border text-[var(--fios-text-muted)]'}`}
+              >
+                Compact FAB {smartWidgetCompact ? 'On' : 'Off'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSmartWidgetShowMetrics(!smartWidgetShowMetrics)}
+                className={`min-h-11 px-3 py-2 rounded-lg border text-[10px] font-bold uppercase cursor-pointer ${smartWidgetShowMetrics ? 'fios-chip-active' : 'fios-border text-[var(--fios-text-muted)]'}`}
+              >
+                Metrics chip {smartWidgetShowMetrics ? 'On' : 'Off'}
+              </button>
+            </div>
+
+            {smartWidgetShowMetrics && (
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-mono text-[var(--fios-text-muted)] uppercase">Metrics (toggle + reorder)</span>
+                {ALL_SMART_METRICS.map((id) => {
+                  const on = smartWidgetMetrics.includes(id);
+                  const idx = smartWidgetMetrics.indexOf(id);
+                  return (
+                    <div key={id} className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (on) setSmartWidgetMetrics(smartWidgetMetrics.filter((m) => m !== id));
+                          else setSmartWidgetMetrics([...smartWidgetMetrics, id]);
+                        }}
+                        className={`flex-1 min-h-11 px-3 py-2 rounded-lg border text-xs font-bold text-left cursor-pointer ${on ? 'accent-border accent-solid-text bg-[var(--fios-surface)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+                      >
+                        {SMART_METRIC_LABELS[id]}
+                      </button>
+                      {on && (
+                        <>
+                          <button type="button" disabled={idx <= 0} onClick={() => {
+                            const next = [...smartWidgetMetrics];
+                            [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                            setSmartWidgetMetrics(next);
+                          }} className="min-h-11 min-w-11 p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move metric up">
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" disabled={idx < 0 || idx >= smartWidgetMetrics.length - 1} onClick={() => {
+                            const next = [...smartWidgetMetrics];
+                            [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                            setSmartWidgetMetrics(next);
+                          }} className="min-h-11 min-w-11 p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move metric down">
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+                <button type="button" onClick={() => setSmartWidgetMetrics([...DEFAULT_SMART_METRICS])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
+                  Reset metrics
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-mono text-[var(--fios-text-muted)] uppercase">Shortcuts (order = menu order)</span>
+              {ALL_SMART_ACTIONS.map((id) => {
+                const on = smartWidgetActions.includes(id);
+                const idx = smartWidgetActions.indexOf(id);
+                return (
+                  <div key={id} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (on) setSmartWidgetActions(smartWidgetActions.filter((a) => a !== id));
+                        else setSmartWidgetActions([...smartWidgetActions, id]);
+                      }}
+                      className={`flex-1 min-h-11 px-3 py-2 rounded-lg border text-xs font-bold text-left cursor-pointer ${on ? 'accent-border accent-solid-text bg-[var(--fios-surface)]' : 'fios-border text-[var(--fios-text-muted)]'}`}
+                    >
+                      {SMART_ACTION_LABELS[id]}
+                    </button>
+                    {on && (
+                      <>
+                        <button type="button" disabled={idx <= 0} onClick={() => {
+                          const next = [...smartWidgetActions];
+                          [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                          setSmartWidgetActions(next);
+                        }} className="min-h-11 min-w-11 p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move up">
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button type="button" disabled={idx < 0 || idx >= smartWidgetActions.length - 1} onClick={() => {
+                          const next = [...smartWidgetActions];
+                          [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                          setSmartWidgetActions(next);
+                        }} className="min-h-11 min-w-11 p-1.5 rounded border fios-border cursor-pointer disabled:opacity-30" aria-label="Move down">
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+              <button type="button" onClick={() => setSmartWidgetActions([...DEFAULT_SMART_ACTIONS])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
+                Reset Smart actions
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* FSRS opt-in (beta) — SM-2 remains default */}
@@ -1159,7 +1243,11 @@ const SettingsTabInner: React.FC = () => {
           </span>
         </label>
       </section>
+      </>
+      )}
 
+      {settingsPane === 'integrations' && (
+      <>
       {/* GEMINI API KEY (BYO KEY & WALKTHROUGH) */}
       <section className="bg-[var(--fios-surface)] border fios-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <div className="flex items-center justify-between">
@@ -1244,7 +1332,11 @@ const SettingsTabInner: React.FC = () => {
           </a>
         </div>
       </section>
+      </>
+      )}
 
+      {settingsPane === 'account' && (
+      <>
       {/* ABOUT, LEGAL & SUPPORT */}
       <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
@@ -1296,6 +1388,12 @@ const SettingsTabInner: React.FC = () => {
         {showAdmin && isAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
       </section>
 
+      <FeedbackForm />
+      </>
+      )}
+
+      {settingsPane === 'integrations' && (
+      <>
       {/* GitHub */}
       <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
         <h2 className="text-xs font-mono font-black uppercase tracking-widest text-foreground flex items-center gap-2">
@@ -1320,8 +1418,6 @@ const SettingsTabInner: React.FC = () => {
         {gistStatus && <p className="text-[11px] font-mono text-muted-foreground">{gistStatus}</p>}
         <p className="text-[10px] text-muted-foreground">Optional: set <code className="accent-solid-text">fios_github_token</code> in localStorage or <code className="accent-solid-text">VITE_GITHUB_TOKEN</code> for automatic gist creation.</p>
       </section>
-
-      <FeedbackForm />
 
       {/* PRIVACY & DATA RIGHTS */}
       <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none space-y-4">
@@ -1381,8 +1477,12 @@ const SettingsTabInner: React.FC = () => {
         </div>
         {feedStatus && <p className="text-xs font-mono accent-solid-text font-bold">{feedStatus}</p>}
       </section>
+      </>
+      )}
 
-      {/* 5. SESSION */}
+      {settingsPane === 'account' && (
+      <>
+      {/* 5. SESSION / DANGER */}
       <section className="bg-card border border-border rounded-xl p-6 shadow-sm dark:shadow-none flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-xs font-mono font-black uppercase tracking-widest text-rose-400 flex items-center gap-2">
@@ -1391,10 +1491,12 @@ const SettingsTabInner: React.FC = () => {
           <p className="text-xs text-muted-foreground">Securely log out of your Fios session on this device.</p>
         </div>
         <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={handleLogout}
-          className="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-foreground font-black italic uppercase text-xs rounded-lg transition-colors flex items-center gap-2 shrink-0 cursor-pointer shadow-lg shadow-rose-500/20">
+          className="min-h-11 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-foreground font-black italic uppercase text-xs rounded-lg transition-colors flex items-center gap-2 shrink-0 cursor-pointer shadow-lg shadow-rose-500/20">
           <LogOut className="w-4 h-4" /> Log Out of Fios
         </motion.button>
       </section>
+      </>
+      )}
 
       {showPrivacy && (
         <PrivacyModal

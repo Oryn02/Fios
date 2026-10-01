@@ -1,10 +1,10 @@
 # Fios — Your Academic Command Center
 
-[![Version](https://img.shields.io/badge/version-v4.0.0-059669)](https://github.com/Oryn02/Fios)
+[![Version](https://img.shields.io/badge/version-v4.1.0-059669)](https://github.com/Oryn02/Fios)
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v4.0.0**
+**Current version: v4.1.0**
 
 
 > Version numbers in Updates / README use coherent semver from the first published release as **v1.0.0** (reassigned by substance; SQL migration filenames on disk may still use older labels).
@@ -46,6 +46,12 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **Mobile study upload** — PDF / TXT / images (iPhone Photos + Android); server PDF extract for iOS Files picker; Vision multimodal for photos.
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
+
+### What’s new in v4.1.0
+
+- Locked 4-tab navigation: Overview, Agenda, Modules, Studio — with Studio Notes & Audio / Quiz & Exam / Code Lab switcher.
+- Module-first drill-down library, Save to Module after generate, Roguelike HUD + Player Card, softer dark reading palette.
+- Agenda combines Timetable + academic calendar; iCal auto-sync; onboarding wizard + Quick Capture.
 
 ### What’s new in v4.0.0
 

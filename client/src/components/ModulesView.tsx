@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BookOpen, Layers, Sparkles, ArrowRight, Trash2, Tag, Plus, Pencil,
+  BookOpen, Layers, Sparkles, ArrowRight, ArrowLeft, Trash2, Tag, Plus, Pencil,
   HelpCircle, Code2, CheckSquare, Square, Bug, Terminal, PencilRuler, Brain, FileText,
-  Upload, Download, Share2,
+  Upload, Download, Share2, ChevronRight,
 } from 'lucide-react';
 import { getUserDecksWithCards, renameDeck, buildDeckExport, downloadDeckJson, deckExportToShareCode } from '../lib/deckService';
 import {
@@ -248,31 +248,187 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   };
 
   const activeCount = filtered[entityTab].length;
+  const selectedMod = selectedModule
+    ? modules.find((m) => m.code === selectedModule) || null
+    : null;
+  const selectedTitle = selectedMod
+    ? moduleDisplayName(selectedMod)
+    : selectedModule
+      ? resolveModuleLabel(modules, selectedModule, selectedModule)
+      : '';
+  const selectedColor = normalizeModuleColor(selectedMod?.color);
+  const totalItemsFor = (code: string) => {
+    const c = countsFor(code);
+    return c.decks + c.quizzes + c.code + c.tasks + c.documents;
+  };
 
-  return (
-    <div className="space-y-8 font-sans text-foreground max-w-6xl mx-auto min-w-0">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-black italic text-foreground uppercase tracking-tight flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-emerald-400" /> Academic Modules
-          </h2>
-          <p className="text-xs font-mono text-muted-foreground mt-1">Organize decks, quizzes, code exams, tasks, and documents into subject folders.</p>
+  /* ── List view: condensed rows only (no split content) ── */
+  if (!selectedModule) {
+    return (
+      <div className="space-y-6 font-sans text-foreground max-w-6xl mx-auto min-w-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black italic text-foreground uppercase tracking-tight flex items-center gap-2">
+              <BookOpen className="w-6 h-6 accent-solid-text" /> Academic Modules
+            </h2>
+            <p className="text-xs font-mono text-muted-foreground mt-1">
+              Tap a module to open its study hub — notes, decks, code, and exams stay in context.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setRecallOpen(true)} className="min-h-11 px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
+              <Brain className="w-3.5 h-3.5 accent-solid-text" /> Active Recall
+            </motion.button>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setEditingModule(null); setModuleFormMode('create'); }} className="min-h-11 px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
+              <Plus className="w-3.5 h-3.5 accent-solid-text" /> New Module
+            </motion.button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setRecallOpen(true)} className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
-            <Brain className="w-3.5 h-3.5 accent-solid-text" /> Active Recall
-          </motion.button>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setEditingModule(null); setModuleFormMode('create'); }} className="px-4 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
-            <Plus className="w-3.5 h-3.5 accent-solid-text" /> New Module
-          </motion.button>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => onOpenFlashcards()} className="px-4 py-2 accent-bg text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
-            <Sparkles className="w-3.5 h-3.5" /> Generate Deck
-          </motion.button>
+
+        <AnimatePresence>
+          {moduleFormMode && (
+            <ModuleFormPanel
+              mode={moduleFormMode}
+              module={editingModule}
+              onClose={closeModuleForm}
+              onSaved={handleModuleSaved}
+            />
+          )}
+        </AnimatePresence>
+
+        {tagFolders.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground">Folders:</span>
+            <button
+              type="button"
+              onClick={() => setFolderFilter(null)}
+              className={`min-h-9 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border cursor-pointer ${folderFilter === null ? 'accent-bg text-slate-950 border-transparent' : 'border-border text-muted-foreground'}`}
+            >
+              All
+            </button>
+            {tagFolders.map(([tag, list]) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setFolderFilter(tag)}
+                className={`min-h-9 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border cursor-pointer ${folderFilter === tag ? 'accent-bg text-slate-950 border-transparent' : 'border-border text-muted-foreground'}`}
+              >
+                <Tag className="w-3 h-3 inline mr-1" />{tag} ({list.length})
+              </button>
+            ))}
+          </div>
+        )}
+
+        {loading && modules.length === 0 ? (
+          <div className="p-8 text-center font-mono text-xs text-muted-foreground animate-pulse">Loading modules…</div>
+        ) : visibleModules.length === 0 ? (
+          <EmptyState
+            label="No modules yet"
+            onAction={() => { setEditingModule(null); setModuleFormMode('create'); }}
+            actionLabel="Create your first module"
+          />
+        ) : (
+          <ul className="rounded-2xl border fios-border bg-[var(--fios-surface)] overflow-hidden divide-y divide-[color-mix(in_srgb,var(--fios-border)_80%,transparent)] shadow-sm dark:shadow-none">
+            {visibleModules.map((mod) => {
+              const total = totalItemsFor(mod.code);
+              const colorKey = normalizeModuleColor(mod.color);
+              const title = moduleDisplayName(mod);
+              const courseCode = moduleCourseCode(mod);
+              return (
+                <li key={mod.id}>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedModule(mod.code)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedModule(mod.code);
+                      }
+                    }}
+                    data-mod-color={colorKey}
+                    className="group flex items-center gap-3 min-h-12 px-3.5 sm:px-4 py-2.5 cursor-pointer hover:bg-[var(--fios-surface-2)] active:bg-[var(--fios-surface-2)] transition-colors"
+                  >
+                    <span data-mod-color={colorKey} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide shrink-0`}>
+                      {courseCode || title.slice(0, 8)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-[var(--fios-text)] truncate">{title}</p>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-[var(--fios-text-muted)] shrink-0 tabular-nums">
+                      {total} {total === 1 ? 'item' : 'items'}
+                    </span>
+                    <div className="flex items-center gap-0.5 shrink-0 opacity-70 group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={(e) => openEditModule(e, mod)}
+                        className="touch-target p-2 text-muted-foreground hover:text-cyan-400 cursor-pointer"
+                        title="Edit module"
+                        aria-label={`Edit ${title}`}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteModule(e, mod)}
+                        className="touch-target p-2 text-muted-foreground hover:text-rose-400 cursor-pointer"
+                        title="Delete Module Folder"
+                        aria-label={`Delete ${title}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <ChevronRight className="w-4 h-4 text-[var(--fios-text-muted)]" aria-hidden />
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        <AnimatePresence>
+          {recallOpen && <ActiveRecall modules={modules} initialModule="" onClose={() => setRecallOpen(false)} />}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  /* ── Full-screen module hub (drill-down) ── */
+  return (
+    <div className="space-y-6 font-sans text-foreground max-w-6xl mx-auto min-w-0">
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => setSelectedModule(null)}
+          className="inline-flex items-center gap-1.5 min-h-11 px-1 text-xs font-bold uppercase tracking-wide text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Modules
+        </button>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-mono font-black uppercase tracking-widest accent-solid-text mb-1">Module hub</p>
+            <h2 className="text-2xl sm:text-3xl font-black italic text-foreground uppercase tracking-tight flex items-center gap-2 min-w-0">
+              <span data-mod-color={selectedColor} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide shrink-0`}>
+                {moduleCourseCode(selectedMod) || selectedModule}
+              </span>
+              <span className="truncate">{selectedTitle}</span>
+            </h2>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setRecallOpen(true)} className="min-h-11 px-3 py-2 bg-[var(--fios-surface-2)] border fios-border text-[var(--fios-text)] font-bold uppercase text-xs rounded-xl flex items-center gap-1.5 cursor-pointer">
+              <Brain className="w-3.5 h-3.5 accent-solid-text" /> Recall
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => onOpenFlashcards(undefined, undefined, selectedModule || undefined, false)}
+              className="min-h-11 px-4 py-2 accent-bg text-slate-950 font-black italic uppercase text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/20"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Generate Flashcards
+            </motion.button>
+          </div>
         </div>
       </div>
 
-      {/* Create / edit module */}
       <AnimatePresence>
         {moduleFormMode && (
           <ModuleFormPanel
@@ -284,107 +440,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Tag / folder groups */}
-      {tagFolders.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground">Folders:</span>
-          <button
-            type="button"
-            onClick={() => setFolderFilter(null)}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border cursor-pointer ${folderFilter === null ? 'accent-bg text-slate-950 border-transparent' : 'border-border text-muted-foreground'}`}
-          >
-            All
-          </button>
-          {tagFolders.map(([tag, list]) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => setFolderFilter(tag)}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border cursor-pointer ${folderFilter === tag ? 'accent-bg text-slate-950 border-transparent' : 'border-border text-muted-foreground'}`}
-            >
-              <Tag className="w-3 h-3 inline mr-1" />{tag} ({list.length})
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Module folders */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <button onClick={() => setSelectedModule(null)}
-          className={`p-4 rounded-xl border text-left transition-colors cursor-pointer ${selectedModule === null ? 'border-emerald-400 bg-emerald-500/10 shadow-lg shadow-emerald-500/10' : 'border-border bg-card hover:border-border shadow-sm dark:shadow-none'}`}>
-          <div className="flex items-center justify-between text-xs font-mono font-bold uppercase tracking-wider text-foreground">
-            <span>All Modules</span><Layers className="w-4 h-4 text-emerald-400" />
-          </div>
-          <p className="text-2xl font-black text-foreground mt-2">{modules.length}</p>
-          <p className="text-[10px] font-mono text-muted-foreground mt-1">{decks.length} decks · {quizzes.length} quizzes · {codeExams.length} exams · {documents.length} docs</p>
-        </button>
-
-        {visibleModules.map((mod) => {
-          const counts = countsFor(mod.code);
-          const isSelected = selectedModule === mod.code;
-          const colorKey = normalizeModuleColor(mod.color);
-          const title = moduleDisplayName(mod);
-          const courseCode = moduleCourseCode(mod);
-          return (
-            <motion.div
-              key={mod.id}
-              whileHover={{ y: -2 }}
-              onClick={() => setSelectedModule(mod.code)}
-              data-mod-color={colorKey}
-              className={`p-4 rounded-xl border text-left transition-colors cursor-pointer relative group flex flex-col justify-between ${isSelected ? 'mod-border bg-card shadow-sm dark:shadow-none' : 'border-border bg-card hover:border-border shadow-sm dark:shadow-none'}`}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span data-mod-color={colorKey} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide`} title={title}>
-                    {title}
-                  </span>
-                  <div className="flex items-center gap-0.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => openEditModule(e, mod)}
-                      className="text-muted-foreground hover:text-cyan-400 p-1 cursor-pointer"
-                      title="Edit module"
-                      aria-label={`Edit ${title}`}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteModule(e, mod)}
-                      className="text-muted-foreground hover:text-rose-400 p-1 cursor-pointer"
-                      title="Delete Module Folder"
-                      aria-label={`Delete ${title}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                {courseCode && (
-                  <p className="text-[10px] font-mono text-muted-foreground mt-1.5 truncate" title={courseCode}>
-                    {courseCode}
-                  </p>
-                )}
-                {mod.tags && mod.tags.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5 min-w-0">
-                    {mod.tags.map((t) => (
-                      <span key={t} data-mod-color={colorKey} className="mod-pill text-[9px] font-mono px-1.5 py-0.5 rounded border max-w-[180px] truncate min-h-[1.25rem]">{t}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[10px] font-mono text-muted-foreground mt-3 pt-2 border-t border-border/60">
-                <span className="flex items-center gap-1"><Layers className="w-3 h-3 text-cyan-400" />{counts.decks}</span>
-                <span className="flex items-center gap-1"><HelpCircle className="w-3 h-3 text-emerald-400" />{counts.quizzes}</span>
-                <span className="flex items-center gap-1"><Code2 className="w-3 h-3 text-indigo-400" />{counts.code}</span>
-                <span className="flex items-center gap-1"><CheckSquare className="w-3 h-3 text-amber-400" />{counts.tasks}</span>
-                <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-rose-400" />{counts.documents}</span>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Entity type tabs — fios-h-scroll enables touch pan-x (global button touch-action otherwise blocks swipe) */}
+      {/* Entity type tabs — full-screen hub content only */}
       <div className="space-y-4 min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-3 min-w-0">
           <div
@@ -403,7 +459,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
                   aria-selected={entityTab === t.id}
                   data-entity-tab={t.id}
                   onClick={() => setEntityTab(t.id)}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 ${entityTab === t.id ? 'bg-emerald-400 text-slate-950' : 'text-muted-foreground hover:text-foreground'}`}
+                  className={`min-h-10 px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 ${entityTab === t.id ? 'bg-emerald-400 text-slate-950' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   <Icon className="w-3.5 h-3.5" /> {t.label}
                 </button>
@@ -411,9 +467,6 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
             })}
           </div>
           <span className="text-xs font-mono text-muted-foreground shrink-0">
-            {selectedModule
-              ? `${resolveModuleLabel(modules, selectedModule, selectedModule)} · `
-              : 'All · '}
             {activeCount} items
           </span>
         </div>
@@ -450,7 +503,14 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
             <motion.div key={entityTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
               {/* DECKS */}
               {entityTab === 'decks' && (
-                filtered.decks.length === 0 ? <EmptyState label="No decks in this module" onAction={() => onOpenFlashcards()} actionLabel="Generate Flashcards" /> : (
+                filtered.decks.length === 0 ? (
+                  <EmptyState
+                    label="No decks in this module"
+                    onAction={() => onOpenFlashcards(undefined, undefined, selectedModule || undefined, false)}
+                    actionLabel="Generate Flashcards"
+                    glow
+                  />
+                ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filtered.decks.map((deck) => (
                       <motion.div key={deck.id} whileHover={{ y: -2 }} onClick={() => onOpenFlashcards(deck.cards, deck.title, deck.module_code, true)}
@@ -732,12 +792,22 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
   );
 };
 
-const EmptyState: React.FC<{ label: string; onAction?: () => void; actionLabel?: string }> = ({ label, onAction, actionLabel }) => (
+const EmptyState: React.FC<{
+  label: string;
+  onAction?: () => void;
+  actionLabel?: string;
+  glow?: boolean;
+}> = ({ label, onAction, actionLabel, glow }) => (
   <div className="p-12 text-center bg-card border border-border/80 rounded-2xl space-y-3 shadow-sm dark:shadow-none">
-    <Sparkles className="w-8 h-8 text-muted-foreground mx-auto" />
+    <Sparkles className={`w-8 h-8 mx-auto ${glow ? 'accent-solid-text' : 'text-muted-foreground'}`} />
     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{label}</p>
     {onAction && actionLabel && (
-      <button onClick={onAction} className="px-4 py-2 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-lg transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+      <button
+        onClick={onAction}
+        className={`px-5 py-3 min-h-11 accent-bg hover:opacity-90 text-slate-950 font-black italic uppercase text-xs rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+          glow ? 'shadow-lg shadow-emerald-500/30 ring-2 ring-emerald-400/40 animate-pulse' : ''
+        }`}
+      >
         <Sparkles className="w-3.5 h-3.5" /> {actionLabel}
       </button>
     )}

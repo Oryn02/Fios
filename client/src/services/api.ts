@@ -62,5 +62,12 @@ export async function generateFlashcards(studyNotes: string): Promise<FlashcardR
   if (!cards.length) {
     throw new Error('No flashcards were returned. Try longer notes or regenerate.');
   }
+  try {
+    const { recordAiGeneration, recordFlashcardTouch } = await import('../lib/studyMilestones');
+    recordAiGeneration(1);
+    recordFlashcardTouch(cards.length);
+  } catch {
+    /* optional */
+  }
   return { cards };
 }

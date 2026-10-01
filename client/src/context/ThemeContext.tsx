@@ -13,6 +13,11 @@ import {
   setAdminHolidayPreview,
   type HolidayPalette,
 } from '../lib/holidays';
+import {
+  applyImmersivePalette,
+  getImmersiveByAccent,
+  rewardsIncludeTheme,
+} from '../lib/rpgThemeRegistry';
 
 function isAccentRewardUnlocked(key: AccentKey): boolean {
   if (!LOCKED_ACCENTS.has(key)) return true;
@@ -21,7 +26,7 @@ function isAccentRewardUnlocked(key: AccentKey): boolean {
     if (!raw) return false;
     const rewards = JSON.parse(raw);
     if (!Array.isArray(rewards)) return false;
-    return rewards.includes(`theme:${key}`) || rewards.includes(key);
+    return rewardsIncludeTheme(rewards.map(String), key);
   } catch {
     return false;
   }
@@ -37,7 +42,8 @@ interface ThemeContextValue {
   holidayTheme: HolidayPalette | null;
   setTheme: (t: ThemeMode) => void;
   toggleTheme: () => void;
-  setAccent: (a: AccentKey) => void;
+  /** Apply accent. Pass `{ force: true }` to bypass RPG lock (operator preview / grant). */
+  setAccent: (a: AccentKey, opts?: { force?: boolean }) => void;
   /** Admin-only: apply a holiday palette immediately (session-scoped). */
   previewHolidayTheme: (palette: HolidayPalette | null) => void;
 }
@@ -55,6 +61,8 @@ export function applyAccentVars(accent: AccentKey) {
   root.dataset.accent = accent;
   root.removeAttribute('data-holiday');
   root.removeAttribute('data-holiday-mood');
+  const immersive = getImmersiveByAccent(accent);
+  applyImmersivePalette(immersive?.defaultUnlocked ? null : immersive);
 }
 
 function resolveSystem(): ResolvedTheme {
@@ -197,8 +205,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   }, [updateProfile, systemPref, accent]);
 
-  const setAccent = useCallback((a: AccentKey) => {
-    if (LOCKED_ACCENTS.has(a) && !isAccentRewardUnlocked(a)) {
+  const setAccent = useCallback((a: AccentKey, opts?: { force?: boolean }) => {
+    if (!opts?.force && LOCKED_ACCENTS.has(a) && !isAccentRewardUnlocked(a)) {
       console.warn('[theme] Accent locked until RPG unlock:', a);
       return;
     }

@@ -17,7 +17,27 @@ export type AccentKey =
   | 'rose-quartz'
   | 'neon-violet'
   | 'cyber'
-  | 'dark-matter';
+  | 'dark-matter'
+  /** Immersive Roguelike themes (v4.1+) — unlocked via study milestones. */
+  | 'bleu-minimal'
+  | 'terminal-matrix'
+  | 'night-shift'
+  | 'manga-eclipse'
+  | 'cyber-samurai'
+  | 'liquid-frost'
+  | 'abyssal-ocean'
+  | 'synthwave'
+  | 'solar-flare'
+  | 'noir'
+  | 'bio-punk'
+  | 'elden'
+  | 'badlands'
+  | 'lofi-cafe'
+  | 'quantum-glitch'
+  | 'chibi-manga'
+  | 'sakura-cafe'
+  | 'webtoon-romance'
+  | 'cozy-cottage';
 export type ThemeMode = 'dark' | 'light' | 'system';
 
 export interface UserProfile {
@@ -76,13 +96,53 @@ export const ACCENTS: AccentDef[] = [
   { key: 'rose-quartz', label: 'Rose Quartz', from: '#fda4af', via: '#fb7185', to: '#e11d48', solid: '#fb7185' },
   { key: 'violet', label: 'Cyber Violet', from: '#c084fc', via: '#a78bfa', to: '#6366f1', solid: '#a78bfa' },
   { key: 'neon-violet', label: 'Neon Violet', from: '#e9d5ff', via: '#c084fc', to: '#7c3aed', solid: '#c084fc' },
-  /** RPG unlock themes (v3.9+) — locked until skill unlocks grant them. */
+  /** Immersive Roguelike themes (v4.1+) — study-milestone unlocks. */
+  { key: 'bleu-minimal', label: 'Bleu Minimal', from: '#34d399', via: '#2dd4bf', to: '#14b8a6', solid: '#34d399' },
+  { key: 'terminal-matrix', label: 'Terminal Matrix', from: '#86efac', via: '#22c55e', to: '#166534', solid: '#4ade80' },
+  { key: 'night-shift', label: 'Seven Bar Night Shift', from: '#fde68a', via: '#fbbf24', to: '#ea580c', solid: '#fbbf24' },
   { key: 'cyber', label: 'Cyber Grid', from: '#22d3ee', via: '#06b6d4', to: '#0891b2', solid: '#22d3ee' },
-  { key: 'dark-matter', label: 'Dark Matter', from: '#94a3b8', via: '#475569', to: '#0f172a', solid: '#64748b' },
+  { key: 'dark-matter', label: 'Dark Matter', from: '#94a3b8', via: '#7c3aed', to: '#0f172a', solid: '#8b5cf6' },
+  { key: 'manga-eclipse', label: 'Manga Berserk / Eclipse', from: '#fb7185', via: '#e11d48', to: '#7f1d1d', solid: '#ef4444' },
+  { key: 'cyber-samurai', label: 'Cyber-Samurai', from: '#fda4af', via: '#ec4899', to: '#9d174d', solid: '#f472b6' },
+  { key: 'liquid-frost', label: 'Liquid Glass / Frost', from: '#a5f3fc', via: '#67e8f9', to: '#0ea5e9', solid: '#22d3ee' },
+  { key: 'abyssal-ocean', label: 'Abyssal Ocean', from: '#38bdf8', via: '#0284c7', to: '#0c4a6e', solid: '#0ea5e9' },
+  { key: 'synthwave', label: "Synthwave / Outrun '84", from: '#f472b6', via: '#ec4899', to: '#22d3ee', solid: '#f472b6' },
+  { key: 'solar-flare', label: 'Solar Flare / Supernova', from: '#fde68a', via: '#f97316', to: '#9a3412', solid: '#f97316' },
+  { key: 'noir', label: 'Monochrome Noir', from: '#e5e5e5', via: '#a3a3a3', to: '#525252', solid: '#d4d4d4' },
+  { key: 'bio-punk', label: 'Bio-Punk / Acid Rain', from: '#bef264', via: '#84cc16', to: '#365314', solid: '#a3e635' },
+  { key: 'elden', label: 'Elden / Erdtree', from: '#fde68a', via: '#d97706', to: '#78350f', solid: '#f59e0b' },
+  { key: 'badlands', label: 'Cyberpunk Nomad', from: '#fdba74', via: '#c2410c', to: '#7c2d12', solid: '#ea580c' },
+  { key: 'lofi-cafe', label: 'Lo-Fi Cafe', from: '#fcd34d', via: '#d97706', to: '#78716c', solid: '#d97706' },
+  { key: 'quantum-glitch', label: 'Quantum Glitch', from: '#22d3ee', via: '#f43f5e', to: '#a855f7', solid: '#f43f5e' },
+  { key: 'chibi-manga', label: 'Chibi Manga', from: '#fca5a5', via: '#f87171', to: '#44403c', solid: '#f87171' },
+  { key: 'sakura-cafe', label: 'Sakura Blossom Cafe', from: '#fbcfe8', via: '#f9a8d4', to: '#fda4af', solid: '#f9a8d4' },
+  { key: 'webtoon-romance', label: 'Midnight Webtoon', from: '#c4b5fd', via: '#f9a8d4', to: '#fdba74', solid: '#c4b5fd' },
+  { key: 'cozy-cottage', label: 'Cozy Cottage', from: '#fde68a', via: '#d6d3d1', to: '#a8a29e', solid: '#d97706' },
 ];
 
-/** Accents that require an RPG unlock before selection. */
-export const LOCKED_ACCENTS = new Set<AccentKey>(['cyber', 'dark-matter']);
+/** Accents that require an immersive study-milestone unlock before selection. */
+export const LOCKED_ACCENTS = new Set<AccentKey>([
+  'terminal-matrix',
+  'night-shift',
+  'cyber',
+  'dark-matter',
+  'manga-eclipse',
+  'cyber-samurai',
+  'liquid-frost',
+  'abyssal-ocean',
+  'synthwave',
+  'solar-flare',
+  'noir',
+  'bio-punk',
+  'elden',
+  'badlands',
+  'lofi-cafe',
+  'quantum-glitch',
+  'chibi-manga',
+  'sakura-cafe',
+  'webtoon-romance',
+  'cozy-cottage',
+]);
 
 export const ACCENT_KEYS = new Set(ACCENTS.map((a) => a.key));
 

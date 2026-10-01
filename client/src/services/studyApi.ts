@@ -229,12 +229,27 @@ export async function mockExamGrade(input: {
   examId?: string;
   exam?: unknown;
   answers: Record<string, string>;
+  difficulty?: string;
 }): Promise<any> {
   const res = await saasFetch('/api/exam/mock-grade', {
     method: 'POST',
     body: JSON.stringify(input),
   });
-  return readJson(res);
+  const data = await readJson(res);
+  try {
+    const pct = Number(
+      data?.percent ?? data?.score_percent ?? data?.accuracy ?? (data?.score != null ? data.score * 100 : NaN)
+    );
+    if (!Number.isNaN(pct)) {
+      const { recordMockExamScore, recordAiGeneration } = await import('../lib/studyMilestones');
+      const hard = String(input.difficulty || data?.difficulty || '').toLowerCase() === 'hard';
+      recordMockExamScore(pct, { hard });
+      recordAiGeneration(1);
+    }
+  } catch {
+    /* optional */
+  }
+  return data;
 }
 
 export async function parseSyllabus(input: {
