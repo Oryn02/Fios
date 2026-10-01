@@ -3,10 +3,23 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; 3.8.0 SaaS pack; current 4.1.0.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; 3.8.0 SaaS pack; current 4.1.1.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v4.1.1',
+      date: 'October 2026',
+      title: 'Theme × UI crash-fix + mobile drawer purge',
+      highlights: [
+        'Mobile-first: sidebar drawer purged to Pillars (Overview / Modules / Agenda / Studio) + System (Settings / Updates) — legacy More Tools removed.',
+        'User Profile exclusive with side nav (no dual-open); profile drawer scrolls on iOS/PWA; renamed from Rogue Profile.',
+        'Liquid Glass real translucency + backdrop-blur; immersive motion upgraded with reduced-motion / low-power safety.',
+        'Settings splits Accent Gradients vs Immersive Themes; Studio heading = Fios Studio; Flashcards hub heading restored.',
+        'Modules hardened under themes (ErrorBoundary + frosted readable surfaces); main scroll restored with theme layers.',
+        'Mobile top nav decluttered (theme / settings / logout on sm+; streak + avatar stay).',
+      ],
+    },
     {
       version: 'v4.1.0',
       date: 'October 2026',
@@ -649,7 +662,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-foreground tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-muted-foreground">Current release · v4.1.0</p>
+        <p className="text-xs font-mono text-muted-foreground">Current release · v4.1.1</p>
       </header>
 
       <div className="space-y-4">

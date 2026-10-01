@@ -52,11 +52,11 @@ export const StudioHub: React.FC<StudioHubProps> = ({
     <div className="space-y-4 max-w-6xl mx-auto">
       <header className="space-y-1">
         <p className="text-[10px] font-mono font-black uppercase tracking-widest accent-solid-text flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5" /> Studio
+          <Sparkles className="w-3.5 h-3.5" /> Create & practice
           {ctxLabel ? ` · ${ctxLabel}` : ''}
         </p>
         <h1 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tight text-[var(--fios-text)]">
-          Create & practice
+          Fios Studio
         </h1>
         <p className="text-xs text-[var(--fios-text-muted)]">
           {ctxLabel

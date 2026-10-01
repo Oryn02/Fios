@@ -15,7 +15,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
 const app = express();
-const FIOS_VERSION = '4.1.0';
+const FIOS_VERSION = '4.1.1';
 
 /**
  * CORS for split Render deploys (Static Site → Web Service).

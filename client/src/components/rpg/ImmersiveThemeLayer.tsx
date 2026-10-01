@@ -1,16 +1,42 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { ImmersiveThemeDef } from '../../lib/rpgThemeRegistry';
 
 type P = { x: number; y: number; r: number; vx: number; vy: number; a: number; phase?: number };
 
+function useMotionAllowed(): boolean {
+  const [allowed, setAllowed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    if (document.documentElement.getAttribute('data-low-power') === 'true') return false;
+    return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => {
+      const low = document.documentElement.getAttribute('data-low-power') === 'true';
+      setAllowed(!low && !mq.matches);
+    };
+    sync();
+    mq.addEventListener('change', sync);
+    const obs = new MutationObserver(sync);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-low-power'] });
+    return () => {
+      mq.removeEventListener('change', sync);
+      obs.disconnect();
+    };
+  }, []);
+  return allowed;
+}
+
 /**
  * Performant CSS/canvas ambient layer for immersive Roguelike themes.
+ * Pointer-events none; respects prefers-reduced-motion + Low-Power.
  */
 export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> = ({ theme }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const motionOk = useMotionAllowed();
 
   useEffect(() => {
-    if (!theme || theme.motion === 'aurora' || theme.defaultUnlocked) return;
+    if (!theme || theme.motion === 'aurora' || theme.defaultUnlocked || !motionOk) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -33,10 +59,10 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
     const w = () => window.innerWidth;
     const h = () => window.innerHeight;
 
-    const cols = Math.ceil(w() / 18);
+    const cols = Math.ceil(w() / 16);
     const drops = Array.from({ length: cols }, () => Math.random() * h());
-    const glyphs = '01アイウエオカキクケコサシスセソタチツテトナニヌネノ<>|/';
-    const particles: P[] = Array.from({ length: 56 }, () => ({
+    const glyphs = '01アイウエオカキクケコサシスセソタチツテトナニヌネノ<>|/∑∂';
+    const particles: P[] = Array.from({ length: 72 }, () => ({
       x: Math.random() * w(),
       y: Math.random() * h(),
       r: 2 + Math.random() * 6,
@@ -55,15 +81,16 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
       const motion = theme.motion;
 
       if (motion === 'matrix') {
-        ctx.fillStyle = 'rgba(2,6,23,0.12)';
+        ctx.fillStyle = 'rgba(2,6,23,0.08)';
         ctx.fillRect(0, 0, width, height);
-        ctx.font = '14px ui-monospace, monospace';
-        ctx.fillStyle = 'rgba(74,222,128,0.55)';
+        ctx.font = '13px ui-monospace, monospace';
         for (let i = 0; i < drops.length; i++) {
           const ch = glyphs[Math.floor(Math.random() * glyphs.length)];
-          ctx.fillText(ch, i * 18, drops[i] * 18);
-          if (drops[i] * 18 > height && Math.random() > 0.975) drops[i] = 0;
-          drops[i] += 0.35 + Math.random() * 0.35;
+          const bright = Math.random() > 0.92;
+          ctx.fillStyle = bright ? 'rgba(190,242,100,0.85)' : 'rgba(74,222,128,0.45)';
+          ctx.fillText(ch, i * 16, drops[i] * 16);
+          if (drops[i] * 16 > height && Math.random() > 0.965) drops[i] = 0;
+          drops[i] += 0.45 + Math.random() * 0.45;
         }
       } else if (motion === 'bokeh') {
         for (const p of particles) {
@@ -97,6 +124,11 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
           ctx.lineTo(width / 2 + i * 120, height);
           ctx.stroke();
         }
+        const glow = ctx.createLinearGradient(0, horizon - 40, 0, horizon + 20);
+        glow.addColorStop(0, 'rgba(34,211,238,0)');
+        glow.addColorStop(1, 'rgba(34,211,238,0.12)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, horizon - 40, width, 60);
       } else if (motion === 'accretion') {
         const cx = width * 0.5;
         const cy = height * 0.45;
@@ -167,27 +199,58 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
           ctx.fillRect(0, 0, width, height);
         }
       } else if (motion === 'frost') {
-        for (let i = 0; i < 8; i++) {
-          const x = ((i * 137 + t * 40) % (width + 100)) - 50;
-          const y = (i * 97) % height;
-          const g = ctx.createLinearGradient(x, y, x + 180, y + 120);
-          g.addColorStop(0, 'rgba(165,243,252,0.04)');
-          g.addColorStop(0.5, 'rgba(255,255,255,0.08)');
-          g.addColorStop(1, 'rgba(165,243,252,0)');
+        // Refracting prism panes + soft frost wash
+        for (let i = 0; i < 10; i++) {
+          const x = ((i * 137 + t * 28) % (width + 160)) - 80;
+          const y = (i * 89 + Math.sin(t + i) * 12) % height;
+          const g = ctx.createLinearGradient(x, y, x + 220, y + 140);
+          g.addColorStop(0, 'rgba(165,243,252,0.02)');
+          g.addColorStop(0.35, 'rgba(255,255,255,0.12)');
+          g.addColorStop(0.65, 'rgba(103,232,249,0.08)');
+          g.addColorStop(1, 'rgba(14,165,233,0)');
           ctx.fillStyle = g;
-          ctx.fillRect(x, y, 200, 140);
+          ctx.beginPath();
+          ctx.moveTo(x, y + 20);
+          ctx.lineTo(x + 160, y);
+          ctx.lineTo(x + 220, y + 100);
+          ctx.lineTo(x + 40, y + 140);
+          ctx.closePath();
+          ctx.fill();
+        }
+        for (let i = 0; i < 40; i++) {
+          ctx.fillStyle = `rgba(255,255,255,${0.02 + Math.random() * 0.05})`;
+          ctx.fillRect(Math.random() * width, Math.random() * height, 1.5, 1.5);
         }
       } else if (motion === 'ocean') {
         for (const p of particles) {
           p.y += p.vy;
-          p.x += Math.sin(p.y * 0.02) * 0.4;
+          p.x += Math.sin(p.y * 0.02 + t) * 0.55;
           if (p.y < -20) {
             p.y = height + 20;
             p.x = Math.random() * width;
           }
           ctx.strokeStyle = `rgba(56,189,248,${p.a})`;
+          ctx.lineWidth = 1.25;
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.stroke();
+          const core = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 2);
+          core.addColorStop(0, `rgba(125,211,252,${p.a * 0.5})`);
+          core.addColorStop(1, 'rgba(56,189,248,0)');
+          ctx.fillStyle = core;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r * 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // pressure wave bands
+        ctx.strokeStyle = 'rgba(14,165,233,0.08)';
+        for (let i = 0; i < 5; i++) {
+          const y = ((t * 30 + i * 80) % (height + 40)) - 20;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          for (let x = 0; x <= width; x += 24) {
+            ctx.lineTo(x, y + Math.sin(x * 0.02 + t + i) * 6);
+          }
           ctx.stroke();
         }
       } else if (motion === 'synthwave') {
@@ -201,12 +264,10 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
         ctx.beginPath();
         ctx.arc(width / 2, sunY, sunR, 0, Math.PI * 2);
         ctx.fill();
-        // scan bands on sun
         ctx.fillStyle = 'rgba(26,5,51,0.55)';
         for (let i = 0; i < 8; i++) {
           ctx.fillRect(width / 2 - sunR, sunY + i * 10 - 20, sunR * 2, 4);
         }
-        // wireframe mountains
         ctx.strokeStyle = 'rgba(34,211,238,0.45)';
         ctx.beginPath();
         ctx.moveTo(0, height);
@@ -216,7 +277,6 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
         }
         ctx.lineTo(width, height);
         ctx.stroke();
-        // palms silhouettes
         ctx.fillStyle = 'rgba(0,0,0,0.55)';
         for (const px of [width * 0.12, width * 0.88]) {
           ctx.fillRect(px, height * 0.55, 4, height * 0.3);
@@ -242,12 +302,10 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
           ctx.fill();
         }
       } else if (motion === 'noir') {
-        // Venetian blinds
         ctx.fillStyle = 'rgba(0,0,0,0.35)';
         for (let y = 0; y < height; y += 28) {
           ctx.fillRect(0, y, width, 10);
         }
-        // film grain
         for (let i = 0; i < 120; i++) {
           ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.08})`;
           ctx.fillRect(Math.random() * width, Math.random() * height, 2, 2);
@@ -257,9 +315,8 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
         ctx.lineWidth = 1.5;
         for (let i = 0; i < 40; i++) {
           const x = ((i * 37 + t * 80) % (width + 40)) - 20;
-          const y0 = -20;
           ctx.beginPath();
-          ctx.moveTo(x, y0);
+          ctx.moveTo(x, -20);
           ctx.lineTo(x + 30, height + 20);
           ctx.stroke();
         }
@@ -289,16 +346,14 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
           ctx.ellipse(p.x, p.y, p.r * 3, p.r, 0, 0, Math.PI * 2);
           ctx.fill();
         }
-        // heat shimmer bands
         ctx.fillStyle = 'rgba(253,186,116,0.04)';
         for (let i = 0; i < 6; i++) {
           const y = height * 0.4 + Math.sin(t * 2 + i) * 12 + i * 30;
           ctx.fillRect(0, y, width, 8);
         }
       } else if (motion === 'lofi') {
-        // rain
         ctx.strokeStyle = 'rgba(214,211,209,0.35)';
-        for (let i = 0; i < 60; i++) {
+        for (let i = 0; i < 80; i++) {
           const x = (i * 47 + t * 120) % width;
           const y = (i * 73 + t * 400) % height;
           ctx.beginPath();
@@ -306,7 +361,6 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
           ctx.lineTo(x + 2, y + 14);
           ctx.stroke();
         }
-        // steam pulse
         const steam = ctx.createRadialGradient(width * 0.2, height * 0.75, 4, width * 0.2, height * 0.75, 50 + Math.sin(t) * 10);
         steam.addColorStop(0, 'rgba(253,230,138,0.2)');
         steam.addColorStop(1, 'rgba(253,230,138,0)');
@@ -325,7 +379,6 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
         ctx.fillStyle = `rgba(244,63,94,${0.03 + Math.random() * 0.05})`;
         ctx.fillRect(2, 0, width, height);
       } else if (motion === 'chibi') {
-        // speed lines
         ctx.strokeStyle = 'rgba(68,64,60,0.2)';
         for (let i = 0; i < 24; i++) {
           const y = (i / 24) * height;
@@ -334,7 +387,6 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
           ctx.lineTo(width, y);
           ctx.stroke();
         }
-        // screentone dots
         for (let y = 0; y < height; y += 8) {
           for (let x = (y % 16 === 0 ? 0 : 4); x < width; x += 8) {
             ctx.fillStyle = 'rgba(0,0,0,0.08)';
@@ -350,7 +402,6 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
           if (p.x < -10) p.x = width + 10;
           if (p.x > width + 10) p.x = -10;
           ctx.fillStyle = `rgba(249,168,212,${p.a})`;
-          // tiny star/heart-ish blob
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.r * 0.7, 0, Math.PI * 2);
           ctx.fill();
@@ -359,7 +410,6 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
           ctx.fillRect(p.x - p.r, p.y - 1, p.r * 2, 2);
         }
       } else if (motion === 'hearth') {
-        // ember fireflies
         for (const p of particles) {
           p.y += p.vy * 0.6;
           p.x += Math.sin(t + (p.phase || 0)) * 0.4;
@@ -375,7 +425,6 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
           ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
           ctx.fill();
         }
-        // hearth glow
         const glow = ctx.createRadialGradient(width / 2, height, 10, width / 2, height, height * 0.45);
         glow.addColorStop(0, `rgba(217,119,6,${0.18 + Math.sin(t * 3) * 0.05})`);
         glow.addColorStop(1, 'rgba(217,119,6,0)');
@@ -392,22 +441,37 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
     };
-  }, [theme]);
+  }, [theme, motionOk]);
 
   if (!theme || theme.defaultUnlocked || theme.motion === 'aurora') {
     return (
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden fios-aurora-layer" aria-hidden>
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden fios-aurora-layer fios-theme-layer" aria-hidden>
         <div className="fios-aurora-blob fios-aurora-a" />
         <div className="fios-aurora-blob fios-aurora-b" />
       </div>
     );
   }
 
+  if (!motionOk) {
+    return (
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden fios-theme-layer" aria-hidden>
+        <div
+          className="absolute inset-0 opacity-40"
+          style={{
+            background: `radial-gradient(ellipse at 30% 20%, color-mix(in srgb, ${theme.palette.from} 35%, transparent), transparent 55%),
+              radial-gradient(ellipse at 80% 70%, color-mix(in srgb, ${theme.palette.to} 28%, transparent), transparent 50%)`,
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden fios-theme-layer" aria-hidden>
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       {theme.motion === 'grid' && <div className="fios-scanline absolute inset-0" />}
       {theme.motion === 'glitch' && <div className="fios-glitch-overlay absolute inset-0" />}
+      {theme.motion === 'frost' && <div className="fios-frost-pane absolute inset-0 opacity-40" />}
     </div>
   );
 };

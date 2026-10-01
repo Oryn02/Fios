@@ -33,10 +33,28 @@ export const DEFAULT_WIDGET_ORDER: WidgetId[] = ['flightPlan', 'heatmap', 'dueCa
 export const DEFAULT_MOBILE_NAV = ['overview', 'agenda', 'modules', 'studio'];
 /** Fixed 4-pillar bottom nav — order is intentional; Settings UI should not offer reorder for these. */
 export const PILLAR_NAV_IDS = ['overview', 'agenda', 'modules', 'studio'] as const;
-export const DEFAULT_NAV_ORDER = [
-  'overview', 'agenda', 'modules', 'studio', 'flashcards', 'quiz', 'code', 'documents', 'tutor', 'social',
-  'atu-calendar', 'grades', 'timer', 'schedule', 'settings', 'updates',
-];
+/** Sidebar / mobile drawer — pillars + system only (no legacy “More tools” dump). */
+export const SIDEBAR_NAV_IDS = [
+  'overview', 'modules', 'agenda', 'studio', 'settings', 'updates',
+] as const;
+export const SIDEBAR_NAV_ID_SET = new Set<string>(SIDEBAR_NAV_IDS);
+export const DEFAULT_NAV_ORDER = [...SIDEBAR_NAV_IDS];
+
+/** Strip legacy tool routes from persisted sidebar order (Modules/Studio hubs own those paths). */
+export function sanitizeNavOrder(order: string[] | null | undefined): string[] {
+  const allowed = SIDEBAR_NAV_ID_SET;
+  const seen = new Set<string>();
+  const next: string[] = [];
+  for (const id of order || []) {
+    if (!allowed.has(id) || seen.has(id)) continue;
+    next.push(id);
+    seen.add(id);
+  }
+  for (const id of SIDEBAR_NAV_IDS) {
+    if (!seen.has(id)) next.push(id);
+  }
+  return next;
+}
 
 /** Default enabled shortcuts (subset of the full catalog). */
 export const DEFAULT_SMART_ACTIONS: SmartActionId[] = ['flashcard', 'note', 'pomodoro', 'tutor'];
@@ -335,7 +353,7 @@ function loadLocal(): PreferencesState {
       widgetVisibility: { ...DEFAULTS.widgetVisibility, ...(parsed.widgetVisibility || {}) },
       widgetOrder: Array.isArray(parsed.widgetOrder) ? parsed.widgetOrder : [...DEFAULTS.widgetOrder],
       mobileNavSlots: Array.isArray(parsed.mobileNavSlots) ? parsed.mobileNavSlots : [...DEFAULTS.mobileNavSlots],
-      navOrder: Array.isArray(parsed.navOrder) ? parsed.navOrder : [...DEFAULTS.navOrder],
+      navOrder: sanitizeNavOrder(Array.isArray(parsed.navOrder) ? parsed.navOrder : [...DEFAULTS.navOrder]),
       smartWidgetActions: sanitizeActions(parsed.smartWidgetActions),
       smartWidgetMetrics: sanitizeMetrics(parsed.smartWidgetMetrics),
       ...floating,
@@ -442,7 +460,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
           widgetVisibility: { ...prev.widgetVisibility, ...(remote.widgetVisibility || {}) },
           widgetOrder: Array.isArray(remote.widgetOrder) ? remote.widgetOrder : prev.widgetOrder,
           mobileNavSlots: Array.isArray(remote.mobileNavSlots) ? remote.mobileNavSlots : prev.mobileNavSlots,
-          navOrder: Array.isArray(remote.navOrder) ? remote.navOrder : prev.navOrder,
+          navOrder: sanitizeNavOrder(Array.isArray(remote.navOrder) ? remote.navOrder : prev.navOrder),
           smartWidgetActions: Array.isArray(remote.smartWidgetActions)
             ? sanitizeActions(remote.smartWidgetActions)
             : prev.smartWidgetActions,
@@ -505,7 +523,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const trimmed = slots.filter(Boolean).slice(0, 5);
     patch({ mobileNavSlots: trimmed.length ? trimmed : [...DEFAULT_MOBILE_NAV] });
   }, [patch]);
-  const setNavOrder = useCallback((order: string[]) => patch({ navOrder: order }), [patch]);
+  const setNavOrder = useCallback((order: string[]) => patch({ navOrder: sanitizeNavOrder(order) }), [patch]);
   const setShowPomodoroWidget = useCallback((v: boolean) => {
     const desktop = defaultFloatingWidgetsOn();
     patch({

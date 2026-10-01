@@ -678,6 +678,15 @@ html.fios-scroll-locked body {
   padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 6px);
   z-index: var(--fios-z-nav);
 }
+:root {
+  /* Approximate bottom nav height for drawer clearance on phones / PWA */
+  --fios-bottom-nav-offset: calc(3.75rem + env(safe-area-inset-bottom, 12px) + 6px);
+}
+@media (min-width: 768px) {
+  :root {
+    --fios-bottom-nav-offset: 0px;
+  }
+}
 
 /*
   Main scroll pad (mobile): clear bottom nav + floating widget stack so section
@@ -1336,11 +1345,65 @@ html[data-rpg-theme]:not([data-rpg-theme="bleu-minimal"]) .fios-app-bg,
 html[data-rpg-theme]:not([data-rpg-theme="bleu-minimal"]) body {
   background-color: var(--rpg-bg) !important;
 }
+
+/* Frosted reading surfaces — keep cards/lists readable without blanking content */
 html[data-rpg-theme]:not([data-rpg-theme="bleu-minimal"]) .fios-card,
+html[data-rpg-theme]:not([data-rpg-theme="bleu-minimal"]) .bg-card,
 html[data-rpg-theme]:not([data-rpg-theme="bleu-minimal"]) [class*="bg-[var(--fios-surface)]"] {
-  backdrop-filter: blur(10px);
+  background-color: color-mix(in srgb, var(--rpg-surface, #1e293b) 78%, transparent) !important;
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
   border-color: var(--rpg-border, rgba(148,163,184,0.22)) !important;
+  color: var(--rpg-text, #e2e8f0);
 }
+html[data-rpg-theme]:not([data-rpg-theme="bleu-minimal"]) .text-muted-foreground,
+html[data-rpg-theme]:not([data-rpg-theme="bleu-minimal"]) .text-foreground {
+  color: inherit;
+}
+html[data-rpg-theme]:not([data-rpg-theme="bleu-minimal"]) .text-muted-foreground {
+  color: var(--rpg-muted, #94a3b8) !important;
+}
+html[data-rpg-theme]:not([data-rpg-theme="bleu-minimal"]) .text-foreground {
+  color: var(--rpg-text, #e2e8f0) !important;
+}
+
+/* Liquid Glass / Frost — real translucency on chrome + cards */
+html[data-rpg-theme="liquid-frost"] {
+  --rpg-surface: rgba(30, 41, 59, 0.42);
+  --rpg-surface-2: rgba(51, 65, 85, 0.38);
+  --fios-surface: rgba(30, 41, 59, 0.42);
+  --fios-surface-2: rgba(51, 65, 85, 0.38);
+}
+html[data-rpg-theme="liquid-frost"] .fios-header,
+html[data-rpg-theme="liquid-frost"] .fios-bottom-nav,
+html[data-rpg-theme="liquid-frost"] .fios-mobile-drawer,
+html[data-rpg-theme="liquid-frost"] .bg-card,
+html[data-rpg-theme="liquid-frost"] .fios-card,
+html[data-rpg-theme="liquid-frost"] [class*="bg-[var(--fios-surface)]"] {
+  background-color: rgba(248, 250, 252, 0.08) !important;
+  backdrop-filter: blur(22px) saturate(1.35) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.35) !important;
+  border-color: rgba(165, 243, 252, 0.28) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+html[data-rpg-theme="liquid-frost"] .fios-frost-pane {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.14),
+    rgba(165, 243, 252, 0.06) 45%,
+    rgba(14, 165, 233, 0.08)
+  );
+  backdrop-filter: blur(28px) saturate(1.4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+}
+
+/* Theme canvas must never trap scroll / taps (phones + PWA) */
+.fios-theme-layer {
+  pointer-events: none !important;
+  touch-action: none;
+  z-index: 0;
+}
+
 html[data-rpg-theme="sakura-cafe"] {
   color-scheme: light;
 }
@@ -1355,4 +1418,20 @@ html[data-rpg-theme="sakura-cafe"] {
 [data-low-power="true"] .fios-aurora-blob {
   animation: none !important;
   opacity: 0.2;
+}
+
+/* Low-power / reduced-motion: drop expensive blur on theme surfaces */
+@media (prefers-reduced-motion: reduce) {
+  html[data-rpg-theme] .bg-card,
+  html[data-rpg-theme] .fios-card,
+  html[data-rpg-theme="liquid-frost"] .fios-header,
+  html[data-rpg-theme="liquid-frost"] .fios-bottom-nav {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+[data-low-power="true"] html[data-rpg-theme] .bg-card,
+[data-low-power="true"] html[data-rpg-theme] .fios-card {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
