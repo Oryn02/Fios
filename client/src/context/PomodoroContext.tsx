@@ -127,6 +127,9 @@ export const PomodoroProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const nextCompleted = completedSessions + 1;
         setCompletedSessions(nextCompleted);
         logFocusSession(durationsRef.current.work, 'work').catch(() => {});
+        void import('../lib/studyMilestones')
+          .then(({ recordPomodoroMinutes }) => recordPomodoroMinutes(durationsRef.current.work))
+          .catch(() => {});
 
         // Transition to long break every 4 completed sessions, otherwise short break
         const nextMode: PomodoroMode = nextCompleted % 4 === 0 ? 'longBreak' : 'shortBreak';

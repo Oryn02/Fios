@@ -46,8 +46,13 @@ const AgendaRow = memo(function AgendaRow({
         <div className={`text-[10px] font-mono font-bold ${muted ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
           {formatAgendaWhen(item)}
         </div>
-        <div className="flex items-center gap-2 min-w-0 flex-wrap">
-          <div className={`text-sm sm:text-xs font-black truncate ${muted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+        <div className="flex items-start gap-2 min-w-0 flex-wrap">
+          {item.moduleCode && (
+            <span data-mod-color={item.colorKey} className={`${MOD_PILL_CLASS} shrink-0 !normal-case tracking-wide`}>
+              {item.moduleCode}
+            </span>
+          )}
+          <div className={`text-sm sm:text-xs font-black break-words w-full sm:w-auto sm:flex-1 min-w-0 ${muted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
             {item.title}
           </div>
           <span data-mod-color={item.colorKey} className={MOD_PILL_CLASS}>
@@ -68,9 +73,6 @@ const AgendaRow = memo(function AgendaRow({
           <div className={`text-[11px] font-mono flex items-center gap-1 truncate ${muted ? 'text-muted-foreground' : 'mod-text'}`} data-mod-color={item.colorKey}>
             <MapPin className="w-3 h-3 shrink-0" /> {item.location}
           </div>
-        )}
-        {item.moduleCode && (
-          <span data-mod-color={item.colorKey} className={`${MOD_BADGE_CLASS} !normal-case tracking-wide`}>{item.moduleCode}</span>
         )}
       </div>
 

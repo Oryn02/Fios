@@ -5,12 +5,20 @@ import { LOCKED_ACCENTS, type AccentKey, type UserStreak } from '../../types/db'
 import { useTheme } from '../../context/ThemeContext';
 import { toast } from '../../lib/toast';
 import { IS_DEMO } from '../../lib/demo';
+import {
+  listRpgThemeUnlocks,
+  rewardsIncludeTheme,
+  type RpgThemeUnlock,
+} from '../../lib/rpgThemeRegistry';
+import {
+  collectStudyMetrics,
+  evaluateAndGrantThemeUnlocks,
+  readLocalRewards,
+} from '../../lib/studyMilestones';
+import { isThemeUnlockedByMetrics, type StudyMetrics } from '../../lib/rpgThemeRegistry';
+import { IMMERSIVE_THEMES } from '../../lib/rpgThemeRegistry';
 
-const UNLOCK_COST = 5;
-const THEME_UNLOCKS: { key: AccentKey; reward: string; label: string }[] = [
-  { key: 'cyber', reward: 'theme:cyber', label: 'Cyber Grid' },
-  { key: 'dark-matter', reward: 'theme:dark-matter', label: 'Dark Matter' },
-];
+const THEME_UNLOCKS = listRpgThemeUnlocks();
 
 function parseRewards(raw: unknown): string[] {
   if (Array.isArray(raw)) return raw.map(String);
@@ -41,21 +49,27 @@ export function getUnlockedRewards(): string[] {
 export function isAccentUnlocked(key: AccentKey): boolean {
   if (!LOCKED_ACCENTS.has(key)) return true;
   const rewards = getUnlockedRewards();
-  return rewards.includes(`theme:${key}`) || rewards.includes(key);
+  return rewardsIncludeTheme(rewards, key);
 }
 
 export const RpgProgressPanel: React.FC<{ compact?: boolean }> = ({ compact }) => {
   const { setAccent, accent } = useTheme();
   const [streak, setStreak] = useState<Partial<UserStreak> | null>(null);
   const [busy, setBusy] = useState(false);
+  const [metrics, setMetrics] = useState<StudyMetrics>({});
 
   const load = useCallback(async () => {
     if (IS_DEMO) {
       setStreak({ xp: 120, skill_points: 8, current_streak: 3, unlocked_rewards: getUnlockedRewards() });
+      const m = await collectStudyMetrics({ xp: 120, streakDays: 3 });
+      setMetrics(m);
+      await evaluateAndGrantThemeUnlocks({ xp: 120, streakDays: 3 });
       return;
     }
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase.from('user_streaks').select('*').eq('user_id', user.id).maybeSingle();
       if (data) {
@@ -66,11 +80,41 @@ export const RpgProgressPanel: React.FC<{ compact?: boolean }> = ({ compact }) =
         } catch {
           /* ignore */
         }
+        const m = await collectStudyMetrics({
+          xp: Number(data.xp) || 0,
+          streakDays: Number(data.current_streak) || 0,
+        });
+        setMetrics(m);
+        const newly = await evaluateAndGrantThemeUnlocks({
+          xp: Number(data.xp) || 0,
+          streakDays: Number(data.current_streak) || 0,
+        });
+        if (newly.length) {
+          const merged = [...new Set([...rewards, ...newly.map((t) => t.reward)])];
+          try {
+            localStorage.setItem('fios_unlocked_rewards', JSON.stringify(merged));
+          } catch {
+            /* ignore */
+          }
+          setStreak((s) => ({ ...s, unlocked_rewards: merged }));
+          await supabase
+            .from('user_streaks')
+            .upsert({
+              user_id: user.id,
+              unlocked_rewards: merged,
+              xp: data.xp,
+              skill_points: data.skill_points,
+              current_streak: data.current_streak,
+              longest_streak: data.longest_streak,
+            } as any);
+        }
       } else {
         setStreak({ xp: 0, skill_points: 0, current_streak: 0, unlocked_rewards: [] });
+        setMetrics(await collectStudyMetrics());
       }
     } catch {
       setStreak({ xp: 0, skill_points: 0, current_streak: 0, unlocked_rewards: getUnlockedRewards() });
+      setMetrics(await collectStudyMetrics());
     }
   }, []);
 
@@ -80,49 +124,56 @@ export const RpgProgressPanel: React.FC<{ compact?: boolean }> = ({ compact }) =
 
   const rewards = parseRewards(streak?.unlocked_rewards).length
     ? parseRewards(streak?.unlocked_rewards)
-    : getUnlockedRewards();
+    : getUnlockedRewards().length
+      ? getUnlockedRewards()
+      : readLocalRewards();
   const sp = streak?.skill_points ?? 0;
   const xp = streak?.xp ?? 0;
 
-  const unlockTheme = async (themeKey: AccentKey, rewardKey: string) => {
-    if (rewards.includes(rewardKey) || rewards.includes(themeKey)) {
-      setAccent(themeKey);
-      toast(`${themeKey} theme applied`, 'success');
-      return;
-    }
-    if (sp < UNLOCK_COST) {
-      toast(`Need ${UNLOCK_COST} skill points`, 'info');
+  const applyOrReveal = async (t: RpgThemeUnlock) => {
+    const unlocked =
+      rewardsIncludeTheme(rewards, t.key) ||
+      rewards.includes(t.reward) ||
+      isThemeUnlockedByMetrics(
+        IMMERSIVE_THEMES.find((x) => x.id === t.immersiveId)!,
+        metrics
+      );
+    if (!unlocked) {
+      toast(t.unlockHint, 'info');
       return;
     }
     setBusy(true);
     try {
-      const nextRewards = [...rewards, rewardKey];
-      const nextSp = sp - UNLOCK_COST;
+      const nextRewards = rewardsIncludeTheme(rewards, t.key)
+        ? rewards
+        : [...rewards, t.reward];
       try {
         localStorage.setItem('fios_unlocked_rewards', JSON.stringify(nextRewards));
       } catch {
         /* ignore */
       }
       if (!IS_DEMO) {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           await supabase
             .from('user_streaks')
             .upsert({
               user_id: user.id,
-              skill_points: nextSp,
               unlocked_rewards: nextRewards,
               xp,
+              skill_points: sp,
               current_streak: streak?.current_streak ?? 0,
               longest_streak: streak?.longest_streak ?? 0,
             } as any);
         }
       }
-      setStreak((s) => ({ ...s, skill_points: nextSp, unlocked_rewards: nextRewards }));
-      setAccent(themeKey);
-      toast(`Unlocked ${themeKey}!`, 'success');
+      setStreak((s) => ({ ...s, unlocked_rewards: nextRewards }));
+      setAccent(t.key);
+      toast(`${t.label} applied`, 'success');
     } catch (e: any) {
-      toast(e?.message || 'Unlock failed', 'error');
+      toast(e?.message || 'Apply failed', 'error');
     } finally {
       setBusy(false);
     }
@@ -136,11 +187,13 @@ export const RpgProgressPanel: React.FC<{ compact?: boolean }> = ({ compact }) =
     setBusy(true);
     try {
       const until = new Date();
-      until.setDate(until.getDate() + ((7 - until.getDay()) % 7 || 7)); // next Sunday-ish weekend end
+      until.setDate(until.getDate() + ((7 - until.getDay()) % 7 || 7));
       const iso = until.toISOString().slice(0, 10);
       const nextSp = sp - 3;
       if (!IS_DEMO) {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           await supabase
             .from('user_streaks')
@@ -205,23 +258,42 @@ export const RpgProgressPanel: React.FC<{ compact?: boolean }> = ({ compact }) =
         </div>
       </div>
       <div className="space-y-2">
-        <p className="text-[10px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Theme unlocks ({UNLOCK_COST} SP)</p>
+        <p className="text-[10px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">
+          Immersive themes (study milestones)
+        </p>
         {THEME_UNLOCKS.map((t) => {
-          const unlocked = rewards.includes(t.reward) || rewards.includes(t.key);
+          const unlocked =
+            rewardsIncludeTheme(rewards, t.key) ||
+            rewards.includes(t.reward) ||
+            isThemeUnlockedByMetrics(
+              IMMERSIVE_THEMES.find((x) => x.id === t.immersiveId)!,
+              metrics
+            );
           return (
             <button
               key={t.key}
               type="button"
               disabled={busy}
-              onClick={() => void unlockTheme(t.key, t.reward)}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border fios-border bg-[var(--fios-surface-2)] text-xs font-bold cursor-pointer text-[var(--fios-text)]"
+              onClick={() => void applyOrReveal(t)}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border fios-border bg-[var(--fios-surface-2)] text-xs font-bold cursor-pointer text-[var(--fios-text)] text-left"
             >
-              <span className="flex items-center gap-2">
-                {unlocked ? <Unlock className="w-3.5 h-3.5 accent-solid-text" /> : <Lock className="w-3.5 h-3.5 text-[var(--fios-text-muted)]" />}
-                {t.label}
+              <span className="flex items-center gap-2 min-w-0">
+                {unlocked ? (
+                  <Unlock className="w-3.5 h-3.5 accent-solid-text shrink-0" />
+                ) : (
+                  <Lock className="w-3.5 h-3.5 text-[var(--fios-text-muted)] shrink-0" />
+                )}
+                <span className="min-w-0">
+                  <span className="block truncate">{t.label}</span>
+                  {!unlocked && (
+                    <span className="block text-[9px] font-mono font-normal text-[var(--fios-text-muted)] truncate">
+                      {t.unlockHint}
+                    </span>
+                  )}
+                </span>
               </span>
-              <span className="text-[10px] font-mono text-[var(--fios-text-muted)]">
-                {unlocked ? (accent === t.key ? 'Active' : 'Apply') : `Unlock`}
+              <span className="text-[10px] font-mono text-[var(--fios-text-muted)] shrink-0">
+                {unlocked ? (accent === t.key ? 'Active' : 'Apply') : 'Locked'}
               </span>
             </button>
           );

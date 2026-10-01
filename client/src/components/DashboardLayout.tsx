@@ -3,13 +3,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutDashboard, Layers, Calendar, Settings, BookOpen,
   LogOut, Menu, X, Timer, HelpCircle, Code2, FileText, Target,
-  Sun, Moon, GraduationCap, Sparkles, Bot, Monitor, Command, Focus, GripVertical, Users,
+  Sun, Moon, GraduationCap, Sparkles, Bot, Monitor, Command, Focus, GripVertical, Users, Flame,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, disableDemo } from '../lib/demo';
 import { useProfile, usePreferredName } from '../context/ProfileContext';
 import { useTheme } from '../context/ThemeContext';
-import { usePreferences, DEFAULT_NAV_ORDER, DEFAULT_MOBILE_NAV } from '../context/PreferencesContext';
+import { usePreferences, DEFAULT_NAV_ORDER, DEFAULT_MOBILE_NAV, PILLAR_NAV_IDS } from '../context/PreferencesContext';
 import { FiosLogo } from './FiosLogo';
 import { Avatar } from './Avatar';
 import { CommandPalette, type CommandItem } from './CommandPalette';
@@ -17,6 +17,11 @@ import { HolidayAmbience } from './HolidayAmbience';
 import { HolidayMotif } from './HolidayMotif';
 import { useKeyboardVisible } from '../hooks/useKeyboardVisible';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { useRpgStatus } from '../hooks/useRpgStatus';
+import { PlayerProfileDrawer } from './rpg/PlayerProfileDrawer';
+import { ImmersiveThemeLayer } from './rpg/ImmersiveThemeLayer';
+import { getImmersiveByAccent } from '../lib/rpgThemeRegistry';
+import { levelFromXp } from '../lib/rpg';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -25,27 +30,29 @@ interface DashboardLayoutProps {
 }
 
 export const NAV_ITEMS = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'flashcards', label: 'Flashcards', icon: Layers },
-  { id: 'modules', label: 'Modules', icon: BookOpen },
-  { id: 'quiz', label: 'Exam Mode', icon: HelpCircle },
-  { id: 'code', label: 'Code Lab', icon: Code2 },
-  { id: 'documents', label: 'Smart Notes', icon: FileText },
-  { id: 'tutor', label: 'AI Tutor', icon: Bot },
-  { id: 'social', label: 'Study Network', icon: Users },
-  { id: 'atu-calendar', label: 'ATU Calendar', icon: GraduationCap },
-  { id: 'grades', label: 'Grades', icon: Target },
-  { id: 'timer', label: 'Focus Timer', icon: Timer },
-  { id: 'schedule', label: 'Timetable', icon: Calendar },
-  { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v4.0.0', icon: Sparkles },
+  { id: 'overview', label: 'Overview', shortLabel: 'Overview', icon: LayoutDashboard },
+  { id: 'agenda', label: 'Agenda', shortLabel: 'Agenda', icon: Calendar },
+  { id: 'modules', label: 'Modules', shortLabel: 'Modules', icon: BookOpen },
+  { id: 'studio', label: 'Studio', shortLabel: 'Studio', icon: Layers },
+  { id: 'flashcards', label: 'Flashcards', shortLabel: 'Cards', icon: Layers },
+  { id: 'quiz', label: 'Exam Mode', shortLabel: 'Exam', icon: HelpCircle },
+  { id: 'code', label: 'Code Lab', shortLabel: 'Code', icon: Code2 },
+  { id: 'documents', label: 'Notes', shortLabel: 'Notes', icon: FileText },
+  { id: 'tutor', label: 'Tutor', shortLabel: 'Tutor', icon: Bot },
+  { id: 'social', label: 'Study Network', shortLabel: 'Network', icon: Users },
+  { id: 'atu-calendar', label: 'ATU Calendar', shortLabel: 'ATU', icon: GraduationCap },
+  { id: 'grades', label: 'Grades', shortLabel: 'Grades', icon: Target },
+  { id: 'timer', label: 'Focus Timer', shortLabel: 'Focus', icon: Timer },
+  { id: 'schedule', label: 'Timetable', shortLabel: 'Timetable', icon: Calendar },
+  { id: 'settings', label: 'Settings', shortLabel: 'Settings', icon: Settings },
+  { id: 'updates', label: 'Updates v4.1.0', shortLabel: 'Updates', icon: Sparkles },
 ];
 
-/** Mobile drawer sections — Extended Tools & Settings regroup (v4.0.0). */
+/** Mobile drawer — pillars first; account/network live behind avatar, not bottom tabs. */
 const DRAWER_SECTIONS: { label: string; ids: readonly string[] }[] = [
-  { label: 'Core Hubs', ids: ['overview', 'flashcards', 'modules', 'schedule', 'atu-calendar'] },
-  { label: 'Academic Tools', ids: ['quiz', 'code', 'documents', 'tutor', 'social', 'grades', 'timer'] },
-  { label: 'System Preferences', ids: ['settings', 'updates'] },
+  { label: 'Pillars', ids: ['overview', 'agenda', 'modules', 'studio'] },
+  { label: 'More tools', ids: ['flashcards', 'quiz', 'code', 'documents', 'tutor', 'grades', 'timer', 'schedule', 'atu-calendar'] },
+  { label: 'System', ids: ['settings', 'updates', 'social'] },
 ];
 
 function groupDrawerNav<T extends { id: string }>(ordered: T[]): { label: string; items: T[] }[] {
@@ -98,8 +105,11 @@ const ZEN_STUDY_TABS = new Set([
 const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, activeTab, setActiveTab }) => {
   const { profile } = useProfile();
   const preferredName = usePreferredName();
-  const { theme, resolvedTheme, toggleTheme, holidayTheme } = useTheme();
+  const { theme, resolvedTheme, toggleTheme, holidayTheme, accent } = useTheme();
+  const immersiveTheme = getImmersiveByAccent(accent);
   const { zenMode, setZenMode, mobileNavSlots, setMobileNavSlots, navOrder, setNavOrder } = usePreferences();
+  const { status: rpgStatus } = useRpgStatus(60_000);
+  const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   /** Desktop sidebar visibility (hamburger toggles this on md+). */
@@ -322,8 +332,9 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
   const [draftNavOrder, setDraftNavOrder] = useState<string[] | null>(null);
   const effectiveNavOrder = draftNavOrder ?? (navOrder?.length ? navOrder : DEFAULT_NAV_ORDER);
-  const baseMobileSlots = mobileNavSlots?.length ? mobileNavSlots : DEFAULT_MOBILE_NAV;
-  const effectiveMobileSlots = draftMobileSlots ?? baseMobileSlots;
+  const baseMobileSlots = [...PILLAR_NAV_IDS];
+  /** Fixed 4-pillar bottom nav — ignore legacy reorder prefs for the bar itself. */
+  const effectiveMobileSlots = baseMobileSlots;
 
   const orderedNav = useMemo(() => {
     const order = effectiveNavOrder;
@@ -598,6 +609,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
 
   return (
     <div className="min-h-dvh fios-app-bg flex flex-col font-sans overflow-x-hidden">
+      <ImmersiveThemeLayer theme={immersiveTheme} />
       <HolidayAmbience />
       {/* Top HUD Bar — always visible unless Zen is hiding study chrome */}
       {!hideChrome && (
@@ -637,10 +649,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               data-fios-version-badge
               className="relative z-[65] inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 4.0.0"
+              aria-label="Fios version 4.1.0"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v4.0.0
+              v4.1.0
             </span>
             {zenMode && (
               <button
@@ -677,14 +689,36 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               <ThemeIcon className="w-4 h-4" />
             </button>
 
+            {/* RPG HUD — streak + level/XP */}
+            <div
+              className="hidden xs:flex sm:flex items-center gap-1.5 px-2 py-1 rounded-full bg-[var(--fios-surface-2)] border fios-border text-[10px] font-mono font-black tabular-nums"
+              title="Study streak and level"
+              aria-label={`Streak ${rpgStatus?.streak?.current_streak ?? 0}, level ${rpgStatus?.level ?? levelFromXp(rpgStatus?.xp ?? 0)}`}
+            >
+              <Flame className="w-3.5 h-3.5 text-orange-400" />
+              <span className="text-[var(--fios-text)]">{rpgStatus?.streak?.current_streak ?? 0}</span>
+              <span className="text-[var(--fios-text-muted)]">·</span>
+              <span className="accent-solid-text">Lv {rpgStatus?.level ?? levelFromXp(rpgStatus?.xp ?? 0)}</span>
+            </div>
+
             <button
               type="button"
-              onClick={() => navigate('settings')}
+              onClick={() => setProfileDrawerOpen(true)}
               className="flex items-center gap-2.5 bg-[var(--fios-surface-2)] pl-1 pr-2.5 py-1 rounded-full border fios-border cursor-pointer max-h-11 select-none"
-              aria-label="Open settings"
+              aria-label="Open player profile"
             >
               <Avatar url={profile?.avatar_url} name={preferredName} size={26} />
               <span className="text-[var(--fios-text)] text-[11px] font-bold max-w-[120px] truncate hidden sm:inline">{displayName}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('settings')}
+              className="fios-header-btn touch-target rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none"
+              aria-label="Open account settings"
+              title="Settings"
+            >
+              <Settings className="w-4 h-4" />
             </button>
 
             <motion.button
@@ -919,37 +953,23 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
           ) : (
             mobileItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              const isDragging = mobileDragId === item.id;
+              const isActive =
+                activeTab === item.id
+                || (item.id === 'agenda' && (activeTab === 'schedule' || activeTab === 'atu-calendar'))
+                || (item.id === 'studio' && ['documents', 'code', 'quiz', 'flashcards', 'tutor'].includes(activeTab));
               return (
                 <button
                   key={item.id}
                   type="button"
-                  ref={(el) => {
-                    if (el) mobileNavElRefs.current.set(item.id, el);
-                    else mobileNavElRefs.current.delete(item.id);
-                  }}
-                  onClick={() => {
-                    if (mobileSuppressClick.current) {
-                      mobileSuppressClick.current = false;
-                      return;
-                    }
-                    navigate(item.id);
-                  }}
-                  onPointerDown={(e) => onMobilePointerDown(e, item.id)}
-                  onPointerMove={onMobilePointerMove}
-                  onPointerUp={onMobilePointerEnd}
-                  onPointerCancel={onMobilePointerEnd}
+                  onClick={() => navigate(item.id)}
                   aria-current={isActive ? 'page' : undefined}
                   aria-label={item.label}
-                  aria-grabbed={isDragging || undefined}
-                  style={{ touchAction: mobileDragId ? 'none' : 'manipulation' }}
-                  className={`touch-target flex flex-col items-center gap-0.5 min-w-[3.5rem] px-2 py-2 rounded-lg cursor-pointer active:bg-[var(--fios-surface-2)] transition-transform ${
-                    isDragging ? 'scale-110 -translate-y-1 accent-solid-text shadow-lg z-10' : ''
-                  } ${isActive && !isDragging ? 'accent-solid-text' : isDragging ? '' : 'text-muted-foreground'}`}
+                  className={`touch-target flex flex-col items-center gap-0.5 min-w-[3.5rem] px-2 py-2 rounded-lg cursor-pointer active:bg-[var(--fios-surface-2)] ${
+                    isActive ? 'accent-solid-text' : 'text-muted-foreground'
+                  }`}
                 >
                   <Icon className="w-5 h-5" />
-                  <span className="text-[9px] font-bold uppercase tracking-wide">{item.label.split(' ')[0]}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wide">{item.shortLabel || item.label}</span>
                 </button>
               );
             })
@@ -1044,6 +1064,11 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       </AnimatePresence>
 
       <CommandPalette open={paletteOpen} onClose={closePalette} items={commandItems} />
+      <PlayerProfileDrawer
+        open={profileDrawerOpen}
+        onClose={() => setProfileDrawerOpen(false)}
+        onOpenSettings={() => navigate('settings')}
+      />
     </div>
   );
 };

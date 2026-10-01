@@ -19,6 +19,9 @@ import { InlineEditableTitle } from './InlineEditableTitle';
 import { toast } from '../lib/toast';
 import { GeminiLatencyHint } from './GeminiLatencyHint';
 import { friendlyGeminiError } from '../lib/geminiUx';
+import { codeLabDefaultsForModule } from '../lib/codeLabDefaults';
+import { LootDropModal, type LootBreakdown } from './rpg/LootDropModal';
+import { estimateStudyLoot } from '../lib/rpg';
 
 const EXAM_ICON: Record<CodeExamType, React.ReactNode> = {
   bug_fix: <Bug className="w-3.5 h-3.5" />,
@@ -39,9 +42,10 @@ interface ActiveChallenge {
 
 interface CodeExamViewProps {
   initialExamId?: string | null;
+  initialModuleCode?: string;
 }
 
-export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => {
+export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId, initialModuleCode }) => {
   const { resolvedTheme } = useTheme();
   const { requireAiAuth } = useAiAuth();
   const monacoTheme = resolvedTheme === 'light' ? 'vs' : 'vs-dark';
@@ -49,8 +53,9 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
   const [examType, setExamType] = useState<CodeExamType>('bug_fix');
   const [topic, setTopic] = useState('');
   const [customPrompt, setCustomPrompt] = useState('');
-  const [moduleCode, setModuleCode] = useState('');
+  const [moduleCode, setModuleCode] = useState(initialModuleCode || '');
   const [modules, setModules] = useState<DBModule[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,11 +68,27 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
   const [savedExams, setSavedExams] = useState<CodeExam[]>([]);
+  const [lootOpen, setLootOpen] = useState(false);
+  const [loot, setLoot] = useState<LootBreakdown | null>(null);
 
   const monacoLanguage = useMemo(
     () => CODE_LANGUAGES.find((l) => l.value === language)?.monaco || 'javascript',
     [language]
   );
+
+  useEffect(() => {
+    const mod = modules.find((m) => m.code === moduleCode);
+    if (!mod && !moduleCode) return;
+    const defaults = codeLabDefaultsForModule({
+      code: mod?.code || moduleCode,
+      name: mod?.name,
+      tags: mod?.tags ?? undefined,
+    });
+    setLanguage(defaults.language);
+    setExamType(defaults.examType);
+    if (!topic.trim()) setTopic(defaults.topic);
+    setSuggestions(defaults.suggestions);
+  }, [moduleCode, modules]); // eslint-disable-line react-hooks/exhaustive-deps -- apply when module context changes
 
   const loadSaved = useCallback(async () => {
     const exams = await getCodeExams();
@@ -149,6 +170,16 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
         userCode,
       });
       setGrade(result);
+      const breakdown = estimateStudyLoot({
+        codePassed: (result.score ?? 0) >= 70,
+        streakBonus: true,
+      });
+      setLoot({
+        ...breakdown,
+        title: (result.score ?? 0) >= 70 ? 'Challenge cleared' : 'Challenge graded',
+        subtitle: challenge.title,
+      });
+      setLootOpen(true);
     } catch (err: any) {
       setError(friendlyGeminiError(err.message || 'Failed to grade submission.'));
     } finally {
@@ -170,6 +201,11 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
         module_code: moduleCode || null,
         completed: grade?.correct ?? false,
       });
+      if (grade?.correct) {
+        void import('../lib/studyMilestones')
+          .then(({ recordCodeChallengeComplete }) => recordCodeChallengeComplete())
+          .catch(() => {});
+      }
       setSaveMsg('Saved to your Code Exams!');
       setTimeout(() => setSaveMsg(null), 2500);
       loadSaved();
@@ -260,8 +296,22 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
             onChange={(e) => setCustomPrompt(e.target.value)}
             placeholder="Describe a targeted challenge — e.g. ‘Write a recursive DFS that detects cycles in an adjacency list’…"
             rows={3}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-base sm:text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-400 resize-y"
+            className="w-full min-h-[4.5rem] bg-background border border-border rounded-lg px-3 py-2 text-base sm:text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-400 resize-y field-sizing-content"
           />
+          {suggestions.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setCustomPrompt(s)}
+                  className="text-[10px] font-mono px-2 py-1 rounded-lg border fios-border text-[var(--fios-text-muted)] hover:accent-solid-text cursor-pointer"
+                >
+                  {s.slice(0, 48)}{s.length > 48 ? '…' : ''}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -492,6 +542,7 @@ export const CodeExamView: React.FC<CodeExamViewProps> = ({ initialExamId }) => 
           </div>
         )}
       </div>
+      <LootDropModal open={lootOpen} loot={loot} onClose={() => setLootOpen(false)} />
     </div>
   );
 };

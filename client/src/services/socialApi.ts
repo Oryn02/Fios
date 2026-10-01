@@ -5,10 +5,27 @@ export async function listFriends() {
   return readJson<{ friendships: any[] }>(res);
 }
 
-export async function requestFriend(addresseeId: string) {
+export async function requestFriend(input: {
+  email?: string;
+  addresseeId?: string;
+  username?: string;
+} | string) {
+  const body =
+    typeof input === 'string'
+      ? (() => {
+          const value = input.trim();
+          if (!value) return {};
+          if (value.includes('@')) return { email: value };
+          // UUID v4-ish
+          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+            return { addresseeId: value };
+          }
+          return { username: value };
+        })()
+      : input;
   const res = await saasFetch('/api/social/friends/request', {
     method: 'POST',
-    body: JSON.stringify({ addresseeId }),
+    body: JSON.stringify(body),
   });
   return readJson(res);
 }

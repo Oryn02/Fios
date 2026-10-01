@@ -3,10 +3,27 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; 3.8.0 SaaS pack; current 4.0.0.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; 3.8.0 SaaS pack; current 4.1.0.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v4.1.0',
+      date: 'October 2026',
+      title: 'Module-first pillars, Studio hub & Roguelike surfaces',
+      highlights: [
+        'Locked 4-tab bottom nav: Overview · Agenda · Modules · Studio (account / network / RPG behind avatar drawer).',
+        'Studio segmented hub: Notes & Audio · Quiz & Exam · Code Lab; module-locked Save to Folder after generate.',
+        'Modules drill-down: condensed single-line list → full-screen hub with Back + Generate Flashcards empty funnel.',
+        'Flashcard UX: Browse/Recall (i) tip, […] overflow, ✨ AI Actions, Confidence? (Guessing→Certain), clearer rating copy.',
+        'Study Lab extras as vertical icon + title + subtitle list; softer dark slate-900 reading palette.',
+        'Roguelike HUD (streak + level), Overview Player Card, loot-drop XP modal, Player Profile drawer.',
+        'Immersive Roguelike theme tree (21 study-milestone themes) with canvas ambience + full UI palettes.',
+        'Agenda = Timetable + academic calendar; iCal auto-sync keeps Unified Agenda live; Add Friend by email.',
+        'Onboarding wizard + Quick Capture FAB; Settings segmented Account | Layout & Theme | Study | Integrations.',
+        'Version alignment: packages, HTML title, Updates, /health, footer → v4.1.0.',
+      ],
+    },
     {
       version: 'v4.0.0',
       date: 'October 2026',
@@ -632,7 +649,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-foreground tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-muted-foreground">Current release · v4.0.0</p>
+        <p className="text-xs font-mono text-muted-foreground">Current release · v4.1.0</p>
       </header>
 
       <div className="space-y-4">

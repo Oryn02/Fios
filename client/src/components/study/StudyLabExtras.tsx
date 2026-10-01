@@ -45,7 +45,7 @@ type LabTab =
   | 'syllabus';
 
 /**
- * Collapsible hub for v3.9 study tools — lecture through syllabus (features 19–28).
+ * Collapsible hub for v3.9 study tools — vertical list with icon + title + subtitle.
  */
 export const StudyLabExtras: React.FC<StudyLabExtrasProps> = ({
   moduleCode,
@@ -70,17 +70,17 @@ export const StudyLabExtras: React.FC<StudyLabExtrasProps> = ({
     return [];
   }, [cards, seedText]);
 
-  const tabs: { id: LabTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'lecture', label: 'Lecture', icon: <Mic className="w-3.5 h-3.5" /> },
-    { id: 'ingest', label: 'Ingest', icon: <Film className="w-3.5 h-3.5" /> },
-    { id: 'mindmap', label: 'Mind map', icon: <Network className="w-3.5 h-3.5" /> },
-    { id: 'lounge', label: 'Lounge', icon: <Headphones className="w-3.5 h-3.5" /> },
-    { id: 'chat', label: 'Doc chat', icon: <MessageSquareQuote className="w-3.5 h-3.5" /> },
-    { id: 'viva', label: 'Viva', icon: <Video className="w-3.5 h-3.5" /> },
-    { id: 'voice', label: 'Voice', icon: <Volume2 className="w-3.5 h-3.5" /> },
-    { id: 'mock', label: 'Mock exam', icon: <ClipboardList className="w-3.5 h-3.5" /> },
-    { id: 'buddy', label: 'Body double', icon: <Users className="w-3.5 h-3.5" /> },
-    { id: 'syllabus', label: 'Syllabus', icon: <CalendarPlus className="w-3.5 h-3.5" /> },
+  const tabs: { id: LabTab; label: string; subtitle: string; icon: React.ReactNode }[] = [
+    { id: 'lecture', label: 'Lecture', subtitle: 'Live lecture → cloze & Q&A cards', icon: <Mic className="w-4 h-4" /> },
+    { id: 'ingest', label: 'Ingest', subtitle: 'Multi-format slides, PDF, audio → deck', icon: <Film className="w-4 h-4" /> },
+    { id: 'mindmap', label: 'Mind map', subtitle: 'Visual concept graph from notes', icon: <Network className="w-4 h-4" /> },
+    { id: 'lounge', label: 'Lounge', subtitle: 'Silent focus blocks with lofi ambience', icon: <Headphones className="w-4 h-4" /> },
+    { id: 'chat', label: 'Doc chat', subtitle: 'Grounded Q&A on your documents', icon: <MessageSquareQuote className="w-4 h-4" /> },
+    { id: 'viva', label: 'Viva', subtitle: 'Oral exam coach with feedback', icon: <Video className="w-4 h-4" /> },
+    { id: 'voice', label: 'Voice', subtitle: 'Hands-free active recall grading', icon: <Volume2 className="w-4 h-4" /> },
+    { id: 'mock', label: 'Mock exam', subtitle: 'Full-length timed practice paper', icon: <ClipboardList className="w-4 h-4" /> },
+    { id: 'buddy', label: 'Body double', subtitle: 'Silent peer study sessions', icon: <Users className="w-4 h-4" /> },
+    { id: 'syllabus', label: 'Syllabus', subtitle: 'Parse deadlines into calendar events', icon: <CalendarPlus className="w-4 h-4" /> },
   ];
 
   return (
@@ -88,7 +88,7 @@ export const StudyLabExtras: React.FC<StudyLabExtrasProps> = ({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left cursor-pointer"
+        className="w-full min-h-11 flex items-center justify-between gap-2 px-4 py-3 text-left cursor-pointer"
       >
         <span className="text-sm font-black uppercase tracking-tight text-[var(--fios-text)]">
           Study Lab extras
@@ -101,22 +101,39 @@ export const StudyLabExtras: React.FC<StudyLabExtrasProps> = ({
         )}
       </button>
       {open ? (
-        <div className="px-4 pb-4 space-y-3 border-t fios-border pt-3">
-          <div className="flex flex-wrap gap-1.5">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase cursor-pointer border ${
-                  tab === t.id
-                    ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]'
-                    : 'fios-border text-[var(--fios-text-muted)]'
-                }`}
-              >
-                {t.icon} {t.label}
-              </button>
-            ))}
+        <div className="px-3 pb-4 space-y-3 border-t fios-border pt-3">
+          <div
+            className="max-h-64 overflow-y-auto scroll-touch space-y-1 pr-0.5"
+            role="listbox"
+            aria-label="Study lab tools"
+          >
+            {tabs.map((t) => {
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => setTab(t.id)}
+                  className={`w-full min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-xl text-left cursor-pointer border transition-colors ${
+                    active
+                      ? 'accent-border accent-solid-text bg-[var(--fios-surface-2)]'
+                      : 'fios-border text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]'
+                  }`}
+                >
+                  <span className={`shrink-0 ${active ? 'accent-solid-text' : 'text-[var(--fios-text-muted)]'}`}>
+                    {t.icon}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-black uppercase tracking-wide">{t.label}</span>
+                    <span className="block text-[10px] font-mono text-[var(--fios-text-muted)] truncate">
+                      {t.subtitle}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
           {tab === 'lecture' && (
             <LiveLectureRecorder moduleCode={moduleCode} onDeckReady={onDeckReady} />

@@ -21,10 +21,14 @@ import {
   LayoutDashboard,
   Settings2,
   ScrollText,
+  Sparkles,
+  Unlock,
 } from 'lucide-react';
 import { useProfile } from '../context/ProfileContext';
 import { useTheme } from '../context/ThemeContext';
 import { ADMIN_HOLIDAY_PREVIEWS } from '../lib/holidays';
+import { listRpgThemeUnlocks } from '../lib/rpgThemeRegistry';
+import { getUnlockedRewards } from './rpg/RpgProgressPanel';
 import {
   deleteAllFeedback,
   deleteFeedback,
@@ -42,6 +46,7 @@ import {
   collectEnvHealth,
   exportFeedbackJson,
   fetchApiHealth,
+  grantRpgThemeUnlock,
   listAdminAudit,
   listAdminProfiles,
   loadOverviewStats,
@@ -75,6 +80,7 @@ type AdminSection =
   | 'users'
   | 'moderation'
   | 'holidays'
+  | 'rpg'
   | 'push'
   | 'system'
   | 'support'
@@ -91,6 +97,7 @@ const NAV: { id: AdminSection; label: string; icon: React.ElementType }[] = [
   { id: 'users', label: 'Users', icon: Users },
   { id: 'moderation', label: 'Moderation', icon: Flag },
   { id: 'holidays', label: 'Holidays', icon: Palette },
+  { id: 'rpg', label: 'RPG Themes', icon: Sparkles },
   { id: 'push', label: 'Push', icon: Bell },
   { id: 'system', label: 'System', icon: Settings2 },
   { id: 'support', label: 'Support', icon: Inbox },
@@ -143,11 +150,15 @@ function SectionHeader({
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
   const { profile } = useProfile();
-  const { holidayTheme, previewHolidayTheme } = useTheme();
+  const { holidayTheme, previewHolidayTheme, setAccent, accent } = useTheme();
   const adminUid = (import.meta.env.VITE_ADMIN_UID as string | undefined)?.trim() || '';
   const isAdmin = !!adminUid && profile?.id === adminUid;
 
   const [section, setSection] = useState<AdminSection>('overview');
+  const [rpgGrantUserId, setRpgGrantUserId] = useState('');
+  const [rpgBusy, setRpgBusy] = useState(false);
+  const rpgThemes = useMemo(() => listRpgThemeUnlocks(), []);
+  const selfRpgRewards = useMemo(() => getUnlockedRewards(), [section, accent]); // refresh when viewing
   const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
   const [loadingFb, setLoadingFb] = useState(false);
   const [fbError, setFbError] = useState<string | null>(null);
@@ -1005,6 +1016,126 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
               >
                 Clear holiday preview
               </button>
+            </section>
+          )}
+
+          {section === 'rpg' && (
+            <section className="space-y-4">
+              <SectionHeader icon={Sparkles} title="Roguelike unlock themes" />
+              <p className="text-[10px] text-[var(--fios-text-muted)] font-mono leading-relaxed">
+                Immersive Roguelike themes unlock via study milestones (not skill points).
+                Registry auto-lists every locked theme. Preview force-applies on this session;
+                Unlock grants the reward (self or target user id).
+              </p>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-mono uppercase text-[var(--fios-text-muted)]">
+                  Grant to user id (blank = self)
+                </label>
+                <input
+                  value={rpgGrantUserId}
+                  onChange={(e) => setRpgGrantUserId(e.target.value)}
+                  placeholder={profile?.id || 'uuid…'}
+                  className="w-full min-h-11 px-3 py-2 rounded-xl bg-[var(--fios-surface-2)] border fios-border text-xs font-mono text-[var(--fios-text)]"
+                />
+              </div>
+              <div className="space-y-2">
+                {rpgThemes.map((t) => {
+                  const selfHas =
+                    selfRpgRewards.includes(t.reward) || selfRpgRewards.includes(t.key);
+                  const active = accent === t.key;
+                  return (
+                    <div
+                      key={t.key}
+                      className="rounded-xl border fios-border bg-[var(--fios-surface-2)] p-3 space-y-2"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="w-5 h-5 rounded-full shrink-0 border border-white/20"
+                          style={{
+                            background: `linear-gradient(135deg, ${t.accent.from}, ${t.accent.via}, ${t.accent.to})`,
+                          }}
+                          aria-hidden
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-[var(--fios-text)] truncate">{t.label}</p>
+                          <p className="text-[9px] font-mono text-[var(--fios-text-muted)] truncate">
+                            {t.reward} · study milestone
+                            {t.unlockHint ? ` · ${t.unlockHint}` : ''}
+                            {selfHas ? ' · unlocked (self)' : ''}
+                            {active ? ' · active' : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={rpgBusy}
+                          onClick={() => {
+                            setAccent(t.key, { force: true });
+                            logAdminAction('rpg_theme_preview', t.key);
+                            refreshAudit();
+                            toast(`Preview ${t.label}`, 'success');
+                          }}
+                          className="min-h-10 px-3 py-1.5 rounded-lg border fios-border text-[10px] font-black uppercase cursor-pointer text-[var(--fios-text)]"
+                        >
+                          Preview
+                        </button>
+                        <button
+                          type="button"
+                          disabled={rpgBusy}
+                          onClick={() => {
+                            void (async () => {
+                              const target = rpgGrantUserId.trim() || profile?.id || '';
+                              if (!target) {
+                                toast('No user id', 'error');
+                                return;
+                              }
+                              setRpgBusy(true);
+                              try {
+                                const isSelf = target === profile?.id;
+                                const res = await grantRpgThemeUnlock({
+                                  userId: target,
+                                  reward: t.reward,
+                                  accentKey: t.key,
+                                  applyAccent: isSelf,
+                                  isSelf,
+                                });
+                                if (!res.ok) {
+                                  toast(res.error || 'Grant failed', 'error');
+                                  return;
+                                }
+                                if (isSelf) setAccent(t.key, { force: true });
+                                refreshAudit();
+                                toast(
+                                  isSelf
+                                    ? `Unlocked ${t.label} for you`
+                                    : `Granted ${t.label} to ${target.slice(0, 8)}…`,
+                                  'success'
+                                );
+                              } finally {
+                                setRpgBusy(false);
+                              }
+                            })();
+                          }}
+                          className="min-h-10 px-3 py-1.5 rounded-lg accent-bg text-slate-950 text-[10px] font-black uppercase cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          {rpgBusy ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Unlock className="w-3.5 h-3.5" />
+                          )}
+                          Unlock / force-enable
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {rpgThemes.length === 0 && (
+                  <p className="text-xs text-[var(--fios-text-muted)]">
+                    No locked RPG accents in registry.
+                  </p>
+                )}
+              </div>
             </section>
           )}
 

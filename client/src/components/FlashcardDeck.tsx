@@ -14,7 +14,7 @@ import {
 } from '../lib/deckService';
 import { InlineEditableTitle } from './InlineEditableTitle';
 import { ReportContentButton } from './ReportContentButton';
-import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle, Download, Share2, BookOpen, Brain, MessageCircle } from 'lucide-react';
+import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle, Download, Share2, BookOpen, Brain, MessageCircle, MoreHorizontal, Sparkles } from 'lucide-react';
 import { toast } from '../lib/toast';
 import { sanitizeDeckTitle } from '../lib/sanitizeDeckTitle';
 import { fsrsReview, studyElaborate, studyFeynman, studyDualCode, saveJol } from '../services/studyApi';
@@ -88,6 +88,9 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
   const [feynmanHint, setFeynmanHint] = useState<string | null>(null);
   const [dualHint, setDualHint] = useState<string | null>(null);
   const [studyBusy, setStudyBusy] = useState(false);
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const [aiActionsOpen, setAiActionsOpen] = useState(false);
+  const [modeInfoOpen, setModeInfoOpen] = useState(false);
 
   useEffect(() => {
     ensureDailyQueueFlushHook();
@@ -192,6 +195,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
 
   const handleNext = useCallback(() => {
     setIsFlipped(false);
+    setAiActionsOpen(false);
     if (activeCards.length > 0) {
       setCurrentIndex((prev) => (prev + 1) % activeCards.length);
     }
@@ -199,12 +203,14 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
 
   const handlePrev = useCallback(() => {
     setIsFlipped(false);
+    setAiActionsOpen(false);
     if (activeCards.length > 0) {
       setCurrentIndex((prev) => (prev - 1 + activeCards.length) % activeCards.length);
     }
   }, [activeCards.length]);
 
   const handleToggleFlip = useCallback(() => {
+    setAiActionsOpen(false);
     setIsFlipped((prev) => !prev);
   }, []);
 
@@ -254,6 +260,13 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
 
   const handleRating = useCallback(async (rating: number) => {
     if (!currentCard) return;
+    try {
+      const { recordFsrsReview, recordFlashcardTouch } = await import('../lib/studyMilestones');
+      if (preferFsrs(currentCard)) recordFsrsReview(1);
+      else recordFlashcardTouch(1);
+    } catch {
+      /* optional milestone tracking */
+    }
     const labels: Record<number, string> = { 1: 'Again', 2: 'Hard', 3: 'Good', 4: 'Easy' };
     const useFsrs = preferFsrs(currentCard) && Boolean((currentCard as any)?.id);
     const offline = typeof navigator !== 'undefined' && !navigator.onLine;
@@ -558,20 +571,26 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               className="flex-1 w-full bg-background border border-border rounded-lg px-3.5 py-2 text-xs font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-400 uppercase tracking-wider font-mono"
             />
 
-            <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-2.5 py-2 w-full sm:w-auto">
-              <Folder className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-              <select
-                value={selectedModuleCode}
-                onChange={(e) => setSelectedModuleCode(e.target.value)}
-                className="bg-transparent text-xs font-mono font-bold text-foreground focus:outline-none cursor-pointer w-full"
-              >
-                <option value="" className="bg-background text-muted-foreground">General (No Module)</option>
-                {modules.map((m) => (
-                  <option key={m.id} value={m.code} className="bg-background text-emerald-400 font-bold">
-                    {moduleDisplayName(m)}
-                  </option>
-                ))}
-              </select>
+            <div className="flex flex-col gap-1 w-full sm:w-auto sm:min-w-[14rem]">
+              <label className="text-[9px] font-mono font-bold uppercase text-muted-foreground">
+                Save to Module: Select Folder…
+              </label>
+              <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-2.5 py-2 w-full">
+                <Folder className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                <select
+                  value={selectedModuleCode}
+                  onChange={(e) => setSelectedModuleCode(e.target.value)}
+                  className="bg-transparent text-xs font-mono font-bold text-foreground focus:outline-none cursor-pointer w-full min-h-9"
+                  aria-label="Save to Module"
+                >
+                  <option value="" className="bg-background text-muted-foreground">Select Folder…</option>
+                  {modules.map((m) => (
+                    <option key={m.id} value={m.code} className="bg-background text-emerald-400 font-bold">
+                      {moduleDisplayName(m)}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <button
@@ -606,70 +625,160 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               />
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <AnkiExportButton title={deckTitle} deckId={savedDeckId} cards={cards as any} />
-              <button
-                type="button"
-                onClick={handleExportJson}
-                className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground cursor-pointer"
-                title="Export JSON"
-              >
-                <Download className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleCopyShareCode()}
-                className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground cursor-pointer"
-                title="Copy share code"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setShareOpen(true)}
-                className="p-1.5 rounded-lg border border-border text-muted-foreground hover:accent-solid-text cursor-pointer"
-                title="Share to friends"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </button>
-              {savedDeckId && (
-                <ReportContentButton
-                  targetType="deck"
-                  targetId={savedDeckId}
-                  targetLabel={deckTitle}
-                  className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-amber-400 cursor-pointer"
-                />
-              )}
               <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" /> SAVED
               </span>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setOverflowOpen((v) => !v)}
+                  className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg border fios-border text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
+                  aria-label="More actions"
+                  aria-expanded={overflowOpen}
+                  title="More"
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+                {overflowOpen && (
+                  <>
+                    <button
+                      type="button"
+                      className="fixed inset-0 z-40 cursor-default"
+                      aria-label="Dismiss menu"
+                      onClick={() => setOverflowOpen(false)}
+                    />
+                    <div
+                      className="absolute right-0 top-full mt-1 z-50 min-w-[200px] rounded-xl border fios-border bg-[var(--fios-surface)] shadow-lg py-1"
+                      role="menu"
+                    >
+                      <div className="px-1 py-0.5" onClick={() => setOverflowOpen(false)}>
+                        <AnkiExportButton
+                          title={deckTitle}
+                          deckId={savedDeckId}
+                          cards={cards as any}
+                          className="w-full justify-start border-0 rounded-lg px-3 py-2.5 min-h-[44px] text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          handleExportJson();
+                          setOverflowOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-left text-xs font-bold uppercase text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)] cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" /> Export JSON
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          void handleCopyShareCode();
+                          setOverflowOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-left text-xs font-bold uppercase text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)] cursor-pointer"
+                      >
+                        <Share2 className="w-3.5 h-3.5" /> Share code
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShareOpen(true);
+                          setOverflowOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-left text-xs font-bold uppercase text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)] cursor-pointer"
+                      >
+                        <Share2 className="w-3.5 h-3.5" /> Share to friends
+                      </button>
+                      {savedDeckId && (
+                        <div className="px-1 py-0.5 border-t fios-border" onClick={() => setOverflowOpen(false)}>
+                          <ReportContentButton
+                            targetType="deck"
+                            targetId={savedDeckId}
+                            targetLabel={deckTitle}
+                            compact={false}
+                            className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-left text-xs font-bold uppercase text-[var(--fios-text-muted)] hover:text-amber-400 hover:bg-[var(--fios-surface-2)] cursor-pointer rounded-lg"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}
 
         {!hasSaved && (
-          <div className="flex items-center gap-2 justify-end -mt-1 flex-wrap">
-            <AnkiExportButton title={deckTitle} cards={cards as any} />
-            <button
-              type="button"
-              onClick={handleExportJson}
-              className="text-[10px] font-mono font-bold uppercase text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
-            >
-              <Download className="w-3 h-3" /> Export JSON
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleCopyShareCode()}
-              className="text-[10px] font-mono font-bold uppercase text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
-            >
-              <Share2 className="w-3 h-3" /> Share code
-            </button>
-            <button
-              type="button"
-              onClick={() => setShareOpen(true)}
-              className="text-[10px] font-mono font-bold uppercase text-muted-foreground hover:accent-solid-text flex items-center gap-1 cursor-pointer"
-            >
-              <Share2 className="w-3 h-3" /> Friends
-            </button>
+          <div className="flex items-center gap-2 justify-end -mt-1">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOverflowOpen((v) => !v)}
+                className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 rounded-lg border fios-border text-[10px] font-mono font-bold uppercase text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
+                aria-label="More export actions"
+                aria-expanded={overflowOpen}
+              >
+                <MoreHorizontal className="w-4 h-4" /> More
+              </button>
+              {overflowOpen && (
+                <>
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-40 cursor-default"
+                    aria-label="Dismiss menu"
+                    onClick={() => setOverflowOpen(false)}
+                  />
+                  <div
+                    className="absolute right-0 top-full mt-1 z-50 min-w-[200px] rounded-xl border fios-border bg-[var(--fios-surface)] shadow-lg py-1"
+                    role="menu"
+                  >
+                    <div className="px-1 py-0.5" onClick={() => setOverflowOpen(false)}>
+                      <AnkiExportButton
+                        title={deckTitle}
+                        cards={cards as any}
+                        className="w-full justify-start border-0 rounded-lg px-3 py-2.5 min-h-[44px] text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)]"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        handleExportJson();
+                        setOverflowOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-left text-xs font-bold uppercase text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)] cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Export JSON
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        void handleCopyShareCode();
+                        setOverflowOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-left text-xs font-bold uppercase text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)] cursor-pointer"
+                    >
+                      <Share2 className="w-3.5 h-3.5" /> Share code
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShareOpen(true);
+                        setOverflowOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-left text-xs font-bold uppercase text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)] cursor-pointer"
+                    >
+                      <Share2 className="w-3.5 h-3.5" /> Friends
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
 
@@ -698,38 +807,65 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-1 bg-background p-1 rounded-xl border border-border w-full sm:flex-1 min-w-0">
-            <button
-              onClick={() => setMode('browse')}
-              title="Browse: flip freely. Grading still updates your SM-2 schedule when you rate after reveal."
-              className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                mode === 'browse'
-                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 font-black'
-                  : 'text-muted-foreground hover:text-foreground border border-transparent'
-              }`}
-            >
-              <Eye className="w-3.5 h-3.5 shrink-0" /> Browse
-            </button>
-            <button
-              onClick={() => setMode('test')}
-              title="Active Recall: answer stays hidden until you tap Reveal, then self-grade."
-              className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                mode === 'test'
-                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 font-black'
-                  : 'text-muted-foreground hover:text-foreground border border-transparent'
-              }`}
-            >
-              <Target className="w-3.5 h-3.5 shrink-0" /> Recall
-            </button>
+          <div className="flex items-center gap-1 w-full sm:flex-1 min-w-0">
+            <div className="flex items-center gap-1 bg-background p-1 rounded-xl border border-border flex-1 min-w-0">
+              <button
+                onClick={() => setMode('browse')}
+                title="Browse: flip freely. Grading still updates your SM-2 schedule when you rate after reveal."
+                className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mode === 'browse'
+                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 font-black'
+                    : 'text-muted-foreground hover:text-foreground border border-transparent'
+                }`}
+              >
+                <Eye className="w-3.5 h-3.5 shrink-0" /> Browse
+              </button>
+              <button
+                onClick={() => setMode('test')}
+                title="Active Recall: answer stays hidden until you tap Reveal, then self-grade."
+                className={`flex-1 min-w-0 px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mode === 'test'
+                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 font-black'
+                    : 'text-muted-foreground hover:text-foreground border border-transparent'
+                }`}
+              >
+                <Target className="w-3.5 h-3.5 shrink-0" /> Recall
+              </button>
+            </div>
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setModeInfoOpen((v) => !v)}
+                className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg border fios-border text-[var(--fios-text-muted)] hover:accent-solid-text cursor-pointer bg-[var(--fios-surface-2)]"
+                aria-label="Browse and Recall mode info"
+                aria-expanded={modeInfoOpen}
+                title="Mode info"
+              >
+                <Info className="w-4 h-4" />
+              </button>
+              {modeInfoOpen && (
+                <>
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-40 cursor-default"
+                    aria-label="Dismiss mode info"
+                    onClick={() => setModeInfoOpen(false)}
+                  />
+                  <div
+                    className="absolute right-0 sm:left-0 sm:right-auto top-full mt-1 z-50 w-[min(100vw-2rem,280px)] rounded-xl border fios-border bg-[var(--fios-surface)] shadow-lg p-3 text-[10px] font-mono text-[var(--fios-text-muted)] leading-relaxed"
+                    role="dialog"
+                    aria-label="Browse and Recall explanation"
+                  >
+                    <p>
+                      <strong className="text-[var(--fios-text)]">Browse</strong> = flip when ready (answer hidden until flip).{' '}
+                      <strong className="text-[var(--fios-text)]">Recall</strong> = quiz with explicit Reveal. Again/Hard/Good/Easy grades schedule the next review — Hard no longer resets your streak.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
-        <p className="text-[10px] font-mono text-muted-foreground flex items-start gap-1.5 pt-1">
-          <Info className="w-3 h-3 shrink-0 mt-0.5 accent-solid-text" />
-          <span>
-            <strong className="text-muted-foreground">Browse</strong> = flip when ready (answer hidden until flip).{' '}
-            <strong className="text-muted-foreground">Recall</strong> = quiz with explicit Reveal. Again/Hard/Good/Easy grades schedule the next review — Hard no longer resets your streak.
-          </span>
-        </p>
       </div>
 
       {/* Save Status Banner */}
@@ -818,104 +954,137 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
                 </button>
               )}
               {isFlipped && (
-                <>
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTutorOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border fios-border text-[10px] font-bold uppercase text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
+                    onClick={() => setAiActionsOpen((v) => !v)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[44px] rounded-lg border fios-border text-[10px] font-bold uppercase text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
+                    aria-expanded={aiActionsOpen}
+                    aria-label="AI Actions"
                   >
-                    <MessageCircle className="w-3 h-3 accent-solid-text" /> Tutor Me
+                    <Sparkles className="w-3.5 h-3.5 accent-solid-text" /> AI Actions
                   </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMnemonicOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border fios-border text-[10px] font-bold uppercase text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
-                    aria-label="Mnemonic"
-                    title="Memory palace mnemonic"
-                  >
-                    <Brain className="w-3 h-3 accent-solid-text" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={studyBusy}
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      setStudyBusy(true);
-                      try {
-                        const r = await studyFeynman({
-                          topic: questionText,
-                          explanation: answerText,
-                        });
-                        setFeynmanHint(
-                          r.studentReply || r.feedback || 'Keep teaching — probe the edge cases.'
-                        );
-                      } catch (err) {
-                        toast(err instanceof Error ? err.message : 'Feynman failed', 'error');
-                      } finally {
-                        setStudyBusy(false);
-                      }
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border fios-border text-[10px] font-bold uppercase text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
-                    title="Feynman / Protégé — teach a confused first-year"
-                  >
-                    Teach
-                  </button>
-                  <button
-                    type="button"
-                    disabled={studyBusy}
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      setStudyBusy(true);
-                      try {
-                        const r = await studyDualCode({
-                          front: questionText,
-                          back: answerText,
-                        });
-                        setDualHint(
-                          [r.iconHint && `Icon: ${r.iconHint}`, r.audioScript]
-                            .filter(Boolean)
-                            .join(' · ')
-                        );
-                      } catch (err) {
-                        toast(err instanceof Error ? err.message : 'Dual-code failed', 'error');
-                      } finally {
-                        setStudyBusy(false);
-                      }
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border fios-border text-[10px] font-bold uppercase text-[var(--fios-text)] cursor-pointer bg-[var(--fios-surface-2)]"
-                    title="Dual-coding micro-asset"
-                  >
-                    Dual
-                  </button>
-                </>
+                  {aiActionsOpen && (
+                    <>
+                      <button
+                        type="button"
+                        className="fixed inset-0 z-40 cursor-default"
+                        aria-label="Dismiss AI actions"
+                        onClick={() => setAiActionsOpen(false)}
+                      />
+                      <div
+                        className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 z-50 min-w-[200px] rounded-xl border fios-border bg-[var(--fios-surface)] shadow-lg py-1"
+                        role="menu"
+                      >
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setTutorOpen(true);
+                            setAiActionsOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-left text-[10px] font-bold uppercase text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)] cursor-pointer"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 accent-solid-text" /> Tutor Me
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setMnemonicOpen(true);
+                            setAiActionsOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-left text-[10px] font-bold uppercase text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)] cursor-pointer"
+                          aria-label="Mnemonic"
+                          title="Memory palace mnemonic"
+                        >
+                          <Brain className="w-3.5 h-3.5 accent-solid-text" /> Mnemonic
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          disabled={studyBusy}
+                          onClick={async () => {
+                            setAiActionsOpen(false);
+                            setStudyBusy(true);
+                            try {
+                              const r = await studyFeynman({
+                                topic: questionText,
+                                explanation: answerText,
+                              });
+                              setFeynmanHint(
+                                r.studentReply || r.feedback || 'Keep teaching — probe the edge cases.'
+                              );
+                            } catch (err) {
+                              toast(err instanceof Error ? err.message : 'Feynman failed', 'error');
+                            } finally {
+                              setStudyBusy(false);
+                            }
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-left text-[10px] font-bold uppercase text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)] cursor-pointer disabled:opacity-60"
+                          title="Feynman / Protégé — teach a confused first-year"
+                        >
+                          Teach
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          disabled={studyBusy}
+                          onClick={async () => {
+                            setAiActionsOpen(false);
+                            setStudyBusy(true);
+                            try {
+                              const r = await studyDualCode({
+                                front: questionText,
+                                back: answerText,
+                              });
+                              setDualHint(
+                                [r.iconHint && `Icon: ${r.iconHint}`, r.audioScript]
+                                  .filter(Boolean)
+                                  .join(' · ')
+                              );
+                            } catch (err) {
+                              toast(err instanceof Error ? err.message : 'Dual-code failed', 'error');
+                            } finally {
+                              setStudyBusy(false);
+                            }
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] text-left text-[10px] font-bold uppercase text-[var(--fios-text)] hover:bg-[var(--fios-surface-2)] cursor-pointer disabled:opacity-60"
+                          title="Dual-coding micro-asset"
+                        >
+                          Dual
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
               {!isFlipped && (
                 <div
-                  className="flex items-center gap-1 w-full justify-center"
+                  className="flex flex-col items-center gap-1.5 w-full justify-center"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <span className="text-[9px] font-mono uppercase text-muted-foreground">JOL</span>
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setJolPredicted(n)}
-                      className={`w-6 h-6 rounded text-[10px] font-bold border cursor-pointer ${
-                        jolPredicted === n
-                          ? 'accent-bg text-slate-950 border-transparent'
-                          : 'border-border text-muted-foreground'
-                      }`}
-                      title="Judgment of Learning — how sure are you before flipping?"
-                    >
-                      {n}
-                    </button>
-                  ))}
+                  <span className="text-[9px] font-mono uppercase text-muted-foreground">Confidence?</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] font-mono text-[var(--fios-text-muted)] shrink-0">Guessing</span>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setJolPredicted(n)}
+                        className={`min-w-[44px] min-h-[44px] rounded-lg text-[10px] font-bold border cursor-pointer ${
+                          jolPredicted === n
+                            ? 'accent-bg text-slate-950 border-transparent'
+                            : 'border-border text-muted-foreground bg-[var(--fios-surface-2)]'
+                        }`}
+                        title="Judgment of Learning — how sure are you before flipping?"
+                        aria-label={`Confidence ${n} of 5`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                    <span className="text-[9px] font-mono text-[var(--fios-text-muted)] shrink-0">Certain</span>
+                  </div>
                 </div>
               )}
             </div>
@@ -956,7 +1125,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
                 </div>
               )}
               <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground text-center flex items-center justify-center gap-1">
-                Rate recall (updates SM-2 queue)
+                How well did you know this?
                 <span title="Grading chooses the next local-calendar due date. Again lapses; Hard keeps progress.">
                   <HelpCircle className="w-3 h-3" />
                 </span>

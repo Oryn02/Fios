@@ -19,6 +19,10 @@ import { FocusTimer } from './components/FocusTimer';
 import { PomodoroWidget } from './components/PomodoroWidget';
 import { QuickActions } from './components/QuickActions';
 import { BrainDumpInbox } from './components/BrainDumpInbox';
+import { QuickCaptureFab } from './components/QuickCaptureFab';
+import { StudioHub, type StudioPane } from './components/StudioHub';
+import { AgendaHub } from './components/AgendaHub';
+import { OnboardingWizard, isOnboardingComplete } from './components/OnboardingWizard';
 import { GeminiGate } from './components/GeminiGate';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
@@ -32,6 +36,7 @@ import { PreferencesProvider } from './context/PreferencesContext';
 import { AiAuthProvider } from './context/AiAuthContext';
 import { startOfflineQueueListener, onOfflineQueueOnline } from './lib/offlineQueue';
 import { reconcileCalendarState } from './lib/calendarService';
+import { ensureCalendarAutoSync } from './lib/calendarAutoSync';
 import { useAiAuth } from './context/AiAuthContext';
 import { lockLandingBrand } from './lib/landingBrand';
 import { NetworkStatusBanner } from './components/NetworkStatusBanner';
@@ -66,7 +71,21 @@ const SocialHub = lazy(() =>
   import('./components/social/SocialHub').then((m) => ({ default: m.SocialHub }))
 );
 
-const HOT_TABS = new Set(['overview', 'schedule', 'modules']);
+const HOT_TABS = new Set(['overview', 'agenda', 'modules', 'studio', 'schedule']);
+
+/** Map legacy tool tabs into the locked 4-pillar IA. */
+function resolvePillarTab(tab: string): string {
+  if (tab === 'schedule' || tab === 'atu-calendar') return 'agenda';
+  if (['documents', 'code', 'quiz', 'flashcards', 'tutor'].includes(tab)) return 'studio';
+  if (tab === 'profile') return 'settings';
+  return tab;
+}
+
+function studioPaneForTab(tab: string): StudioPane {
+  if (tab === 'code') return 'code';
+  if (tab === 'quiz' || tab === 'flashcards') return 'quiz';
+  return 'notes';
+}
 
 function TabFallback() {
   return (
@@ -90,7 +109,10 @@ const Dashboard: React.FC = () => {
   const { requireAiAuth } = useAiAuth();
   const keyboardVisible = useKeyboardVisible();
   const [activeTab, setActiveTab] = useState('overview');
-  /** Keep Overview / Timetable / Modules mounted after first visit for instant return nav. */
+  const [studioPane, setStudioPane] = useState<StudioPane>('notes');
+  const [studioModuleCode, setStudioModuleCode] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(() => !isOnboardingComplete());
+  /** Keep Overview / Agenda / Modules / Studio mounted after first visit for instant return nav. */
   const [mountedHotTabs, setMountedHotTabs] = useState<Set<string>>(() => new Set(['overview']));
   const [studyNotes, setStudyNotes] = useState('');
   const [cards, setCards] = useState<Flashcard[]>([]);
@@ -103,18 +125,30 @@ const Dashboard: React.FC = () => {
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [openTutorOnLoad, setOpenTutorOnLoad] = useState(false);
 
+  useEffect(() => {
+    ensureCalendarAutoSync();
+  }, []);
+
   const handleTabChange = useCallback((tab: string, options?: { openTutor?: boolean }) => {
-    if (tab === 'flashcards' && !options) {
-      // plain nav to flashcards tab — keep generator unless opening a deck
-    }
     setOpenTutorOnLoad(!!options?.openTutor);
-    setActiveTab(tab);
-    if (HOT_TABS.has(tab)) {
+    if (['documents', 'code', 'quiz', 'flashcards', 'tutor'].includes(tab)) {
+      setStudioPane(studioPaneForTab(tab));
+    }
+    const dest =
+      tab === 'documents' || tab === 'code' || tab === 'quiz' || tab === 'tutor' || tab === 'flashcards'
+        ? 'studio'
+        : tab === 'schedule' || tab === 'atu-calendar'
+          ? 'agenda'
+          : tab === 'profile'
+            ? 'settings'
+            : tab;
+    setActiveTab(dest);
+    if (HOT_TABS.has(dest)) {
       setMountedHotTabs((prev) => {
-        if (prev.has(tab)) return prev;
-        const next = new Set(prev);
-        next.add(tab);
-        return next;
+        if (prev.has(dest)) return prev;
+        const nextSet = new Set(prev);
+        nextSet.add(dest);
+        return nextSet;
       });
     }
   }, []);
@@ -200,9 +234,17 @@ const Dashboard: React.FC = () => {
       setSelectedDeck({ cards: deckCards, title, moduleCode, isSaved });
     } else {
       setCards([]);
-      setSelectedDeck(null);
+      setSelectedDeck(moduleCode ? { cards: [], title, moduleCode, isSaved: false } : null);
+      if (moduleCode) setStudioModuleCode(moduleCode);
     }
-    setActiveTab('flashcards');
+    setStudioPane('quiz');
+    setActiveTab('studio');
+    setMountedHotTabs((prev) => {
+      if (prev.has('studio')) return prev;
+      const next = new Set(prev);
+      next.add('studio');
+      return next;
+    });
   }, []);
 
   const handleOpenReviewQueue = useCallback(async () => {
@@ -260,7 +302,31 @@ const Dashboard: React.FC = () => {
     <DashboardLayout activeTab={activeTab} setActiveTab={handleTabChange}>
       <NetworkStatusBanner />
 
-      {/* Hot surfaces stay mounted after first visit so Timetable / Modules / Tasks feel instant. */}
+      {showOnboarding ? (
+        <OnboardingWizard
+          onComplete={() => setShowOnboarding(false)}
+          onGenerateFirstDeck={async (notes, moduleCode) => {
+            setStudyNotes(notes);
+            if (moduleCode) setStudioModuleCode(moduleCode);
+            const data = await generateFlashcards(notes);
+            const cardsList = Array.isArray(data?.cards) ? data.cards : [];
+            if (!cardsList.length) throw new Error('No flashcards were returned.');
+            setCards(cardsList);
+            setSelectedDeck({
+              cards: cardsList,
+              title: sanitizeDeckTitle(notes.trim().slice(0, 48), 'First deck'),
+              moduleCode,
+              isSaved: false,
+            });
+            setStudioPane('quiz');
+            setActiveTab('studio');
+            setShowOnboarding(false);
+            setMountedHotTabs((prev) => new Set([...prev, 'studio']));
+          }}
+        />
+      ) : (
+        <>
+      {/* Hot surfaces stay mounted after first visit so pillars feel instant. */}
       {mountedHotTabs.has('overview') && (
         <div className={activeTab === 'overview' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'overview'}>
           <ErrorBoundary fallbackTitle="Overview widgets crashed">
@@ -271,6 +337,11 @@ const Dashboard: React.FC = () => {
               isActive={activeTab === 'overview'}
             />
           </ErrorBoundary>
+        </div>
+      )}
+      {mountedHotTabs.has('agenda') && (
+        <div className={activeTab === 'agenda' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'agenda'}>
+          <AgendaHub />
         </div>
       )}
       {mountedHotTabs.has('schedule') && (
@@ -284,19 +355,75 @@ const Dashboard: React.FC = () => {
             onOpenFlashcards={handleOpenFlashcards}
             onOpenQuiz={(quizId) => {
               setActiveQuizId(quizId);
-              setActiveTab('quiz');
+              setStudioPane('quiz');
+              handleTabChange('studio');
             }}
             onOpenCodeExam={(examId) => {
               setActiveCodeExamId(examId);
-              setActiveTab('code');
+              setStudioPane('code');
+              handleTabChange('studio');
             }}
             onOpenDocument={(docId) => {
               setActiveDocId(docId);
-              setActiveTab('documents');
+              setStudioPane('notes');
+              handleTabChange('studio');
             }}
             setActiveTab={handleTabChange}
             isActive={activeTab === 'modules'}
           />
+        </div>
+      )}
+      {mountedHotTabs.has('studio') && (
+        <div className={activeTab === 'studio' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'studio'}>
+          <ErrorBoundary fallbackTitle="Studio crashed">
+            <StudioHub
+              initialPane={studioPane}
+              moduleCode={studioModuleCode || selectedDeck?.moduleCode}
+              initialExamId={activeCodeExamId}
+              initialQuizId={activeQuizId}
+              onDeckReady={(deck) =>
+                handleOpenFlashcards(deck.cards, deck.title, studioModuleCode || undefined, false)
+              }
+              flashcardSlot={
+                cards.length === 0 ? (
+                  <FlashcardGenerator
+                    studyNotes={studyNotes}
+                    setStudyNotes={setStudyNotes}
+                    onGenerate={handleGenerate}
+                    loading={loading}
+                    error={error}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center bg-card border border-border p-3 rounded-xl">
+                      <span className="text-xs font-mono font-bold text-muted-foreground uppercase">
+                        Active deck studying
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCards([]);
+                          setSelectedDeck(null);
+                        }}
+                        className="text-[10px] font-mono font-bold uppercase accent-solid-text cursor-pointer"
+                      >
+                        New generation
+                      </button>
+                    </div>
+                    <GeminiGate feature="Flashcards">
+                      <FlashcardDeck
+                        cards={cards}
+                        isSaved={selectedDeck?.isSaved}
+                        deckTitle={selectedDeck?.title}
+                        moduleCode={selectedDeck?.moduleCode || studioModuleCode || undefined}
+                        deckId={(selectedDeck as any)?.id}
+                      />
+                    </GeminiGate>
+                  </div>
+                )
+              }
+            />
+          </ErrorBoundary>
         </div>
       )}
 
@@ -328,47 +455,45 @@ const Dashboard: React.FC = () => {
                           Active deck studying
                         </span>
                         <button
+                          type="button"
                           onClick={() => {
                             setCards([]);
                             setSelectedDeck(null);
                           }}
-                          className="text-xs font-mono accent-solid-text hover:underline font-bold uppercase cursor-pointer"
+                          className="text-[10px] font-mono font-bold uppercase accent-solid-text cursor-pointer"
                         >
-                          + Generate New Deck
+                          New generation
                         </button>
                       </div>
-                      <ErrorBoundary fallbackTitle="Flashcard deck crashed">
+                      <GeminiGate feature="Flashcards">
                         <FlashcardDeck
                           cards={cards}
-                          isSaved={selectedDeck?.isSaved ?? false}
+                          isSaved={selectedDeck?.isSaved}
                           deckTitle={selectedDeck?.title}
                           moduleCode={selectedDeck?.moduleCode}
                         />
-                      </ErrorBoundary>
+                      </GeminiGate>
                     </div>
                   )}
                 </div>
               )}
 
               {activeTab === 'quiz' && (
-                <GeminiGate feature="Quiz Generator">
+                <ErrorBoundary fallbackTitle="Exam Mode crashed">
                   <QuizExamView initialQuizId={activeQuizId} />
-                </GeminiGate>
+                </ErrorBoundary>
               )}
 
               {activeTab === 'code' && (
-                <GeminiGate feature="Code Exams">
-                  <ErrorBoundary fallbackTitle="Code Lab crashed">
-                    <CodeExamView initialExamId={activeCodeExamId} />
-                  </ErrorBoundary>
-                </GeminiGate>
+                <ErrorBoundary fallbackTitle="Code Lab crashed">
+                  <CodeExamView initialExamId={activeCodeExamId} />
+                </ErrorBoundary>
               )}
 
               {activeTab === 'documents' && (
-                <DocumentsView
-                  initialDocId={activeDocId}
-                  autoOpenTutor={openTutorOnLoad}
-                />
+                <ErrorBoundary fallbackTitle="Notes crashed">
+                  <DocumentsView initialDocId={activeDocId} autoOpenTutor={openTutorOnLoad} />
+                </ErrorBoundary>
               )}
 
               {activeTab === 'tutor' && <AiTutorView />}
@@ -393,10 +518,10 @@ const Dashboard: React.FC = () => {
           </motion.div>
         </AnimatePresence>
       )}
+        </>
+      )}
 
-      {/* Shared bottom-right dock: Quick FAB (right) · Pomodoro · Brain Dump (left of duo).
-          Row-reverse keeps FAB nearest the corner; clears bottom nav via CSS calc offset.
-          Auto-hides when soft keyboard / text focus is active (mobile). */}
+      {/* Shared bottom-right dock: Quick Capture (mobile) · Quick FAB · Pomodoro · Brain Dump */}
       <div
         className={`fios-fab-dock fixed right-3 md:right-6 flex flex-row-reverse items-end gap-2.5 md:gap-3 pointer-events-none transition-all duration-200 ${
           keyboardVisible ? 'fios-chrome-hidden' : ''
@@ -404,6 +529,7 @@ const Dashboard: React.FC = () => {
         aria-label="Floating study tools"
         aria-hidden={keyboardVisible || undefined}
       >
+        <QuickCaptureFab />
         <QuickActions
           onNavigate={handleTabChange}
           onOpenTutor={() => handleTabChange('tutor')}
@@ -426,7 +552,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v4.0.0
+        Academic Suite · Study Lab · v4.1.0
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-foreground uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -571,7 +697,7 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v4.0.0 — Your Academic Command Center';
+    document.title = 'Fios v4.1.0 — Your Academic Command Center';
   }, []);
 
   useEffect(() => {
@@ -719,7 +845,7 @@ export function App() {
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v4.0.0…
+          Initializing Fios v4.1.0…
         </div>
       </div>
     );
