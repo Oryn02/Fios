@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
-  ArrowRight, Layers, HelpCircle, Code2, FileText, Target, Timer,
-  ShieldCheck, KeyRound, Play, Check, ChevronDown, Mail, Calendar,
-  Bot, BookOpen, Smartphone, Palette, Sparkles,
+  ArrowRight, Layers, Code2, ShieldCheck, KeyRound, Play, Check, ChevronDown, Mail, Calendar,
+  Bot, BookOpen, Smartphone, Timer, Sparkles,
 } from 'lucide-react';
 import { FiosLogo } from './FiosLogo';
 import { enableDemoAndReload } from '../lib/demo';
 import { PrivacyModal } from './PrivacyModal';
 import { TermsModal } from './TermsModal';
+import { CookiePolicyModal } from './CookiePolicyModal';
 import { SupportModal } from './SupportModal';
 
 interface LandingPageProps {
@@ -156,14 +156,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
   const [tab, setTab] = useState('flashcards');
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showCookies, setShowCookies] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const activeWalk = walkthrough.find((w) => w.id === tab) || walkthrough[0];
 
   useEffect(() => {
-    const open = () => setShowPrivacy(true);
-    window.addEventListener('fios-open-privacy', open);
-    return () => window.removeEventListener('fios-open-privacy', open);
+    const openPrivacy = () => setShowPrivacy(true);
+    const openCookies = () => setShowCookies(true);
+    window.addEventListener('fios-open-privacy', openPrivacy);
+    window.addEventListener('fios-open-cookies', openCookies);
+    return () => {
+      window.removeEventListener('fios-open-privacy', openPrivacy);
+      window.removeEventListener('fios-open-cookies', openCookies);
+    };
   }, []);
 
   const fadeUp = reduceMotion
@@ -461,6 +467,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <button type="button" onClick={() => onOpenAuth('signup')} className="hover:text-white cursor-pointer">Sign up</button>
               <button type="button" onClick={enableDemoAndReload} className="hover:text-white cursor-pointer">Live demo</button>
               <button type="button" onClick={() => setShowPrivacy(true)} className="hover:text-emerald-400 cursor-pointer underline">Privacy Policy</button>
+              <button type="button" onClick={() => setShowCookies(true)} className="hover:text-emerald-400 cursor-pointer underline">Cookie Policy</button>
               <button type="button" onClick={() => setShowTerms(true)} className="hover:text-emerald-400 cursor-pointer underline">Terms of Service</button>
               <button type="button" onClick={() => setShowSupport(true)} className="hover:text-emerald-400 transition-colors inline-flex items-center gap-1 cursor-pointer">
                 <Mail className="w-3.5 h-3.5" /> Support
