@@ -526,7 +526,7 @@ export const IMMERSIVE_THEMES: ImmersiveThemeDef[] = [
     palette: {
       bg: '#1c1917',
       surface: '#292524',
-      surface2: '#fafaf9',
+      surface2: '#44403c',
       text: '#fafaf9',
       muted: '#fca5a5',
       border: 'rgba(68,64,60,0.45)',
@@ -719,6 +719,12 @@ export function applyImmersivePalette(theme: ImmersiveThemeDef | null): void {
     root.style.removeProperty('--rpg-text');
     root.style.removeProperty('--rpg-muted');
     root.style.removeProperty('--rpg-border');
+    root.style.removeProperty('--background');
+    root.style.removeProperty('--card');
+    root.style.removeProperty('--foreground');
+    root.style.removeProperty('--muted-foreground');
+    root.style.removeProperty('--border');
+    root.style.removeProperty('--fios-surface-2');
     return;
   }
   root.setAttribute('data-rpg-theme', theme.id);
@@ -734,6 +740,13 @@ export function applyImmersivePalette(theme: ImmersiveThemeDef | null): void {
   root.style.setProperty('--fios-accent-solid', theme.palette.solid);
   root.style.setProperty('--fios-bg', theme.palette.bg);
   root.style.setProperty('--fios-surface', theme.palette.surface);
+  root.style.setProperty('--fios-surface-2', theme.palette.surface2);
   root.style.setProperty('--fios-text', theme.palette.text);
   root.style.setProperty('--fios-text-muted', theme.palette.muted);
+  // Keep shadcn `bg-card` / `text-foreground` grids in sync with immersive palette
+  root.style.setProperty('--background', theme.palette.bg);
+  root.style.setProperty('--card', theme.palette.surface);
+  root.style.setProperty('--foreground', theme.palette.text);
+  root.style.setProperty('--muted-foreground', theme.palette.muted);
+  root.style.setProperty('--border', theme.palette.border);
 }

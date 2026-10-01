@@ -369,7 +369,7 @@ export const ImmersiveThemeLayer: React.FC<{ theme: ImmersiveThemeDef | null }> 
         ctx.arc(width * 0.2, height * 0.75, 60, 0, Math.PI * 2);
         ctx.fill();
       } else if (motion === 'glitch') {
-        if (Math.random() > 0.92) {
+        if (width >= 2 && height >= 2 && Math.random() > 0.92) {
           const sliceY = Math.random() * height;
           const sliceH = 8 + Math.random() * 40;
           ctx.drawImage(canvas, 0, sliceY, width, sliceH, (Math.random() - 0.5) * 30, sliceY, width, sliceH);

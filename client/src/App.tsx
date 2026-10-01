@@ -341,12 +341,16 @@ const Dashboard: React.FC = () => {
       )}
       {mountedHotTabs.has('agenda') && (
         <div className={activeTab === 'agenda' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'agenda'}>
-          <AgendaHub />
+          <ErrorBoundary fallbackTitle="Agenda crashed">
+            <AgendaHub />
+          </ErrorBoundary>
         </div>
       )}
       {mountedHotTabs.has('schedule') && (
         <div className={activeTab === 'schedule' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'schedule'}>
-          <ScheduleTab />
+          <ErrorBoundary fallbackTitle="Timetable crashed">
+            <ScheduleTab />
+          </ErrorBoundary>
         </div>
       )}
       {mountedHotTabs.has('modules') && (
@@ -498,7 +502,11 @@ const Dashboard: React.FC = () => {
                 </ErrorBoundary>
               )}
 
-              {activeTab === 'tutor' && <AiTutorView />}
+              {activeTab === 'tutor' && (
+                <ErrorBoundary fallbackTitle="Tutor crashed">
+                  <AiTutorView />
+                </ErrorBoundary>
+              )}
 
               {activeTab === 'social' && (
                 <ErrorBoundary fallbackTitle="Study Network crashed">

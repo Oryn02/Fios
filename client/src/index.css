@@ -1397,6 +1397,11 @@ html[data-rpg-theme="liquid-frost"] .fios-frost-pane {
   -webkit-backdrop-filter: blur(28px) saturate(1.4);
 }
 
+html[data-rpg-theme]:not([data-rpg-theme="bleu-minimal"]) .fios-header,
+html[data-rpg-theme]:not([data-rpg-theme="bleu-minimal"]) .fios-bottom-nav {
+  background-color: color-mix(in srgb, var(--rpg-bg, #0F172A) 72%, transparent) !important;
+}
+
 /* Theme canvas must never trap scroll / taps (phones + PWA) */
 .fios-theme-layer {
   pointer-events: none !important;
