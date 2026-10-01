@@ -10,6 +10,19 @@ import {
   mediaNotesSchema,
   oralExamSchema,
   occlusionMaskSchema,
+  mindMapSchema,
+  mnemonicSchema,
+  socraticSchema,
+  clozeCardSchema,
+  groundedChatSchema,
+  vivaCoachSchema,
+  feynmanSchema,
+  elaborateSchema,
+  dualCodeSchema,
+  voiceGradeSchema,
+  mockExamSchema,
+  mockExamGradeSchema,
+  syllabusParseSchema,
 } from './schemas.js';
 
 dotenv.config();
@@ -110,13 +123,17 @@ function wordCount(s: string): number {
  */
 export async function generateFlashcardsFromText(studyNotes: string, apiKey?: string) {
   const ai = getClient(apiKey);
+  const hasPageMarkers = /---\s*Page\s+\d+\s*---/i.test(studyNotes || '');
+  const citationHint = hasPageMarkers
+    ? ' When notes contain `--- Page N ---` markers, set sourcePage to that page number, sourceParagraph to the 1-based paragraph within the page when possible, and sourceQuote to a short verbatim excerpt grounding the card. Omit citation fields only when truly unknown.'
+    : ' If page markers are absent, leave sourcePage/sourceParagraph/sourceQuote unset or empty.';
   const response = await ai.models.generateContent({
     model: MODEL_NAME,
     contents: `Generate a set of study flashcards based on the following lecture notes:\n\n${studyNotes}`,
     config: {
       responseMimeType: 'application/json',
       responseSchema: flashcardSchema,
-      systemInstruction: 'You are an expert study assistant. Create high-quality, concise study flashcards covering key concepts.',
+      systemInstruction: `You are an expert study assistant. Create high-quality, concise study flashcards covering key concepts.${citationHint}`,
     },
   });
 
@@ -727,4 +744,424 @@ export async function saasGenerate(
       systemInstruction: opts.system || 'You are a helpful Fios study assistant.',
     },
   });
+}
+
+export type MindMapNode = {
+  id: string;
+  label: string;
+  summary: string;
+  parentId?: string;
+};
+
+export type MindMapResult = {
+  title: string;
+  nodes: MindMapNode[];
+  edges: { source: string; target: string }[];
+};
+
+/**
+ * Build a hierarchical mind-map graph from study notes.
+ */
+export async function generateMindMapFromText(
+  text: string,
+  apiKey?: string
+): Promise<MindMapResult> {
+  const ai = getClient(apiKey);
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: `Create a hierarchical mind map of the key concepts in these notes. Use stable ids (n1, n2, …), short labels, one-sentence summaries, parentId for hierarchy, and edges for relationships.\n\n${String(text || '').slice(0, 28000)}`,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: mindMapSchema,
+      systemInstruction:
+        'You are an expert study cartographer. Produce a clear hierarchical mind map with 5–25 nodes. Every non-root node should have a parentId. Include corresponding edges.',
+    },
+  });
+  const raw = extractText(response);
+  if (!raw.trim()) throw new Error('No text returned from Gemini model.');
+  const parsed = JSON.parse(cleanJsonResponse(raw));
+  const nodes: MindMapNode[] = Array.isArray(parsed?.nodes)
+    ? parsed.nodes.map((n: any, i: number) => ({
+        id: String(n.id || `n${i + 1}`),
+        label: String(n.label || 'Concept'),
+        summary: String(n.summary || ''),
+        ...(n.parentId ? { parentId: String(n.parentId) } : {}),
+      }))
+    : [];
+  const edges = Array.isArray(parsed?.edges)
+    ? parsed.edges.map((e: any) => ({
+        source: String(e.source || ''),
+        target: String(e.target || ''),
+      })).filter((e: { source: string; target: string }) => e.source && e.target)
+    : nodes
+        .filter((n) => n.parentId)
+        .map((n) => ({ source: n.parentId!, target: n.id }));
+  return {
+    title: String(parsed?.title || 'Mind Map'),
+    nodes,
+    edges,
+  };
+}
+
+export type MnemonicResult = {
+  acronym?: string;
+  story?: string;
+  rhyme?: string;
+  tip?: string;
+};
+
+/**
+ * Generate memory aids for one flashcard.
+ */
+export async function generateMnemonic(
+  cardFront: string,
+  cardBack: string,
+  style?: string,
+  apiKey?: string
+): Promise<MnemonicResult> {
+  const ai = getClient(apiKey);
+  const styleHint = style?.trim()
+    ? ` Prefer this style: ${style.trim()}.`
+    : ' Prefer the most memorable mix of acronym, story, rhyme, and tip.';
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: `Create mnemonics for this flashcard.\nFront: ${cardFront}\nBack: ${cardBack}`,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: mnemonicSchema,
+      systemInstruction: `You invent vivid, classroom-safe memory aids for students.${styleHint} Leave unused fields as empty strings.`,
+    },
+  });
+  const raw = extractText(response);
+  if (!raw.trim()) throw new Error('No text returned from Gemini model.');
+  const parsed = JSON.parse(cleanJsonResponse(raw));
+  const out: MnemonicResult = {};
+  if (parsed?.acronym) out.acronym = String(parsed.acronym);
+  if (parsed?.story) out.story = String(parsed.story);
+  if (parsed?.rhyme) out.rhyme = String(parsed.rhyme);
+  if (parsed?.tip) out.tip = String(parsed.tip);
+  if (!out.tip && !out.acronym && !out.story && !out.rhyme) {
+    out.tip = 'Link a vivid image of the front cue to the key idea on the back.';
+  }
+  return out;
+}
+
+export type SocraticTurnResult = {
+  reply: string;
+  hintsUsed: number;
+  studentOnTrack: boolean;
+};
+
+/**
+ * Socratic tutor turn. NEVER reveals the final answer — only leading questions.
+ */
+export async function socraticTutorTurn(opts: {
+  cardFront: string;
+  cardBack: string;
+  history: { role: string; content: string }[];
+  studentMessage: string;
+  apiKey?: string;
+}): Promise<SocraticTurnResult> {
+  const ai = getClient(opts.apiKey);
+  const historyBlock = (opts.history || [])
+    .map((h) => `${h.role === 'tutor' || h.role === 'assistant' ? 'Tutor' : 'Student'}: ${h.content}`)
+    .join('\n');
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: `Card prompt (front): ${opts.cardFront}
+Private answer key (back — NEVER reveal verbatim or paraphrase as the answer): ${opts.cardBack}
+
+Prior dialogue:
+${historyBlock || '(none)'}
+
+Student's latest message:
+${opts.studentMessage}
+
+Respond with leading questions and gentle scaffolds only.`,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: socraticSchema,
+      systemInstruction:
+        'You are a Socratic study tutor. NEVER reveal the final answer, never quote the answer key, and never say the solution outright. Ask leading questions, nudge misconceptions, and celebrate partial progress. Keep replies concise.',
+    },
+  });
+  const raw = extractText(response);
+  if (!raw.trim()) throw new Error('No text returned from Gemini model.');
+  const parsed = JSON.parse(cleanJsonResponse(raw));
+  return {
+    reply: String(parsed?.reply || 'What part of the prompt feels clearest to you so far?'),
+    hintsUsed: Math.min(3, Math.max(0, Number(parsed?.hintsUsed) || 0)),
+    studentOnTrack: Boolean(parsed?.studentOnTrack),
+  };
+}
+
+/** Cloze + Q&A cards from a transcript. */
+export async function generateClozeAndQaFromTranscript(transcript: string, apiKey?: string) {
+  const { text: raw } = await generateWithFallback({
+    contents: `From this transcript, create cloze-deletion cards and Q&A cards for spaced repetition:\n\n${transcript.slice(0, 28000)}`,
+    apiKey,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: clozeCardSchema,
+      systemInstruction:
+        'Mix cloze (use {{c1::answer}} style on the front) and normal Q&A. Keep cards atomic.',
+    },
+  });
+  return JSON.parse(cleanJsonResponse(raw));
+}
+
+/** Course-scoped grounded chat with inline citations. */
+export async function groundedDocumentChat(opts: {
+  question: string;
+  passages: { text: string; page?: number; paragraph?: number; chunkIndex?: number }[];
+  apiKey?: string;
+}) {
+  const ctx = opts.passages
+    .map(
+      (p, i) =>
+        `[#${i}] page=${p.page ?? '?'} para=${p.paragraph ?? '?'} chunk=${p.chunkIndex ?? i}\n${p.text}`
+    )
+    .join('\n\n---\n\n');
+  const { text: raw } = await generateWithFallback({
+    contents: `Answer using ONLY the passages. Cite quotes.\n\nPASSAGES:\n${ctx}\n\nQUESTION:\n${opts.question}`,
+    apiKey: opts.apiKey,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: groundedChatSchema,
+      systemInstruction:
+        'Ground every claim in the passages. citations[].quote must be verbatim. If unknown, say so.',
+    },
+  });
+  return JSON.parse(cleanJsonResponse(raw));
+}
+
+/** Viva / presentation coach turn. */
+export async function vivaCoachTurn(opts: {
+  content: string;
+  transcript?: string;
+  wpm?: number;
+  fillerCount?: number;
+  history?: { role: string; content: string }[];
+  apiKey?: string;
+}) {
+  const hist = (opts.history || []).map((h) => `${h.role}: ${h.content}`).join('\n');
+  const { text: raw } = await generateWithFallback({
+    contents: `You are a professor running a viva / presentation rehearsal.
+Study content:
+${opts.content.slice(0, 20000)}
+
+Student spoken transcript (optional):
+${opts.transcript || '(none)'}
+Estimated WPM: ${opts.wpm ?? 'unknown'}; filler words heard: ${opts.fillerCount ?? 'unknown'}
+
+Prior:
+${hist || '(ask opening viva question)'}`,
+    apiKey: opts.apiKey,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: vivaCoachSchema,
+      systemInstruction:
+        'Ask professor-style viva questions. Comment on pacing and filler words when metrics are present.',
+    },
+  });
+  return JSON.parse(cleanJsonResponse(raw));
+}
+
+/** Mini-quiz for a mind-map node. */
+export async function mindMapNodeQuiz(
+  label: string,
+  summary: string,
+  context?: string,
+  apiKey?: string
+) {
+  return generateQuizFromText(
+    `Concept: ${label}\nSummary: ${summary}\nContext: ${context || ''}`,
+    apiKey,
+    3
+  );
+}
+
+/** Protégé / Feynman — AI plays confused first-year student. */
+export async function feynmanStudentTurn(opts: {
+  topic: string;
+  teacherExplanation?: string;
+  explanation?: string;
+  history?: { role: string; content: string }[];
+  apiKey?: string;
+}) {
+  const explanation = opts.teacherExplanation || opts.explanation || '';
+  const hist = (opts.history || []).map((h) => `${h.role}: ${h.content}`).join('\n');
+  const { text: raw } = await generateWithFallback({
+    contents: `Topic: ${opts.topic}
+Teacher's explanation to you (a confused first-year):
+${explanation}
+
+Prior:
+${hist || '(none)'}`,
+    apiKey: opts.apiKey,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: feynmanSchema,
+      systemInstruction:
+        'You are a confused but curious first-year student. Ask genuine clarifying questions, probe edge cases, and never pretend you fully understand. Score how accurate/complete the teacher was (0-100).',
+    },
+  });
+  return JSON.parse(cleanJsonResponse(raw));
+}
+
+/** Elaborative interrogation after Hard / fail-twice. */
+export async function elaborativeInterrogation(opts: {
+  front?: string;
+  back?: string;
+  cardFront?: string;
+  cardBack?: string;
+  priorTopic?: string;
+  apiKey?: string;
+}) {
+  const front = opts.front || opts.cardFront || '';
+  const back = opts.back || opts.cardBack || '';
+  const { text: raw } = await generateWithFallback({
+    contents: `Flashcard front: ${front}\nBack: ${back}\nPrior topic to connect: ${opts.priorTopic || 'general course knowledge'}`,
+    apiKey: opts.apiKey,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: elaborateSchema,
+      systemInstruction:
+        'Help the student elaborate: why the answer is true, and how it connects to a prior topic. End with a short prompt they should answer before moving on.',
+    },
+  });
+  return JSON.parse(cleanJsonResponse(raw));
+}
+
+/** Dual-coding micro-asset hints for a card. */
+export async function generateDualCodeAsset(opts: {
+  front?: string;
+  back?: string;
+  cardFront?: string;
+  cardBack?: string;
+  apiKey?: string;
+}) {
+  const front = opts.front || opts.cardFront || '';
+  const back = opts.back || opts.cardBack || '';
+  const { text: raw } = await generateWithFallback({
+    contents: `Create dual-coding micro-assets for this card.\nFront: ${front}\nBack: ${back}`,
+    apiKey: opts.apiKey,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: dualCodeSchema,
+      systemInstruction:
+        'Suggest a simple icon hint, optional tiny mermaid diagram, and a short audio mnemonic script (<40 words).',
+    },
+  });
+  return JSON.parse(cleanJsonResponse(raw));
+}
+
+/** Alias used by study routes. */
+export async function dualCodeMicroAsset(opts: {
+  cardFront?: string;
+  cardBack?: string;
+  front?: string;
+  back?: string;
+  apiKey?: string;
+}) {
+  return generateDualCodeAsset(opts);
+}
+
+/**
+ * Grade a spoken active-recall attempt vs the card answer.
+ * Returns FSRS-style rating 1–4 plus brief feedback.
+ */
+export async function gradeSpokenRecall(opts: {
+  front: string;
+  back: string;
+  spoken: string;
+  apiKey?: string;
+}): Promise<{ rating: 1 | 2 | 3 | 4; feedback: string; accuracy: number }> {
+  const { text: raw } = await generateWithFallback({
+    contents: `Flashcard front (prompt): ${opts.front}
+Correct back (answer key): ${opts.back}
+Student's spoken answer (STT transcript): ${opts.spoken}
+
+Grade how well the spoken answer covers the correct answer. Be fair to STT noise.`,
+    apiKey: opts.apiKey,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: voiceGradeSchema,
+      systemInstruction:
+        'You grade spoken active recall. rating is FSRS: 1=Again (missed), 2=Hard (partial), 3=Good, 4=Easy. Ignore minor STT typos.',
+    },
+  });
+  const parsed = JSON.parse(cleanJsonResponse(raw));
+  const rating = Math.min(4, Math.max(1, Math.round(Number(parsed?.rating) || 2))) as 1 | 2 | 3 | 4;
+  return {
+    rating,
+    feedback: String(parsed?.feedback || ''),
+    accuracy: Math.min(100, Math.max(0, Number(parsed?.accuracy) || 0)),
+  };
+}
+
+/** Full-length mock exam: mix of MCQ / short / essay from module docs. */
+export async function generateMockExam(opts: {
+  moduleCode: string;
+  durationMin?: number;
+  sourceText: string;
+  apiKey?: string;
+}) {
+  const mins = Math.min(180, Math.max(20, Number(opts.durationMin) || 90));
+  const { text: raw } = await generateWithFallback({
+    contents: `Module: ${opts.moduleCode}
+Target duration: ${mins} minutes.
+Create a full mock exam mixing multiple-choice, short-answer, and essay questions from these notes/docs:
+
+${opts.sourceText.slice(0, 40000)}`,
+    apiKey: opts.apiKey,
+    preferPro: true,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: mockExamSchema,
+      systemInstruction:
+        'Build a realistic timed mock exam. Cover several topics. Include answerKey for grading. Mark estimated minutes per question.',
+    },
+  });
+  const parsed = JSON.parse(cleanJsonResponse(raw));
+  return { ...parsed, durationMin: mins, moduleCode: opts.moduleCode };
+}
+
+/** Grade mock exam answers → rubric + weak-topic diagnostic scorecard. */
+export async function gradeMockExam(opts: {
+  exam: unknown;
+  answers: Record<string, string>;
+  apiKey?: string;
+}) {
+  const { text: raw } = await generateWithFallback({
+    contents: `EXAM JSON:\n${JSON.stringify(opts.exam).slice(0, 30000)}\n\nSTUDENT ANSWERS:\n${JSON.stringify(opts.answers).slice(0, 20000)}`,
+    apiKey: opts.apiKey,
+    preferPro: true,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: mockExamGradeSchema,
+      systemInstruction:
+        'Grade fairly. Produce a Diagnostic Scorecard with weakTopics ranked by severity. Rubric feedback should be actionable.',
+    },
+  });
+  return JSON.parse(cleanJsonResponse(raw));
+}
+
+/** Extract deadlines / exams from syllabus text. */
+export async function parseSyllabusEvents(opts: {
+  text: string;
+  moduleCode?: string;
+  apiKey?: string;
+}) {
+  const { text: raw } = await generateWithFallback({
+    contents: `Module code hint: ${opts.moduleCode || '(unknown)'}\n\nSyllabus / course outline text:\n${opts.text.slice(0, 40000)}`,
+    apiKey: opts.apiKey,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: syllabusParseSchema,
+      systemInstruction:
+        'Extract assignment deadlines, exams, quizzes, and other dated academic events. Prefer ISO dates (YYYY-MM-DD). Skip vague undated items.',
+    },
+  });
+  return JSON.parse(cleanJsonResponse(raw));
 }

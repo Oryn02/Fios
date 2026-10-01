@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "Fios Web Clipper",
+  "version": "4.0.0",
+  "description": "Clip Canvas, Moodle, Wikipedia, or any page into a Fios flashcard deck or audio recap.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://fios-web.onrender.com/*",
+    "https://*.onrender.com/*",
+    "http://localhost:*/*"
+  ],
+  "action": {
+    "default_title": "Clip to Fios",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "fios-clipper@fios.app",
+      "strict_min_version": "109.0"
+    }
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

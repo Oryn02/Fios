@@ -1,0 +1,36 @@
+{
+  "name": "fios-ide",
+  "displayName": "Fios Study Queue",
+  "description": "FSRS daily queue in the sidebar while you wait on builds.",
+  "version": "1.0.0",
+  "publisher": "fios",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other", "Education"],
+  "activationEvents": ["onView:fiosQueue", "onCommand:fios.refreshQueue", "onCommand:fios.openReview"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "fios.refreshQueue", "title": "Fios: Refresh Daily Queue" },
+      { "command": "fios.openReview", "title": "Fios: Open Review in Browser" },
+      { "command": "fios.setApi", "title": "Fios: Set API Base + Token" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "fios", "title": "Fios", "icon": "media/fios.svg" }
+      ]
+    },
+    "views": {
+      "fios": [
+        { "id": "fiosQueue", "name": "Daily Queue" }
+      ]
+    },
+    "configuration": {
+      "title": "Fios",
+      "properties": {
+        "fios.apiBase": { "type": "string", "default": "", "description": "Fios API origin" },
+        "fios.accessToken": { "type": "string", "default": "", "description": "Supabase access token" },
+        "fios.appUrl": { "type": "string", "default": "https://fios-web.onrender.com", "description": "Fios web app URL" }
+      }
+    }
+  }
+}

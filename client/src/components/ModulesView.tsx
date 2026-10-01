@@ -21,8 +21,9 @@ import { toast } from '../lib/toast';
 import type { MCQQuiz, CodeExam, Task, CodeExamType, FiosDocument } from '../types/db';
 import { ActiveRecall } from './ActiveRecall';
 import { InlineEditableTitle } from './InlineEditableTitle';
-import { ImportDeckModal } from './ImportDeckModal';
+import { UniversalImportModal } from './importers/UniversalImportModal';
 import { ModuleFormPanel } from './ModuleFormPanel';
+import { downloadModuleVault } from '../lib/vaultExport';
 
 interface ModulesViewProps {
   onOpenFlashcards: (deckCards?: any[], title?: string, moduleCode?: string, isSaved?: boolean) => void;
@@ -426,6 +427,19 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
             >
               <Upload className="w-3.5 h-3.5 accent-solid-text" /> Import deck
             </button>
+            {selectedModule && (
+              <button
+                type="button"
+                onClick={() => {
+                  void downloadModuleVault(selectedModule)
+                    .then(() => toast('Vault ZIP downloaded', 'success'))
+                    .catch((e: any) => toast(e?.message || 'Vault export failed', 'error'));
+                }}
+                className="px-3 py-1.5 rounded-lg border fios-border bg-[var(--fios-surface-2)] text-[10px] font-mono font-bold uppercase text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 accent-solid-text" /> Export vault
+              </button>
+            )}
           </div>
         )}
 
@@ -709,7 +723,7 @@ const ModulesViewInner: React.FC<ModulesViewProps> = ({
         {recallOpen && <ActiveRecall modules={modules} initialModule={selectedModule || ''} onClose={() => setRecallOpen(false)} />}
       </AnimatePresence>
 
-      <ImportDeckModal
+      <UniversalImportModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
         onImported={() => { void loadData(); }}

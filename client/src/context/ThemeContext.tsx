@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { ACCENTS, normalizeAccent, type AccentKey, type ThemeMode } from '../types/db';
+import { ACCENTS, normalizeAccent, LOCKED_ACCENTS, type AccentKey, type ThemeMode } from '../types/db';
 import { useProfile } from './ProfileContext';
+import { setPreferenceLocal } from '../components/CookieConsent';
 import {
   applyHolidayPaletteVars,
   birthdayPalette,
@@ -12,6 +13,19 @@ import {
   setAdminHolidayPreview,
   type HolidayPalette,
 } from '../lib/holidays';
+
+function isAccentRewardUnlocked(key: AccentKey): boolean {
+  if (!LOCKED_ACCENTS.has(key)) return true;
+  try {
+    const raw = localStorage.getItem('fios_unlocked_rewards');
+    if (!raw) return false;
+    const rewards = JSON.parse(raw);
+    if (!Array.isArray(rewards)) return false;
+    return rewards.includes(`theme:${key}`) || rewards.includes(key);
+  } catch {
+    return false;
+  }
+}
 
 type ResolvedTheme = 'dark' | 'light';
 
@@ -126,12 +140,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (profile?.theme) {
       const t = normalizeTheme(profile.theme);
       setThemeState((prev) => (prev === t ? prev : t));
-      localStorage.setItem('fios_theme', t);
+      setPreferenceLocal('fios_theme', t);
     }
     if (profile?.accent_color) {
       const a = normalizeAccent(profile.accent_color);
       setAccentState((prev) => (prev === a ? prev : a));
-      localStorage.setItem('fios_accent', a);
+      setPreferenceLocal('fios_accent', a);
     }
   }, [profile]);
 
@@ -147,16 +161,26 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [accent, holidayTheme]);
 
+  // If the user later opts into Preferences, mirror the in-memory theme into localStorage.
+  useEffect(() => {
+    const flush = () => {
+      setPreferenceLocal('fios_theme', theme);
+      setPreferenceLocal('fios_accent', accent);
+    };
+    window.addEventListener('fios-cookie-updated', flush);
+    return () => window.removeEventListener('fios-cookie-updated', flush);
+  }, [theme, accent]);
+
   const setTheme = useCallback((t: ThemeMode) => {
     setAdminHolidayPreview(null);
     markHolidayManualOverride();
     setHolidayTheme(null);
     setThemeState(t);
-    localStorage.setItem('fios_theme', t);
+    setPreferenceLocal('fios_theme', t);
     applyResolvedTheme(t === 'system' ? resolveSystem() : t);
-    applyAccentVars(normalizeAccent(localStorage.getItem('fios_accent')));
+    applyAccentVars(normalizeAccent(localStorage.getItem('fios_accent') || accent));
     updateProfile({ theme: t }).catch((e: any) => console.error('Failed to persist theme:', e));
-  }, [updateProfile]);
+  }, [updateProfile, accent]);
 
   const toggleTheme = useCallback(() => {
     setAdminHolidayPreview(null);
@@ -165,21 +189,25 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setThemeState((prev) => {
       const current = prev === 'system' ? systemPref : prev;
       const next: ThemeMode = current === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('fios_theme', next);
+      setPreferenceLocal('fios_theme', next);
       applyResolvedTheme(next);
-      applyAccentVars(normalizeAccent(localStorage.getItem('fios_accent')));
+      applyAccentVars(normalizeAccent(localStorage.getItem('fios_accent') || accent));
       updateProfile({ theme: next }).catch((e: any) => console.error('Failed to persist theme:', e));
       return next;
     });
-  }, [updateProfile, systemPref]);
+  }, [updateProfile, systemPref, accent]);
 
   const setAccent = useCallback((a: AccentKey) => {
+    if (LOCKED_ACCENTS.has(a) && !isAccentRewardUnlocked(a)) {
+      console.warn('[theme] Accent locked until RPG unlock:', a);
+      return;
+    }
     setAdminHolidayPreview(null);
     markHolidayManualOverride();
     setHolidayTheme(null);
     const next = normalizeAccent(a);
     setAccentState(next);
-    localStorage.setItem('fios_accent', next);
+    setPreferenceLocal('fios_accent', next);
     applyAccentVars(next);
     updateProfile({ accent_color: next }).catch((e: any) => console.error('Failed to persist accent:', e));
   }, [updateProfile]);

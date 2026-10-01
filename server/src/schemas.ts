@@ -21,6 +21,18 @@ export const flashcardSchema = {
             type: Type.STRING,
             description: 'Answer, definition, or code explanation',
           },
+          sourcePage: {
+            type: Type.INTEGER,
+            description: 'Optional 1-based page number when notes use --- Page N --- markers',
+          },
+          sourceParagraph: {
+            type: Type.INTEGER,
+            description: 'Optional 1-based paragraph index within that page or section',
+          },
+          sourceQuote: {
+            type: Type.STRING,
+            description: 'Optional short verbatim quote grounding the card in the source',
+          },
         },
         required: ['front', 'back'],
       },
@@ -237,6 +249,290 @@ export const oralExamSchema = {
     },
   },
   required: ['question', 'rubricHint', 'score', 'feedback'],
+};
+
+/** Hierarchical mind-map graph from study notes. */
+export const mindMapSchema = {
+  type: Type.OBJECT,
+  properties: {
+    title: {
+      type: Type.STRING,
+      description: 'Short title for the mind map',
+    },
+    nodes: {
+      type: Type.ARRAY,
+      description: 'Concept nodes',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          id: { type: Type.STRING, description: 'Stable node id (e.g. n1)' },
+          label: { type: Type.STRING, description: 'Short node label' },
+          summary: { type: Type.STRING, description: 'One-sentence summary of the concept' },
+          parentId: {
+            type: Type.STRING,
+            description: 'Parent node id; omit or empty for root',
+          },
+        },
+        required: ['id', 'label', 'summary'],
+      },
+    },
+    edges: {
+      type: Type.ARRAY,
+      description: 'Directed edges between nodes',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          source: { type: Type.STRING, description: 'Source node id' },
+          target: { type: Type.STRING, description: 'Target node id' },
+        },
+        required: ['source', 'target'],
+      },
+    },
+  },
+  required: ['title', 'nodes', 'edges'],
+};
+
+/** Memory aids for a single flashcard. */
+export const mnemonicSchema = {
+  type: Type.OBJECT,
+  properties: {
+    acronym: {
+      type: Type.STRING,
+      description: 'Acronym or initialism mnemonic; empty string if not applicable',
+    },
+    story: {
+      type: Type.STRING,
+      description: 'Short vivid story linking front to back; empty if not applicable',
+    },
+    rhyme: {
+      type: Type.STRING,
+      description: 'Rhyme or jingle; empty if not applicable',
+    },
+    tip: {
+      type: Type.STRING,
+      description: 'Practical memory tip or keyword method; empty if not applicable',
+    },
+  },
+  required: ['tip'],
+};
+
+/** Socratic tutor turn — leading questions only, never the final answer. */
+export const socraticSchema = {
+  type: Type.OBJECT,
+  properties: {
+    reply: {
+      type: Type.STRING,
+      description: 'Tutor reply with leading questions only; never reveal the final answer',
+    },
+    hintsUsed: {
+      type: Type.INTEGER,
+      description: 'How many gentle scaffold hints were embedded (0-3)',
+    },
+    studentOnTrack: {
+      type: Type.BOOLEAN,
+      description: 'Whether the student appears to be approaching the correct idea',
+    },
+  },
+  required: ['reply', 'hintsUsed', 'studentOnTrack'],
+};
+
+export const clozeCardSchema = {
+  type: Type.OBJECT,
+  properties: {
+    title: { type: Type.STRING },
+    cards: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          front: { type: Type.STRING },
+          back: { type: Type.STRING },
+          cardKind: { type: Type.STRING, description: 'cloze | qa' },
+        },
+        required: ['front', 'back'],
+      },
+    },
+  },
+  required: ['title', 'cards'],
+};
+
+export const groundedChatSchema = {
+  type: Type.OBJECT,
+  properties: {
+    answer: { type: Type.STRING },
+    citations: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          quote: { type: Type.STRING },
+          page: { type: Type.INTEGER },
+          paragraph: { type: Type.INTEGER },
+          chunkIndex: { type: Type.INTEGER },
+        },
+        required: ['quote'],
+      },
+    },
+  },
+  required: ['answer', 'citations'],
+};
+
+export const vivaCoachSchema = {
+  type: Type.OBJECT,
+  properties: {
+    question: { type: Type.STRING },
+    feedback: { type: Type.STRING },
+    pacingNote: { type: Type.STRING },
+    fillerNote: { type: Type.STRING },
+    score: { type: Type.INTEGER },
+  },
+  required: ['question', 'feedback', 'score'],
+};
+
+export const feynmanSchema = {
+  type: Type.OBJECT,
+  properties: {
+    studentReply: {
+      type: Type.STRING,
+      description: 'Confused first-year student response / question',
+    },
+    accuracyScore: { type: Type.INTEGER, description: '0-100 how accurate the teacher was' },
+    edgeCases: { type: Type.ARRAY, items: { type: Type.STRING } },
+    followUps: { type: Type.ARRAY, items: { type: Type.STRING } },
+    feedback: { type: Type.STRING },
+  },
+  required: ['studentReply', 'accuracyScore', 'feedback'],
+};
+
+export const elaborateSchema = {
+  type: Type.OBJECT,
+  properties: {
+    why: { type: Type.STRING },
+    connection: { type: Type.STRING },
+    prompt: { type: Type.STRING, description: 'Question for the student to elaborate on' },
+  },
+  required: ['why', 'connection', 'prompt'],
+};
+
+export const dualCodeSchema = {
+  type: Type.OBJECT,
+  properties: {
+    iconHint: { type: Type.STRING, description: 'lucide-style icon name hint e.g. brain, atom' },
+    diagramMermaid: { type: Type.STRING, description: 'Tiny mermaid snippet or empty' },
+    audioScript: { type: Type.STRING, description: 'Short spoken mnemonic under 40 words' },
+  },
+  required: ['iconHint', 'audioScript'],
+};
+
+/** Spoken active-recall grade → FSRS rating 1-4. */
+export const voiceGradeSchema = {
+  type: Type.OBJECT,
+  properties: {
+    rating: {
+      type: Type.INTEGER,
+      description: 'FSRS rating 1=Again, 2=Hard, 3=Good, 4=Easy',
+    },
+    feedback: {
+      type: Type.STRING,
+      description: 'One or two sentences of spoken-friendly feedback',
+    },
+    accuracy: {
+      type: Type.INTEGER,
+      description: '0-100 rough coverage of the correct answer',
+    },
+  },
+  required: ['rating', 'feedback', 'accuracy'],
+};
+
+/** Full-length mock exam with mixed question types. */
+export const mockExamSchema = {
+  type: Type.OBJECT,
+  properties: {
+    title: { type: Type.STRING },
+    durationMin: { type: Type.INTEGER },
+    questions: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          id: { type: Type.STRING },
+          type: { type: Type.STRING, description: 'mcq | short | essay' },
+          prompt: { type: Type.STRING },
+          options: { type: Type.ARRAY, items: { type: Type.STRING } },
+          correctIndex: { type: Type.INTEGER },
+          answerKey: { type: Type.STRING },
+          topic: { type: Type.STRING },
+          points: { type: Type.INTEGER },
+          estimatedMin: { type: Type.INTEGER },
+        },
+        required: ['id', 'type', 'prompt', 'topic', 'points'],
+      },
+    },
+  },
+  required: ['title', 'durationMin', 'questions'],
+};
+
+/** Mock exam grading + diagnostic scorecard. */
+export const mockExamGradeSchema = {
+  type: Type.OBJECT,
+  properties: {
+    overallPercent: { type: Type.NUMBER },
+    rubric: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          questionId: { type: Type.STRING },
+          score: { type: Type.NUMBER },
+          maxPoints: { type: Type.NUMBER },
+          feedback: { type: Type.STRING },
+          topic: { type: Type.STRING },
+        },
+        required: ['questionId', 'score', 'maxPoints', 'feedback'],
+      },
+    },
+    weakTopics: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          topic: { type: Type.STRING },
+          severity: { type: Type.STRING, description: 'high | medium | low' },
+          note: { type: Type.STRING },
+        },
+        required: ['topic', 'severity', 'note'],
+      },
+    },
+    summary: { type: Type.STRING },
+  },
+  required: ['overallPercent', 'rubric', 'weakTopics', 'summary'],
+};
+
+/** Syllabus → dated academic events. */
+export const syllabusParseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    events: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          type: {
+            type: Type.STRING,
+            description: 'deadline | exam | quiz | lecture | other',
+          },
+          date: { type: Type.STRING, description: 'ISO date YYYY-MM-DD when known' },
+          time: { type: Type.STRING, description: 'Optional HH:MM' },
+          description: { type: Type.STRING },
+          moduleCode: { type: Type.STRING },
+        },
+        required: ['title', 'type'],
+      },
+    },
+    notes: { type: Type.STRING },
+  },
+  required: ['events'],
 };
 
 /** Diagram occlusion masks — bounding boxes as percentages of image width/height. */

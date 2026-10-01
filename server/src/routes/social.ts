@@ -159,7 +159,9 @@ router.get('/course-bank', requireUser, async (req: AuthedRequest, res: Response
     }
     let q = db
       .from('shared_resources')
-      .select('*')
+      .select(
+        'id, owner_id, resource_type, resource_id, title, module_code, payload, visibility, group_id, created_at, view_count, clone_count, upvote_count, downvote_count'
+      )
       .eq('visibility', 'course_bank')
       .order('created_at', { ascending: false })
       .limit(100);
@@ -167,12 +169,105 @@ router.get('/course-bank', requireUser, async (req: AuthedRequest, res: Response
     if (moduleCode) q = q.eq('module_code', moduleCode);
     const { data, error } = await q;
     if (error) {
-      res.status(400).json({ error: error.message });
+      // Soft-fallback if new columns missing
+      const fallback = await db
+        .from('shared_resources')
+        .select('*')
+        .eq('visibility', 'course_bank')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (fallback.error) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      let rows = fallback.data || [];
+      if (moduleCode) rows = rows.filter((r: any) => r.module_code === moduleCode);
+      res.json({ resources: rows });
       return;
     }
     res.json({ resources: data || [] });
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'Course bank failed' });
+  }
+});
+
+/** POST /api/social/course-bank/:id/view */
+router.post('/course-bank/:id/view', requireUser, async (req: AuthedRequest, res: Response) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    if (!id) {
+      res.status(400).json({ error: 'id required' });
+      return;
+    }
+    const db = dbFor(req);
+    if (!db) {
+      res.status(503).json({ error: 'Database not configured' });
+      return;
+    }
+    const { data, error } = await db.rpc('fios_record_resource_view', {
+      p_resource_id: id,
+    });
+    if (error) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+    res.json({ resource: data });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'View failed' });
+  }
+});
+
+/** POST /api/social/course-bank/:id/vote { vote: 1|-1 } */
+router.post('/course-bank/:id/vote', requireUser, async (req: AuthedRequest, res: Response) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    const vote = Number(req.body?.vote);
+    if (!id || ![1, -1].includes(vote)) {
+      res.status(400).json({ error: 'id and vote (1|-1) required' });
+      return;
+    }
+    const db = dbFor(req);
+    if (!db) {
+      res.status(503).json({ error: 'Database not configured' });
+      return;
+    }
+    const { data, error } = await db.rpc('fios_vote_resource', {
+      p_resource_id: id,
+      p_vote: vote,
+    });
+    if (error) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+    res.json({ resource: data });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Vote failed' });
+  }
+});
+
+/** POST /api/social/course-bank/:id/clone */
+router.post('/course-bank/:id/clone', requireUser, async (req: AuthedRequest, res: Response) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    if (!id) {
+      res.status(400).json({ error: 'id required' });
+      return;
+    }
+    const db = dbFor(req);
+    if (!db) {
+      res.status(503).json({ error: 'Database not configured' });
+      return;
+    }
+    const { data, error } = await db.rpc('fios_clone_shared_deck', {
+      p_resource_id: id,
+    });
+    if (error) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+    res.json({ clone: data });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Clone failed' });
   }
 });
 

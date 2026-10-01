@@ -1,5 +1,5 @@
 {
-  "name": "Fios — Academic Command Center",
+  "name": "Fios \u2014 Academic Command Center",
   "short_name": "Fios",
   "description": "AI flashcards, quizzes, code lab, tutor, and focus tools.",
   "start_url": "/",
@@ -36,6 +36,32 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Daily review",
+      "short_name": "Review",
+      "description": "Jump to flashcard review",
+      "url": "/?tab=flashcards&review=1",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Overview streak",
+      "short_name": "Streak",
+      "description": "Open overview / streak",
+      "url": "/?tab=overview",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

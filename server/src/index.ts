@@ -2,9 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import routes from './routes.js';
+import { attachLounge } from './loungeSocket.js';
 
 // Load root .env then server/.env (local overrides). Never commit real secrets.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -13,6 +15,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
 const app = express();
+const FIOS_VERSION = '4.0.0';
 
 /**
  * CORS for split Render deploys (Static Site → Web Service).
@@ -48,10 +51,10 @@ app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 app.get('/health', (_req, res) => {
-  res.status(200).json({ ok: true, service: 'fios-api', version: '3.8.0' });
+  res.status(200).json({ ok: true, service: 'fios-api', version: FIOS_VERSION });
 });
 app.get('/api/health', (_req, res) => {
-  res.status(200).json({ ok: true, service: 'fios-api', version: '3.8.0' });
+  res.status(200).json({ ok: true, service: 'fios-api', version: FIOS_VERSION });
 });
 
 // API routes first — never fall through to the SPA for /api/*
@@ -94,7 +97,9 @@ if (clientDist) {
   app.use(express.static(clientDist, { index: false, maxAge: '1h' }));
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
-    if (req.path.startsWith('/api') || req.path === '/health') return next();
+    if (req.path.startsWith('/api') || req.path === '/health' || req.path.startsWith('/lounge')) {
+      return next();
+    }
     res.sendFile(path.join(clientDist, 'index.html'), (err) => {
       if (err) next(err);
     });
@@ -117,7 +122,7 @@ if (clientDist) {
 
     return res.status(200).json({
       service: 'fios-api',
-      version: '3.8.0',
+      version: FIOS_VERSION,
       health: '/health',
       app: primaryAppOrigin,
       hint: 'This host is the Express API only. Open the Fios Static Site (fios-web) for the app UI.',
@@ -129,8 +134,10 @@ if (clientDist) {
 }
 
 const PORT = Number(process.env.PORT) || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Fios listening on http://0.0.0.0:${PORT}`);
+const httpServer = http.createServer(app);
+attachLounge(httpServer);
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`Fios listening on http://0.0.0.0:${PORT} (v${FIOS_VERSION}, lounge socket attached)`);
 });
 
 export default app;

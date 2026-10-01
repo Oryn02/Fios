@@ -21,6 +21,7 @@ import { friendlyGeminiError } from '../lib/geminiUx';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { MockOralExam } from './ai/MockOralExam';
 import { DiagramOcclusion } from './study/DiagramOcclusion';
+import { StudyLabExtras } from './study/StudyLabExtras';
 import { AudioPlayer } from './media/AudioPlayer';
 import { fetchAudioRecapBlob } from '../services/mediaApi';
 
@@ -312,6 +313,11 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
         <p className="text-[10px] font-mono text-[var(--fios-text-muted)] -mt-1">
           Audio lecture → summary uploads voice, transcribes via Gemini, and saves a Smart Note automatically.
         </p>
+        <StudyLabExtras
+          moduleCode={moduleCode || active?.module_code || undefined}
+          documentId={active?.id !== 'general-tutor' ? active?.id : undefined}
+          seedText={text || active?.summary || ''}
+        />
 
         <textarea
           value={text}

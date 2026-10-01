@@ -63,3 +63,27 @@ export async function joinGroup(inviteCode: string) {
   });
   return readJson(res);
 }
+
+export async function voteResource(resourceId: string, vote: 1 | -1 | 0) {
+  const res = await saasFetch(`/api/social/course-bank/${encodeURIComponent(resourceId)}/vote`, {
+    method: 'POST',
+    body: JSON.stringify({ vote }),
+  });
+  return readJson<{ upvote_count?: number; downvote_count?: number; user_vote?: number; resource?: any; [k: string]: any }>(res);
+}
+
+export async function cloneResource(resourceId: string) {
+  const res = await saasFetch(`/api/social/course-bank/${encodeURIComponent(resourceId)}/clone`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+  return readJson<{ clone?: any; deckId?: string; title?: string; [k: string]: any }>(res);
+}
+
+export async function viewResource(resourceId: string) {
+  const res = await saasFetch(`/api/social/course-bank/${encodeURIComponent(resourceId)}/view`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+  return readJson<{ view_count?: number; resource?: any; [k: string]: any }>(res);
+}

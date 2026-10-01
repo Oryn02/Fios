@@ -1,13 +1,15 @@
 /**
  * Import a flashcard deck from JSON file, paste JSON, or shareable base64 code.
+ * Also launches UniversalImportModal for CSV / RemNote / Quizlet / Notion / Anki.
  */
 import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Download, Loader2, Upload, X } from 'lucide-react';
+import { Download, Loader2, Upload, X, Layers } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { saveDeckWithCards, parseDeckImport, type DeckExportPayload } from '../lib/deckService';
 import { toast } from '../lib/toast';
 import { IS_DEMO } from '../lib/demo';
+import { UniversalImportModal } from './importers/UniversalImportModal';
 
 interface Props {
   open: boolean;
@@ -20,6 +22,7 @@ export const ImportDeckModal: React.FC<Props> = ({ open, onClose, onImported }) 
 
   const [raw, setRaw] = useState('');
   const [busy, setBusy] = useState(false);
+  const [universalOpen, setUniversalOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const importPayload = async (payload: DeckExportPayload) => {
@@ -72,87 +75,118 @@ export const ImportDeckModal: React.FC<Props> = ({ open, onClose, onImported }) 
   };
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/60"
-          onClick={onClose}
-        >
+    <>
+      <AnimatePresence>
+        {open && !universalOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg rounded-2xl border fios-border bg-[var(--fios-surface)] p-5 space-y-4 shadow-sm dark:shadow-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/60"
+            onClick={onClose}
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-mono font-black uppercase tracking-widest accent-solid-text">
-                  Flashcards
-                </p>
-                <h3 className="text-sm font-black uppercase text-[var(--fios-text)] flex items-center gap-2">
-                  <Download className="w-4 h-4 accent-solid-text" /> Import deck
-                </h3>
-              </div>
-              <button type="button" onClick={onClose} className="touch-target shrink-0 rounded-lg text-[var(--fios-text-muted)] cursor-pointer" aria-label="Close">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void handleFile(f);
-                if (fileRef.current) fileRef.current.value = '';
-              }}
-            />
-
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => fileRef.current?.click()}
-              className="w-full py-3 rounded-xl border border-dashed fios-border text-xs font-bold uppercase text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-40"
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg rounded-2xl border fios-border bg-[var(--fios-surface)] p-5 space-y-4 shadow-sm dark:shadow-none"
             >
-              <Upload className="w-4 h-4 accent-solid-text" /> Upload .json
-            </button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-mono font-black uppercase tracking-widest accent-solid-text">
+                    Flashcards
+                  </p>
+                  <h3 className="text-sm font-black uppercase text-[var(--fios-text)] flex items-center gap-2">
+                    <Download className="w-4 h-4 accent-solid-text" /> Import deck
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="touch-target shrink-0 rounded-lg text-[var(--fios-text-muted)] cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">
-                Or paste JSON / share code
-              </label>
-              <textarea
-                value={raw}
-                onChange={(e) => setRaw(e.target.value)}
-                placeholder='{"version":1,"title":"…","cards":[…]} or fios1.…'
-                className="w-full h-36 p-3 bg-[var(--fios-surface-2)] border fios-border rounded-xl text-[11px] font-mono text-[var(--fios-text)] focus:outline-none focus:accent-border"
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void handleFile(f);
+                  if (fileRef.current) fileRef.current.value = '';
+                }}
               />
-            </div>
 
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-bold uppercase text-[var(--fios-text-muted)] cursor-pointer">
-                Cancel
-              </button>
               <button
                 type="button"
-                disabled={busy || !raw.trim()}
-                onClick={() => void handlePasteImport()}
-                className="px-4 py-2 accent-bg text-slate-950 text-xs font-black uppercase rounded-xl cursor-pointer disabled:opacity-40 inline-flex items-center gap-1.5"
+                disabled={busy}
+                onClick={() => fileRef.current?.click()}
+                className="w-full py-3 rounded-xl border border-dashed fios-border text-xs font-bold uppercase text-[var(--fios-text-muted)] hover:text-[var(--fios-text)] cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-40"
               >
-                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                Import
+                <Upload className="w-4 h-4 accent-solid-text" /> Upload .json
               </button>
-            </div>
+
+              <button
+                type="button"
+                onClick={() => setUniversalOpen(true)}
+                className="w-full py-3 rounded-xl border fios-border text-xs font-bold uppercase text-[var(--fios-text)] cursor-pointer inline-flex items-center justify-center gap-2 bg-[var(--fios-surface-2)]"
+              >
+                <Layers className="w-4 h-4 accent-solid-text" /> CSV · Quizlet · RemNote · Notion · Anki
+              </button>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">
+                  Or paste JSON / share code
+                </label>
+                <textarea
+                  value={raw}
+                  onChange={(e) => setRaw(e.target.value)}
+                  placeholder='{"version":1,"title":"…","cards":[…]} or fios1.…'
+                  className="w-full h-36 p-3 bg-[var(--fios-surface-2)] border fios-border rounded-xl text-[11px] font-mono text-[var(--fios-text)] focus:outline-none focus:accent-border"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-xs font-bold uppercase text-[var(--fios-text-muted)] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={busy || !raw.trim()}
+                  onClick={() => void handlePasteImport()}
+                  className="px-4 py-2 accent-bg text-slate-950 text-xs font-black uppercase rounded-xl cursor-pointer disabled:opacity-40 inline-flex items-center gap-1.5"
+                >
+                  {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                  Import
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+      <UniversalImportModal
+        open={universalOpen}
+        onClose={() => {
+          setUniversalOpen(false);
+          onClose();
+        }}
+        onImported={() => {
+          setUniversalOpen(false);
+          onImported?.();
+          onClose();
+        }}
+      />
+    </>
   );
 };
 

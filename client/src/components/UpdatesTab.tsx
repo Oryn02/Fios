@@ -3,10 +3,49 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.8.0.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; 3.8.0 SaaS pack; current 4.0.0.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v4.0.0',
+      date: 'October 2026',
+      title: 'Major study OS — citations through community cognitive suite',
+      highlights: [
+        'Source-grounded citations + View Source PDF viewer; universal importers; offline Daily Queue; browser clipper + VS Code queue extension.',
+        'STEM code/sandbox cards, LMS connect, RPG progression, Course Bank votes/clone/peer-review, mind maps, Lofi lounges, vault export.',
+        'Live lecture + multi-format ingest, grounded chat, viva coach, cognitive engines (JOL, Feynman, elaborate, dual-coding, anti-memorization).',
+        'Mock exams, syllabus→ics, PDF highlight toolbar, past-paper matrix, pgvector knowledge graph hooks, cram sheets, delta detection, debates.',
+        'Learning macros dashboard, gauntlet mode, energy-aware queues, handwriting OCR, micro-dosing PWA shortcuts, BPM audio fallback to Lofi.',
+        'Landing + FAQ + Privacy/Terms/GDPR + first-class Cookie Policy & consent (essential vs preferences). No ad trackers; BYO Gemini never in cookies.',
+        'Paste-ready SQL: supabase/v3.9.0-citations-clipper-offline.sql (also docs/fios-v4.0.0-citations-clipper-offline.sql).',
+        'Version alignment: packages, HTML title, Updates, /health, footer → v4.0.0.',
+      ],
+    },
+    {
+      version: 'v3.9.0',
+      date: 'October 2026',
+      title: 'Citations → clipper → voice recall → mock exams (features 1–30)',
+      highlights: [
+        '1–4 Citations & View Source — cards link to PDF page + quote; SourceViewer side-by-side.',
+        '5–7 Universal importers — Fios JSON, CSV, Quizlet, Notion, RemNote, Anki .apkg.',
+        '8–9 Offline Daily Queue — IndexedDB cache + /api/study/offline-sync flush.',
+        '10–12 Interactive code cards + Judge0/local JS runner; STEM cloze from lecture.',
+        '13–15 LMS connect (Canvas/Moodle/Blackboard), weekly prep, Obsidian vault export.',
+        '16–18 Roguelike RPG XP/unlocks, Course Bank vote/clone, Socratic Tutor Me + mnemonics.',
+        '19–21 AI mind maps, Lofi Pomodoro lounges (socket.io), live lecture → cloze/Q&A.',
+        '22–24 Grounded doc chat + viva coach; Feynman / elaborative / dual-coding hooks on cards.',
+        '25 Hands-free Voice Active Recall — Web Speech STT/TTS + POST /api/study/voice-grade → FSRS.',
+        '26 Full-length AI Mock Exam — /api/exam/mock-generate + mock-grade Diagnostic Scorecard.',
+        '27 Body Doubling — module match, 50m silent timer, goals, end check-in chat only.',
+        '28 Syllabus Parser — Gemini deadlines → .ics download + calendar hints.',
+        '29 Smart PDF Highlight toolbar — Flashcard / Explain / Quiz / Add to Notes.',
+        '30 PWA shortcuts (streak/review) + iOS limits in client/public/WIDGETS.md; ?tab=&review=1.',
+        'Browser clipper MV3 (extensions/fios-clipper). Interleaved practice + JOL metacognition.',
+        'SQL: supabase/v3.9.0-citations-clipper-offline.sql (card_jol, mock_exams, focus_buddy, syllabus_events…).',
+        'Version alignment: packages, HTML title, Updates, /health, footer → v3.9.0.',
+      ],
+    },
     {
       version: 'v3.8.0',
       date: 'October 2026',
@@ -593,7 +632,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-foreground tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-muted-foreground">Current release · v3.8.0</p>
+        <p className="text-xs font-mono text-muted-foreground">Current release · v4.0.0</p>
       </header>
 
       <div className="space-y-4">

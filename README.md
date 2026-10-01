@@ -1,10 +1,10 @@
 # Fios — Your Academic Command Center
 
-[![Version](https://img.shields.io/badge/version-v3.8.0-059669)](https://github.com/Oryn02/Fios)
+[![Version](https://img.shields.io/badge/version-v4.0.0-059669)](https://github.com/Oryn02/Fios)
 
 > **Fios is a test application, created end-to-end using AI tools — specifically Google's Gemini API and [Cursor](https://cursor.com) (Agent Mode).** It was built to explore how far agent-driven development can take a real, full-stack study platform. Treat it as a reference/demo project rather than a production service.
 
-**Current version: v3.8.0**
+**Current version: v4.0.0**
 
 
 > Version numbers in Updates / README use coherent semver from the first published release as **v1.0.0** (reassigned by substance; SQL migration filenames on disk may still use older labels).
@@ -47,14 +47,15 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 - **PWA** — installable standalone app (apple-touch 180×180, 192/512, maskable — white `</>` on solid black) via VitePWA + Workbox; offline mutation queue (IndexedDB) + network indicator.
 - **Render hosting** — Express Web Service (`server/` / fios-api) + Static Site (`client/` / fios-web); client calls API via `VITE_API_URL`.
 
-### What’s new in v3.8.0
+### What’s new in v4.0.0
 
-- Optional FSRS (beta) spaced repetition with server `/api/study/review`; SM-2 remains the default client path.
-- Study Network tab: friends, course bank, classroom analytics.
-- Mock oral exam, diagram occlusion, audio recap, Anki `.apkg` export, daily due queue.
-- Live multiplayer quiz lobby (invite codes) without changing solo Exam Mode generation.
-- Paste-ready SQL: `supabase/v3.8.0-master-saas.sql` (+ `supabase/migrations/20261001_fios_master_saas.sql`).
-- Version alignment across packages and API `/health`.
+- Source-grounded citations + View Source; universal importers; offline Daily Queue; browser clipper + VS Code queue extension.
+- STEM sandbox cards, LMS connect, RPG progression, Course Bank votes/clone/peer-review, mind maps, Lofi lounges, vault export.
+- Live lecture + multi-format ingest, grounded chat, viva coach, cognitive engines (JOL, Feynman, elaborate, dual-coding, anti-memorization).
+- Mock exams, syllabus→ics, PDF highlight toolbar, past-paper matrix, pgvector hooks, cram sheets, delta detection, debates, learning macros, gauntlet.
+- First-class Cookie Policy & consent (essential vs preferences; preferences persist only after consent). BYO Gemini key never in cookies.
+- Landing / FAQ / Privacy / Terms / GDPR cross-links; version alignment across packages, HTML title, Updates, `/health`, footer → v4.0.0.
+- Paste-ready SQL: `supabase/v3.9.0-citations-clipper-offline.sql` (also `/cursor/stores/self/docs/fios-v4.0.0-citations-clipper-offline.sql`).
 
 ### What’s new in v3.7.7
 
@@ -392,7 +393,7 @@ Fios is **privacy-first**. Instead of reselling AI access, each user plugs in th
 ```
 Fios/
 ├── render.yaml             # Render Blueprint (API + Static Site)
-├── client/                 # React + Vite frontend (v3.8.0) — Render Static Site root
+├── client/                 # React + Vite frontend (v4.0.0) — Render Static Site root
 │   ├── package.json        # ← Root Directory must point HERE (not client/src)
 │   ├── src/
 │   │   ├── components/

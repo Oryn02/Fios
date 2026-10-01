@@ -91,7 +91,7 @@ export const AiAuthLockModal: React.FC<AiAuthLockModalProps> = ({ open, onClose 
               </div>
 
               <p className="text-sm text-[var(--fios-text-muted)] leading-relaxed">
-                AI features and cloud generation are locked in the live demo view. Please sign up or log in with GitHub to unlock full access to Fios v3.8.0.
+                AI features and cloud generation are locked in the live demo view. Please sign up or log in with GitHub to unlock full access to Fios v4.0.0.
               </p>
 
               <button
