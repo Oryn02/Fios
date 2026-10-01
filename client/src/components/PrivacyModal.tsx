@@ -35,7 +35,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
   const borderCls = landing ? 'border-border' : 'fios-border';
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+    <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="absolute inset-0" onClick={onClose} aria-hidden />
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 12 }}

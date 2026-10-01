@@ -24,7 +24,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
   const closeBtn = landing ? 'bg-emerald-400 text-slate-950' : 'accent-bg text-slate-950';
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+    <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="absolute inset-0" onClick={onClose} aria-hidden />
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 12 }}
