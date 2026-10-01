@@ -701,7 +701,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               onClick={toggleTheme}
               title="Toggle theme"
               aria-label="Toggle theme"
-              className="hidden sm:inline-flex fios-header-btn touch-target rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none"
+              className="!hidden md:!inline-flex fios-header-btn touch-target rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none"
             >
               <ThemeIcon className="w-4 h-4" />
             </button>
@@ -714,8 +714,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             >
               <Flame className="w-3.5 h-3.5 text-orange-400" />
               <span className="text-[var(--fios-text)]">{rpgStatus?.streak?.current_streak ?? 0}</span>
-              <span className="text-[var(--fios-text-muted)] hidden xs:inline">·</span>
-              <span className="accent-solid-text hidden xs:inline sm:inline">Lv {rpgStatus?.level ?? levelFromXp(rpgStatus?.xp ?? 0)}</span>
+              <span className="text-[var(--fios-text-muted)] hidden sm:inline">·</span>
+              <span className="accent-solid-text hidden sm:inline">Lv {rpgStatus?.level ?? levelFromXp(rpgStatus?.xp ?? 0)}</span>
             </div>
 
             <button
@@ -731,7 +731,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             <button
               type="button"
               onClick={() => navigate('settings')}
-              className="hidden sm:inline-flex fios-header-btn touch-target rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none"
+              className="!hidden md:!inline-flex fios-header-btn touch-target rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none"
               aria-label="Open account settings"
               title="Settings"
             >
@@ -745,7 +745,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               disabled={isLoggingOut}
               title="Sign Out"
               aria-label="Sign out"
-              className="hidden sm:inline-flex fios-header-btn touch-target rounded-md bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-black tracking-wider transition-colors cursor-pointer select-none"
+              className="!hidden md:!inline-flex fios-header-btn touch-target rounded-md bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-black tracking-wider transition-colors cursor-pointer select-none"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Logout</span>
