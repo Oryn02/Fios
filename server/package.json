@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "3.7.7",
+  "version": "3.8.0",
   "description": "Fios Express API (Render Web Service)",
   "main": "dist/index.js",
   "scripts": {
@@ -14,15 +14,18 @@
   "type": "module",
   "dependencies": {
     "@google/genai": "^2.22.0",
+    "@supabase/supabase-js": "^2.117.2",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.2.0",
     "@types/node": "^26.6.2",
+    "anki-apkg-export": "^4.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "multer": "^2.4.0",
     "pdfjs-dist": "^5.4.296",
+    "ts-fsrs": "^5.4.2",
     "typescript": "^7.0.2",
     "web-push": "^3.6.7"
   },

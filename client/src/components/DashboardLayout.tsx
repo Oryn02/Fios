@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutDashboard, Layers, Calendar, Settings, BookOpen,
   LogOut, Menu, X, Timer, HelpCircle, Code2, FileText, Target,
-  Sun, Moon, GraduationCap, Sparkles, Bot, Monitor, Command, Focus, GripVertical,
+  Sun, Moon, GraduationCap, Sparkles, Bot, Monitor, Command, Focus, GripVertical, Users,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, disableDemo } from '../lib/demo';
@@ -32,18 +32,19 @@ export const NAV_ITEMS = [
   { id: 'code', label: 'Code Lab', icon: Code2 },
   { id: 'documents', label: 'Smart Notes', icon: FileText },
   { id: 'tutor', label: 'AI Tutor', icon: Bot },
+  { id: 'social', label: 'Study Network', icon: Users },
   { id: 'atu-calendar', label: 'ATU Calendar', icon: GraduationCap },
   { id: 'grades', label: 'Grades', icon: Target },
   { id: 'timer', label: 'Focus Timer', icon: Timer },
   { id: 'schedule', label: 'Timetable', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v3.7.7', icon: Sparkles },
+  { id: 'updates', label: 'Updates v3.8.0', icon: Sparkles },
 ];
 
-/** Mobile drawer sections — Extended Tools & Settings regroup (v3.7.7). */
+/** Mobile drawer sections — Extended Tools & Settings regroup (v3.8.0). */
 const DRAWER_SECTIONS: { label: string; ids: readonly string[] }[] = [
   { label: 'Core Hubs', ids: ['overview', 'flashcards', 'modules', 'schedule', 'atu-calendar'] },
-  { label: 'Academic Tools', ids: ['quiz', 'code', 'documents', 'tutor', 'grades', 'timer'] },
+  { label: 'Academic Tools', ids: ['quiz', 'code', 'documents', 'tutor', 'social', 'grades', 'timer'] },
   { label: 'System Preferences', ids: ['settings', 'updates'] },
 ];
 
@@ -636,10 +637,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               data-fios-version-badge
               className="relative z-[65] inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 3.7.7"
+              aria-label="Fios version 3.8.0"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v3.7.7
+              v3.8.0
             </span>
             {zenMode && (
               <button

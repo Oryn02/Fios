@@ -210,3 +210,55 @@ export const ragQueryResponseShape = {
   scores: 'number[] — parallel relevance scores (higher = better match)',
   query: 'string — echoed query',
 } as const;
+
+/** Mock oral exam turn — examiner question + brief rubric hint. */
+export const oralExamSchema = {
+  type: Type.OBJECT,
+  properties: {
+    question: {
+      type: Type.STRING,
+      description: 'The next oral examiner question, clear and spoken aloud-friendly',
+    },
+    rubricHint: {
+      type: Type.STRING,
+      description: 'Brief notes on what a strong answer should cover (not shown as the answer)',
+    },
+    followUp: {
+      type: Type.STRING,
+      description: 'Optional follow-up probe if the student answer was incomplete; empty string if N/A',
+    },
+    score: {
+      type: Type.INTEGER,
+      description: '0-100 score for the previous student answer; use 0 if this is the opening question',
+    },
+    feedback: {
+      type: Type.STRING,
+      description: 'Short examiner feedback on the previous answer; empty for opening turn',
+    },
+  },
+  required: ['question', 'rubricHint', 'score', 'feedback'],
+};
+
+/** Diagram occlusion masks — bounding boxes as percentages of image width/height. */
+export const occlusionMaskSchema = {
+  type: Type.OBJECT,
+  properties: {
+    regions: {
+      type: Type.ARRAY,
+      description: 'Occlusion regions for study (hide/reveal labels)',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          id: { type: Type.STRING, description: 'Stable region id' },
+          label: { type: Type.STRING, description: 'What is hidden under this mask' },
+          x: { type: Type.NUMBER, description: 'Left edge as % of image width (0-100)' },
+          y: { type: Type.NUMBER, description: 'Top edge as % of image height (0-100)' },
+          w: { type: Type.NUMBER, description: 'Width as % of image width' },
+          h: { type: Type.NUMBER, description: 'Height as % of image height' },
+        },
+        required: ['id', 'label', 'x', 'y', 'w', 'h'],
+      },
+    },
+  },
+  required: ['regions'],
+};

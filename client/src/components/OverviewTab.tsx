@@ -24,6 +24,7 @@ import { DatetimeLocalInput } from './DatetimeLocalInput';
 import { StudyStreakHeatmap } from './StudyStreakHeatmap';
 import { ExamCountdownWidget } from './ExamCountdownWidget';
 import { WeeklyGoalWidget } from './WeeklyGoalWidget';
+import { DailyQueue } from './study/DailyQueue';
 import { toast } from '../lib/toast';
 import { overviewGreeting } from '../lib/holidays';
 import { useTheme } from '../context/ThemeContext';
@@ -701,8 +702,9 @@ const OverviewTabInner: React.FC<OverviewTabProps> = ({ onOpenFlashcards, onNavi
         <div className="min-w-0 max-w-full">
           <StudyStreakHeatmap />
         </div>
-        <div className="min-w-0 max-w-full">
+        <div className="min-w-0 max-w-full space-y-6">
           <ExamCountdownWidget />
+          <DailyQueue onOpenDeck={() => onOpenFlashcards()} />
         </div>
       </div>
 

@@ -51,6 +51,8 @@ export async function saveDeckWithCards(
         interval: (c as any).interval || 0,
         repetitions: (c as any).repetitions || 0,
         next_review: (c as any).next_review || new Date().toISOString(),
+        scheduler: (c as any).scheduler || 'sm2',
+        fsrs_state: (c as any).fsrs_state || null,
       })),
     };
     demoDeckState = [deck, ...demoDeckState];
@@ -75,7 +77,7 @@ export async function saveDeckWithCards(
 
   if (deckError) throw deckError;
 
-  // 2. Insert Relational Cards with SM-2 defaults
+  // 2. Insert Relational Cards with SM-2 defaults (FSRS opt-in via scheduler later)
   const cardsToInsert = cards.map((c) => ({
     deck_id: deck.id,
     question: c.front || (c as any).question,
@@ -84,6 +86,8 @@ export async function saveDeckWithCards(
     interval: (c as any).interval || 0,
     repetitions: (c as any).repetitions || 0,
     next_review: (c as any).next_review || new Date().toISOString(),
+    scheduler: (c as any).scheduler || 'sm2',
+    fsrs_state: (c as any).fsrs_state || null,
   }));
 
   const { error: cardsError } = await supabase

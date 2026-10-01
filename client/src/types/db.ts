@@ -142,6 +142,9 @@ export interface DBModule {
   created_at: string;
 }
 
+/** Scheduler used for spaced repetition — SM-2 default; FSRS opt-in. */
+export type CardScheduler = 'sm2' | 'fsrs';
+
 export interface Card {
   id?: string;
   deck_id?: string;
@@ -154,6 +157,50 @@ export interface Card {
   interval?: number;
   repetitions?: number;
   next_review?: string | null;
+  /** Default sm2 — existing decks keep client SM-2. */
+  scheduler?: CardScheduler;
+  fsrs_state?: Record<string, unknown> | null;
+  created_at?: string;
+}
+
+export interface ModuleExam {
+  id: string;
+  module_id: string;
+  user_id: string;
+  title: string;
+  exam_at: string;
+  weight?: number | null;
+  created_at?: string;
+}
+
+export interface UserStreak {
+  user_id: string;
+  current_streak: number;
+  longest_streak: number;
+  xp: number;
+  last_study_date: string | null;
+  updated_at?: string;
+}
+
+export interface Friendship {
+  id: string;
+  requester_id: string;
+  addressee_id: string;
+  status: 'pending' | 'accepted' | 'blocked' | 'declined';
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SharedResource {
+  id: string;
+  owner_id: string;
+  resource_type: 'deck' | 'document' | 'quiz' | 'module' | 'link';
+  resource_id?: string | null;
+  title: string;
+  module_code?: string | null;
+  payload: Record<string, unknown>;
+  visibility: 'private' | 'friends' | 'group' | 'course_bank';
+  group_id?: string | null;
   created_at?: string;
 }
 

@@ -17,8 +17,21 @@ import { ReportContentButton } from './ReportContentButton';
 import { Target, Eye, Save, CheckCircle2, AlertCircle, Folder, Clock, Layers, Info, HelpCircle, Download, Share2 } from 'lucide-react';
 import { toast } from '../lib/toast';
 import { sanitizeDeckTitle } from '../lib/sanitizeDeckTitle';
+import { fsrsReview } from '../services/studyApi';
+import { AnkiExportButton } from './study/AnkiExportButton';
+import { ShareModal } from './social/ShareModal';
 
 const SM2_ONBOARD_KEY = 'fios_sm2_onboarded';
+const FSRS_PREF_KEY = 'fios_fsrs_opt_in';
+
+function preferFsrs(card: any): boolean {
+  if (card?.scheduler === 'fsrs') return true;
+  try {
+    return localStorage.getItem(FSRS_PREF_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 interface FlashcardDeckProps {
   cards: Flashcard[];
@@ -56,6 +69,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
       return true;
     }
   });
+  const [shareOpen, setShareOpen] = useState(false);
 
   const dismissSm2Onboard = useCallback(() => {
     try {
@@ -173,6 +187,34 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
   const handleRating = useCallback(async (rating: number) => {
     if (!currentCard) return;
     const labels: Record<number, string> = { 1: 'Again', 2: 'Hard', 3: 'Good', 4: 'Easy' };
+    const useFsrs = preferFsrs(currentCard) && Boolean((currentCard as any)?.id);
+
+    if (useFsrs) {
+      try {
+        const result = await fsrsReview((currentCard as any).id, rating as 1 | 2 | 3 | 4);
+        const cardIndexInAll = cards.findIndex(c => (c as any).id ? (c as any).id === (currentCard as any).id : c === currentCard);
+        if (cardIndexInAll !== -1) {
+          const updatedCards = [...cards];
+          updatedCards[cardIndexInAll] = {
+            ...currentCard,
+            scheduler: 'fsrs',
+            fsrs_state: result.fsrs_state,
+            interval: result.interval,
+            repetitions: result.repetitions,
+            next_review: result.next_review,
+          } as any;
+          setCards(updatedCards);
+        }
+        recordFlashcardReview();
+        toast(`Rated ${labels[rating] || rating} (FSRS)`, rating >= 3 ? 'success' : 'info');
+        handleNext();
+        return;
+      } catch (err) {
+        console.error(err);
+        toast('FSRS sync failed — falling back to SM-2', 'info');
+      }
+    }
+
     const updatedStats = calculateSM2(
       {
         easeFactor: (currentCard as any).ease_factor || 2.5,
@@ -426,6 +468,7 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               />
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              <AnkiExportButton title={deckTitle} deckId={savedDeckId} cards={cards as any} />
               <button
                 type="button"
                 onClick={handleExportJson}
@@ -439,6 +482,14 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
                 onClick={() => void handleCopyShareCode()}
                 className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground cursor-pointer"
                 title="Copy share code"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShareOpen(true)}
+                className="p-1.5 rounded-lg border border-border text-muted-foreground hover:accent-solid-text cursor-pointer"
+                title="Share to friends"
               >
                 <Share2 className="w-3.5 h-3.5" />
               </button>
@@ -458,7 +509,8 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
         )}
 
         {!hasSaved && (
-          <div className="flex items-center gap-2 justify-end -mt-1">
+          <div className="flex items-center gap-2 justify-end -mt-1 flex-wrap">
+            <AnkiExportButton title={deckTitle} cards={cards as any} />
             <button
               type="button"
               onClick={handleExportJson}
@@ -472,6 +524,13 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
               className="text-[10px] font-mono font-bold uppercase text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
             >
               <Share2 className="w-3 h-3" /> Share code
+            </button>
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className="text-[10px] font-mono font-bold uppercase text-muted-foreground hover:accent-solid-text flex items-center gap-1 cursor-pointer"
+            >
+              <Share2 className="w-3 h-3" /> Friends
             </button>
           </div>
         )}
@@ -691,6 +750,15 @@ const FlashcardDeckInner: React.FC<FlashcardDeckProps> = ({
         </div>
       )}
 
+      <ShareModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        title={deckTitle}
+        resourceType="deck"
+        resourceId={savedDeckId}
+        moduleCode={selectedModuleCode || undefined}
+        payload={{ cardCount: cards.length }}
+      />
     </div>
   );
 };

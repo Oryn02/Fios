@@ -3,10 +3,25 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.7.7.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.8.0.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v3.8.0',
+      date: 'October 2026',
+      title: 'Master study suite — FSRS, Study Network, live quiz, audio recap',
+      highlights: [
+        'Optional FSRS spaced repetition (beta) beside the existing SM-2 path — default stays SM-2 so your decks keep working.',
+        'Daily due queue, Anki .apkg export, and share-to-friends alongside JSON / share codes.',
+        'Study Network: friends, course bank, and classroom analytics for group streaks and quiz scores.',
+        'Mock oral exam + diagram occlusion study tools powered by Gemini Flash / Pro.',
+        'Audio recap player for spoken summaries of your notes (server TTS when configured).',
+        'Live multiplayer quiz lobby with invite codes — solo Exam Mode unchanged.',
+        'Paste-ready Supabase SQL: supabase/v3.8.0-master-saas.sql (also under supabase/migrations/).',
+        'Version alignment: packages, HTML title, Updates tab, README, and API /health report v3.8.0.',
+      ],
+    },
     {
       version: 'v3.7.7',
       date: 'September 2026',
@@ -578,7 +593,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-foreground tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-muted-foreground">Current release · v3.7.7</p>
+        <p className="text-xs font-mono text-muted-foreground">Current release · v3.8.0</p>
       </header>
 
       <div className="space-y-4">

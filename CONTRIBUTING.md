@@ -1,6 +1,6 @@
 # Contributing to Fios
 
-Thanks for helping improve Fios. This guide covers local setup, schema migrations, and architecture notes for the current release (**v3.6.6**); older v2.2.0+ migration notes remain for existing databases.
+Thanks for helping improve Fios. This guide covers local setup, schema migrations, and architecture notes for the current release (**v3.8.0**); older v2.2.0+ migration notes remain for existing databases.
 
 ## Prerequisites
 
@@ -38,11 +38,13 @@ For production on **Render**, set Static Site Root Directory to `client` and Web
 
 1. Open the Supabase SQL editor.
 2. Run [`supabase/schema.sql`](supabase/schema.sql) in full — it is **idempotent**.
-3. v2.2.0 additions (also in that file):
+3. For Master SaaS (v3.8.0): also paste [`supabase/v3.8.0-master-saas.sql`](supabase/v3.8.0-master-saas.sql)
+   (mirrors [`supabase/migrations/20261001_fios_master_saas.sql`](supabase/migrations/20261001_fios_master_saas.sql)).
+4. v2.2.0 additions (also in schema.sql):
    - `user_profiles.prefs` (jsonb)
    - `modules.parent_code`, `modules.tags`
    - `document_revisions`, `tutor_messages`, `note_chunks` (+ RLS)
-4. **Smart Notes `documents.content`** (v3.0.0+ additive block at the end of the file):
+5. **Smart Notes `documents.content`** (v3.0.0+ additive block at the end of the file):
    - Symptom: `Could not find the 'content' column of 'documents' in the schema cache`
    - Run the `alter table public.documents add column if not exists content …` block (safe to re-run).
    - Reload PostgREST: Dashboard → Project Settings → API → **Reload schema**, or `NOTIFY pgrst, 'reload schema';` (also issued by the schema file), or wait ~1 minute.

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FileText, Sparkles, Loader2, BookOpen, MessageSquare, Send, Trash2, X, Bot, User, Upload, Tag, History, Undo2,
+  FileText, Sparkles, Loader2, BookOpen, MessageSquare, Send, Trash2, X, Bot, User, Upload, Tag, History, Undo2, Mic, Volume2, Eye,
 } from 'lucide-react';
 import { FileUpload } from './FileUpload';
 import { summarizeText, askTutor } from '../services/aiApi';
@@ -19,6 +19,10 @@ import { toast } from '../lib/toast';
 import { GeminiLatencyHint } from './GeminiLatencyHint';
 import { friendlyGeminiError } from '../lib/geminiUx';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { MockOralExam } from './ai/MockOralExam';
+import { DiagramOcclusion } from './study/DiagramOcclusion';
+import { AudioPlayer } from './media/AudioPlayer';
+import { fetchAudioRecapBlob } from '../services/mediaApi';
 
 interface ChatMessage { role: 'user' | 'assistant'; text: string; }
 
@@ -53,6 +57,10 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
   const [historyOpen, setHistoryOpen] = useState(false);
   const [editingSummary, setEditingSummary] = useState(false);
   const [draftSummary, setDraftSummary] = useState('');
+  const [showOral, setShowOral] = useState(false);
+  const [showOcclusion, setShowOcclusion] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioBusy, setAudioBusy] = useState(false);
 
   const load = useCallback(async () => {
     const { documents, loadError } = await getDocuments();
@@ -391,8 +399,55 @@ const DocumentsInner: React.FC<DocumentsInnerProps> = ({ initialDocId, autoOpenT
               <button onClick={() => openTutor(active)} className="px-3 py-1.5 accent-bg text-slate-950 text-xs font-black uppercase rounded-lg flex items-center gap-1.5 cursor-pointer">
                 <MessageSquare className="w-3.5 h-3.5" /> Ask AI Tutor
               </button>
+              <button
+                type="button"
+                onClick={() => setShowOral((v) => !v)}
+                className="px-3 py-1.5 border fios-border text-xs font-bold uppercase rounded-lg flex items-center gap-1.5 cursor-pointer text-[var(--fios-text-muted)]"
+              >
+                <Mic className="w-3.5 h-3.5" /> Oral exam
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowOcclusion((v) => !v)}
+                className="px-3 py-1.5 border fios-border text-xs font-bold uppercase rounded-lg flex items-center gap-1.5 cursor-pointer text-[var(--fios-text-muted)]"
+              >
+                <Eye className="w-3.5 h-3.5" /> Occlusion
+              </button>
+              <button
+                type="button"
+                disabled={audioBusy}
+                onClick={async () => {
+                  if (!requireAiAuth()) return;
+                  setAudioBusy(true);
+                  try {
+                    const blob = await fetchAudioRecapBlob({
+                      source: active.content || active.summary || '',
+                      text: active.summary || undefined,
+                    });
+                    if (audioUrl) URL.revokeObjectURL(audioUrl);
+                    setAudioUrl(URL.createObjectURL(blob));
+                    toast('Audio recap ready', 'success');
+                  } catch (e) {
+                    toast(e instanceof Error ? e.message : 'Audio recap failed', 'error');
+                  } finally {
+                    setAudioBusy(false);
+                  }
+                }}
+                className="px-3 py-1.5 border fios-border text-xs font-bold uppercase rounded-lg flex items-center gap-1.5 cursor-pointer text-[var(--fios-text-muted)] disabled:opacity-60"
+              >
+                {audioBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Volume2 className="w-3.5 h-3.5" />}
+                Audio recap
+              </button>
             </div>
           </div>
+          {audioUrl && <AudioPlayer src={audioUrl} title={`${active.title} recap`} />}
+          {showOral && (
+            <MockOralExam
+              material={`${active.title}\n\n${active.summary || ''}\n\n${active.content || ''}`}
+              onClose={() => setShowOral(false)}
+            />
+          )}
+          {showOcclusion && <DiagramOcclusion />}
           {editingSummary ? (
             <div className="space-y-2">
               <textarea

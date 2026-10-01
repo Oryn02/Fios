@@ -62,6 +62,9 @@ const AiTutorView = lazy(() =>
 const ATUCalendarView = lazy(() =>
   import('./components/ATUCalendarView').then((m) => ({ default: m.ATUCalendarView }))
 );
+const SocialHub = lazy(() =>
+  import('./components/social/SocialHub').then((m) => ({ default: m.SocialHub }))
+);
 
 const HOT_TABS = new Set(['overview', 'schedule', 'modules']);
 
@@ -346,6 +349,12 @@ const Dashboard: React.FC = () => {
 
               {activeTab === 'tutor' && <AiTutorView />}
 
+              {activeTab === 'social' && (
+                <ErrorBoundary fallbackTitle="Study Network crashed">
+                  <SocialHub />
+                </ErrorBoundary>
+              )}
+
               {activeTab === 'atu-calendar' && <ATUCalendarView />}
 
               {activeTab === 'grades' && <GradePredictorView />}
@@ -393,7 +402,7 @@ const FlashcardGenerator: React.FC<{
     <header className="flex flex-col items-center text-center space-y-3 pt-2">
       <div className="flex items-center gap-2 px-3 py-1 rounded-sm bg-[var(--fios-surface-2)] border-l-2 accent-border accent-solid-text text-[11px] font-black uppercase tracking-widest">
         <span className="w-1.5 h-1.5 rounded-full accent-bg animate-pulse" />
-        Academic Suite · Study Lab · v3.7.7
+        Academic Suite · Study Lab · v3.8.0
       </div>
       <h1 className="text-4xl sm:text-5xl font-black italic tracking-tight text-foreground uppercase">
         Fios <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--fios-accent-from)] via-[var(--fios-accent-via)] to-[var(--fios-accent-to)]">Studio</span>
@@ -538,7 +547,7 @@ export function App() {
   });
 
   useEffect(() => {
-    document.title = 'Fios v3.7.7 — Your Academic Command Center';
+    document.title = 'Fios v3.8.0 — Your Academic Command Center';
   }, []);
 
   useEffect(() => {
@@ -686,7 +695,7 @@ export function App() {
       <div className="min-h-dvh fios-app-bg flex items-center justify-center accent-solid-text font-mono text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full accent-bg animate-ping" />
-          Initializing Fios v3.7.7…
+          Initializing Fios v3.8.0…
         </div>
       </div>
     );
