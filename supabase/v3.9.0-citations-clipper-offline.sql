@@ -1,9 +1,9 @@
 -- ============================================================================
--- Fios v3.9.0 — Citations, Clipper, Importers, Offline, STEM, LMS, RPG,
+-- Fios v4.0.0 — Citations, Clipper, Importers, Offline, STEM, LMS, RPG,
 -- Socratic Tutor, Course Bank community library
 -- Idempotent; additive. Does not drop SM-2 columns or break v3.8.0 SaaS pack.
 -- Paste into Supabase SQL editor. Mirror: supabase/migrations/20261001_fios_v390.sql
--- Docs copy: /cursor/stores/self/docs/fios-v3.9.0-citations-clipper-offline.sql
+-- Docs copy: /cursor/stores/self/docs/fios-v4.0.0-citations-clipper-offline.sql
 -- ============================================================================
 create extension if not exists "pgcrypto";
 

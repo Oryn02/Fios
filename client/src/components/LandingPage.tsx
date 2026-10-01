@@ -102,14 +102,14 @@ const walkthrough = [
   },
 ];
 
-const faqs = [
+const faqs: { q: string; a: string; links?: Array<'cookies' | 'privacy' | 'terms'> }[] = [
   {
     q: 'Is Fios completely free to use?',
     a: 'Yes for personal academic use. Core study hubs, offline queue, and Course Bank tools are free. AI features use your own Google Gemini API key (BYO) — your quota, your billing with Google.',
   },
   {
     q: 'How does Bring Your Own Key (BYO Gemini) work?',
-    a: 'Paste your key in Settings. It is stored on your profile under Row Level Security (never in a cookie) and sent only with your AI requests. Remove or replace it anytime.',
+    a: 'Paste your key in Settings. It is stored on your profile under Row Level Security (never in a cookie or preference localStorage) and sent only with your AI requests. Remove or replace it anytime.',
   },
   {
     q: 'Does Fios work offline?',
@@ -130,14 +130,17 @@ const faqs = [
   {
     q: 'Are lecture recordings stored?',
     a: 'Live lecture / audio features send audio you capture to Gemini (via your key) for transcription. Resulting notes/decks live in your private rows. See Privacy Policy for retention and AI processing details.',
+    links: ['privacy'],
   },
   {
     q: 'Cookies & local storage — what do you use?',
-    a: 'Essential storage for sign-in, offline queues, and PWA caches so the app works. Optional Preferences storage for theme/nav. No ad or analytics SDKs. Open Cookie Policy in the footer for the full inventory.',
+    a: 'Essential storage for sign-in, offline queues, streaks cache, and PWA caches so the app works. Optional Preferences storage (theme/nav) is written only after you consent. No ad or analytics SDKs. Full inventory in the Cookie Policy.',
+    links: ['cookies', 'privacy'],
   },
   {
     q: 'Are my notes private? (GDPR)',
-    a: 'Study data sits in your private Supabase schema with RLS. Export My Data is in Settings; erasure requests go to the operator email in Privacy Policy. Cookie Policy and Terms link from the footer.',
+    a: 'Study data sits in your private Supabase schema with RLS. Export My Data is in Settings; erasure requests go to the operator email in the Privacy Policy & GDPR statement. Cookie Policy and Terms also link from the footer.',
+    links: ['privacy', 'cookies', 'terms'],
   },
   {
     q: 'Can I install Fios or use lock-screen shortcuts?',
@@ -236,7 +239,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.14 }}
               className="text-slate-400 text-sm md:text-base leading-relaxed max-w-xl mx-auto sm:mx-0"
             >
-              Turn lectures into SM-2 flashcards, exams, Code Lab challenges, and an AI tutor — with schedule, agenda, and focus tools in one place.
+              Cited flashcards, offline Daily Queue, STEM sandboxes, Course Bank, cognitive tutors, and focus lounges —
+              powered by your own Gemini key.
             </motion.p>
 
             <motion.div
@@ -432,8 +436,39 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                       <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${isOpen ? 'rotate-180 text-emerald-400' : ''}`} />
                     </button>
                     {isOpen && (
-                      <div className="px-4 pb-4 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-white/5 pt-3">
-                        {faq.a}
+                      <div className="px-4 pb-4 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-white/5 pt-3 space-y-2">
+                        <p>{faq.a}</p>
+                        {faq.links && faq.links.length > 0 && (
+                          <div className="flex flex-wrap gap-3 pt-1">
+                            {faq.links.includes('cookies') && (
+                              <button
+                                type="button"
+                                onClick={() => setShowCookies(true)}
+                                className="text-emerald-400 underline cursor-pointer text-[11px] font-mono font-bold uppercase"
+                              >
+                                Cookie Policy
+                              </button>
+                            )}
+                            {faq.links.includes('privacy') && (
+                              <button
+                                type="button"
+                                onClick={() => setShowPrivacy(true)}
+                                className="text-emerald-400 underline cursor-pointer text-[11px] font-mono font-bold uppercase"
+                              >
+                                Privacy / GDPR
+                              </button>
+                            )}
+                            {faq.links.includes('terms') && (
+                              <button
+                                type="button"
+                                onClick={() => setShowTerms(true)}
+                                className="text-emerald-400 underline cursor-pointer text-[11px] font-mono font-bold uppercase"
+                              >
+                                Terms of Service
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -483,7 +518,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
         </div>
       </footer>
 
-      {showPrivacy && <PrivacyModal variant="landing" onClose={() => setShowPrivacy(false)} />}
+      {showPrivacy && (
+        <PrivacyModal
+          variant="landing"
+          onClose={() => setShowPrivacy(false)}
+          onOpenCookies={() => {
+            setShowPrivacy(false);
+            setShowCookies(true);
+          }}
+        />
+      )}
+      {showCookies && (
+        <CookiePolicyModal
+          variant="landing"
+          onClose={() => setShowCookies(false)}
+          onOpenPrivacy={() => {
+            setShowCookies(false);
+            setShowPrivacy(true);
+          }}
+        />
+      )}
       {showTerms && <TermsModal variant="landing" onClose={() => setShowTerms(false)} />}
       {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
     </div>

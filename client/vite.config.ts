@@ -37,6 +37,20 @@ export default defineConfig({
           { src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png', purpose: 'any' },
           { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
         ],
+        shortcuts: [
+          {
+            name: 'Daily review',
+            short_name: 'Review',
+            url: '/?tab=flashcards&review=1',
+            icons: [{ src: '/icon-192.png', sizes: '192x192' }],
+          },
+          {
+            name: 'Overview streak',
+            short_name: 'Streak',
+            url: '/?tab=overview',
+            icons: [{ src: '/icon-192.png', sizes: '192x192' }],
+          },
+        ],
       },
       workbox: {
         // Import custom push + notificationclick handlers (public/push-handler.js).

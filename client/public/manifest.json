@@ -1,5 +1,5 @@
 {
-  "name": "Fios — Academic Command Center",
+  "name": "Fios \u2014 Academic Command Center",
   "short_name": "Fios",
   "description": "AI flashcards, quizzes, code lab, tutor, and focus tools.",
   "start_url": "/",
@@ -40,18 +40,28 @@
   ],
   "shortcuts": [
     {
-      "name": "Review due cards",
+      "name": "Daily review",
       "short_name": "Review",
-      "description": "Open flashcards due for review",
+      "description": "Jump to flashcard review",
       "url": "/?tab=flashcards&review=1",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
-      "name": "Study streak",
+      "name": "Overview streak",
       "short_name": "Streak",
-      "description": "Open overview streak & daily queue",
-      "url": "/?tab=overview&streak=1",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "description": "Open overview / streak",
+      "url": "/?tab=overview",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

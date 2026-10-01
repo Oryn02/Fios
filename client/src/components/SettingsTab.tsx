@@ -31,10 +31,11 @@ import { ACCENTS, LOCKED_ACCENTS, type AccentKey, type ThemeMode } from '../type
 import { validateGeminiKey } from '../services/aiApi';
 import { TermsModal } from './TermsModal';
 import { PrivacyModal } from './PrivacyModal';
+import { CookiePolicyModal } from './CookiePolicyModal';
 import { AdminPanel, useIsAdmin } from './AdminPanel';
 import { FeedbackForm } from './FeedbackForm';
 import { SupportModal } from './SupportModal';
-import { resetCookieConsent } from './CookieConsent';
+import { resetCookieConsent, setPreferenceLocal } from './CookieConsent';
 import { toast } from '../lib/toast';
 import { NAV_ITEMS } from './DashboardLayout';
 import { normalizeBirthday } from '../lib/holidays';
@@ -84,10 +85,16 @@ const SettingsTabInner: React.FC = () => {
 
   // Modals state
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showCookies, setShowCookies] = useState(false);
   useEffect(() => {
-    const open = () => setShowPrivacy(true);
-    window.addEventListener('fios-open-privacy', open);
-    return () => window.removeEventListener('fios-open-privacy', open);
+    const openPrivacy = () => setShowPrivacy(true);
+    const openCookies = () => setShowCookies(true);
+    window.addEventListener('fios-open-privacy', openPrivacy);
+    window.addEventListener('fios-open-cookies', openCookies);
+    return () => {
+      window.removeEventListener('fios-open-privacy', openPrivacy);
+      window.removeEventListener('fios-open-cookies', openCookies);
+    };
   }, []);
   const [showTerms, setShowTerms] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
@@ -330,7 +337,7 @@ const SettingsTabInner: React.FC = () => {
     }
     const backupData = {
       exportedAt: new Date().toISOString(),
-      version: '3.9.0',
+      version: '4.0.0',
       profile,
       preferences: JSON.parse(localStorage.getItem('fios_preferences') || '{}'),
       localStorage: { ...localStorage },
@@ -1141,11 +1148,7 @@ const SettingsTabInner: React.FC = () => {
               }
             })()}
             onChange={(e) => {
-              try {
-                localStorage.setItem('fios_fsrs_opt_in', e.target.checked ? '1' : '0');
-              } catch {
-                /* ignore */
-              }
+              setPreferenceLocal('fios_fsrs_opt_in', e.target.checked ? '1' : '0');
             }}
           />
           <span>
@@ -1248,7 +1251,7 @@ const SettingsTabInner: React.FC = () => {
           <Shield className="w-4 h-4 accent-solid-text" /> About, Legal & Support
         </h2>
         <p className="text-xs text-muted-foreground">
-          Review our data processing practices under GDPR or reach out directly for assistance. Fios v3.9.0.
+          Review our data processing practices under GDPR or reach out directly for assistance. Fios v4.0.0.
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
@@ -1256,6 +1259,12 @@ const SettingsTabInner: React.FC = () => {
             className="px-4 py-2 rounded-lg bg-background border border-border text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
           >
             <Shield className="w-3.5 h-3.5" /> Privacy Policy & GDPR
+          </button>
+          <button
+            onClick={() => setShowCookies(true)}
+            className="px-4 py-2 rounded-lg bg-background border border-border text-xs font-mono accent-solid-text hover:underline cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <Cookie className="w-3.5 h-3.5" /> Cookie Policy
           </button>
           <button
             onClick={() => setShowTerms(true)}
@@ -1387,7 +1396,24 @@ const SettingsTabInner: React.FC = () => {
         </motion.button>
       </section>
 
-      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      {showPrivacy && (
+        <PrivacyModal
+          onClose={() => setShowPrivacy(false)}
+          onOpenCookies={() => {
+            setShowPrivacy(false);
+            setShowCookies(true);
+          }}
+        />
+      )}
+      {showCookies && (
+        <CookiePolicyModal
+          onClose={() => setShowCookies(false)}
+          onOpenPrivacy={() => {
+            setShowCookies(false);
+            setShowPrivacy(true);
+          }}
+        />
+      )}
       {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
       {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
     </div>

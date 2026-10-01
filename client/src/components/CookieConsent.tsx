@@ -28,11 +28,25 @@ export function readConsent(): ConsentPrefs | null {
   }
 }
 
-/** True when user has allowed preference-category local persistence. Essential always allowed. */
+/**
+ * True when the user has opted into preference-category local persistence.
+ * Prefer consent before writing non-essential keys; essential storage is always allowed.
+ * Reading previously stored preference keys still works so the UI does not flash defaults.
+ */
 export function preferencesAllowed(): boolean {
   const c = readConsent();
-  if (!c) return true; // pre-banner: keep app functional with existing prefs
-  return c.preferences !== false;
+  if (!c) return false;
+  return c.preferences === true;
+}
+
+/** Write a preferences-category localStorage key only when consent allows. */
+export function setPreferenceLocal(key: string, value: string): void {
+  if (!preferencesAllowed()) return;
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* quota / private mode */
+  }
 }
 
 export function resetCookieConsent() {

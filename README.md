@@ -49,12 +49,13 @@ Fios turns raw lecture notes into **SM-2 spaced-repetition flashcards, MCQ quizz
 
 ### What’s new in v4.0.0
 
-- Optional FSRS (beta) spaced repetition with server `/api/study/review`; SM-2 remains the default client path.
-- Study Network tab: friends, course bank, classroom analytics.
-- Mock oral exam, diagram occlusion, audio recap, Anki `.apkg` export, daily due queue.
-- Live multiplayer quiz lobby (invite codes) without changing solo Exam Mode generation.
-- Paste-ready SQL: `supabase/v3.9.0-master-saas.sql` (+ `supabase/migrations/20261001_fios_master_saas.sql`).
-- Version alignment across packages and API `/health`.
+- Source-grounded citations + View Source; universal importers; offline Daily Queue; browser clipper + VS Code queue extension.
+- STEM sandbox cards, LMS connect, RPG progression, Course Bank votes/clone/peer-review, mind maps, Lofi lounges, vault export.
+- Live lecture + multi-format ingest, grounded chat, viva coach, cognitive engines (JOL, Feynman, elaborate, dual-coding, anti-memorization).
+- Mock exams, syllabus→ics, PDF highlight toolbar, past-paper matrix, pgvector hooks, cram sheets, delta detection, debates, learning macros, gauntlet.
+- First-class Cookie Policy & consent (essential vs preferences; preferences persist only after consent). BYO Gemini key never in cookies.
+- Landing / FAQ / Privacy / Terms / GDPR cross-links; version alignment across packages, HTML title, Updates, `/health`, footer → v4.0.0.
+- Paste-ready SQL: `supabase/v3.9.0-citations-clipper-offline.sql` (also `/cursor/stores/self/docs/fios-v4.0.0-citations-clipper-offline.sql`).
 
 ### What’s new in v3.7.7
 

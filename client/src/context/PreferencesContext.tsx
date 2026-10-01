@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react';
 import { useProfile } from './ProfileContext';
+import { setPreferenceLocal } from '../components/CookieConsent';
 
 export type WidgetId = 'flightPlan' | 'heatmap' | 'dueCards' | 'calendar';
 
@@ -458,7 +459,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
           lowPower: typeof remote.lowPower === 'boolean' ? remote.lowPower : prev.lowPower,
           openDyslexic: typeof remote.openDyslexic === 'boolean' ? remote.openDyslexic : prev.openDyslexic,
         };
-        localStorage.setItem(LS_KEY, JSON.stringify(next));
+        setPreferenceLocal(LS_KEY, JSON.stringify(next));
         return next;
       });
     }
@@ -466,7 +467,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const persist = useCallback((next: PreferencesState) => {
     setPrefs(next);
-    localStorage.setItem(LS_KEY, JSON.stringify(next));
+    setPreferenceLocal(LS_KEY, JSON.stringify(next));
     updateProfile({ prefs: next } as any).catch(() => {
       /* prefs column may not exist yet */
     });
@@ -475,7 +476,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const patch = useCallback((partial: Partial<PreferencesState>) => {
     setPrefs((prev) => {
       const next = { ...prev, ...partial };
-      localStorage.setItem(LS_KEY, JSON.stringify(next));
+      setPreferenceLocal(LS_KEY, JSON.stringify(next));
       updateProfile({ prefs: next } as any).catch(() => {
         /* prefs column may not exist yet */
       });
@@ -493,7 +494,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
         ...prev,
         widgetVisibility: { ...prev.widgetVisibility, [id]: visible },
       };
-      localStorage.setItem(LS_KEY, JSON.stringify(next));
+      setPreferenceLocal(LS_KEY, JSON.stringify(next));
       updateProfile({ prefs: next } as any).catch(() => {});
       return next;
     });
@@ -564,7 +565,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
           return prev;
         }
         const next = { ...prev, ...floating, ...brainDump };
-        localStorage.setItem(LS_KEY, JSON.stringify(next));
+        setPreferenceLocal(LS_KEY, JSON.stringify(next));
         return next;
       });
     };
@@ -572,6 +573,13 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     mq.addEventListener('change', syncViewportDefaults);
     return () => mq.removeEventListener('change', syncViewportDefaults);
   }, []);
+
+  // Mirror in-memory prefs into localStorage once Preferences consent is granted.
+  useEffect(() => {
+    const flush = () => setPreferenceLocal(LS_KEY, JSON.stringify(prefs));
+    window.addEventListener('fios-cookie-updated', flush);
+    return () => window.removeEventListener('fios-cookie-updated', flush);
+  }, [prefs]);
 
   useEffect(() => {
     const root = document.documentElement;

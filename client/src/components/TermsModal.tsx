@@ -43,7 +43,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
               <h3 id="tos-title" className={`text-base font-black uppercase truncate ${landing ? 'text-foreground' : 'text-[var(--fios-text)]'}`}>
                 Terms of Service
               </h3>
-              <p className={`text-[11px] font-mono truncate ${muted}`}>Fios Academic Command Center · v4.0.0 · September 2026</p>
+              <p className={`text-[11px] font-mono truncate ${muted}`}>Fios Academic Command Center · v4.0.0 · October 2026</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className={`touch-target shrink-0 rounded-lg cursor-pointer ${muted} hover:opacity-80`} aria-label="Close">
@@ -108,9 +108,11 @@ export const TermsModal: React.FC<TermsModalProps> = ({ onClose, variant = 'dash
           <section className="space-y-1.5">
             <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>7. Your content & privacy</h4>
             <p>
-              You retain ownership of notes, decks, and uploads. Content is stored in your private Supabase rows under Row Level Security.
-              You may export a JSON copy of your study data from Settings or request erasure as described in the Privacy Policy.
-              Processing of feedback, support messages, push subscriptions, and local/PWA storage is described there in full.
+              You retain ownership of notes, decks, and uploads. Private content is stored in your Supabase rows under
+              Row Level Security. If you publish to Course Bank or join peer review, the content you share becomes
+              visible per the visibility you choose (including public course-bank listings). You may export JSON from
+              Settings or request erasure as described in the Privacy Policy. Cookies / local storage categories are
+              listed in the Cookie Policy linked from the landing footer and consent banner.
             </p>
           </section>
 

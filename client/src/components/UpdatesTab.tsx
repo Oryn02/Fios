@@ -3,10 +3,25 @@ import { Sparkles, CheckCircle2 } from 'lucide-react';
 
 /**
  * Semver remapped from historical labels (first published → 1.0.0).
- * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; current 3.9.0.
+ * See PR / internal mapping: old 2.0…3.1.14 → 1.0.0…3.5.4; 3.8.0 SaaS pack; current 4.0.0.
  */
 const UpdatesTabInner: React.FC = () => {
   const releases = [
+    {
+      version: 'v4.0.0',
+      date: 'October 2026',
+      title: 'Major study OS — citations through community cognitive suite',
+      highlights: [
+        'Source-grounded citations + View Source PDF viewer; universal importers; offline Daily Queue; browser clipper + VS Code queue extension.',
+        'STEM code/sandbox cards, LMS connect, RPG progression, Course Bank votes/clone/peer-review, mind maps, Lofi lounges, vault export.',
+        'Live lecture + multi-format ingest, grounded chat, viva coach, cognitive engines (JOL, Feynman, elaborate, dual-coding, anti-memorization).',
+        'Mock exams, syllabus→ics, PDF highlight toolbar, past-paper matrix, pgvector knowledge graph hooks, cram sheets, delta detection, debates.',
+        'Learning macros dashboard, gauntlet mode, energy-aware queues, handwriting OCR, micro-dosing PWA shortcuts, BPM audio fallback to Lofi.',
+        'Landing + FAQ + Privacy/Terms/GDPR + first-class Cookie Policy & consent (essential vs preferences). No ad trackers; BYO Gemini never in cookies.',
+        'Paste-ready SQL: supabase/v3.9.0-citations-clipper-offline.sql (also docs/fios-v4.0.0-citations-clipper-offline.sql).',
+        'Version alignment: packages, HTML title, Updates, /health, footer → v4.0.0.',
+      ],
+    },
     {
       version: 'v3.9.0',
       date: 'October 2026',
@@ -617,7 +632,7 @@ const UpdatesTabInner: React.FC = () => {
           SYSTEM CHANGELOG
         </div>
         <h1 className="text-3xl font-black italic uppercase text-foreground tracking-tight">Fios Updates</h1>
-        <p className="text-xs font-mono text-muted-foreground">Current release · v3.9.0</p>
+        <p className="text-xs font-mono text-muted-foreground">Current release · v4.0.0</p>
       </header>
 
       <div className="space-y-4">

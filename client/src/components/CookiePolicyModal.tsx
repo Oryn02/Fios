@@ -30,14 +30,14 @@ const ROWS: Row[] = [
     name: 'fios_theme / fios_accent',
     purpose: 'Remember appearance (theme mode & accent)',
     type: 'Preferences · localStorage',
-    retention: 'Until changed or cleared',
+    retention: 'Until changed or cleared; written only after Preferences consent',
     thirdParty: 'None',
   },
   {
     name: 'fios_preferences (and related nav/widget keys)',
     purpose: 'Widget order, mobile nav slots, Zen / low-power / a11y flags',
     type: 'Preferences · localStorage (+ optional profile prefs sync)',
-    retention: 'Until changed or cleared',
+    retention: 'Until changed or cleared; written only after Preferences consent',
     thirdParty: 'None (cloud copy only if signed in)',
   },
   {
@@ -45,6 +45,41 @@ const ROWS: Row[] = [
     purpose: 'Fast local paint of profile fields while online sync catches up',
     type: 'Essential/functional · localStorage',
     retention: 'Until sign-out / clear',
+    thirdParty: 'None',
+  },
+  {
+    name: 'fios_review_days (streaks cache)',
+    purpose: 'Local flashcard review-day map for heatmap / streak widgets',
+    type: 'Essential/functional · localStorage',
+    retention: 'Rotated as you study; cleared with site data',
+    thirdParty: 'None',
+  },
+  {
+    name: 'fios_unlocked_rewards',
+    purpose: 'Cache RPG unlocks (e.g. locked accent themes) for fast UI',
+    type: 'Essential/functional · localStorage',
+    retention: 'Until refreshed from profile / cleared',
+    thirdParty: 'None',
+  },
+  {
+    name: 'fios_fsrs_opt_in',
+    purpose: 'Remember whether you opted into FSRS scheduling locally',
+    type: 'Preferences · localStorage',
+    retention: 'Until changed or cleared',
+    thirdParty: 'None',
+  },
+  {
+    name: 'fios_lms_connection (cache)',
+    purpose: 'Remember last LMS base URL / connection hint for Settings reconnect UX',
+    type: 'Essential/functional · localStorage (tokens live under RLS on your connection row)',
+    retention: 'Until cleared; secrets are not meant to live long-term in cookies',
+    thirdParty: 'None (sync calls go to your LMS when you connect)',
+  },
+  {
+    name: 'Calendar / schedule caches (fios_calendar_state, fios_schedule_meta, fios_manual_schedule)',
+    purpose: 'Offline agenda + last-synced timetable so Schedule keeps working',
+    type: 'Essential/functional · localStorage',
+    retention: 'Rotated on sync; cleared with site data',
     thirdParty: 'None',
   },
   {
@@ -69,7 +104,7 @@ const ROWS: Row[] = [
     thirdParty: 'None',
   },
   {
-    name: 'Push subscription (browser)',
+    name: 'Push subscription (browser) / fios_vapid_public_key',
     purpose: 'Optional Class Reminders via Web Push when you enable them',
     type: 'Consent-based · browser push + server endpoint store',
     retention: 'Until you disable reminders or clear site data',
@@ -77,7 +112,8 @@ const ROWS: Row[] = [
   },
   {
     name: 'Gemini API key',
-    purpose: 'BYO key for AI features — stored on your encrypted profile row under RLS (and optionally mirrored in memory for the session). Never placed in cookies.',
+    purpose:
+      'BYO key for AI features — stored on your encrypted profile row under RLS (session may hold it in memory while you use AI). Never placed in cookies or preference localStorage.',
     type: 'Not a cookie · account secret',
     retention: 'Until you remove it in Settings',
     thirdParty: 'Sent only to Google Gemini when you invoke AI',
@@ -145,7 +181,8 @@ export const CookiePolicyModal: React.FC<CookiePolicyModalProps> = ({
             <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>1. Overview</h4>
             <p>
               Fios uses first-party browser storage (cookies where the auth provider sets them, plus localStorage,
-              IndexedDB, and Cache Storage) to run the study app. We do <strong className={strong}>not</strong> use
+              IndexedDB, and Cache Storage) to run the study app. Non-essential preference keys are written only after
+              you accept Preferences (or Accept all) on the consent banner. We do <strong className={strong}>not</strong> use
               third-party advertising cookies or product-analytics SDKs. See also the{' '}
               <button type="button" className={`${heading} underline cursor-pointer`} onClick={onOpenPrivacy}>
                 Privacy Policy & GDPR statement

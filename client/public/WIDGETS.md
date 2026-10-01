@@ -1,4 +1,4 @@
-# PWA widgets & home-screen shortcuts (Fios v3.9.0)
+# PWA widgets & home-screen shortcuts (Fios v4.0.0)
 
 Chromium-based browsers (Chrome / Edge / Android) support a `shortcuts` array in `manifest.json`. Fios exposes:
 

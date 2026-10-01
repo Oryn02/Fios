@@ -7,13 +7,14 @@ interface PrivacyModalProps {
   onClose: () => void;
   /** Landing page uses locked emerald styling; dashboard uses theme tokens. */
   variant?: 'dashboard' | 'landing';
+  onOpenCookies?: () => void;
 }
 
 /**
  * Shared Privacy Policy & GDPR statement (landing + Settings).
  * Keep user-facing: no internal tooling mentions.
  */
-export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = 'dashboard' }) => {
+export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = 'dashboard', onOpenCookies }) => {
   useBodyScrollLock(true, '[data-modal-scroll]');
   const landing = variant === 'landing';
   const heading = landing ? 'text-emerald-400' : 'accent-solid-text';
@@ -54,7 +55,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
               <h3 id="privacy-title" className={`text-base font-black uppercase truncate ${landing ? 'text-foreground' : 'text-[var(--fios-text)]'}`}>
                 Privacy Policy & GDPR Statement
               </h3>
-              <p className={`text-[11px] font-mono truncate ${muted}`}>Fios Academic Command Center · v4.0.0 · Last updated September 2026</p>
+              <p className={`text-[11px] font-mono truncate ${muted}`}>Fios Academic Command Center · v4.0.0 · Last updated October 2026</p>
             </div>
           </div>
           <button type="button" onClick={onClose} className={`touch-target shrink-0 rounded-lg cursor-pointer ${muted} hover:opacity-80`} aria-label="Close">
@@ -80,8 +81,11 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
               <li><strong className={strong}>Study content:</strong> modules (codes, names, exam dates, accent tags), Smart Notes / documents, flashcard decks, MCQ quizzes, code exams, academic tasks (titles, due/start times), grades, focus / Pomodoro logs, revision flight-plan state, study-streak activity, tutor chat history.</li>
               <li><strong className={strong}>Timetable:</strong> timetable entries, optional iCal feed URLs you connect, and a local/cloud cache of last-synced classes so your agenda works offline and reconciles when you are back online.</li>
               <li><strong className={strong}>BYO Gemini key:</strong> stored on your profile under Row Level Security so AI features can run with your key.</li>
-              <li><strong className={strong}>Multi-modal uploads (optional):</strong> PDFs, photos, audio, and notes you attach in AI Tutor / Smart Notes are processed with <em>your</em> Gemini API key — content is sent to Google under your key’s terms, and retained by Fios only as your private study rows (not for advertising).</li>
-              <li><strong className={strong}>Web Push subscriptions (optional):</strong> if you enable Class Reminders, your browser may store a push endpoint (and related subscription metadata) so upcoming-class alerts can be delivered. You can disable reminders anytime in Settings; endpoints are not used for marketing.</li>
+              <li><strong className={strong}>Multi-modal uploads (optional):</strong> PDFs, photos, audio, handwritten notes, and lecture recordings you attach for AI Tutor / Smart Notes / live lecture are processed with <em>your</em> Gemini API key — content is sent to Google under your key’s terms, and retained by Fios only as your private study rows (not for advertising).</li>
+              <li><strong className={strong}>LMS connections (optional):</strong> base URL and access token you provide for Canvas / Moodle / Blackboard, plus materials synced into your private rows.</li>
+              <li><strong className={strong}>Course Bank / social (optional):</strong> titles and payloads you choose to share publicly or with friends; votes, clone/view counters, and peer-review verdicts on public cards.</li>
+              <li><strong className={strong}>Learning macros & reviews:</strong> optional Recall/Synthesis/Application counters, FSRS/SM-2 review logs, and related streak/XP fields used for study progress.</li>
+              <li><strong className={strong}>Web Push subscriptions (optional):</strong> if you enable Class Reminders, your browser may store a push endpoint so upcoming-class alerts can be delivered. You can disable reminders anytime in Settings.</li>
               <li><strong className={strong}>Feedback & ratings (optional):</strong> see §3.</li>
               <li><strong className={strong}>Support contact (optional):</strong> see §4.</li>
               <li><strong className={strong}>Device / local:</strong> browser localStorage / sessionStorage / IndexedDB for consent, theme, offline mutation queue, PWA caches, and similar functional state — not sold to advertisers.</li>
@@ -143,9 +147,19 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ onClose, variant = '
           <section className="space-y-1.5">
             <h4 className={`text-xs font-black uppercase tracking-wider ${heading}`}>7. Cookies & local storage</h4>
             <p>
-              Fios uses essential storage for sign-in session tokens and functional preferences (theme, nav, consent flag, offline queue, PWA caches).
-              We do not run third-party advertising or cross-site tracking pixels. You can reset the consent banner from Settings and clear
-              browser storage at any time.
+              Fios uses essential storage for sign-in session tokens, offline mutation queues, streaks/review caches,
+              PWA caches, and core study function so the app keeps working. Optional <strong className={strong}>preferences</strong> storage
+              (theme, nav, widgets) is written only after you choose Preferences / Accept all on the cookie consent banner. We do not run third-party advertising
+              or cross-site tracking pixels. Your Gemini API key is stored on your account profile under RLS —{' '}
+              <strong className={strong}>never in a cookie</strong>. Full inventory:{' '}
+              {onOpenCookies ? (
+                <button type="button" className={`${heading} underline cursor-pointer`} onClick={onOpenCookies}>
+                  Cookie Policy
+                </button>
+              ) : (
+                <span className={strong}>Cookie Policy</span>
+              )}{' '}
+              (landing footer / consent banner / Settings). Reset consent anytime in Settings.
             </p>
           </section>
 
