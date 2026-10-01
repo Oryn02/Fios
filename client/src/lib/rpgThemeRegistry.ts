@@ -286,8 +286,8 @@ export const IMMERSIVE_THEMES: ImmersiveThemeDef[] = [
     motion: 'frost',
     palette: {
       bg: '#0f172a',
-      surface: '#1e293b',
-      surface2: '#334155',
+      surface: 'rgba(30, 41, 59, 0.42)',
+      surface2: 'rgba(51, 65, 85, 0.38)',
       text: '#f8fafc',
       muted: '#a5f3fc',
       border: 'rgba(165,243,252,0.28)',

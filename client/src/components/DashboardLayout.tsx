@@ -9,7 +9,14 @@ import { supabase } from '../lib/supabase';
 import { IS_DEMO, disableDemo } from '../lib/demo';
 import { useProfile, usePreferredName } from '../context/ProfileContext';
 import { useTheme } from '../context/ThemeContext';
-import { usePreferences, DEFAULT_NAV_ORDER, DEFAULT_MOBILE_NAV, PILLAR_NAV_IDS } from '../context/PreferencesContext';
+import {
+  usePreferences,
+  DEFAULT_NAV_ORDER,
+  DEFAULT_MOBILE_NAV,
+  PILLAR_NAV_IDS,
+  SIDEBAR_NAV_ID_SET,
+  sanitizeNavOrder,
+} from '../context/PreferencesContext';
 import { FiosLogo } from './FiosLogo';
 import { Avatar } from './Avatar';
 import { CommandPalette, type CommandItem } from './CommandPalette';
@@ -29,6 +36,7 @@ interface DashboardLayoutProps {
   setActiveTab: (tab: string, options?: { openTutor?: boolean }) => void;
 }
 
+/** Full catalog for deep links / command palette. Sidebar drawer uses SIDEBAR_NAV only. */
 export const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', shortLabel: 'Overview', icon: LayoutDashboard },
   { id: 'agenda', label: 'Agenda', shortLabel: 'Agenda', icon: Calendar },
@@ -45,29 +53,20 @@ export const NAV_ITEMS = [
   { id: 'timer', label: 'Focus Timer', shortLabel: 'Focus', icon: Timer },
   { id: 'schedule', label: 'Timetable', shortLabel: 'Timetable', icon: Calendar },
   { id: 'settings', label: 'Settings', shortLabel: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates v4.1.0', shortLabel: 'Updates', icon: Sparkles },
+  { id: 'updates', label: 'Updates v4.1.1', shortLabel: 'Updates', icon: Sparkles },
 ];
 
-/** Mobile drawer — pillars first; account/network live behind avatar, not bottom tabs. */
+/** Sidebar / drawer — pillars + system only (legacy tools live in Modules / Studio hubs). */
 const DRAWER_SECTIONS: { label: string; ids: readonly string[] }[] = [
-  { label: 'Pillars', ids: ['overview', 'agenda', 'modules', 'studio'] },
-  { label: 'More tools', ids: ['flashcards', 'quiz', 'code', 'documents', 'tutor', 'grades', 'timer', 'schedule', 'atu-calendar'] },
-  { label: 'System', ids: ['settings', 'updates', 'social'] },
+  { label: 'Pillars', ids: ['overview', 'modules', 'agenda', 'studio'] },
+  { label: 'System', ids: ['settings', 'updates'] },
 ];
 
 function groupDrawerNav<T extends { id: string }>(ordered: T[]): { label: string; items: T[] }[] {
-  const known = new Set(DRAWER_SECTIONS.flatMap((s) => [...s.ids]));
-  const sections = DRAWER_SECTIONS.map((section) => ({
+  return DRAWER_SECTIONS.map((section) => ({
     label: section.label,
     items: ordered.filter((item) => (section.ids as readonly string[]).includes(item.id)),
   })).filter((s) => s.items.length > 0);
-  const orphans = ordered.filter((item) => !known.has(item.id));
-  if (orphans.length) {
-    const academic = sections.find((s) => s.label === 'Academic Tools');
-    if (academic) academic.items.push(...orphans);
-    else sections.push({ label: 'Academic Tools', items: orphans });
-  }
-  return sections;
 }
 
 /** True when the event target is a text-entry control (skip ⌘K / Ctrl+K while typing). */
@@ -282,19 +281,29 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
   const navigate = useCallback((tab: string) => {
     setActiveTab(tab);
     setDrawerOpen(false);
+    setProfileDrawerOpen(false);
   }, [setActiveTab]);
 
   const exitZen = useCallback(() => setZenMode(false), [setZenMode]);
 
-  /** Header hamburger / X — mobile drawer or desktop sidebar. */
+  /** Header hamburger / X — mobile drawer or desktop sidebar. Exclusive with profile. */
   const toggleNavChrome = useCallback(() => {
     if (isDesktop) {
       setSidebarOpen((v) => !v);
       setDrawerOpen(false);
+      setProfileDrawerOpen(false);
     } else {
+      setProfileDrawerOpen(false);
       setDrawerOpen((v) => !v);
     }
   }, [isDesktop]);
+
+  const openProfileDrawer = useCallback(() => {
+    setDrawerOpen(false);
+    setProfileDrawerOpen(true);
+  }, []);
+
+  const closeProfileDrawer = useCallback(() => setProfileDrawerOpen(false), []);
 
   const navToggleOpen = isDesktop ? sidebarOpen : drawerOpen;
 
@@ -331,31 +340,39 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
   }, [exitZen, togglePalette]);
 
   const [draftNavOrder, setDraftNavOrder] = useState<string[] | null>(null);
-  const effectiveNavOrder = draftNavOrder ?? (navOrder?.length ? navOrder : DEFAULT_NAV_ORDER);
+  const effectiveNavOrder = sanitizeNavOrder(draftNavOrder ?? (navOrder?.length ? navOrder : DEFAULT_NAV_ORDER));
   const baseMobileSlots = [...PILLAR_NAV_IDS];
   /** Fixed 4-pillar bottom nav — ignore legacy reorder prefs for the bar itself. */
   const effectiveMobileSlots = baseMobileSlots;
 
+  /** Sidebar / drawer catalog only (pillars + Settings + Updates). */
   const orderedNav = useMemo(() => {
     const order = effectiveNavOrder;
     const byId = new Map(NAV_ITEMS.map((n) => [n.id, n]));
     const seen = new Set<string>();
     const list: typeof NAV_ITEMS = [];
     for (const id of order) {
+      if (!SIDEBAR_NAV_ID_SET.has(id)) continue;
       const item = byId.get(id);
       if (item && !seen.has(id)) {
         list.push(item);
         seen.add(id);
       }
     }
-    for (const item of NAV_ITEMS) {
-      if (!seen.has(item.id)) list.push(item);
+    for (const id of SIDEBAR_NAV_ID_SET) {
+      if (seen.has(id)) continue;
+      const item = byId.get(id);
+      if (item) list.push(item);
     }
     return list;
   }, [effectiveNavOrder]);
 
+  /** Command palette still lists deep-link tools (Flashcards, Tutor, …) — not the sidebar. */
+  const commandNavItems = useMemo(() => NAV_ITEMS, []);
+
   const moveNav = useCallback((id: string, dir: -1 | 1) => {
-    const order = [...(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER)];
+    if (!SIDEBAR_NAV_ID_SET.has(id)) return;
+    const order = sanitizeNavOrder(navOrder?.length ? navOrder : DEFAULT_NAV_ORDER);
     const idx = order.indexOf(id);
     if (idx < 0) return;
     const next = idx + dir;
@@ -568,7 +585,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
   }, [HOLD_MS, applyDrawerDragAt, clearDrawerHold, hapticTick, navOrder, onDrawerPointerEnd]);
 
   const commandItems: CommandItem[] = useMemo(() => [
-    ...orderedNav.map((item) => ({
+    ...commandNavItems.map((item) => ({
       id: `nav-${item.id}`,
       label: item.label,
       hint: 'Navigate',
@@ -596,7 +613,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       keywords: ['logout'],
       action: () => { void handleLogout(); },
     },
-  ], [orderedNav, navigate, toggleTheme, handleLogout, zenMode, setZenMode]);
+  ], [commandNavItems, navigate, toggleTheme, handleLogout, zenMode, setZenMode]);
 
   const displayName = profile?.full_name?.trim() || preferredName;
   const ThemeIcon = theme === 'system' ? Monitor : (resolvedTheme === 'dark' ? Sun : Moon);
@@ -649,10 +666,10 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               data-fios-version-badge
               className="relative z-[65] inline-flex items-center gap-1 shrink-0 text-[9px] sm:text-xs font-black not-italic accent-solid-text bg-[var(--fios-surface-2)] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-md border accent-border tracking-wider"
               title="Fios version"
-              aria-label="Fios version 4.1.0"
+              aria-label="Fios version 4.1.1"
             >
               <HolidayMotif themeFamily={holidayTheme?.themeFamily} size={12} className="hidden sm:inline" />
-              v4.1.0
+              v4.1.1
             </span>
             {zenMode && (
               <button
@@ -684,28 +701,28 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               onClick={toggleTheme}
               title="Toggle theme"
               aria-label="Toggle theme"
-              className="fios-header-btn touch-target rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none"
+              className="hidden sm:inline-flex fios-header-btn touch-target rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none"
             >
               <ThemeIcon className="w-4 h-4" />
             </button>
 
-            {/* RPG HUD — streak + level/XP */}
+            {/* RPG HUD — streak + level (compact on phones) */}
             <div
-              className="hidden xs:flex sm:flex items-center gap-1.5 px-2 py-1 rounded-full bg-[var(--fios-surface-2)] border fios-border text-[10px] font-mono font-black tabular-nums"
+              className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-full bg-[var(--fios-surface-2)] border fios-border text-[10px] font-mono font-black tabular-nums shrink-0"
               title="Study streak and level"
               aria-label={`Streak ${rpgStatus?.streak?.current_streak ?? 0}, level ${rpgStatus?.level ?? levelFromXp(rpgStatus?.xp ?? 0)}`}
             >
               <Flame className="w-3.5 h-3.5 text-orange-400" />
               <span className="text-[var(--fios-text)]">{rpgStatus?.streak?.current_streak ?? 0}</span>
-              <span className="text-[var(--fios-text-muted)]">·</span>
-              <span className="accent-solid-text">Lv {rpgStatus?.level ?? levelFromXp(rpgStatus?.xp ?? 0)}</span>
+              <span className="text-[var(--fios-text-muted)] hidden xs:inline">·</span>
+              <span className="accent-solid-text hidden xs:inline sm:inline">Lv {rpgStatus?.level ?? levelFromXp(rpgStatus?.xp ?? 0)}</span>
             </div>
 
             <button
               type="button"
-              onClick={() => setProfileDrawerOpen(true)}
+              onClick={openProfileDrawer}
               className="flex items-center gap-2.5 bg-[var(--fios-surface-2)] pl-1 pr-2.5 py-1 rounded-full border fios-border cursor-pointer max-h-11 select-none"
-              aria-label="Open player profile"
+              aria-label="Open user profile"
             >
               <Avatar url={profile?.avatar_url} name={preferredName} size={26} />
               <span className="text-[var(--fios-text)] text-[11px] font-bold max-w-[120px] truncate hidden sm:inline">{displayName}</span>
@@ -714,7 +731,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
             <button
               type="button"
               onClick={() => navigate('settings')}
-              className="fios-header-btn touch-target rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none"
+              className="hidden sm:inline-flex fios-header-btn touch-target rounded-lg bg-[var(--fios-surface-2)] border fios-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none"
               aria-label="Open account settings"
               title="Settings"
             >
@@ -728,7 +745,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               disabled={isLoggingOut}
               title="Sign Out"
               aria-label="Sign out"
-              className="fios-header-btn touch-target rounded-md bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-black tracking-wider transition-colors cursor-pointer select-none"
+              className="hidden sm:inline-flex fios-header-btn touch-target rounded-md bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-black tracking-wider transition-colors cursor-pointer select-none"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Logout</span>
@@ -782,7 +799,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
                 transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-                className="fios-mobile-drawer fixed top-[var(--fios-header-offset)] left-0 bottom-0 z-50 w-[80%] max-w-[300px] overflow-hidden overscroll-x-none bg-[var(--fios-surface)] border-r fios-border shadow-2xl p-4 flex flex-col safe-bottom transform-gpu will-change-transform"
+                className="fios-mobile-drawer fixed top-[var(--fios-header-offset)] left-0 bottom-[var(--fios-bottom-nav-offset,0px)] z-50 w-[min(80vw,18rem)] max-w-[300px] overflow-hidden overscroll-x-none bg-[var(--fios-surface)]/92 backdrop-blur-xl border-r fios-border shadow-2xl p-4 flex flex-col safe-bottom transform-gpu will-change-transform"
                 style={{ touchAction: 'pan-y' }}
                 aria-label="Mobile navigation"
               >
@@ -792,8 +809,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                <nav className="space-y-3 overflow-y-auto flex-1 scroll-touch select-none" aria-label="Extended tools and settings">
-                  <p className="px-3 pb-0.5 text-[9px] font-mono text-muted-foreground">Hold &amp; drag to reorder · Extended Tools &amp; Settings</p>
+                <nav className="space-y-3 overflow-y-auto flex-1 min-h-0 scroll-touch select-none" aria-label="Pillars and system">
+                  <p className="px-3 pb-0.5 text-[9px] font-mono text-muted-foreground">Hold &amp; drag to reorder · Pillars &amp; System</p>
                   {groupDrawerNav(orderedNav).map((section) => (
                     <div key={section.label} className="space-y-1">
                       <p className="px-3 pt-2 pb-1 text-[9px] font-black font-mono uppercase tracking-widest text-muted-foreground">
@@ -997,7 +1014,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="fixed top-0 left-0 bottom-0 z-50 w-[80vw] max-w-xs bg-[var(--fios-surface)] border-r fios-border p-4 flex flex-col safe-top safe-bottom"
+              className="fios-mobile-drawer fixed top-0 left-0 bottom-[var(--fios-bottom-nav-offset,0px)] z-50 w-[min(80vw,18rem)] max-w-xs bg-[var(--fios-surface)]/92 backdrop-blur-xl border-r fios-border p-4 flex flex-col safe-top safe-bottom"
               aria-label="Mobile navigation"
             >
               <div className="flex items-center justify-between mb-4">
@@ -1006,8 +1023,8 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <nav className="space-y-3 overflow-y-auto flex-1 scroll-touch select-none" aria-label="Extended tools and settings">
-                <p className="px-3 pb-0.5 text-[9px] font-mono text-muted-foreground">Hold &amp; drag to reorder · Extended Tools &amp; Settings</p>
+              <nav className="space-y-3 overflow-y-auto flex-1 min-h-0 scroll-touch select-none" aria-label="Pillars and system">
+                <p className="px-3 pb-0.5 text-[9px] font-mono text-muted-foreground">Hold &amp; drag to reorder · Pillars &amp; System</p>
                 {groupDrawerNav(orderedNav).map((section) => (
                   <div key={section.label} className="space-y-1">
                     <p className="px-3 pt-2 pb-1 text-[9px] font-black font-mono uppercase tracking-widest text-muted-foreground">
@@ -1066,7 +1083,7 @@ const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children, active
       <CommandPalette open={paletteOpen} onClose={closePalette} items={commandItems} />
       <PlayerProfileDrawer
         open={profileDrawerOpen}
-        onClose={() => setProfileDrawerOpen(false)}
+        onClose={closeProfileDrawer}
         onOpenSettings={() => navigate('settings')}
       />
     </div>

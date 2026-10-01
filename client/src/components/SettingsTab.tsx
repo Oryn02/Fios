@@ -5,7 +5,7 @@ import {
   Sliders, Timer, Check, MapPin, IdCard, Palette, Sun, Moon,
   KeyRound, ExternalLink, Loader2, Lock, Download, AlertCircle, CheckCircle, HelpCircle, Target, Mail, Smartphone,
   Monitor, BatteryLow, Type, Focus, GitBranch, Cookie, FileText, ShieldCheck,
-  GripVertical, LayoutGrid, ChevronUp, ChevronDown, Zap, Bell, Brain
+  LayoutGrid, ChevronUp, ChevronDown, Zap, Bell, Brain
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { IS_DEMO, DEMO_USER, disableDemo } from '../lib/demo';
@@ -15,8 +15,6 @@ import { useProfile } from '../context/ProfileContext';
 import { useTheme } from '../context/ThemeContext';
 import {
   usePreferences,
-  DEFAULT_MOBILE_NAV,
-  DEFAULT_NAV_ORDER,
   DEFAULT_SMART_ACTIONS,
   DEFAULT_SMART_METRICS,
   ALL_SMART_ACTIONS,
@@ -25,6 +23,8 @@ import {
   SMART_METRIC_LABELS,
   type SmartActionId,
   type SmartMetricId,
+  SIDEBAR_NAV_IDS,
+  sanitizeNavOrder,
 } from '../context/PreferencesContext';
 import { AvatarPicker } from './Avatar';
 import { ACCENTS, LOCKED_ACCENTS, type AccentKey, type ThemeMode } from '../types/db';
@@ -59,6 +59,11 @@ import {
   getPushSupportStatus,
   type ReminderLeadMinutes,
 } from '../lib/pushNotifications';
+import { IMMERSIVE_THEMES } from '../lib/rpgThemeRegistry';
+
+const IMMERSIVE_ACCENT_KEYS = new Set(IMMERSIVE_THEMES.map((t) => t.accentKey));
+const ACCENT_GRADIENTS = ACCENTS.filter((a) => !IMMERSIVE_ACCENT_KEYS.has(a.key as AccentKey));
+const IMMERSIVE_ACCENTS = ACCENTS.filter((a) => IMMERSIVE_ACCENT_KEYS.has(a.key as AccentKey));
 
 type SettingsPane = 'account' | 'layout' | 'study' | 'integrations';
 
@@ -74,7 +79,6 @@ const SettingsTabInner: React.FC = () => {
   const { theme, setTheme, accent, setAccent } = useTheme();
   const {
     lowPower, setLowPower, zenMode, setZenMode, openDyslexic, setOpenDyslexic,
-    mobileNavSlots, setMobileNavSlots,
     navOrder, setNavOrder,
     showPomodoroWidget, setShowPomodoroWidget,
     showSmartWidget, setShowSmartWidget,
@@ -925,68 +929,20 @@ const SettingsTabInner: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Mobile bottom nav (add / hide / reorder · max 5)</span>
-          <p className="text-[10px] text-[var(--fios-text-muted)]">On your phone, long-press a bottom tab and drag to reposition. Order saves to localStorage / profile prefs.</p>
-          <div className="space-y-1.5">
-            {(() => {
-              const slots = mobileNavSlots.length ? mobileNavSlots : [...DEFAULT_MOBILE_NAV];
-              return slots.map((id, idx) => {
-              const item = NAV_ITEMS.find((n) => n.id === id);
-              if (!item) return null;
-              return (
-                <div key={id} className="flex items-center gap-2 rounded-lg border fios-border bg-[var(--fios-surface-2)] px-2 py-1.5">
-                  <GripVertical className="w-3.5 h-3.5 text-[var(--fios-text-muted)]" />
-                  <span className="flex-1 text-xs font-bold text-[var(--fios-text)]">{item.label}</span>
-                  <button type="button" disabled={idx === 0} onClick={() => {
-                    const next = [...slots];
-                    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-                    setMobileNavSlots(next);
-                  }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move up"><ChevronUp className="w-3.5 h-3.5" /></button>
-                  <button type="button" disabled={idx >= slots.length - 1} onClick={() => {
-                    const next = [...slots];
-                    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-                    setMobileNavSlots(next);
-                  }} className="p-1 cursor-pointer disabled:opacity-30" aria-label="Move down"><ChevronDown className="w-3.5 h-3.5" /></button>
-                  <button
-                    type="button"
-                    disabled={slots.length <= 1}
-                    onClick={() => setMobileNavSlots(slots.filter((s) => s !== id))}
-                    className="text-[10px] text-rose-400 font-bold cursor-pointer px-1 disabled:opacity-30"
-                  >
-                    Hide
-                  </button>
-                </div>
-              );
-              });
-            })()}
-          </div>
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {NAV_ITEMS.filter((item) => !(mobileNavSlots.length ? mobileNavSlots : DEFAULT_MOBILE_NAV).includes(item.id)).map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                disabled={(mobileNavSlots.length ? mobileNavSlots : DEFAULT_MOBILE_NAV).length >= 5}
-                onClick={() => {
-                  const slots = mobileNavSlots.length ? mobileNavSlots : [...DEFAULT_MOBILE_NAV];
-                  if (slots.length < 5) setMobileNavSlots([...slots, item.id]);
-                }}
-                className="px-2 py-1 rounded text-[10px] font-mono font-bold uppercase border fios-border text-[var(--fios-text-muted)] cursor-pointer disabled:opacity-40"
-              >
-                + {item.label}
-              </button>
-            ))}
-            <button type="button" onClick={() => setMobileNavSlots([...DEFAULT_MOBILE_NAV])} className="px-2 py-1 text-[10px] font-mono accent-solid-text cursor-pointer">
-              Reset
-            </button>
-          </div>
+          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Mobile bottom nav</span>
+          <p className="text-[10px] text-[var(--fios-text-muted)]">
+            Fixed 4-pillar bar: Overview · Agenda · Modules · Studio. Tools live inside Modules / Studio hubs — not extra bottom slots.
+          </p>
         </div>
 
         <div className="space-y-2">
-          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Desktop sidebar order</span>
-          <p className="text-[10px] text-[var(--fios-text-muted)]">Drag in the sidebar or reorder here. Persists to localStorage / profile prefs.</p>
+          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Desktop sidebar / drawer order</span>
+          <p className="text-[10px] text-[var(--fios-text-muted)]">
+            Pillars + Settings + Updates only. Hold-drag in the mobile drawer or reorder here.
+          </p>
           <div className="max-h-48 overflow-y-auto space-y-1">
             {(() => {
-              const order = navOrder.length ? navOrder : [...DEFAULT_NAV_ORDER];
+              const order = sanitizeNavOrder(navOrder.length ? navOrder : [...SIDEBAR_NAV_IDS]);
               return order.map((id, idx) => {
               const item = NAV_ITEMS.find((n) => n.id === id);
               if (!item) return null;
@@ -1008,15 +964,40 @@ const SettingsTabInner: React.FC = () => {
               });
             })()}
           </div>
-          <button type="button" onClick={() => setNavOrder([...DEFAULT_NAV_ORDER])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
+          <button type="button" onClick={() => setNavOrder([...SIDEBAR_NAV_IDS])} className="text-[10px] font-mono accent-solid-text cursor-pointer">
             Reset sidebar order
           </button>
         </div>
 
         <div className="space-y-2">
-          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Accent Gradient</span>
+          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Accent Gradients</span>
+          <p className="text-[10px] text-[var(--fios-text-muted)]">
+            Color accents only — do not change the immersive scene. Landing page keeps Fios emerald.
+          </p>
           <div className="flex flex-wrap gap-2">
-            {ACCENTS.map((a) => {
+            {ACCENT_GRADIENTS.map((a) => (
+              <button
+                key={a.key}
+                type="button"
+                onClick={() => setAccent(a.key)}
+                className={`min-h-11 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition-transform cursor-pointer ${
+                  accent === a.key ? 'ring-2 ring-white/60 scale-[1.03]' : 'opacity-80 hover:opacity-100'
+                } bg-[var(--fios-surface-2)] fios-border text-[var(--fios-text)]`}
+              >
+                <span className="w-4 h-4 rounded-full" style={{ backgroundImage: `linear-gradient(120deg, ${a.from}, ${a.to})` }} />
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <span className="text-[11px] font-mono font-bold uppercase text-[var(--fios-text-muted)]">Immersive Themes</span>
+          <p className="text-[10px] text-[var(--fios-text-muted)]">
+            Full UI overhauls unlocked via study milestones (motion layers, glass, palettes). Separate from accent gradients above.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {IMMERSIVE_ACCENTS.map((a) => {
               const locked = LOCKED_ACCENTS.has(a.key as AccentKey) && !isAccentUnlocked(a.key as AccentKey);
               return (
               <button
@@ -1025,12 +1006,12 @@ const SettingsTabInner: React.FC = () => {
                 disabled={locked}
                 onClick={() => {
                   if (locked) {
-                    toast('Unlock via RPG skill points first', 'info');
+                    toast('Unlock via study milestones first', 'info');
                     return;
                   }
                   setAccent(a.key);
                 }}
-                className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition-transform cursor-pointer ${
+                className={`min-h-11 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition-transform cursor-pointer ${
                   accent === a.key ? 'ring-2 ring-white/60 scale-[1.03]' : 'opacity-80 hover:opacity-100'
                 } ${locked ? 'opacity-40 cursor-not-allowed' : ''} bg-[var(--fios-surface-2)] fios-border text-[var(--fios-text)]`}
               >
@@ -1041,7 +1022,6 @@ const SettingsTabInner: React.FC = () => {
               );
             })}
           </div>
-          <p className="text-[10px] text-[var(--fios-text-muted)]">The public landing page keeps Fios's signature emerald identity regardless of this choice. Cyber & Dark Matter unlock via RPG.</p>
         </div>
       </section>
 
